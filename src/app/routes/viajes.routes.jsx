@@ -1,9 +1,6 @@
 import { Route, Switch } from "wouter";
 
-import CrearViaje from "./CrearViaje";
-import ListaViajes from "./ListaViajes";
-import DetalleViaje from "./DetalleViaje";
-import { Stack } from "@mantine/core";
+import { ListaViajes, CrearViaje, DetalleViaje } from "@features/viajes";
 
 const ViajesRoutes = () => (
   <Switch>

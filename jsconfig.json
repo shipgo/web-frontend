@@ -2,15 +2,15 @@
   "compilerOptions": {
     "baseUrl": "./src",
     "paths": {
-      "@components/*": ["components/*"],
-      "@constants/*": ["constants/*"],
-      "@utils/*": ["utils/*"],
-      "@hooks/*": ["hooks/*"],
-      "@screens/*": ["screens/*"],
-      "@layout/*": ["layout/*"],
-      "@contexts/*": ["contexts/*"],
-      "@pages/*": ["pages/*"],
-      "@config/*": ["config/*"],
+      "@components/*": ["app/components/*"],
+      "@config/*": ["app/config/*"],
+      "@constants/*": ["app/constants/*"],
+      "@contexts/*": ["app/contexts/*"],
+      "@hooks/*": ["app/hooks/*"],
+      "@providers/*": ["app/providers/*"],
+      "@utils/*": ["app/utils/*"],
+      "@features/*": ["features/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "dist"]
 }
