@@ -4,6 +4,15 @@ import react from "@vitejs/plugin-react-swc";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        credentials: "include",
+      },
+    },
+  },
   resolve: {
     alias: [
       { find: "@components", replacement: "/src/app/components" },
@@ -14,6 +23,8 @@ export default defineConfig({
       { find: "@providers", replacement: "/src/app/providers" },
       { find: "@utils", replacement: "/src/app/utils" },
       { find: "@features", replacement: "/src/features" },
+      { find: "@api", replacement: "/src/app/api" },
+      { find: "@stores", replacement: "/src/app/stores" },
     ],
   },
 });

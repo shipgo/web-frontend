@@ -1,35 +1,61 @@
-import { useState, useMemo, useEffect } from "react";
-
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import { useAuthStore } from "@stores/auth.store";
 import { AuthContext } from "@contexts/auth";
+import { Center, Loader } from "@mantine/core";
 
-const DEFAULT_USER = {
-  fullname: 'Joaquín Dolcemascolo',
-  email: 'joadolce@hotmail.com',
-  role: 'Administrador',
-}
+// Rutas públicas que no requieren autenticación
+const PUBLIC_ROUTES = ["/login", "/recuperar-cuenta", "/verificar-cuenta"];
 
 const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(DEFAULT_USER);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setLocation] = useLocation();
+  const { user, isLoading, isAuthenticated, initUser } = useAuthStore();
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const validateUser = async () => {
-    try {
-      setIsLoading(true);
-    } catch {
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        await initUser();
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+
+    initialize();
+  }, [initUser]);
+
+  // Redirigir a login si no está autenticado y no está en una ruta pública
+  useEffect(() => {
+    if (isInitialized && !isLoading) {
+      const currentPath = window.location.pathname;
+      const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+        currentPath.startsWith(route)
+      );
+
+      if (!isAuthenticated && !isPublicRoute) {
+        setLocation("/login");
+      } else if (isAuthenticated && currentPath === "/login") {
+        // Si ya está autenticado y está en login, redirigir al home
+        setLocation("/");
+      }
     }
-  };
+  }, [isAuthenticated, isLoading, isInitialized, setLocation]);
 
-  useEffect(() => { validateUser() }, []);
-
-  const value = useMemo(() => ({ user, isLoading }), [user, isLoading]);
+  // Mostrar loader mientras se inicializa la autenticación
+  if (!isInitialized || isLoading) {
+    return (
+      <Center h="100vh">
+        <Loader size="lg" />
+      </Center>
+    );
+  }
 
   return (
-    <AuthContext value={value}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated }}>
       {children}
-    </AuthContext>
+    </AuthContext.Provider>
   );
 };
 

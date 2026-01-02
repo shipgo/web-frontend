@@ -2,39 +2,42 @@ import { mapValues } from "es-toolkit";
 import { useQuery } from "@tanstack/react-query";
 
 import { useParams } from "@hooks/useParams";
+import { viajeApi } from "../../../api/viajes.api";
 
-const VIAJES = [];
-
-const getViajes = (params, pageLimit) =>
-  new Promise((resolve) => {
-    const offset = (params.page - 1) * pageLimit;
-
-    setTimeout(() => {
-      resolve({
-        total: VIAJES.length,
-        results: VIAJES.slice(offset, offset + pageLimit),
-        totalPages: Math.ceil(VIAJES.length / pageLimit),
-      });
-    }, 1500);
-  });
-
-export const useGetViajes = (pageLimit) => {
+/**
+ * Hook para obtener viajes con paginación usando la API real
+ * @param {number} pageLimit - Cantidad de elementos por página
+ */
+export const useGetViajes = (pageLimit = 10) => {
   const paramsOptions = useParams();
 
+  // Normalizar parámetros para el backend
+  // El backend espera: page (0-indexed), size, y otros filtros
   const normalizedParams = {
-    page: paramsOptions.params.page,
+    page: (paramsOptions.params.page || 1) - 1, // Convertir de 1-indexed (UI) a 0-indexed (backend)
+    size: pageLimit,
     ...mapValues(paramsOptions.params.filters, (filter) => filter.values),
   };
 
   const {
     isError,
-    data = {},
+    data: backendData,
     isFetching: isLoading,
     refetch: refetchViajes,
   } = useQuery({
-    queryFn: () => getViajes(normalizedParams, pageLimit),
+    queryFn: async () => {
+      const response = await viajeApi.get(normalizedParams);
+      return response;
+    },
     queryKey: ["viajes", JSON.stringify(normalizedParams)],
   });
+
+  // Transformar respuesta del backend al formato esperado por el componente
+  const data = {
+    total: backendData?.totalElements || 0,
+    results: backendData?.content || [],
+    totalPages: backendData?.totalPages || 0,
+  };
 
   return {
     data,

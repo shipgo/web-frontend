@@ -17,9 +17,34 @@ import {
 import { IconBell, IconLogout, IconSearch } from "@tabler/icons-react";
 
 import { useAuth } from "@contexts/auth";
+import { useAuthStore } from "@stores/auth.store";
+import { API_URLS } from "@constants/apiUrls";
 
 const AppHeader = () => {
   const { user } = useAuth();
+  const { logout } = useAuthStore();
+
+  // Si no hay usuario, no renderizar el header (o renderizar versión simplificada)
+  if (!user) {
+    return null;
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
+
+  const fullName = user.getFullName
+    ? user.getFullName()
+    : user.fullname || "Usuario";
+
+  const initials = user.getInitials
+    ? user.getInitials()
+    : fullName.substring(0, 2).toUpperCase();
+  const role = user.authorities?.[0]?.name || user.role || "Usuario";
 
   return (
     <AppShellHeader component={Flex} justify="center">
@@ -55,19 +80,25 @@ const AppHeader = () => {
                 size="lg"
                 variant="transparent"
                 rightSection={
-                  <Avatar
-                    radius="xl"
-                    color="colorPalette"
-                    name={user.fullname}
-                  />
+                  user.profile ? (
+                    <Avatar
+                      src={`/api${user.profile}`}
+                      radius="xl"
+                      color="colorPalette"
+                    />
+                  ) : (
+                    <Avatar radius="xl" color="colorPalette">
+                      {initials}
+                    </Avatar>
+                  )
                 }
                 leftSection={
                   <Stack gap={0} ta="right" maw={300}>
                     <Text fw={600} size="sm" truncate="end">
-                      {user.fullname}
+                      {fullName}
                     </Text>
                     <Text size="xs" c="gray">
-                      {user.role}
+                      {role}
                     </Text>
                   </Stack>
                 }
@@ -76,6 +107,7 @@ const AppHeader = () => {
 
             <Menu.Dropdown>
               <Menu.Item
+                onClick={handleLogout}
                 leftSection={
                   <IconLogout style={{ width: rem(14), height: rem(14) }} />
                 }

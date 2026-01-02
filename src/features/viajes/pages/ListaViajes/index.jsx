@@ -34,21 +34,21 @@ const ListaViajes = () => {
             show: isLoading,
             description: "Cargando viajes...",
           }}
-          // onError={{
-          //   show: isError,
-          //   onClick: refetchViajes,
-          //   description: 'Ocurrió un error al cargar los viajes',
-          // }}
-          // onEmptyData={{
-          //   show: data.total === 0 && Object.keys(filters).length === 0,
-          //   title: 'Sin viajes que mostrar',
-          //   description: 'Parece que no cargaste ningún viaje todavía',
-          // }}
-          // onEmptyFiltersData={{
-          //   show: data.total === 0 && Object.keys(filters).length > 0,
-          //   title: 'Sin viajes que mostrar',
-          //   description: 'No se encontraron viajes con los filtros aplicados',
-          // }}
+          onError={{
+            show: isError,
+            onClick: refetchViajes,
+            description: "Ocurrió un error al cargar los viajes",
+          }}
+          onEmptyData={{
+            show: data.total === 0 && Object.keys(filters).length === 0,
+            title: "Sin viajes que mostrar",
+            description: "Parece que no cargaste ningún viaje todavía",
+          }}
+          onEmptyFiltersData={{
+            show: data.total === 0 && Object.keys(filters).length > 0,
+            title: "Sin viajes que mostrar",
+            description: "No se encontraron viajes con los filtros aplicados",
+          }}
         >
           <Flex align="center" justify="space-between">
             <FiltersList

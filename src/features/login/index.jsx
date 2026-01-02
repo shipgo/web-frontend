@@ -1,11 +1,12 @@
-import { useLayoutEffect, useState } from 'react'
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 
-import { isEqual, omit } from 'es-toolkit'
-import { IconExclamationMark } from '@tabler/icons-react'
+import { omit } from "es-toolkit";
+import { IconExclamationMark } from "@tabler/icons-react";
 
-import { useLocalStorage } from '@mantine/hooks';
-import { useForm, isNotEmpty } from '@mantine/form'
-import { notifications } from '@mantine/notifications';
+import { useLocalStorage } from "@mantine/hooks";
+import { useForm, isNotEmpty } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
 import {
   Button,
   PasswordInput,
@@ -22,67 +23,77 @@ import {
   rem,
   FocusTrap,
   Image,
-} from '@mantine/core'
+} from "@mantine/core";
 
-const FORM_WIDHT = '35rem';
-const LOCAL_STORAGE_VALUES = { key: 'storedUser', defaultValue: null };
-const DEFAULT_FORM_VALUES = { email: '', password: '', remember: false };
+import { useAuthStore } from "@stores/auth.store";
+
+const FORM_WIDHT = "35rem";
+const LOCAL_STORAGE_KEY = "shipgo_stored_user";
+const DEFAULT_FORM_VALUES = { username: "", password: "", remember: false };
 
 const LoginPage = () => {
+  const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);
-  const [storedUser, setStoredUser] = useLocalStorage(LOCAL_STORAGE_VALUES);
+  const [storedUser, setStoredUser] = useLocalStorage({
+    key: LOCAL_STORAGE_KEY,
+    defaultValue: null,
+  });
+  const { login } = useAuthStore();
 
   const form = useForm({
-    mode: 'uncontrolled',
+    mode: "uncontrolled",
     initialValues: DEFAULT_FORM_VALUES,
     validate: {
-      email: isNotEmpty(),
-      password: isNotEmpty(),
-    }
+      username: isNotEmpty("Usuario requerido"),
+      password: isNotEmpty("Contraseña requerida"),
+    },
   });
 
-  useLayoutEffect(() => {
-    if (!storedUser) return;
-
-    form.initialize({
-      password: '',
-      remember: true,
-      email: storedUser,
-    });
-  }, []);
-
-  const handleRemember = ({ email, remember }) => {
-    if (remember) {
-      setStoredUser(email);
-      return;
+  // Cargar usuario guardado al montar el componente
+  useEffect(() => {
+    if (storedUser) {
+      form.setValues({
+        username: storedUser,
+        password: "",
+        remember: true,
+      });
     }
+  }, [storedUser]); // Solo depende de storedUser
 
-    setStoredUser(null);
-  };
-
-  const handleFormSubmit = async formValues => {
+  const handleFormSubmit = async (formValues) => {
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const userValues = omit(formValues, 'remember');
 
-    const correctCredentials = isEqual(userValues, {
-      email: 'admin',
-      password: 'admin',
-    });
+    try {
+      const credentials = omit(formValues, ["remember"]);
 
-    if (correctCredentials) {
-      handleRemember(formValues);
+      // Llamar al login del auth store
+      await login(credentials);
+
+      // Guardar o limpiar usuario según "recordar"
+      if (formValues.remember) {
+        setStoredUser(formValues.username);
+      } else {
+        setStoredUser(null);
+      }
+
       notifications.clean();
-      return;
-    }
 
-    setLoading(false);
-    notifications.show({
-      color: "red",
-      title: "Usuario y/o contraseña incorrectos",
-      message: "Por favor, verificá los datos ingresados",
-      icon: <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />,
-    });
+      // Redirigir al home después del login exitoso
+      setLocation("/");
+    } catch (error) {
+      console.error("Login error:", error);
+
+      notifications.show({
+        color: "red",
+        title: "Usuario y/o contraseña incorrectos",
+        message: "Por favor, verificá los datos ingresados",
+        icon: (
+          <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
+        ),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -90,67 +101,60 @@ const LoginPage = () => {
       <Card miw={FORM_WIDHT} mih="100svh" p="xl" withBorder>
         <Stack
           p="xl"
-          gap='lg'
+          gap="lg"
           my="auto"
-          component='form'
+          component="form"
           justify="center"
-          onSubmit={form.onSubmit(values => handleFormSubmit(values))}
+          onSubmit={form.onSubmit((values) => handleFormSubmit(values))}
         >
           <LoadingOverlay visible={loading} />
 
           <Stack gap={0}>
-            <Title order={1} >Iniciar sesión</Title>
+            <Title order={1}>Iniciar sesión</Title>
             <Text>Completá con tus datos</Text>
           </Stack>
 
-
           <FocusTrap active>
-            <Stack
-              active
-              gap='xs'
-            >
+            <Stack active gap="xs">
               <TextInput
-                {...form.getInputProps('email')}
+                {...form.getInputProps("username")}
                 autoFocus
-                size='md'
-                label='Correo'
-                autoComplete='off'
+                size="md"
+                label="Usuario"
+                autoComplete="username"
                 disabled={loading}
-                key={form.key('email')}
-                placeholder='usuario@ejemplo.com'
+                key={form.key("username")}
+                placeholder="Ingresá tu usuario"
               />
               <PasswordInput
-                {...form.getInputProps('password')}
-                size='md'
-                label='Contraseña'
+                {...form.getInputProps("password")}
+                size="md"
+                label="Contraseña"
+                autoComplete="current-password"
                 disabled={loading}
-                key={form.key('password')}
-                placeholder='Introducí tu contraseña'
+                key={form.key("password")}
+                placeholder="Introducí tu contraseña"
               />
             </Stack>
           </FocusTrap>
 
-          <Group justify='space-between'>
+          <Group justify="space-between">
             <Switch
-              {...form.getInputProps('remember', { type: 'checkbox' })}
-              size='md'
+              {...form.getInputProps("remember", { type: "checkbox" })}
+              size="md"
               label="Recordame"
-              key={form.key('remember')}
+              key={form.key("remember")}
             />
-            <Anchor>Olvidé mi contraseña</Anchor>
+            <Anchor href="/recuperar-cuenta">Olvidé mi contraseña</Anchor>
           </Group>
 
-          <Button
-            size='lg'
-            type='submit'
-            disabled={loading}
-          >
+          <Button size="lg" type="submit" disabled={loading}>
             Iniciar sesión
           </Button>
 
-          <Group justify='center'>
+          <Group justify="center">
             <Anchor>Necesito ayuda</Anchor>
-            <Divider orientation='vertical' />
+            <Divider orientation="vertical" />
             <Anchor>No tengo una cuenta</Anchor>
           </Group>
         </Stack>
@@ -161,7 +165,7 @@ const LoginPage = () => {
         miw={`calc(100svw - ${FORM_WIDHT})`}
       />
     </Group>
-  )
+  );
 };
 
-export default LoginPage
+export default LoginPage;

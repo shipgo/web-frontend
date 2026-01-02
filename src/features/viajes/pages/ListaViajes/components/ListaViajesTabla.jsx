@@ -43,33 +43,52 @@ const ACTIONS = [
 ];
 
 const COLUMNS = ["ID", "Fecha de registro", "Estado", "Chofer", "Acciones"];
-const items = [
-  { id: 1, fecha: "2025-05-29T10:00:00Z", estado: "en camino" },
-  { id: 2, fecha: "2025-05-20T03:00:00Z", estado: "completado" },
-  { id: 3, fecha: "2025-05-29T14:00:00Z", estado: "pendiente" },
-];
 
 const getColor = (estado) => {
   const posibleColors = {
-    "en camino": "blue",
-    completado: "green",
-    pendiente: "yellow",
-    cancelado: "red",
+    "EN_CAMINO": "blue",
+    "EN CAMINO": "blue",
+    "COMPLETADO": "green",
+    "PENDIENTE": "yellow",
+    "CANCELADO": "red",
   };
-  return posibleColors[estado];
+  return posibleColors[estado?.toUpperCase()] || "gray";
 };
 
 const shouldDisableAction = (estado, label) => {
+  const normalizedEstado = estado?.toUpperCase();
   const disableActions = {
-    completado: ["Reportar", "Editar", "Eliminar", "Localizar"],
-    "en camino": ["Editar", "Eliminar"],
-    pendiente: ["Localizar", "Reportar"],
-    cancelado: ["Reportar", "Editar", "Eliminar", "Localizar"],
+    COMPLETADO: ["Reportar", "Editar", "Eliminar", "Localizar"],
+    "EN_CAMINO": ["Editar", "Eliminar"],
+    "EN CAMINO": ["Editar", "Eliminar"],
+    PENDIENTE: ["Localizar", "Reportar"],
+    CANCELADO: ["Reportar", "Editar", "Eliminar", "Localizar"],
   };
-  return disableActions[estado]?.includes(label) ?? true;
+  return disableActions[normalizedEstado]?.includes(label) ?? true;
 };
 
-const ListaViajesTabla = () => {
+const ListaViajesTabla = ({ items = [] }) => {
+  if (items.length === 0) {
+    return (
+      <Table>
+        <Table.Thead>
+          <Table.Tr>
+            {COLUMNS.map((column) => (
+              <Table.Th key={column}>{column}</Table.Th>
+            ))}
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          <Table.Tr>
+            <Table.Td colSpan={COLUMNS.length} style={{ textAlign: "center" }}>
+              No hay viajes para mostrar
+            </Table.Td>
+          </Table.Tr>
+        </Table.Tbody>
+      </Table>
+    );
+  }
+
   return (
     <Table
       stickyHeader
@@ -85,71 +104,88 @@ const ListaViajesTabla = () => {
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
-        {items.map((item) => (
-          <Table.Tr key={item.id}>
-            <Table.Td>{item.id}</Table.Td>
+        {items.map((item) => {
+          // Extraer datos del chofer desde el objeto viaje
+          const chofer = item.usuario || item.chofer || item.choferAsignado;
+          const vehiculo = item.vehiculo;
 
-            <Table.Td>
-              <Stack gap="0">
-                <Text size="sm">{toLocalDate(item.fecha)}</Text>
-                <Text size="xs" fw="bold">
-                  {timeFromNow(item.fecha)}
-                </Text>
-              </Stack>
-            </Table.Td>
+          return (
+            <Table.Tr key={item.id}>
+              <Table.Td>{item.id}</Table.Td>
 
-            <Table.Td>
-              <Badge color={getColor(item.estado)} variant="light" radius="md">
-                {item.estado}
-              </Badge>
-            </Table.Td>
+              <Table.Td>
+                <Stack gap="0">
+                  <Text size="sm">
+                    {toLocalDate(item.fechaInicio || item.fecha || item.fechaCreacion)}
+                  </Text>
+                  <Text size="xs" fw="bold">
+                    {timeFromNow(item.fechaInicio || item.fecha || item.fechaCreacion)}
+                  </Text>
+                </Stack>
+              </Table.Td>
 
-            <Table.Td>
-              {item.choferAsignado ? (
-                <Group gap="0.5rem">
-                  <Avatar src={item.choferAsignado.perfil} />
-                  <Stack gap={0}>
-                    <Text size="sm">{item.choferAsignado.nombre}</Text>
-                    <Text size="xs" fw={600}>
-                      {item.choferAsignado.vehiculo_asignado}
-                    </Text>
-                  </Stack>
-                </Group>
-              ) : (
-                "-"
-              )}
-            </Table.Td>
+              <Table.Td>
+                <Badge color={getColor(item.estado)} variant="light" radius="md">
+                  {item.estado || "Sin estado"}
+                </Badge>
+              </Table.Td>
 
-            <Table.Td>
-              <Menu shadow="md" width={150}>
-                <Menu.Target>
-                  <ActionIcon variant="subtle" size="input-sm">
-                    <IconDotsVertical size={18} />
-                  </ActionIcon>
-                </Menu.Target>
+              <Table.Td>
+                {chofer ? (
+                  <Group gap="0.5rem">
+                    <Avatar 
+                      src={chofer.profile || chofer.perfil} 
+                      name={chofer.nombre || chofer.username}
+                    />
+                    <Stack gap={0}>
+                      <Text size="sm">
+                        {chofer.nombre && chofer.apellido
+                          ? `${chofer.nombre} ${chofer.apellido}`
+                          : chofer.nombre || chofer.username || "Sin nombre"}
+                      </Text>
+                      {vehiculo && (
+                        <Text size="xs" fw={600}>
+                          {vehiculo.patente || vehiculo.marca || "Sin vehículo"}
+                        </Text>
+                      )}
+                    </Stack>
+                  </Group>
+                ) : (
+                  <Text size="sm" c="dimmed">Sin chofer asignado</Text>
+                )}
+              </Table.Td>
 
-                <Menu.Dropdown>
-                  {ACTIONS.map(({ name, items }, index) => (
-                    <Fragment key={name}>
-                      <Menu.Label> {name} </Menu.Label>
-                      {items.map(({ icon, label, color }) => (
-                        <Menu.Item
-                          key={label}
-                          color={color}
-                          leftSection={icon}
-                          disabled={shouldDisableAction(item.estado, label)}
-                        >
-                          {label}
-                        </Menu.Item>
-                      ))}
-                      {index === 0 && <Menu.Divider />}
-                    </Fragment>
-                  ))}
-                </Menu.Dropdown>
-              </Menu>
-            </Table.Td>
-          </Table.Tr>
-        ))}
+              <Table.Td>
+                <Menu shadow="md" width={150}>
+                  <Menu.Target>
+                    <ActionIcon variant="subtle" size="input-sm">
+                      <IconDotsVertical size={18} />
+                    </ActionIcon>
+                  </Menu.Target>
+
+                  <Menu.Dropdown>
+                    {ACTIONS.map(({ name, items: actionItems }, index) => (
+                      <Fragment key={name}>
+                        <Menu.Label> {name} </Menu.Label>
+                        {actionItems.map(({ icon, label, color }) => (
+                          <Menu.Item
+                            key={label}
+                            color={color}
+                            leftSection={icon}
+                            disabled={shouldDisableAction(item.estado, label)}
+                          >
+                            {label}
+                          </Menu.Item>
+                        ))}
+                        {index === 0 && <Menu.Divider />}
+                      </Fragment>
+                    ))}
+                  </Menu.Dropdown>
+                </Menu>
+              </Table.Td>
+            </Table.Tr>
+          );
+        })}
       </Table.Tbody>
     </Table>
   );

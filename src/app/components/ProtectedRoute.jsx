@@ -1,11 +1,26 @@
 import { Redirect } from 'wouter';
+import { Center, Loader } from '@mantine/core';
 
 import { useAuth } from '@contexts/auth';
 
 const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
 
-  return user ? children : <Redirect to="/login" replace />;
+  // Mostrar loader mientras verifica autenticación
+  if (isLoading) {
+    return (
+      <Center h="100vh">
+        <Loader size="lg" />
+      </Center>
+    );
+  }
+
+  // Redirigir a login si no está autenticado
+  if (!isAuthenticated || !user) {
+    return <Redirect to="/login" replace />;
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;

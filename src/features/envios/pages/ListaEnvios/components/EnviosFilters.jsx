@@ -44,7 +44,11 @@ const EnviosFilters = ({ onFiltersChange }) => {
 
   const handleSubmit = useCallback(
     (values) => {
-      return onFiltersChange(formattedValues);
+      const formattedValues = Object.entries(values)
+        .filter(getFilledValues)
+        .map(formatValues);
+      
+      return onFiltersChange(Object.fromEntries(formattedValues));
     },
     [onFiltersChange, getFilledValues, formatValues]
   );
