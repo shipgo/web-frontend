@@ -48,7 +48,7 @@ const ListaMantenimientos = () => {
 
           <Button
             ml="auto"
-            to="/mantenimientos/crear"
+            to="/crear"
             component={Link}
             leftSection={<IconPlus />}
           >
@@ -103,7 +103,10 @@ const ListaMantenimientos = () => {
             />
           </Flex>
 
-          <ListaMantenimientosTabla items={data.results} />
+          <ListaMantenimientosTabla
+            items={data.results}
+            onRefresh={refetchMantenimientos}
+          />
         </ScreenContainer>
       </Card>
 

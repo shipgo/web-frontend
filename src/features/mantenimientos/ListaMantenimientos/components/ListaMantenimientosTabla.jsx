@@ -16,8 +16,10 @@ import {
   IconTrash,
   IconCar,
 } from "@tabler/icons-react";
+import { useLocation } from "wouter";
 
-import { timeFromNow, toLocalDate } from "@utils/dates";
+import { timeFromNow, toLocalDateTime } from "@utils/dates";
+import { useDeleteMantenimiento } from "../hooks/useDeleteMantenimiento";
 
 const ACTIONS = [
   {
@@ -77,7 +79,35 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-const ListaMantenimientosTabla = ({ items = [] }) => {
+const ListaMantenimientosTabla = ({ items = [], onRefresh }) => {
+  const [, navigate] = useLocation();
+  const { openDeleteModal } = useDeleteMantenimiento(onRefresh);
+
+  const handleAction = (action, item) => {
+    switch (action) {
+      case "Ver detalles":
+        navigate(`~/mantenimientos/${item.id}`);
+        break;
+      case "Ver vehículo":
+        if (item.vehiculo?.id) {
+          navigate(`~/vehiculos/${item.vehiculo.id}`);
+        }
+        break;
+      case "Completar":
+        // TODO: Implementar acción de completar
+        console.log("Completar mantenimiento", item.id);
+        break;
+      case "Editar":
+        navigate(`~/mantenimientos/${item.id}/editar`);
+        break;
+      case "Eliminar":
+        openDeleteModal(item);
+        break;
+      default:
+        break;
+    }
+  };
+
   if (items.length === 0) {
     return (
       <Table>
@@ -124,12 +154,13 @@ const ListaMantenimientosTabla = ({ items = [] }) => {
             item.tipo ||
             "Sin tipo";
 
-          const fechaProgramada =
-            item.fechaProgramada || item.fecha || item.fechaCreacion;
+          const fechaProgramada = item.fechaHoraMantenimiento;
           const costo = item.costo || item.costoEstimado || 0;
           const estado = item.estado || "PENDIENTE";
           const sucursal =
-            vehiculo?.sucursal?.nombre || item.sucursal?.nombre || "Sin sucursal";
+            vehiculo?.sucursal?.nombre ||
+            item.sucursal?.nombre ||
+            "Sin sucursal";
 
           return (
             <Table.Tr key={item.id}>
@@ -151,7 +182,7 @@ const ListaMantenimientosTabla = ({ items = [] }) => {
               <Table.Td>
                 {fechaProgramada ? (
                   <Stack gap="0">
-                    <Text size="sm">{toLocalDate(fechaProgramada)}</Text>
+                    <Text size="sm">{toLocalDateTime(fechaProgramada)}</Text>
                     <Text size="xs" fw="bold">
                       {timeFromNow(fechaProgramada)}
                     </Text>
@@ -201,6 +232,7 @@ const ListaMantenimientosTabla = ({ items = [] }) => {
                             color={color}
                             leftSection={icon}
                             disabled={shouldDisableAction(estado, label)}
+                            onClick={() => handleAction(label, item)}
                           >
                             {label}
                           </Menu.Item>
@@ -220,4 +252,3 @@ const ListaMantenimientosTabla = ({ items = [] }) => {
 };
 
 export default ListaMantenimientosTabla;
-
