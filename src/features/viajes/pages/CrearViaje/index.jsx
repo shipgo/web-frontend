@@ -1,7 +1,6 @@
 import {
-  AppShellFooter,
-  AppShellSection,
   Box,
+  Breadcrumbs,
   Button,
   Card,
   Flex,
@@ -19,18 +18,25 @@ import { IconInfoCircle } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 
 import SeccionEnvios from "./components/SeccionEnvios";
-import SeccionVehiculos from "./components/SeccionVehiculos";
-import { IconFileDescription } from "@tabler/icons-react";
+import SeccionRecursos from "./components/SeccionRecursos";
+import SeccionResumen from "./components/SeccionResumen";
+import { Link } from "wouter";
 
 const CrearViaje = () => {
   return (
     <PageContainer>
       <Flex align="flex-end" gap="xs">
         <Box>
-          <Title order={2}>Crear viaje</Title>
-          <Text c="gray.6" size="sm">
-            Completá los pasos para crear un nuevo viaje
-          </Text>
+          <Breadcrumbs
+            separatorMargin="sm"
+            separator={<Title order={3}>/</Title>}
+          >
+            <Title component={Link} href="/" order={2}>
+              Viajes
+            </Title>
+            <Title order={2}>Crear nuevo viaje</Title>
+          </Breadcrumbs>
+          <Text c="dimmed">Completa las secciones para crear un viaje</Text>
         </Box>
 
         <Button variant="subtle" ml="auto">
@@ -63,6 +69,7 @@ const CrearViaje = () => {
               flex={1}
               label="Fecha tentativa de salida"
               placeholder="Seleccioná una fecha"
+              defaultValue={new Date()}
             />
 
             <Select
@@ -85,27 +92,8 @@ const CrearViaje = () => {
       </Card>
 
       <SeccionEnvios />
-
-      <SeccionVehiculos />
-
-      <Card padding="lg" component={Stack}>
-        <Group gap="0.75rem">
-          <ThemeIcon size="xl" variant="light">
-            <IconFileDescription />
-          </ThemeIcon>
-
-          <Box>
-            <Title order={4}>Resumen del viaje</Title>
-            <Text c="gray.6" size="sm">
-              Revisa los datos del viaje antes de finalizar
-            </Text>
-          </Box>
-        </Group>
-      </Card>
-
-      <AppShellSection pos="sticky" bottom={0}>
-        <Card>asdas</Card>
-      </AppShellSection>
+      <SeccionRecursos />
+      <SeccionResumen />
     </PageContainer>
   );
 };

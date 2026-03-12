@@ -19,7 +19,8 @@ import ScreenContainer from "@components/ScreenContainer";
 import ItemPaquete from "./ItemPaquete";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
-import { PACKAGES } from "../constants/packages";
+import PACKAGES from "./PACKAGES.json";
+
 import SelectableItemList from "@components/SelectableItemList";
 
 const ACCIONES = [
@@ -34,33 +35,48 @@ const ACCIONES = [
 ];
 
 const getPackages = ({ pageParam, pageSize = 25 }) =>
-  new Promise((resolve) => {
+  new Promise((resolve, reject) => {
     setTimeout(() => {
       const offset = pageParam + pageSize;
       const data = PACKAGES.slice(pageParam, offset);
       const nextPage = PACKAGES.length > offset ? offset : null;
-      resolve({ data, nextPage });
-    }, 1000);
+      if (Math.random() < 0.5) {
+        resolve({ data, nextPage });
+      } else {
+        reject({ data, nextPage });
+      }
+    }, 2000);
   });
 
 const EnviosPendientes = ({ onPackagesAction, packagesInTrip }) => {
   const selectedPackages = useMap();
   const [hideIncludedPackages, toggleHideIncludedPackages] = useToggle();
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery({
-      queryKey: ["pending-packages"],
-      queryFn: getPackages,
-      initialPageParam: 0,
-      getNextPageParam: (lastPage) => lastPage.nextPage,
-    });
+  const {
+    data,
+    isFetching,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isFetchPreviousPageError,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ["pending-packages"],
+    queryFn: getPackages,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+  });
+
+  const hasError = isError || isFetchNextPageError || isFetchPreviousPageError;
 
   const getPackagesToShow = () => {
     const packages = data?.pages.flatMap((page) => page.data);
 
     if (hideIncludedPackages) {
       return packages.filter(
-        (item) => !packagesInTrip.some((map) => map.has(item.id))
+        (item) => !packagesInTrip.some((map) => map.has(item.id)),
       );
     }
 
@@ -111,6 +127,17 @@ const EnviosPendientes = ({ onPackagesAction, packagesInTrip }) => {
               styleProps={{
                 h: "100%",
               }}
+              onLoading={{
+                show: isFetching,
+                description: "Cargando envíos pendientes...",
+              }}
+              onError={{
+                show: hasError,
+                title: "Error al cargar los envíos",
+                description:
+                  "Hubo un error al cargar los envíos pendientes, por favor intenta nuevamente",
+                onClick: refetch,
+              }}
               onEmptyData={{
                 show: true,
                 title: "No hay envíos pendientes",
@@ -119,6 +146,10 @@ const EnviosPendientes = ({ onPackagesAction, packagesInTrip }) => {
             />
           ),
           Footer: () => {
+            if (isFetching || hasError) {
+              return null;
+            }
+
             if (hasNextPage) {
               return (
                 <Button

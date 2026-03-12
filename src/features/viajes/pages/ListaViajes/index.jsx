@@ -1,12 +1,12 @@
-import { Card, Center, Flex, Pagination, Stack } from "@mantine/core";
+import { Card, Flex, Pagination, Stack, Text } from "@mantine/core";
 
-import FiltersList from "@components/FiltersList";
-import ResultsCounter from "@components/ResultsCounter";
 import ScreenContainer from "@components/ScreenContainer";
+import PageContainer from "@components/PageContainer";
 
 import { useGetViajes } from "./hooks/useGetViajes";
 import ListaViajesHeader from "./components/ListaViajesHeader";
 import ListaViajesTabla from "./components/ListaViajesTabla";
+import ListaViajesFiltros from "./components/ListaViajesFiltros";
 
 const PAGE_LIMIT = 10;
 
@@ -25,8 +25,10 @@ const ListaViajes = () => {
   const showPagination = data.total > PAGE_LIMIT;
 
   return (
-    <Stack gap="s" m="auto" maw="1440" p="lg">
+    <PageContainer>
       <ListaViajesHeader />
+
+      <ListaViajesFiltros />
 
       <Card component={Stack}>
         <ScreenContainer
@@ -50,36 +52,15 @@ const ListaViajes = () => {
           //   description: 'No se encontraron viajes con los filtros aplicados',
           // }}
         >
-          <Flex align="center" justify="space-between">
-            <FiltersList
-              filters={filters}
-              onClearFilters={clearFilters}
-              onFilterRemove={removeFilter}
-            />
-
-            <ResultsCounter
-              limit={PAGE_LIMIT}
-              currentPage={page}
-              onRefresh={refetchViajes}
-              amount={data.total}
-            />
-          </Flex>
-
           <ListaViajesTabla items={data.results} />
         </ScreenContainer>
       </Card>
 
-      {showPagination && (
-        <Center>
-          <Pagination
-            value={page}
-            variant="dots"
-            onChange={setPage}
-            total={data?.totalPages}
-          />
-        </Center>
-      )}
-    </Stack>
+      <Flex align="center" justify="space-between">
+        <Pagination value={1} total={100} />
+        <Text c="dimmed">Mostrando 1 - 10 de 100 resultados</Text>
+      </Flex>
+    </PageContainer>
   );
 };
 

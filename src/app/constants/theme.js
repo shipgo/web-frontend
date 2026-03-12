@@ -1,5 +1,6 @@
 import { DateInput } from "@mantine/dates";
-import { Anchor, Card, createTheme, TextInput } from "@mantine/core";
+import { Anchor, Button, Card, createTheme, TextInput, Select, MultiSelect, Switch } from "@mantine/core";
+import { DatePickerInput } from "@mantine/dates";
 
 import { COLOR_PALETTE } from "@constants/colorPalette";
 
@@ -8,6 +9,7 @@ export const THEME = createTheme({
   primaryShade: 9,
   primaryColor: "colorPalette",
   cursorType: "pointer",
+  defaultRadius: "md",
   components: {
     Anchor: Anchor.extend({
       defaultProps: {
@@ -20,15 +22,51 @@ export const THEME = createTheme({
         padding: "lg",
       },
     }),
+    // Switch: Switch.extend({
+    //   defaultProps: {
+    //     size: "md",
+    //   },
+    // }),
+    Select: Select.extend({
+      styles: {
+        label: {
+          marginBlockEnd: "0.5rem"
+        }
+      },
+    }),
+    MultiSelect: MultiSelect.extend({
+      styles: {
+        label: {
+          marginBlockEnd: "0.5rem"
+        }
+      },
+    }),
     TextInput: TextInput.extend({
+      styles: {
+        label: {
+          marginBlockEnd: "0.5rem"
+        }
+      },
       defaultProps: {
+        // size: "md",
         autoCorrect: "off",
         autoComplete: "off",
       },
     }),
-    DateInput: DateInput.extend({
+    // Button: Button.extend({
+    //   defaultProps: {
+    //     size: "md",
+    //   },
+    // }),
+    DatePickerInput: DatePickerInput.extend({
+      styles: {
+        label: {
+          marginBlockEnd: "0.5rem"
+        }
+      },
       defaultProps: {
         valueFormat: "DD/MM/YYYY",
+        // size: "md",
       },
     }),
   },

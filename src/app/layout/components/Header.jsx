@@ -23,12 +23,11 @@ const AppHeader = () => {
 
   return (
     <AppShellHeader component={Flex} justify="center">
-      <Flex flex={1} maw={1440} px="xl">
+      <Flex flex={1} maw={1440} px="xl" py="xs">
         <Group>
           <TextInput
             w="400"
             type="search"
-            radius="xl"
             variant="filled"
             placeholder="Buscá envíos, viajes..."
             rightSection={<IconSearch size={20} />}

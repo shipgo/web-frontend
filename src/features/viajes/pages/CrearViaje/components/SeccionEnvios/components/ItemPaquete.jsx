@@ -18,7 +18,7 @@ const ItemPaquete = ({
       <Box mr="auto">
         <Group gap="xs">
           <Text size="sm" fw="500">
-            {item.id}
+            #{item.id}
           </Text>
 
           {isIncludedInTrip && (

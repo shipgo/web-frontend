@@ -1,10 +1,12 @@
-import { Grid, Stack, Text, Title } from "@mantine/core"
+import { Grid, Stack, Text, Title } from "@mantine/core";
 
-import { uniqueId } from "es-toolkit/compat"
+import { uniqueId } from "es-toolkit/compat";
 
 const GridData = ({ items, columnsCount = 1 }) => {
-
-  const normalizedItems = items.map(item => ({ ...item, id: item.id ?? uniqueId() }))
+  const normalizedItems = items.map((item) => ({
+    ...item,
+    id: item.id ?? uniqueId(),
+  }));
 
   return (
     <Grid>
@@ -17,7 +19,7 @@ const GridData = ({ items, columnsCount = 1 }) => {
         </Grid.Col>
       ))}
     </Grid>
-  )
-}
+  );
+};
 
-export default GridData
+export default GridData;

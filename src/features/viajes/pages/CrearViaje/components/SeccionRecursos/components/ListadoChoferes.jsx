@@ -78,7 +78,7 @@ const ListadoChoferes = () => {
     <Card flex={1} h="500" padding="none" shadow="none" withBorder>
       <Card.Section withBorder p="md">
         <Group justify="space-between">
-          <Title order={5}>Choferes disponibles</Title>
+          <Title order={5}>Choferes disponibles (Opcional)</Title>
           <Button
             variant="subtle"
             onClick={handleRefetch}

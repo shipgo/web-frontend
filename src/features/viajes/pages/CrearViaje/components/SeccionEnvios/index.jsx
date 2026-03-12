@@ -2,20 +2,8 @@ import { Card, Group, Text, Title, Box, Stack, ThemeIcon } from "@mantine/core";
 import { useMap } from "@mantine/hooks";
 import { IconPackage } from "@tabler/icons-react";
 
-import { PACKAGES } from "../constants/packages";
-
-import EnviosPendientes from "./EnviosPendientes";
-import EnviosSeleccionados from "./EnviosSeleccionados";
-
-// const getPendingPackages = ({ packagesList, selectedPackages }) => {
-//   let pendingPackages = new Map(packagesList);
-
-//   for (const items of selectedPackages.values()) {
-//     pendingPackages = mapDifference(pendingPackages, items);
-//   }
-
-//   return Array.from(pendingPackages.values());
-// };
+import EnviosPendientes from "./components/EnviosPendientes";
+import EnviosSeleccionados from "./components/EnviosSeleccionados";
 
 const SeccionEnvios = () => {
   const packagesInTripByCategory = useMap();

@@ -2,10 +2,10 @@ import { Stack, Card, Group, Text, Title, Box, ThemeIcon } from "@mantine/core";
 
 import { IconTruckDelivery } from "@tabler/icons-react";
 
-import ListadoVehiculos from "./ListadoVehiculos";
-import ListadoChoferes from "./ListadoChoferes";
+import ListadoVehiculos from "./components/ListadoVehiculos";
+import ListadoChoferes from "./components/ListadoChoferes";
 
-const SeccionVehiculos = () => {
+const SeccionRecursos = () => {
   return (
     <Card padding="lg" component={Stack}>
       <Group gap="0.75rem">
@@ -29,4 +29,4 @@ const SeccionVehiculos = () => {
   );
 };
 
-export default SeccionVehiculos;
+export default SeccionRecursos;

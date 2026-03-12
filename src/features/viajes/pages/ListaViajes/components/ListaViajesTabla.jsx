@@ -1,16 +1,20 @@
 import { Fragment } from "react";
 import {
   ActionIcon,
-  Avatar,
   Badge,
   Group,
   Menu,
+  Progress,
   Stack,
   Table,
   Text,
+  Tooltip,
 } from "@mantine/core";
 
 import { timeFromNow, toLocalDate } from "@utils/dates";
+
+import dayjs from "dayjs";
+
 import {
   IconMapSearch,
   IconFileDescription,
@@ -18,6 +22,7 @@ import {
   IconEdit,
   IconTrash,
   IconDotsVertical,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 
 const ACTIONS = [
@@ -42,21 +47,110 @@ const ACTIONS = [
   },
 ];
 
-const COLUMNS = ["ID", "Fecha de registro", "Estado", "Chofer", "Acciones"];
-const items = [
-  { id: 1, fecha: "2025-05-29T10:00:00Z", estado: "en camino" },
-  { id: 2, fecha: "2025-05-20T03:00:00Z", estado: "completado" },
-  { id: 3, fecha: "2025-05-29T14:00:00Z", estado: "pendiente" },
+const showWarning = (item) => {
+  return (
+    ["planificado", "asignado"].includes(item.estado.toLowerCase()) &&
+    dayjs(item.fecha).isBefore(dayjs())
+  );
+};
+
+const COLUMNS = [
+  "ID Viaje",
+  "Fecha programada",
+  "Estado",
+  "Recursos",
+  "Carga",
+  "Progreso",
+  "Acciones",
 ];
 
-const getColor = (estado) => {
-  const posibleColors = {
-    "en camino": "blue",
-    completado: "green",
-    pendiente: "yellow",
-    cancelado: "red",
+const ITEMS = [
+  {
+    id: "1SDG56FHY4D",
+    fecha: "2026-03-15T10:00:00Z",
+    estado: "Planificado",
+    chofer: { nombre: "Juan Perez" },
+    vehiculo: { patente: "ABC123", capacidad: 3000 },
+    carga: { envios: 15, bultos: 30, peso: 4500 },
+    paquetes_entregados: 0,
+  },
+  {
+    id: "2ASD89GHJ12",
+    fecha: "2026-03-12T03:00:00Z",
+    estado: "ASIGNADO",
+    chofer: { nombre: "Daniel Gomez" },
+    vehiculo: { patente: "DEF456", capacidad: 2000 },
+    carga: { envios: 10, bultos: 20, peso: 3000 },
+    paquetes_entregados: 0,
+  },
+  {
+    id: "3GHJ12KLM34",
+    fecha: new Date(),
+    estado: "EN CURSO",
+    chofer: { nombre: "Martin Garcia" },
+    vehiculo: { patente: "GHI789", capacidad: 2500 },
+    carga: { envios: 5, bultos: 10, peso: 2500 },
+    paquetes_entregados: 4,
+  },
+  {
+    id: "4JKL34MNO56",
+    fecha: "2026-03-10T08:00:00Z",
+    estado: "FINALIZADO",
+    chofer: { nombre: "Lucas Garcia" },
+    vehiculo: { patente: "JKL012", capacidad: 4000 },
+    carga: { envios: 20, bultos: 40, peso: 4000 },
+    paquetes_entregados: 20,
+  },
+  {
+    id: "5MNO56PQR78",
+    fecha: "2026-03-11T12:00:00Z",
+    estado: "INTERRUMPIDO",
+    chofer: { nombre: "Andres Martinez" },
+    vehiculo: { patente: "MNO345", capacidad: 3500 },
+    carga: { envios: 5, bultos: 16, peso: 2800 },
+    paquetes_entregados: 1,
+  },
+].sort((a, b) => dayjs(b.fecha).diff(dayjs(a.fecha)));
+
+const getStatusColor = (estado) => {
+  const COLORS = {
+    "en curso": "blue",
+    finalizado: "green",
+    planificado: "orange",
+    interrumpido: "red",
+    asignado: "yellow",
   };
-  return posibleColors[estado];
+
+  return COLORS[estado.toLowerCase()] ?? "gray";
+};
+
+const getProgressProps = (item) => {
+  const progress = (item.paquetes_entregados / item.carga.envios) * 100;
+
+  const props = { value: progress };
+
+  if (progress === 100) {
+    props.color = "green";
+    return props;
+  }
+
+  if (progress >= 75 && progress < 100) {
+    props.color = "lime";
+    return props;
+  }
+
+  if (progress >= 50 && progress < 75) {
+    props.color = "yellow";
+    return props;
+  }
+
+  if (progress >= 25 && progress < 50) {
+    props.color = "orange";
+    return props;
+  }
+
+  props.color = "red";
+  return props;
 };
 
 const shouldDisableAction = (estado, label) => {
@@ -85,39 +179,61 @@ const ListaViajesTabla = () => {
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
-        {items.map((item) => (
+        {ITEMS.map((item) => (
           <Table.Tr key={item.id}>
             <Table.Td>{item.id}</Table.Td>
 
             <Table.Td>
-              <Stack gap="0">
-                <Text size="sm">{toLocalDate(item.fecha)}</Text>
-                <Text size="xs" fw="bold">
-                  {timeFromNow(item.fecha)}
-                </Text>
-              </Stack>
+              <Group>
+                <Stack gap="0">
+                  <Text size="sm">{toLocalDate(item.fecha)}</Text>
+                  <Text size="xs" fw="bold">
+                    {timeFromNow(item.fecha)}
+                  </Text>
+                </Stack>
+                {showWarning(item) && (
+                  <Tooltip withArrow label="Viaje retrasado">
+                    <IconAlertTriangle size={20} color="orange" />
+                  </Tooltip>
+                )}
+              </Group>
             </Table.Td>
 
             <Table.Td>
-              <Badge color={getColor(item.estado)} variant="light" radius="md">
+              <Badge
+                color={getStatusColor(item.estado)}
+                variant="light"
+                radius="md"
+              >
                 {item.estado}
               </Badge>
             </Table.Td>
 
             <Table.Td>
-              {item.choferAsignado ? (
-                <Group gap="0.5rem">
-                  <Avatar src={item.choferAsignado.perfil} />
-                  <Stack gap={0}>
-                    <Text size="sm">{item.choferAsignado.nombre}</Text>
-                    <Text size="xs" fw={600}>
-                      {item.choferAsignado.vehiculo_asignado}
-                    </Text>
-                  </Stack>
-                </Group>
-              ) : (
-                "-"
-              )}
+              <Stack gap={0}>
+                <Text size="sm">{item.vehiculo.patente}</Text>
+                <Text size="xs" fw={600}>
+                  {item.chofer.nombre}
+                </Text>
+              </Stack>
+            </Table.Td>
+
+            <Table.Td>
+              <Stack gap={0}>
+                <Text size="sm">{item.carga.peso} kg</Text>
+                <Text size="xs" fw={600}>
+                  {item.carga.envios} envíos ({item.carga.bultos} bultos)
+                </Text>
+              </Stack>
+            </Table.Td>
+
+            <Table.Td>
+              <Stack gap="0.25rem">
+                <Text size="sm">
+                  {item.paquetes_entregados} / {item.carga.envios} entregas
+                </Text>
+                <Progress {...getProgressProps(item)} />
+              </Stack>
             </Table.Td>
 
             <Table.Td>

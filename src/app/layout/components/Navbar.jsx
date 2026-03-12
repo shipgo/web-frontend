@@ -26,7 +26,7 @@ const AppNavbar = () => {
   return (
     <AppShellNavbar>
       <Button
-        h="64"
+        h="70"
         to="/"
         size="xl"
         radius="0"
