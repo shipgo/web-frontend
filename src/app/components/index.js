@@ -5,3 +5,5 @@ export { default as ResultsCounter } from "@components/ResultsCounter";
 export { default as ScreenContainer } from "@components/ScreenContainer";
 export { default as Map } from "@components/Map";
 export { default as GridData } from "@components/GridData";
+export { default as SelectionBanner } from "@components/SelectionBanner";
+export { default as RowActionsMenu } from "@components/RowActionsMenu";

@@ -17,7 +17,7 @@ const ListaViajesHeader = () => {
         <Breadcrumbs>
           <Title order={2}>Viajes</Title>
         </Breadcrumbs>
-        <Text c="gray.6">Listado de viajes cargados en el sistema</Text>
+        <Text c="dimmed">Listado de viajes cargados en el sistema</Text>
       </Stack>
 
       <Button

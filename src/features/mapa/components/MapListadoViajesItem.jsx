@@ -48,7 +48,7 @@ const MapListadoViajesItem = ({ viajeId }) => {
     >
       <Group gap="xs">
         <Title order={5}>ASD123</Title>
-        <Text c="gray.6" size="sm">
+        <Text c="dimmed" size="sm">
           Joaquín Dolcemascolo
         </Text>
         <Badge ml="auto" variant="light" color="green">
@@ -57,10 +57,10 @@ const MapListadoViajesItem = ({ viajeId }) => {
       </Group>
 
       <Group>
-        <Text c="gray.6" size="sm">
+        <Text c="dimmed" size="sm">
           7 paquetes restantes
         </Text>
-        <Text c="gray.6" size="sm">
+        <Text c="dimmed" size="sm">
           ETA: 12:00
         </Text>
       </Group>

@@ -2,7 +2,7 @@ import { omit } from "es-toolkit";
 import { useState, useCallback } from "react";
 
 const DEFAUL_PARAMS = {
-  page: 0,
+  page: 1,
   filters: {},
 };
 
@@ -19,7 +19,7 @@ export const useParams = (initialParams = DEFAUL_PARAMS) => {
   const setFilters = useCallback((newFilters) => {
     setParams((prevParams) => ({
       ...prevParams,
-      page: 0,
+      page: 1,
       filters: newFilters,
     }));
   }, []);

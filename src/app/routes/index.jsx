@@ -8,6 +8,9 @@ import Layout from "../layout";
 
 import EnviosRoutes from "./envios.routes";
 import ViajesRoutes from "./viajes.routes";
+import UsuariosRoutes from "./usuarios.routes";
+import SucursalesRoutes from "./sucursales.routes";
+import VehiculosRoutes from "./vehiculos.routes";
 
 const AppRoutes = () => {
   return (
@@ -21,7 +24,9 @@ const AppRoutes = () => {
             <Route path="/mapa" component={MapaPage} />
             <Route path="/envios" component={EnviosRoutes} nest />
             <Route path="/viajes" component={ViajesRoutes} nest />
-            <Route path="/usuarios" component={() => "Usuarios"} nest />
+            <Route path="/usuarios" component={UsuariosRoutes} nest />
+            <Route path="/sucursales" component={SucursalesRoutes} nest />
+            <Route path="/vehiculos" component={VehiculosRoutes} nest />
           </Switch>
         </Layout>
       </Route>

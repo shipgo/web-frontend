@@ -2,14 +2,11 @@ import {
   ActionIcon,
   AppShellHeader,
   Avatar,
-  Button,
   Flex,
   Group,
   Indicator,
   Menu,
   rem,
-  Stack,
-  Text,
   TextInput,
   Tooltip,
 } from "@mantine/core";
@@ -34,7 +31,7 @@ const AppHeader = () => {
           />
         </Group>
 
-        <Group ml="auto" gap="xs">
+        <Group ml="auto">
           <Tooltip label="Notificaciones">
             <Indicator inline size={12} offset={5} processing>
               <ActionIcon
@@ -48,29 +45,8 @@ const AppHeader = () => {
           </Tooltip>
 
           <Menu position="bottom-end" withArrow width={175}>
-            <Menu.Target>
-              <Button
-                pr="0"
-                size="lg"
-                variant="transparent"
-                rightSection={
-                  <Avatar
-                    radius="xl"
-                    color="colorPalette"
-                    name={user.fullname}
-                  />
-                }
-                leftSection={
-                  <Stack gap={0} ta="right" maw={300}>
-                    <Text fw={600} size="sm" truncate="end">
-                      {user.fullname}
-                    </Text>
-                    <Text size="xs" c="gray">
-                      {user.role}
-                    </Text>
-                  </Stack>
-                }
-              />
+            <Menu.Target style={{ cursor: "pointer" }}>
+              <Avatar radius="xl" color="colorPalette" name={user.fullname} />
             </Menu.Target>
 
             <Menu.Dropdown>

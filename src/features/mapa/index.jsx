@@ -1,16 +1,18 @@
-import { Flex } from "@mantine/core";
+import { Flex } from '@mantine/core';
 
-import MapCard from "./components/MapCard";
-import MapListadoViajes from "./components/MapListadoViajes";
+import MapCard from './components/MapCard';
+import MapListadoViajes from './components/MapListadoViajes';
+import MapRoute from './components/MapRoute';
+import SelectedViajeProvider from './providers/selectedViaje';
 
-import SelectedViajeProvider from "./providers/selectedViaje";
-
-const Mapa = ({ selectedTrip }) => {
+const Mapa = () => {
   return (
     <SelectedViajeProvider>
       <Flex m="auto" maw="1440" mah="730px" h="100vh" gap="lg" p="lg">
         <MapListadoViajes />
-        <MapCard />
+        <MapCard>
+          <MapRoute />
+        </MapCard>
       </Flex>
     </SelectedViajeProvider>
   );

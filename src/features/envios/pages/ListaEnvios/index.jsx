@@ -1,131 +1,89 @@
-import {
-  Card,
-  Flex,
-  Center,
-  Pagination,
-  Stack,
-  Button,
-  Title,
-  Divider,
-  Collapse,
-} from "@mantine/core";
+import { useEffect } from 'react';
+import { Card, Flex, Pagination, Text } from '@mantine/core';
+import { useSet } from '@mantine/hooks';
 
-import { ResultsCounter, FiltersList, ScreenContainer } from "@components";
+import PageContainer from '@components/PageContainer';
+import ScreenContainer from '@components/ScreenContainer';
+import SelectionBanner from '@components/SelectionBanner';
 
-import { Link } from "wouter";
-import { isEmpty } from "es-toolkit/compat";
-import { useDisclosure } from "@mantine/hooks";
-import {
-  IconMailPlus,
-  IconUpload,
-  IconShare,
-  IconFilter,
-} from "@tabler/icons-react";
+import ListaEnviosHeader from './components/ListaEnviosHeader';
+import ListaEnviosFiltros from './components/ListaEnviosFiltros';
+import ListaEnviosTabla from './components/ListaEnviosTabla';
 
-import EnviosTable from "./components/EnviosTable";
-import EnviosFilters from "./components/EnviosFilters";
-
-import { useGetEnvios } from "./hooks/useGetEnvios";
-
-const PAGE_LIMIT = 5;
+import { useGetEnvios } from './hooks/useGetEnvios';
 
 const ListaEnvios = () => {
-  const [showFilters, { toggle }] = useDisclosure(true);
+  const { params, setPage, setFilters, refetch, enviosQuery, PAGE_LIMIT } = useGetEnvios();
+  const { data = {}, isFetching: isLoading, isError } = enviosQuery;
 
-  const {
-    params,
-    setPage,
-    refetch,
-    setFilters,
-    enviosQuery,
-    clearFilters,
-    removeFilter,
-  } = useGetEnvios(PAGE_LIMIT);
+  const selectedIds = useSet();
 
-  const { page, filters } = params;
+  useEffect(() => {
+    selectedIds.clear();
+  }, [data.results]);
 
-  const showPagination =
-    enviosQuery.data?.totalPages > 1 && !enviosQuery.isFetching;
+  const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+  const onToggleAll = () => {
+    if (data.results?.every((i) => selectedIds.has(i.id))) {
+      data.results.forEach((i) => selectedIds.delete(i.id));
+    } else {
+      data.results?.forEach((i) => selectedIds.add(i.id));
+    }
+  };
+
+  const showPagination = data.total > PAGE_LIMIT;
 
   return (
-    <Stack gap="s" m="auto" maw="1440" p="lg">
-      <Card component={Stack}>
-        <Flex justify="space-between" gap="0.5rem" align="flex-end">
-          <Title order={2}>Envíos</Title>
-          <Button
-            ml="auto"
-            to="/crear"
-            component={Link}
-            leftSection={<IconMailPlus />}
-          >
-            Crear envío
-          </Button>
+    <PageContainer>
+      <ListaEnviosHeader />
 
-          <Button variant="light" onClick={toggle} leftSection={<IconFilter />}>
-            Filtros
-          </Button>
+      <ListaEnviosFiltros onFiltersChange={setFilters} disabled={isLoading} />
 
-          <Button variant="subtle" leftSection={<IconUpload />}>
-            Importar
-          </Button>
+      <SelectionBanner
+        count={selectedIds.size}
+        singular="envío seleccionado"
+        plural="envíos seleccionados"
+        onClear={() => selectedIds.clear()}
+      />
 
-          <Button variant="subtle" leftSection={<IconShare />}>
-            Exportar
-          </Button>
-        </Flex>
-
-        <Collapse in={showFilters}>
-          <Divider mb="lg" />
-          <EnviosFilters onFiltersChange={setFilters} />
-        </Collapse>
-      </Card>
-
-      <Card component={Stack}>
+      <Card>
         <ScreenContainer
-          onLoading={{
-            show: enviosQuery.isFetching,
-            description: "Cargando envíos...",
+          onLoading={{ show: isLoading, description: 'Cargando envíos...' }}
+          onError={{ show: isError, onClick: refetch, description: 'Ocurrió un error al cargar los envíos' }}
+          onEmptyData={{
+            show: data.total === 0 && Object.keys(params.filters).length === 0,
+            title: 'Sin envíos que mostrar',
+            description: 'Parece que no cargaste ningún envío todavía',
           }}
-          onError={{
-            onClick: refetch,
-            show: enviosQuery.error,
-            description: "Ocurrió un error al cargar los envíos",
-          }}
-          onEmptyData={{ show: enviosQuery.data?.resultsTotal === 0 }}
           onEmptyFiltersData={{
-            show: enviosQuery.data?.resultsTotal === 0 && !isEmpty(filters),
+            show: data.total === 0 && Object.keys(params.filters).length > 0,
+            title: 'Sin resultados',
+            description: 'No se encontraron envíos con los filtros aplicados',
           }}
         >
-          <Flex align="center" justify="space-between">
-            <FiltersList
-              filters={filters}
-              onClearFilters={clearFilters}
-              onFilterRemove={removeFilter}
-            />
-
-            <ResultsCounter
-              limit={PAGE_LIMIT}
-              currentPage={page}
-              onRefresh={refetch}
-              amount={enviosQuery.data?.total}
-            />
-          </Flex>
-
-          <EnviosTable items={enviosQuery.data?.content} />
+          <ListaEnviosTabla
+            items={data.results}
+            selectedIds={selectedIds}
+            onToggle={onToggle}
+            onToggleAll={onToggleAll}
+          />
         </ScreenContainer>
       </Card>
 
-      {showPagination && (
-        <Center>
-          <Pagination
-            value={page}
-            variant="dots"
-            onChange={setPage}
-            total={enviosQuery.data?.totalPages}
-          />
-        </Center>
-      )}
-    </Stack>
+      <Flex align="center">
+        <Pagination
+          value={params.page}
+          onChange={setPage}
+          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+          disabled={!showPagination}
+        />
+        <Text c="dimmed" ml="auto">
+          {data.total > 0
+            ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+            : '0 resultados'}
+        </Text>
+      </Flex>
+    </PageContainer>
   );
 };
 

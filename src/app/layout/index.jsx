@@ -8,6 +8,7 @@ import { HEADER_HEIGHT_PX, NAVBAR_WIDTH_PX } from "./constants/layoutSizes";
 const Layout = ({ children }) => (
   <AppShell
     layout="alt"
+    footer={{ height: HEADER_HEIGHT_PX }}
     navbar={{ width: NAVBAR_WIDTH_PX }}
     header={{ height: HEADER_HEIGHT_PX }}
   >

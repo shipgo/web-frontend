@@ -1,6 +1,17 @@
-import { DateInput } from "@mantine/dates";
-import { Anchor, Button, Card, createTheme, TextInput, Select, MultiSelect, Switch } from "@mantine/core";
-import { DatePickerInput } from "@mantine/dates";
+import {
+  Anchor,
+  Card,
+  createTheme,
+  TextInput,
+  Select,
+  MultiSelect,
+  Tooltip,
+  Modal,
+  Textarea,
+  NumberFormatter,
+  Loader,
+} from "@mantine/core";
+import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 
 import { COLOR_PALETTE } from "@constants/colorPalette";
 
@@ -30,22 +41,34 @@ export const THEME = createTheme({
     Select: Select.extend({
       styles: {
         label: {
-          marginBlockEnd: "0.5rem"
-        }
+          marginBlockEnd: "0.5rem",
+        },
       },
     }),
     MultiSelect: MultiSelect.extend({
       styles: {
         label: {
-          marginBlockEnd: "0.5rem"
-        }
+          marginBlockEnd: "0.5rem",
+        },
+      },
+    }),
+    Textarea: Textarea.extend({
+      styles: {
+        label: {
+          marginBlockEnd: "0.5rem",
+        },
+      },
+      defaultProps: {
+        // size: "md",
+        autoCorrect: "off",
+        autoComplete: "off",
       },
     }),
     TextInput: TextInput.extend({
       styles: {
         label: {
-          marginBlockEnd: "0.5rem"
-        }
+          marginBlockEnd: "0.5rem",
+        },
       },
       defaultProps: {
         // size: "md",
@@ -58,11 +81,45 @@ export const THEME = createTheme({
     //     size: "md",
     //   },
     // }),
+    Loader: Loader.extend({
+      defaultProps: {
+        type: "bars",
+      },
+    }),
+    NumberFormatter: NumberFormatter.extend({
+      defaultProps: {
+        thousandSeparator: ".",
+        decimalScale: 2,
+        decimalSeparator: ",",
+      },
+    }),
+    Modal: Modal.extend({
+      defaultProps: {
+        centered: true,
+        padding: "lg",
+      },
+    }),
+    Tooltip: Tooltip.extend({
+      defaultProps: {
+        withArrow: true,
+      },
+    }),
+    DateTimePicker: DateTimePicker.extend({
+      styles: {
+        label: {
+          marginBlockEnd: "0.5rem",
+        },
+      },
+      defaultProps: {
+        valueFormat: "DD/MM/YYYY",
+        // size: "md",
+      },
+    }),
     DatePickerInput: DatePickerInput.extend({
       styles: {
         label: {
-          marginBlockEnd: "0.5rem"
-        }
+          marginBlockEnd: "0.5rem",
+        },
       },
       defaultProps: {
         valueFormat: "DD/MM/YYYY",

@@ -76,6 +76,7 @@ const AppNavbar = () => {
           label={label}
           component={Link}
           leftSection={icon}
+          active={location.startsWith(to)}
         />
       ))}
 

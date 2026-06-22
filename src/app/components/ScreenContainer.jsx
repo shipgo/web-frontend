@@ -1,3 +1,4 @@
+import { cloneElement } from "react";
 import { IconFilesOff, IconAlertTriangle } from "@tabler/icons-react";
 
 import {
@@ -20,6 +21,7 @@ const Wrapper = ({ children, backgroundColor, className, styleProps }) => (
     component={Card}
     shadow="none"
     bg={backgroundColor}
+    radius="0"
     className={`${className}`}
     {...styleProps}
   >
@@ -52,8 +54,10 @@ const ScreenContainer = ({
           className={`${className}`}
           backgroundColor={backgroundColor}
         >
-          <Loader type="bars" />
-          <Text c={textColor}>{onLoading.description ?? "Cargando..."}</Text>
+          <Loader />
+          <Text c={textColor} size="sm" ta="center" maw="50ch">
+            {onLoading.description ?? "Cargando..."}
+          </Text>
         </Wrapper>
       )
     );
@@ -67,13 +71,13 @@ const ScreenContainer = ({
           className={`${className}`}
           backgroundColor={backgroundColor}
         >
-          <IconAlertTriangle color={titleColor} size={60} />
+          <IconAlertTriangle color={titleColor} size={50} />
 
           <Stack gap="0" align="center" justify="center">
-            <Title c={titleColor} order={3}>
+            <Title c={titleColor} order={5}>
               {onError.title ?? "Oops"}
             </Title>
-            <Text c={textColor}>
+            <Text c={textColor} size="sm" ta="center" maw="50ch">
               {onError.description ?? "Parece ser que ocurrió un error"}
             </Text>
           </Stack>
@@ -96,13 +100,15 @@ const ScreenContainer = ({
           className={`${className}`}
           backgroundColor={backgroundColor}
         >
-          <IconFilesOff color={titleColor} size={60} />
+          {onEmptyData.icon
+            ? cloneElement(onEmptyData.icon, { color: titleColor })
+            : <IconFilesOff color={titleColor} size={50} />}
 
           <Stack gap="0" align="center" justify="center">
-            <Title c={titleColor} order={3}>
+            <Title c={titleColor} order={5}>
               {onEmptyData.title ?? "Sin datos"}
             </Title>
-            <Text c={textColor}>
+            <Text c={textColor} size="sm" ta="center" maw="50ch">
               {onEmptyData.description ??
                 "Parece ser que no hay información que mostrar"}
             </Text>
@@ -120,13 +126,13 @@ const ScreenContainer = ({
           className={`${className}`}
           backgroundColor={backgroundColor}
         >
-          <IconFilesOff color={titleColor} size={60} />
+          <IconFilesOff color={titleColor} size={50} />
 
           <Stack gap="0" align="center" justify="center">
-            <Title c={titleColor} order={3}>
+            <Title c={titleColor} order={5}>
               {onEmptyFiltersData.title ?? "Sin datos"}
             </Title>
-            <Text c={textColor}>
+            <Text c={textColor} size="sm" ta="center" maw="50ch">
               {onEmptyFiltersData.description ??
                 "Parece ser que no hay información que mostrar con estos filtros"}
             </Text>

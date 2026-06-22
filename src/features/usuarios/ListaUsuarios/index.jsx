@@ -1,51 +1,89 @@
-import {
-  Button,
-  Card,
-  Collapse,
-  Divider,
-  Flex,
-  Group,
-  Pagination,
-  Stack,
-  Title,
-} from "@mantine/core";
-import { IconFilter } from "@tabler/icons-react";
+import { useEffect } from 'react';
+import { Card, Flex, Pagination, Text } from '@mantine/core';
+import { useSet } from '@mantine/hooks';
 
-import FiltersList from "@components/FiltersList";
-import ResultsCounter from "@components/ResultsCounter";
+import PageContainer from '@components/PageContainer';
+import ScreenContainer from '@components/ScreenContainer';
+import SelectionBanner from '@components/SelectionBanner';
 
-import ListaUsuariosCrearUser from "./components/ListaUsuariosCrearUser";
-import ListaUsuariosFiltros from "./components/ListaUsuariosFiltros";
+import ListaUsuariosHeader from './components/ListaUsuariosHeader';
+import ListaUsuariosFiltros from './components/ListaUsuariosFiltros';
+import ListaUsuariosTabla from './components/ListaUsuariosTabla';
+
+import { useGetUsuarios } from './hooks/useGetUsuarios';
 
 const ListaUsuarios = () => {
+  const { params, setPage, setFilters, refetch, usuariosQuery, PAGE_LIMIT } = useGetUsuarios();
+  const { data = {}, isFetching: isLoading, isError } = usuariosQuery;
+
+  const selectedIds = useSet();
+
+  useEffect(() => {
+    selectedIds.clear();
+  }, [data.results]);
+
+  const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+  const onToggleAll = () => {
+    if (data.results?.every((i) => selectedIds.has(i.id))) {
+      data.results.forEach((i) => selectedIds.delete(i.id));
+    } else {
+      data.results?.forEach((i) => selectedIds.add(i.id));
+    }
+  };
+
+  const showPagination = data.total > PAGE_LIMIT;
+
   return (
-    <Stack m="auto" maw="1440" mah="730px" h="100vh" gap="lg" p="lg">
-      <Card>
-        <Group align="flex-end" gap="xs">
-          <Title order={2} mr="auto">
-            Usuarios
-          </Title>
-          <ListaUsuariosCrearUser />
-          <Button leftSection={<IconFilter />} variant="light">
-            Filtros
-          </Button>
-        </Group>
+    <PageContainer>
+      <ListaUsuariosHeader />
 
-        <Collapse in mt="sm">
-          <Divider mb="sm" />
-          <ListaUsuariosFiltros />
-        </Collapse>
-      </Card>
+      <ListaUsuariosFiltros onFiltersChange={setFilters} disabled={isLoading} />
+
+      <SelectionBanner
+        count={selectedIds.size}
+        singular="usuario seleccionado"
+        plural="usuarios seleccionados"
+        onClear={() => selectedIds.clear()}
+      />
 
       <Card>
-        <Flex justify="space-between">
-          <FiltersList />
-          <ResultsCounter />
-        </Flex>
+        <ScreenContainer
+          onLoading={{ show: isLoading, description: 'Cargando usuarios...' }}
+          onError={{ show: isError, onClick: refetch, description: 'Ocurrió un error al cargar los usuarios' }}
+          onEmptyData={{
+            show: data.total === 0 && Object.keys(params.filters).length === 0,
+            title: 'Sin usuarios que mostrar',
+            description: 'Parece que no hay usuarios cargados todavía',
+          }}
+          onEmptyFiltersData={{
+            show: data.total === 0 && Object.keys(params.filters).length > 0,
+            title: 'Sin resultados',
+            description: 'No se encontraron usuarios con los filtros aplicados',
+          }}
+        >
+          <ListaUsuariosTabla
+            items={data.results}
+            selectedIds={selectedIds}
+            onToggle={onToggle}
+            onToggleAll={onToggleAll}
+          />
+        </ScreenContainer>
       </Card>
 
-      <Pagination mx="auto" />
-    </Stack>
+      <Flex align="center">
+        <Pagination
+          value={params.page}
+          onChange={setPage}
+          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+          disabled={!showPagination}
+        />
+        <Text c="dimmed" ml="auto">
+          {data.total > 0
+            ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+            : '0 resultados'}
+        </Text>
+      </Flex>
+    </PageContainer>
   );
 };
 

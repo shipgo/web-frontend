@@ -1,16 +1,21 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src",
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "checkJs": true,
     "paths": {
-      "@components/*": ["app/components/*"],
-      "@config/*": ["app/config/*"],
-      "@constants/*": ["app/constants/*"],
-      "@contexts/*": ["app/contexts/*"],
-      "@hooks/*": ["app/hooks/*"],
-      "@providers/*": ["app/providers/*"],
-      "@utils/*": ["app/utils/*"],
-      "@features/*": ["features/*"]
+      "@components/*": ["./src/app/components/*"],
+      "@config/*": ["./src/app/config/*"],
+      "@constants/*": ["./src/app/constants/*"],
+      "@contexts/*": ["./src/app/contexts/*"],
+      "@hooks/*": ["./src/app/hooks/*"],
+      "@providers/*": ["./src/app/providers/*"],
+      "@utils/*": ["./src/app/utils/*"],
+      "@features/*": ["./src/features/*"]
     }
   },
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }
