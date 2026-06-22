@@ -1,0 +1,28 @@
+src/features/vehiculos/pages/ListaVehiculos/components/ListaVehiculosHeader.jsx
+  h_676ec38d8ac4c5 1-17
+src/features/viajes/pages/CrearViaje/SeccionEnvios/ItemPaquete.jsx
+  h_676ec38d8ac4c5 1-56
+src/features/viajes/pages/CrearViaje/SeccionRecursos/ItemVehiculo.jsx
+  h_676ec38d8ac4c5 1-42
+src/app/components/ScreenContainer.jsx
+  h_676ec38d8ac4c5 24,58,74,77,80,103
+package.json
+  h_676ec38d8ac4c5 21,30-31,34,42-43
+src/app/components/GridData.jsx
+  h_676ec38d8ac4c5 16,19
+src/features/envios/pages/CrearEnvios/index.jsx
+  h_676ec38d8ac4c5 1-3,5-12,14,17-20,23,26-28,31-35,38-45,47-62,65-69,71
+src/app/constants/theme.js
+  h_676ec38d8ac4c5 7-12,14,44-45,51-52,55-64,70-71,84-117,121-122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "17f2d9e1bd8edef777c4bdb1be32d40a8fba9eef",
+  "prompts": {},
+  "humans": {
+    "h_676ec38d8ac4c5": {
+      "author": "Joaquín Dolcemascolo <joadolce@hotmail.com>"
+    }
+  }
+}
