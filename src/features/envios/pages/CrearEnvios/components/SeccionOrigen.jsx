@@ -44,7 +44,7 @@ const SeccionOrigen = () => {
   const hasInput = form.values.direccionDestino.length >= 3;
   const autocompleteDataWithDisabled =
     hasInput && !loadingInput && autocompleteData.length === 0
-      ? [{ value: '__no_results__', label: 'Sin resultados', disabled: true }]
+      ? [{ value: "__no_results__", label: "Sin resultados", disabled: true }]
       : autocompleteData.map((item) => ({
           ...item,
           disabled: item.value === selectedId,
@@ -64,105 +64,109 @@ const SeccionOrigen = () => {
   };
 
   return (
-    <Card>
-      <Stack>
-        <Group gap="0.75rem">
-          <ThemeIcon size="xl" variant="light">
-            <IconMapPin />
-          </ThemeIcon>
-          <Box>
-            <Title order={4}>Origen y destino</Title>
-            <Text c="dimmed" size="sm">
-              Indicá los datos del destinatario y la dirección de entrega
-            </Text>
-          </Box>
-        </Group>
+    <Group align="stretch" gap="md">
+      <Card flex={7}>
+        <Stack>
+          <Group gap="0.75rem">
+            <ThemeIcon size="xl" variant="light">
+              <IconMapPin />
+            </ThemeIcon>
+            <Box>
+              <Title order={4}>Origen y destino</Title>
+              <Text c="dimmed" size="sm">
+                Indicá los datos del destinatario y la dirección de entrega
+              </Text>
+            </Box>
+          </Group>
 
-        <Grid>
-          <Grid.Col span={7}>
-            <Flex direction="column" h="100%" gap="md">
-              <Grid>
-                <Grid.Col span={6}>
-                  <TextInput
-                    key={form.key("nombreDestinatario")}
-                    {...form.getInputProps("nombreDestinatario")}
-                    required
-                    label="Nombre del destinatario"
-                    placeholder="Ej: Juan García"
-                  />
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <TextInput
-                    key={form.key("telefonoDestinatario")}
-                    {...form.getInputProps("telefonoDestinatario")}
-                    required
-                    label="Teléfono del destinatario"
-                    placeholder="Ej: 11 1234-5678"
-                  />
-                </Grid.Col>
-                <Grid.Col span={12}>
-                  <Autocomplete
-                    label="Dirección de destino"
-                    required
-                    error={form.errors.direccionDestino}
-                    value={form.values.direccionDestino}
-                    onChange={handleDireccionChange}
-                    onOptionSubmit={handleSelect}
-                    data={autocompleteDataWithDisabled}
-                    placeholder="Ej: Av. Corrientes 1234, Buenos Aires"
-                    filter={({ options }) => options}
-                    rightSection={loadingInput ? <Loader size="xs" /> : null}
-                    clearable
-                  />
-                </Grid.Col>
-              </Grid>
-              <Textarea
-                key={form.key("observacionesDireccion")}
-                {...form.getInputProps("observacionesDireccion")}
-                label="Observaciones de entrega"
-                placeholder="Ej: Portón azul, timbre roto, entregar en horario de mañana..."
-                maxLength={260}
-                description={`${form.values.observacionesDireccion?.length ?? 0} / 260`}
-                autosize
-                minRows={3}
-                flex={1}
-              />
-            </Flex>
-          </Grid.Col>
-          <Grid.Col span={5}>
-            <ScreenContainer
-              onLoading={{
-                show: loadingMap,
-                description: "Obteniendo ubicación...",
-              }}
-              onEmptyData={{
-                show: form.values.coordenadas === null,
-                icon: <IconMapPin size={50} />,
-                title: "Sin ubicación",
-                description:
-                  "Ingresá una dirección válida para visualizar el mapa",
-              }}
-              styleProps={{ h: 290, mih: 0, radius: "md" }}
-            >
-              <MapCard
-                key={`mapa-${form.values.coordenadas?.lat}-${form.values.coordenadas?.lng}`}
-                initialCenter={form.values.coordenadas ?? DEFAULT_CENTER}
-                initialZoom={15}
-                h={290}
-              >
-                <Marker
-                  longitude={coordenadas.lng}
-                  latitude={coordenadas.lat}
-                  draggable
-                  onDragEnd={handleMarkerDragEnd}
-                  color="red"
+          <Flex direction="column" h="100%" gap="md">
+            <Grid>
+              <Grid.Col span={6}>
+                <TextInput
+                  autoFocus
+                  key={form.key("nombreDestinatario")}
+                  {...form.getInputProps("nombreDestinatario")}
+                  required
+                  label="Nombre del destinatario"
+                  placeholder="Ej: Juan García"
                 />
-              </MapCard>
-            </ScreenContainer>
-          </Grid.Col>
-        </Grid>
-      </Stack>
-    </Card>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <TextInput
+                  key={form.key("telefonoDestinatario")}
+                  {...form.getInputProps("telefonoDestinatario")}
+                  required
+                  label="Teléfono del destinatario"
+                  placeholder="Ej: 11 1234-5678"
+                />
+              </Grid.Col>
+              <Grid.Col span={12}>
+                <Autocomplete
+                  label="Dirección de destino"
+                  required
+                  error={form.errors.direccionDestino}
+                  value={form.values.direccionDestino}
+                  onChange={handleDireccionChange}
+                  onOptionSubmit={handleSelect}
+                  data={autocompleteDataWithDisabled}
+                  placeholder="Ej: Av. Corrientes 1234, Buenos Aires"
+                  filter={({ options }) => options}
+                  rightSection={loadingInput ? <Loader size="xs" /> : null}
+                  clearable
+                />
+              </Grid.Col>
+            </Grid>
+            <Textarea
+              key={form.key("observacionesDireccion")}
+              {...form.getInputProps("observacionesDireccion")}
+              label="Observaciones de entrega"
+              placeholder="Ej: Portón azul, timbre roto, entregar en horario de mañana..."
+              maxLength={260}
+              description={`${form.values.observacionesDireccion?.length ?? 0} / 260`}
+              autosize
+              minRows={3}
+              flex={1}
+            />
+          </Flex>
+        </Stack>
+      </Card>
+
+      <Card padding={0} flex={5}>
+        <ScreenContainer
+          onLoading={{
+            show: loadingMap,
+            description: "Obteniendo ubicación...",
+          }}
+          onEmptyData={{
+            show: form.values.coordenadas === null,
+            icon: <IconMapPin size={50} />,
+            title: "Sin ubicación",
+            description: "Ingresá una dirección válida para visualizar el mapa",
+          }}
+          styleProps={{
+            h: "100%",
+            mih: 0,
+            radius: "md",
+            bg: "var(--mantine-color-default)",
+          }}
+        >
+          <MapCard
+            key={`mapa-${form.values.coordenadas?.lat}-${form.values.coordenadas?.lng}`}
+            initialCenter={form.values.coordenadas ?? DEFAULT_CENTER}
+            initialZoom={15}
+            h="100%"
+          >
+            <Marker
+              longitude={coordenadas.lng}
+              latitude={coordenadas.lat}
+              draggable
+              onDragEnd={handleMarkerDragEnd}
+              color="red"
+            />
+          </MapCard>
+        </ScreenContainer>
+      </Card>
+    </Group>
   );
 };
 

@@ -1,6 +1,6 @@
-import { Fragment } from 'react';
-import { ActionIcon, Menu } from '@mantine/core';
-import { IconDotsVertical } from '@tabler/icons-react';
+import { Fragment } from "react";
+import { ActionIcon, Menu } from "@mantine/core";
+import { IconDotsVertical } from "@tabler/icons-react";
 
 /**
  * actions: Array of items or groups
@@ -8,8 +8,13 @@ import { IconDotsVertical } from '@tabler/icons-react';
  * Flat item:   { label, icon, color?, disabled?, dividerBefore? }
  * Group:       { name, items: [{ label, icon, color?, disabled? }] }
  */
-const RowActionsMenu = ({ actions = [], width = 180 }) => (
-  <Menu shadow="md" width={width} position="bottom-end">
+const RowActionsMenu = ({ actions = [], width = "max-content" }) => (
+  <Menu
+    shadow="md"
+    width={width}
+    styles={{ dropdown: { minWidth: 180 } }}
+    position="bottom-end"
+  >
     <Menu.Target>
       <ActionIcon variant="subtle" c="dimmed" size="input-sm">
         <IconDotsVertical size={18} />
@@ -24,7 +29,13 @@ const RowActionsMenu = ({ actions = [], width = 180 }) => (
               {index > 0 && <Menu.Divider />}
               <Menu.Label>{entry.name}</Menu.Label>
               {entry.items.map(({ label, icon, color, disabled, onClick }) => (
-                <Menu.Item key={label} color={color} leftSection={icon} disabled={disabled} onClick={onClick}>
+                <Menu.Item
+                  key={label}
+                  color={color}
+                  leftSection={icon}
+                  disabled={disabled}
+                  onClick={onClick}
+                >
                   {label}
                 </Menu.Item>
               ))}
@@ -35,7 +46,12 @@ const RowActionsMenu = ({ actions = [], width = 180 }) => (
         return (
           <Fragment key={entry.label}>
             {entry.dividerBefore && <Menu.Divider />}
-            <Menu.Item color={entry.color} leftSection={entry.icon} disabled={entry.disabled} onClick={entry.onClick}>
+            <Menu.Item
+              color={entry.color}
+              leftSection={entry.icon}
+              disabled={entry.disabled}
+              onClick={entry.onClick}
+            >
               {entry.label}
             </Menu.Item>
           </Fragment>

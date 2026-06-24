@@ -6,6 +6,7 @@ import LoginPage from "@features/login";
 
 import Layout from "../layout";
 
+import DashboardRoutes from "./dashboard.routes";
 import EnviosRoutes from "./envios.routes";
 import ViajesRoutes from "./viajes.routes";
 import UsuariosRoutes from "./usuarios.routes";
@@ -21,6 +22,7 @@ const AppRoutes = () => {
         <Layout>
           <Switch>
             <Route path="/" component={HomePage} />
+            <Route path="/dashboard" component={DashboardRoutes} nest />
             <Route path="/mapa" component={MapaPage} />
             <Route path="/envios" component={EnviosRoutes} nest />
             <Route path="/viajes" component={ViajesRoutes} nest />

@@ -14,6 +14,7 @@ import {
 import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 
 import { COLOR_PALETTE } from "@constants/colorPalette";
+import { BarChart } from "@mantine/charts";
 
 export const THEME = createTheme({
   colors: { colorPalette: COLOR_PALETTE },
@@ -81,6 +82,11 @@ export const THEME = createTheme({
     //     size: "md",
     //   },
     // }),
+    BarChart: BarChart.extend({
+      defaultProps: {
+        barProps: { radius: 10 },
+      },
+    }),
     Loader: Loader.extend({
       defaultProps: {
         type: "bars",

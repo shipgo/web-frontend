@@ -100,9 +100,11 @@ const ScreenContainer = ({
           className={`${className}`}
           backgroundColor={backgroundColor}
         >
-          {onEmptyData.icon
-            ? cloneElement(onEmptyData.icon, { color: titleColor })
-            : <IconFilesOff color={titleColor} size={50} />}
+          {onEmptyData.icon ? (
+            cloneElement(onEmptyData.icon, { color: titleColor })
+          ) : (
+            <IconFilesOff color={titleColor} size={50} />
+          )}
 
           <Stack gap="0" align="center" justify="center">
             <Title c={titleColor} order={5}>

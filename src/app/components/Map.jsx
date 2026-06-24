@@ -13,12 +13,12 @@ const MAP_STYLES = {
   light: "mapbox://styles/joado97/cmbhc0hiv001u01s9bay1fbap",
 };
 
-const Map = ({ children }) => {
+const Map = ({ children, initialViewState }) => {
   const { colorScheme } = useMantineColorScheme();
 
   return (
     <Mapbox
-      initialViewState={{
+      initialViewState={initialViewState ?? {
         zoom: 13,
         latitude: CENTER.lat,
         longitude: CENTER.lng,

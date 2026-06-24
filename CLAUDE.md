@@ -54,4 +54,4 @@ Each feature follows: `pages/<PageName>/index.jsx` + colocated components, hooks
 
 ## Resources
 
-- Mantine v8 component API reference for LLMs: https://mantine.dev/llms.txt (individual component docs at `https://mantine.dev/llms/<topic>.md`, e.g. `form-create-form-context.md`)
+- Mantine v8 component API reference for LLMs: https://v8.mantine.dev/llms.txt (individual component docs at `https://v8.mantine.dev/llms/<topic>.md`, e.g. `charts-donut-chart.md`)
