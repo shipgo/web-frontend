@@ -8,8 +8,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useForm } from "@mantine/form";
-import { zod4Resolver } from "mantine-form-zod-resolver";
+import { useForm, schemaResolver } from "@mantine/form";
 import { IconPlus } from "@tabler/icons-react";
 
 import { PAQUETE_INITIAL_VALUES, PAQUETE_SCHEMA } from "../constants/schema";
@@ -23,7 +22,7 @@ const AgregarPaqueteModal = ({ onAdd }) => {
   const form = useForm({
     mode: "controlled",
     initialValues: PAQUETE_INITIAL_VALUES,
-    validate: zod4Resolver(PAQUETE_SCHEMA),
+    validate: schemaResolver(PAQUETE_SCHEMA, { sync: true }),
   });
 
   const isPersonalizado = form.values.tamano === "personalizado";

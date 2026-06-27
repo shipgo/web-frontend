@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { zod4Resolver } from "mantine-form-zod-resolver";
 import {
   Box,
   Breadcrumbs,
@@ -12,6 +11,8 @@ import {
 } from "@mantine/core";
 
 import PageContainer from "@components/PageContainer";
+
+import { schemaResolver } from "@mantine/form";
 
 import { EnvioFormProvider, useEnvioForm } from "./contexts/CrearEnvioContext";
 import { CREAR_ENVIO_SCHEMA, INITIAL_VALUES } from "./constants/schema";
@@ -25,7 +26,7 @@ const CrearEnvios = () => {
   const form = useEnvioForm({
     mode: "controlled",
     initialValues: INITIAL_VALUES,
-    validate: zod4Resolver(CREAR_ENVIO_SCHEMA),
+    validate: schemaResolver(CREAR_ENVIO_SCHEMA, { sync: true }),
   });
 
   const handleSubmit = form.onSubmit(() => {
