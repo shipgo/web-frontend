@@ -1,6 +1,6 @@
-import { Card, Group, Stack, Text, ThemeIcon } from "@mantine/core";
+import { Card, Group, Stack, Text, ThemeIcon, Tooltip } from "@mantine/core";
 import { BarChart } from "@mantine/charts";
-import { IconChartBar } from "@tabler/icons-react";
+import { IconChartBar, IconInfoCircle } from "@tabler/icons-react";
 import ScreenContainer from "@components/ScreenContainer";
 
 const VOLUMEN_SEMANAL = [
@@ -20,12 +20,13 @@ const VolumeChart = ({ periodoLabel, isLoading }) => (
         <IconChartBar />
       </ThemeIcon>
       <Stack gap={0}>
-        <Text size="sm" fw={600}>
-          Volumen de paquetes
-        </Text>
-        <Text size="xs" c="dimmed">
-          {periodoLabel}
-        </Text>
+        <Group gap={4} align="center">
+          <Text size="sm" fw={600}>Volumen de paquetes</Text>
+          <Tooltip label="Total de paquetes procesados por día en el período seleccionado." withArrow>
+            <IconInfoCircle size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
+          </Tooltip>
+        </Group>
+        <Text size="xs" c="dimmed">{periodoLabel}</Text>
       </Stack>
     </Group>
     <ScreenContainer onLoading={{ show: isLoading }} styleProps={{ bg: 'transparent', mih: '220px' }}>

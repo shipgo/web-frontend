@@ -1,70 +1,74 @@
-import {
-  Badge,
-  Text,
-  Group,
-  Title,
-  Box,
-  useMantineColorScheme,
-} from "@mantine/core";
-import { useHover } from "@mantine/hooks";
+import { ActionIcon, Badge, Box, Divider, Group, Text, Tooltip } from '@mantine/core';
+import { useHover } from '@mantine/hooks';
+import { IconBrandWhatsapp } from '@tabler/icons-react';
 
-import { useSelectedViaje } from "../contexts/selectedViaje";
+import { useSelectedViaje } from '../contexts/selectedViaje';
+import { ESTADO_CONFIG } from '../mocks';
 
-const BACKGROUND_COLORS = {
-  dark: {
-    selected: "dark.8",
-    hovered: "dark.7",
-    default: "dark.6",
-  },
-  light: {
-    selected: "gray.1",
-    hovered: "gray.0",
-    default: "white",
-  },
-};
-
-const getBackground = (isHovered, isSelected, colorScheme) => {
-  const colors = BACKGROUND_COLORS[colorScheme] || BACKGROUND_COLORS.light;
-
-  if (isSelected) return colors.selected;
-  if (isHovered) return colors.hovered;
-  return colors.default;
-};
-
-const MapListadoViajesItem = ({ viajeId }) => {
+const MapListadoViajesItem = ({ viaje, isLast }) => {
   const { hovered, ref } = useHover();
-  const { colorScheme } = useMantineColorScheme();
   const { selectedViajeId, setSelectedViajeId } = useSelectedViaje();
 
-  const isSelected = selectedViajeId === viajeId;
+  const isSelected = selectedViajeId === viaje.id;
+  const estado = ESTADO_CONFIG[viaje.estado];
+
+  const handleWhatsApp = (e) => {
+    e.stopPropagation();
+    window.open(`https://wa.me/54${viaje.telefono}`, '_blank');
+  };
 
   return (
-    <Box
-      p="md"
-      ref={ref}
-      style={{ cursor: "pointer" }}
-      onClick={() => setSelectedViajeId(viajeId)}
-      bg={getBackground(hovered, isSelected, colorScheme)}
-    >
-      <Group gap="xs">
-        <Title order={5}>ASD123</Title>
-        <Text c="dimmed" size="sm">
-          Joaquín Dolcemascolo
-        </Text>
-        <Badge ml="auto" variant="light" color="green">
-          Activo
-        </Badge>
-      </Group>
+    <>
+      <Box
+        ref={ref}
+        px="md"
+        py="sm"
+        style={{ cursor: 'pointer' }}
+        onClick={() => setSelectedViajeId(viaje.id)}
+        bg={isSelected ? 'var(--mantine-color-blue-light)' : hovered ? 'var(--mantine-color-default-hover)' : undefined}
+      >
+        <Group justify="space-between" mb={4}>
+          <Text fw={700} size="sm">
+            {viaje.patente}
+          </Text>
+          <Badge variant="light" color={estado.color} size="sm">
+            {estado.label}
+          </Badge>
+        </Group>
 
-      <Group>
-        <Text c="dimmed" size="sm">
-          7 paquetes restantes
-        </Text>
-        <Text c="dimmed" size="sm">
-          ETA: 12:00
-        </Text>
-      </Group>
-    </Box>
+        <Group justify="space-between">
+          <Group gap={6}>
+            <Text size="sm" c="dimmed">
+              {viaje.chofer}
+            </Text>
+            <Tooltip label="Contactar por WhatsApp" position="right">
+              <ActionIcon
+                variant="subtle"
+                color="green"
+                size="sm"
+                onClick={handleWhatsApp}
+              >
+                <IconBrandWhatsapp size={14} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+          <Text size="xs" c="dimmed">
+            {viaje.sucursal}
+          </Text>
+        </Group>
+
+        <Group gap="xs" mt={4}>
+          <Text size="xs" c="dimmed">
+            ETA: {viaje.eta}
+          </Text>
+          <Text size="xs" c="dimmed">·</Text>
+          <Text size="xs" c="dimmed">
+            {viaje.paquetesRestantes} paquetes restantes
+          </Text>
+        </Group>
+      </Box>
+      {!isLast && <Divider />}
+    </>
   );
 };
 

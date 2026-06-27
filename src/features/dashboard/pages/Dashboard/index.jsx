@@ -15,6 +15,7 @@ import DashboardFiltros from './components/DashboardFiltros';
 import KpiCard from './components/KpiCard';
 import VolumeChart from './components/VolumeChart';
 import FleetDonut from './components/FleetDonut';
+import TamanoCargaDonut from './components/TamanoCargaDonut';
 import SucursalChart from './components/SucursalChart';
 import FallosChart from './components/FallosChart';
 import DesvioChart from './components/DesvioChart';
@@ -25,7 +26,7 @@ const VIAJES_ACTIVOS = 17;
 const ALERTAS = { total: 8, criticas: 3 };
 const FLOTA = { operativos: 24, enTaller: 6, total: 30 };
 
-const DEFAULT_FILTROS = { date: [null, null], sucursal: 'todas', quickFilterLabel: null };
+const DEFAULT_FILTROS = { date: [null, null], sucursal: null, quickFilterLabel: null };
 
 const DashboardPage = () => {
   const [filtros, setFiltros] = useState(DEFAULT_FILTROS);
@@ -68,6 +69,7 @@ const DashboardPage = () => {
           icon={<IconPackage />}
           color="teal"
           isLoading={isLoading}
+          tooltip="Total de envíos programados para el día. Incluye entregados y pendientes."
         />
         <KpiCard
           title="Viajes Activos"
@@ -76,6 +78,7 @@ const DashboardPage = () => {
           icon={<IconRoute />}
           color="blue"
           isLoading={isLoading}
+          tooltip="Camiones actualmente en ruta en el turno activo."
         />
         <KpiCard
           title="Alertas / Atrasos"
@@ -84,6 +87,7 @@ const DashboardPage = () => {
           icon={<IconAlertTriangle />}
           color="red"
           isLoading={isLoading}
+          tooltip="Incidencias activas detectadas. Las críticas requieren atención inmediata."
         />
         <KpiCard
           title="Disponibilidad de Flota"
@@ -92,6 +96,7 @@ const DashboardPage = () => {
           icon={<IconTruck />}
           color="green"
           isLoading={isLoading}
+          tooltip="Camiones operativos sobre el total disponible. Excluye los que están en taller."
         />
       </SimpleGrid>
 
@@ -105,22 +110,24 @@ const DashboardPage = () => {
       </Grid>
 
       <Grid>
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <SucursalChart periodoLabel={periodoLabel} isLoading={isLoading} />
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <TamanoCargaDonut periodoLabel={periodoLabel} isLoading={isLoading} />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <FallosChart periodoLabel={periodoLabel} isLoading={isLoading} />
+        <Grid.Col span={{ base: 12, md: 8 }}>
+          <SucursalChart periodoLabel={periodoLabel} filtros={filtros} isLoading={isLoading} />
         </Grid.Col>
       </Grid>
 
       <Grid>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <DesvioChart periodoLabel={periodoLabel} isLoading={isLoading} />
+          <FallosChart periodoLabel={periodoLabel} filtros={filtros} isLoading={isLoading} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <IncidenciasTable periodoLabel={periodoLabel} isLoading={isLoading} />
+          <DesvioChart periodoLabel={periodoLabel} isLoading={isLoading} />
         </Grid.Col>
       </Grid>
+
+      <IncidenciasTable periodoLabel={periodoLabel} isLoading={isLoading} />
     </PageContainer>
   );
 };

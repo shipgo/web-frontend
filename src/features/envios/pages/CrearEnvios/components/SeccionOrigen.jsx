@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Autocomplete,
   Box,
   Card,
@@ -12,8 +13,10 @@ import {
   TextInput,
   ThemeIcon,
   Title,
+  Tooltip,
 } from "@mantine/core";
-import { IconMapPin } from "@tabler/icons-react";
+import { useState } from "react";
+import { IconCurrentLocation, IconMapPin } from "@tabler/icons-react";
 import { Marker } from "react-map-gl/mapbox";
 
 import MapCard from "@features/mapa/components/MapCard";
@@ -26,6 +29,7 @@ const DEFAULT_CENTER = { lat: -32.40949761013196, lng: -63.24437044777056 };
 const SeccionOrigen = () => {
   const form = useEnvioFormContext();
   const coordenadas = form.values.coordenadas ?? DEFAULT_CENTER;
+  const [geocodedCoords, setGeocodedCoords] = useState(null);
 
   const {
     autocompleteData,
@@ -38,8 +42,13 @@ const SeccionOrigen = () => {
     onSelect: ({ address, coordenadas: coords }) => {
       form.setFieldValue("direccionDestino", address);
       form.setFieldValue("coordenadas", coords);
+      setGeocodedCoords(coords);
     },
   });
+
+  const handleResetMarker = () => {
+    if (geocodedCoords) form.setFieldValue("coordenadas", geocodedCoords);
+  };
 
   const hasInput = form.values.direccionDestino.length >= 3;
   const autocompleteDataWithDisabled =
@@ -111,8 +120,8 @@ const SeccionOrigen = () => {
                   data={autocompleteDataWithDisabled}
                   placeholder="Ej: Av. Corrientes 1234, Buenos Aires"
                   filter={({ options }) => options}
-                  rightSection={loadingInput ? <Loader size="xs" /> : null}
-                  clearable
+                  rightSection={loadingInput ? <Loader size="xs" /> : undefined}
+                  clearable={!loadingInput}
                 />
               </Grid.Col>
             </Grid>
@@ -132,39 +141,56 @@ const SeccionOrigen = () => {
       </Card>
 
       <Card padding={0} flex={5}>
-        <ScreenContainer
-          onLoading={{
-            show: loadingMap,
-            description: "Obteniendo ubicación...",
-          }}
-          onEmptyData={{
-            show: form.values.coordenadas === null,
-            icon: <IconMapPin size={50} />,
-            title: "Sin ubicación",
-            description: "Ingresá una dirección válida para visualizar el mapa",
-          }}
-          styleProps={{
-            h: "100%",
-            mih: 0,
-            radius: "md",
-            bg: "var(--mantine-color-default)",
-          }}
-        >
-          <MapCard
-            key={`mapa-${form.values.coordenadas?.lat}-${form.values.coordenadas?.lng}`}
-            initialCenter={form.values.coordenadas ?? DEFAULT_CENTER}
-            initialZoom={15}
-            h="100%"
+        <Box pos="relative" h="100%">
+          <ScreenContainer
+            onLoading={{
+              show: loadingMap,
+              description: "Obteniendo ubicación...",
+            }}
+            onEmptyData={{
+              show: form.values.coordenadas === null,
+              icon: <IconMapPin size={50} />,
+              title: "Sin ubicación",
+              description: "Ingresá una dirección válida para visualizar el mapa",
+            }}
+            styleProps={{
+              h: "100%",
+              mih: 0,
+              radius: "md",
+              bg: "var(--mantine-color-default)",
+            }}
           >
-            <Marker
-              longitude={coordenadas.lng}
-              latitude={coordenadas.lat}
-              draggable
-              onDragEnd={handleMarkerDragEnd}
-              color="red"
-            />
-          </MapCard>
-        </ScreenContainer>
+            <MapCard
+              key={`mapa-${form.values.coordenadas?.lat}-${form.values.coordenadas?.lng}`}
+              initialCenter={form.values.coordenadas ?? DEFAULT_CENTER}
+              initialZoom={15}
+              h="100%"
+            >
+              <Marker
+                longitude={coordenadas.lng}
+                latitude={coordenadas.lat}
+                draggable
+                onDragEnd={handleMarkerDragEnd}
+                color="red"
+              />
+            </MapCard>
+          </ScreenContainer>
+          {geocodedCoords && (
+            <Tooltip label="Reiniciar posición del marcador" position="left">
+              <ActionIcon
+                pos="absolute"
+                top={10}
+                right={10}
+                size="lg"
+                variant="white"
+                onClick={handleResetMarker}
+                style={{ zIndex: 1 }}
+              >
+                <IconCurrentLocation size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Box>
       </Card>
     </Group>
   );

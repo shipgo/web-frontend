@@ -1,6 +1,6 @@
-import { Card, Group, Stack, Text, ThemeIcon } from '@mantine/core';
+import { Card, Group, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import { BarChart } from '@mantine/charts';
-import { IconRoute } from '@tabler/icons-react';
+import { IconRoute, IconInfoCircle } from '@tabler/icons-react';
 import ScreenContainer from '@components/ScreenContainer';
 
 const DESVIACION_VIAJES = [
@@ -19,7 +19,12 @@ const DesvioChart = ({ periodoLabel, isLoading }) => (
         <IconRoute />
       </ThemeIcon>
       <Stack gap={0}>
-        <Text size="sm" fw={600}>Desviación de ruta</Text>
+        <Group gap={4} align="center">
+          <Text size="sm" fw={600}>Desviación de ruta</Text>
+          <Tooltip label="Comparación entre el tiempo de ruta planificado y el tiempo real registrado por viaje." withArrow>
+            <IconInfoCircle size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
+          </Tooltip>
+        </Group>
         <Text size="xs" c="dimmed">Planificado vs real (min) · {periodoLabel}</Text>
       </Stack>
     </Group>

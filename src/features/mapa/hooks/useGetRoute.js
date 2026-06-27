@@ -1,128 +1,48 @@
 import axios from "axios";
-import { useEffect } from "react";
-
-import { LngLatBounds } from "mapbox-gl";
-import { useMap } from "react-map-gl/mapbox";
 import { useQuery } from "@tanstack/react-query";
+
+import { VIAJES_MOCK } from "../mocks";
 
 const VITE_MAPBOX_API_KEY = import.meta.env.VITE_MAPBOX_API_KEY;
 
-const WAYPOINTS = [
-  {
-    street: "Progreso",
-    address_number: "1034",
-    place: "Villa María",
-    region: "Córdoba",
-    postcode: "5900",
-  },
-  {
-    street: "Boulevard Argentino",
-    address_number: "1647",
-    place: "Villa María",
-    region: "Córdoba",
-    postcode: "5900",
-  },
-  {
-    street: "Ramiro Suarez",
-    address_number: "1374",
-    place: "Villa María",
-    region: "Córdoba",
-    postcode: "5900",
-  },
-  {
-    street: "Buenos Aires",
-    address_number: "1329",
-    place: "Villa María",
-    region: "Córdoba",
-    postcode: "5900",
-  },
-  {
-    street: "9 de Julio",
-    address_number: "674",
-    place: "Villa María",
-    region: "Córdoba",
-    postcode: "5900",
-  },
-];
-
-const getCoordinates = (waypoint) =>
-  axios
-    .get("https://api.mapbox.com/search/geocode/v6/forward", {
-      params: {
-        ...waypoint,
-        limit: 1,
-        countries: "AR",
-        worldview: "ar",
-        types: "address",
-        autocomplete: false,
-        access_token: VITE_MAPBOX_API_KEY,
-      },
-    })
-    .then((response) =>
-      response?.data?.features?.[0]?.geometry?.coordinates.join(",")
-    );
-
-const getRoute = async () => {
-  const formattedCoordinates = await Promise.all(
-    WAYPOINTS.map(getCoordinates)
-  ).then((coordinates) => coordinates.join(";"));
+const getRoute = (viaje) => {
+  const startPoint = viaje.deliveredStops === 0 ? viaje.currentLocation : viaje.originLocation;
+  const waypoints = [startPoint, ...viaje.stops.map((s) => s.coords)];
+  const coords = waypoints.map(([lng, lat]) => `${lng},${lat}`).join(";");
 
   return axios
     .get(
-      `https://api.mapbox.com/optimized-trips/v1/mapbox/driving-traffic/${formattedCoordinates}`,
+      `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${coords}`,
       {
         params: {
-          geometries: "geojson",
           access_token: VITE_MAPBOX_API_KEY,
+          geometries: "geojson",
           overview: "full",
-          steps: true,
-          approaches: WAYPOINTS.map(() => "curb").join(";"),
+          steps: false,
         },
-      }
+      },
     )
-    .then((response) => response?.data);
+    .then((res) => res.data);
 };
 
 export const useGetRoute = (selectedViajeId) => {
+  const viaje = VIAJES_MOCK.find((v) => v.id === selectedViajeId);
+
   const {
+    data: route,
     isError,
     isFetching,
-    data: route,
   } = useQuery({
-    queryFn: getRoute,
-    staleTime: Infinity,
-    enabled: selectedViajeId !== null,
+    queryFn: () => getRoute(viaje),
+    enabled: !!viaje,
     queryKey: ["route", selectedViajeId],
     select: (data) => ({
-      geometry: data.trips[0].geometry,
-      coordinates: data.waypoints.map((waypoint) => waypoint.location),
+      geometry: data.routes[0].geometry,
+      totalDistance: data.routes[0].distance,
+      legDistances: data.routes[0].legs.map((leg) => leg.distance),
+      waypoints: data.waypoints.map((wp) => wp.location),
     }),
   });
 
-  const { current: map } = useMap();
-
-  useEffect(() => {
-    const showRoute = () => {
-      if (!map || !route) return;
-
-      const bounds = new LngLatBounds();
-
-      route.coordinates.forEach(([lng, lat]) => {
-        bounds.extend([lng, lat]);
-      });
-
-      map.fitBounds(bounds, {
-        padding: 200,
-        duration: 2000,
-      });
-    };
-
-    showRoute();
-  }, [route, map, selectedViajeId]);
-
-  return {
-    route,
-    isError,
-    isFetching,
-  };
+  return { route, isError, isFetching };
 };

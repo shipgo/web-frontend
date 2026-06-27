@@ -1,4 +1,5 @@
-import { Badge, Card, Group, Stack, Table, Text, ThemeIcon } from '@mantine/core';
+import { Badge, Card, Group, Stack, Table, Text, ThemeIcon, Tooltip } from '@mantine/core';
+import { IconInfoCircle } from '@tabler/icons-react';
 import ScreenContainer from '@components/ScreenContainer';
 import { IconAlertCircle } from '@tabler/icons-react';
 
@@ -23,7 +24,12 @@ const IncidenciasTable = ({ periodoLabel, isLoading }) => (
         <IconAlertCircle />
       </ThemeIcon>
       <Stack gap={0}>
-        <Text size="sm" fw={600}>Incidencias recientes</Text>
+        <Group gap={4} align="center">
+          <Text size="sm" fw={600}>Incidencias recientes</Text>
+          <Tooltip label="Las 5 incidencias más recientes del período, ordenadas por criticidad." withArrow>
+            <IconInfoCircle size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
+          </Tooltip>
+        </Group>
         <Text size="xs" c="dimmed">Top 5 · {periodoLabel}</Text>
       </Stack>
     </Group>

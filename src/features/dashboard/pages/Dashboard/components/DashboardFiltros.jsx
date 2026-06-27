@@ -40,7 +40,7 @@ const DashboardFiltros = ({ onFiltersChange }) => {
 
   const form = useForm({
     mode: 'controlled',
-    initialValues: { date: getTodayDateRange(), sucursal: 'todas' },
+    initialValues: { date: getTodayDateRange(), sucursal: null },
     onValuesChange: (values) => {
       if (applyingQuickFilterRef.current) {
         applyingQuickFilterRef.current = false;
@@ -103,8 +103,11 @@ const DashboardFiltros = ({ onFiltersChange }) => {
         <Select
           {...form.getInputProps('sucursal')}
           label="Sucursal"
+          placeholder="Todas las sucursales"
           data={SUCURSALES}
-          w={200}
+          w={220}
+          searchable
+          clearable
         />
       </Flex>
 

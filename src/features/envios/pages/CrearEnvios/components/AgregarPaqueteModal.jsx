@@ -5,7 +5,6 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Textarea,
   TextInput,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -89,17 +88,6 @@ const AgregarPaqueteModal = ({ onAdd }) => {
               type="number"
               label="Peso (kg)"
               placeholder="0"
-            />
-            <Textarea
-              key={form.key("descripcion")}
-              {...form.getInputProps("descripcion")}
-              error={form.errors.descripcion}
-              label="Descripción del contenido"
-              placeholder="Ej: Documentación, electrónicos, indumentaria..."
-              maxLength={260}
-              description={`${form.values.descripcion?.length ?? 0} / 260`}
-              autosize
-              minRows={2}
             />
             {isPersonalizado && (
               <SimpleGrid cols={3}>

@@ -1,6 +1,6 @@
-import { Card, Group, Stack, Text, ThemeIcon } from '@mantine/core';
+import { Card, Group, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import { DonutChart } from '@mantine/charts';
-import { IconTruck } from '@tabler/icons-react';
+import { IconTruck, IconInfoCircle } from '@tabler/icons-react';
 import ScreenContainer from '@components/ScreenContainer';
 
 const OCUPACION_FLOTA = [
@@ -18,7 +18,12 @@ const FleetDonut = ({ periodoLabel, isLoading }) => (
         <IconTruck />
       </ThemeIcon>
       <Stack gap={0}>
-        <Text size="sm" fw={600}>Ocupación de flota</Text>
+        <Group gap={4} align="center">
+          <Text size="sm" fw={600}>Ocupación de flota</Text>
+          <Tooltip label="Estado operativo actual de los camiones: en ruta, disponibles o en taller." withArrow>
+            <IconInfoCircle size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
+          </Tooltip>
+        </Group>
         <Text size="xs" c="dimmed">{periodoLabel}</Text>
       </Stack>
     </Group>

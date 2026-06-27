@@ -1,7 +1,8 @@
-import { Card, Flex, Group, RingProgress, Stack, Text, ThemeIcon, Title } from '@mantine/core';
+import { Card, Flex, Group, RingProgress, Stack, Text, ThemeIcon, Title, Tooltip } from '@mantine/core';
+import { IconInfoCircle } from '@tabler/icons-react';
 import ScreenContainer from '@components/ScreenContainer';
 
-const KpiCard = ({ title, value, subtitle, icon, color, ring = null, isLoading }) => (
+const KpiCard = ({ title, value, subtitle, icon, color, ring = null, isLoading, tooltip }) => (
   <Card>
     <Group justify="space-between" wrap="nowrap">
       <Flex gap="sm" align="flex-start">
@@ -9,7 +10,14 @@ const KpiCard = ({ title, value, subtitle, icon, color, ring = null, isLoading }
           {icon}
         </ThemeIcon>
         <Stack gap={4}>
-          <Text size="xs" c="dimmed" tt="uppercase" fw={600}>{title}</Text>
+          <Group gap={4} align="center">
+            <Text size="xs" c="dimmed" tt="uppercase" fw={600}>{title}</Text>
+            {tooltip && (
+              <Tooltip label={tooltip} withArrow>
+                <IconInfoCircle size={12} style={{ color: 'var(--mantine-color-dimmed)' }} />
+              </Tooltip>
+            )}
+          </Group>
           <ScreenContainer
             onLoading={{ show: isLoading }}
             styleProps={{ bg: 'transparent', mih: '64px', shadow: 'none' }}

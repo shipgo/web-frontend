@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
 
 export const SUCURSALES = [
-  { value: 'todas', label: 'Todas las sucursales' },
   { value: 'caba-centro', label: 'CABA Centro' },
   { value: 'rosario', label: 'Rosario' },
   { value: 'cordoba', label: 'Córdoba' },
@@ -19,6 +18,18 @@ export const QUICK_FILTERS = [
 ];
 
 export const getTodayDateRange = () => [dayjs().startOf('day'), dayjs()];
+
+// Returns the time granularity for the dynamic X-axis of charts.
+// When all sucursales are selected: group by sucursal.
+// When a specific sucursal is selected: group by time based on the date range width.
+export const getTimeGranularity = ({ sucursal, date }) => {
+  if (!sucursal) return 'sucursales';
+  if (!date[0] || !date[1]) return 'dias';
+  const diff = dayjs(date[1]).diff(dayjs(date[0]), 'day');
+  if (diff <= 7) return 'dias';
+  if (diff <= 60) return 'semanas';
+  return 'meses';
+};
 
 export const getSucursalLabel = (value) =>
   SUCURSALES.find((s) => s.value === value)?.label ?? 'Todas las sucursales';
