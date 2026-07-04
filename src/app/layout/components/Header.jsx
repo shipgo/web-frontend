@@ -14,9 +14,16 @@ import {
 import { IconBell, IconLogout, IconSearch } from "@tabler/icons-react";
 
 import { useAuth } from "@contexts/auth";
+import { useLocation } from "wouter";
 
 const AppHeader = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const [, navigate] = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <AppShellHeader component={Flex} justify="center">
@@ -51,6 +58,8 @@ const AppHeader = () => {
 
             <Menu.Dropdown>
               <Menu.Item
+                color="red"
+                onClick={handleLogout}
                 leftSection={
                   <IconLogout style={{ width: rem(14), height: rem(14) }} />
                 }

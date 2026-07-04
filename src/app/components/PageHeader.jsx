@@ -9,7 +9,14 @@ const PageHeader = ({ title, subtitle, children }) => (
     </Stack>
     <Group gap="xs">
       {children}
-      <Button variant="subtle">Necesito ayuda</Button>
+      <Button
+        variant="subtle"
+        component="a"
+        href="https://shipgo.gitbook.io/manual"
+        target="_blank"
+      >
+        Necesito ayuda
+      </Button>
     </Group>
   </Flex>
 );

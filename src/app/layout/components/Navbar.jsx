@@ -2,11 +2,14 @@ import { Link, useLocation } from "wouter";
 
 import {
   AppShellNavbar,
-  Button,
+  Image,
   NavLink,
   Text,
+  UnstyledButton,
   useMantineColorScheme,
 } from "@mantine/core";
+
+import logo from "/src/assets/logoipsum-custom-logo.svg";
 import {
   IconBook,
   IconExternalLink,
@@ -25,16 +28,9 @@ const AppNavbar = () => {
 
   return (
     <AppShellNavbar>
-      <Button
-        h="70"
-        to="/"
-        size="xl"
-        radius="0"
-        variant="subtle"
-        component={Link}
-      >
-        ShipGo!
-      </Button>
+      <UnstyledButton to="/" component={Link} p="md" display="flex">
+        <Image src={logo} h={37} w="auto" fit="contain" mx="auto" />
+      </UnstyledButton>
 
       <NavLink
         to="/"
@@ -103,7 +99,7 @@ const AppNavbar = () => {
       <NavLink
         label="Manual"
         target="_blank"
-        href="//www.sgoogle.com.ar"
+        href="https://shipgo.gitbook.io/manual"
         leftSection={<IconBook size={18} />}
         rightSection={<IconExternalLink size={18} />}
       />

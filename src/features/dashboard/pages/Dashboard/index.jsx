@@ -53,7 +53,12 @@ const DashboardPage = () => {
           <Button variant="light" leftSection={<IconDownload size={16} />}>
             Exportar PDF
           </Button>
-          <Button variant="subtle">
+          <Button
+            variant="subtle"
+            component="a"
+            href="https://shipgo.gitbook.io/manual"
+            target="_blank"
+          >
             Necesito ayuda
           </Button>
         </Flex>

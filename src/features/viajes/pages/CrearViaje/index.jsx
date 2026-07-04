@@ -42,7 +42,13 @@ const CrearViaje = () => {
           <Text c="dimmed">Completa las secciones para crear un viaje</Text>
         </Box>
 
-        <Button variant="subtle" ml="auto">
+        <Button
+          variant="subtle"
+          ml="auto"
+          component="a"
+          href="https://shipgo.gitbook.io/manual"
+          target="_blank"
+        >
           Necesito ayuda
         </Button>
 

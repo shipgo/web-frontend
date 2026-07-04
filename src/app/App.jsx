@@ -1,7 +1,6 @@
 import "dayjs/locale/es";
 
 import { ModalsProvider } from "@mantine/modals";
-import { useColorScheme } from "@mantine/hooks";
 import { DatesProvider } from "@mantine/dates";
 import { MantineProvider, v8CssVariablesResolver } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
@@ -28,12 +27,10 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  const colorScheme = useColorScheme();
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <MantineProvider theme={THEME} defaultColorScheme={colorScheme} cssVariablesResolver={v8CssVariablesResolver}>
+        <MantineProvider theme={THEME} defaultColorScheme="auto" cssVariablesResolver={v8CssVariablesResolver}>
           <DatesProvider settings={DATE_PROVIDER_CONFIG}>
             <ModalsProvider>
               <AppRoutes />

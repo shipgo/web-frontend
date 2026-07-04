@@ -1,44 +1,41 @@
-import {
-  Accordion,
-  Badge,
-  Divider,
-  Group,
-  SimpleGrid,
-  Stack,
-} from "@mantine/core";
+import { SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { useMantineColorScheme } from '@mantine/core';
 
-import ITEMS from "./items.jsx";
-import HomeItem from "./components/HomeItem.jsx";
+import PageContainer from '@components/PageContainer';
+
+import ITEMS from './items.jsx';
+import HomeItem from './components/HomeItem.jsx';
 
 const HomePage = () => {
+  const { toggleColorScheme } = useMantineColorScheme();
+
+  const resolveonClick = (action) => {
+    if (action === 'toggleTheme') return toggleColorScheme;
+    return undefined;
+  };
+
   return (
-    <Stack maw="1440px" m="auto" p="lg">
-      <Accordion
-        multiple
-        variant="default"
-        defaultValue={ITEMS.map((item) => item.title)}
-      >
+    <PageContainer>
+      <Stack gap={4}>
+        <Title order={2}>Bienvenido</Title>
+        <Text c='dimmed'>¿Qué querés hacer hoy?</Text>
+      </Stack>
+
+      <Stack gap='xl'>
         {ITEMS.map(({ title, options }) => (
-          <Accordion.Item bd="none" key={title} value={title}>
-            <Accordion.Control>
-              <Group>
-                <Badge style={{ cursor: "pointer" }} variant="default">
-                  {title}
-                </Badge>
-                <Divider flex="1" mr="lg" />
-              </Group>
-            </Accordion.Control>
-            <Accordion.Panel>
-              <SimpleGrid cols={5} spacing="lg">
-                {options.map((option) => (
-                  <HomeItem key={option.tilte} {...option} />
-                ))}
-              </SimpleGrid>
-            </Accordion.Panel>
-          </Accordion.Item>
+          <Stack key={title} gap='sm'>
+            <Text size='xs' fw={600} tt='uppercase' c='dimmed' style={{ letterSpacing: '0.08em' }}>
+              {title}
+            </Text>
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing='md'>
+              {options.map((option) => (
+                <HomeItem key={option.title} {...option} onClick={resolveonClick(option.action)} />
+              ))}
+            </SimpleGrid>
+          </Stack>
         ))}
-      </Accordion>
-    </Stack>
+      </Stack>
+    </PageContainer>
   );
 };
 
