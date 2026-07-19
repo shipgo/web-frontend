@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:v8.mantine.dev)"
+      "WebFetch(domain:v8.mantine.dev)",
+      "Bash(npm view *)"
     ]
   }
 }
