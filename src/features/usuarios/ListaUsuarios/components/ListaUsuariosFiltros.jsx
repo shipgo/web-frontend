@@ -1,116 +1,126 @@
-import { useCallback } from "react";
+import { useState, useRef } from 'react';
 
-import { useForm } from "@mantine/form";
-import { useFocusTrap } from "@mantine/hooks";
-import { Button, Group, Select, SimpleGrid, TextInput } from "@mantine/core";
+import { useForm } from '@mantine/form';
+import { useDebouncedCallback } from '@mantine/hooks';
+import { Card, Chip, Flex, Select, TextInput } from '@mantine/core';
+import { IconSearch } from '@tabler/icons-react';
 
-import { isNull } from "es-toolkit";
-import { isEmpty } from "es-toolkit/compat";
+const ROLES = ['ROLE_ADMIN', 'ROLE_USER', 'ROLE_CHOFER'];
 
-const ROLES_FILTERS = ["ROLE_ADMIN", "ROLE_USER", "ROLE_CHOFER"];
+const QUICK_FILTERS = [
+  { label: 'Choferes', getFilters: () => ({ nombre: '', email: '', username: '', authority: 'ROLE_CHOFER', localidad: '' }) },
+  { label: 'Administradores', getFilters: () => ({ nombre: '', email: '', username: '', authority: 'ROLE_ADMIN', localidad: '' }) },
+];
 
-const DEFAULT_VALUES = {
-  nombre: "",
-  apellido: "",
-  email: "",
-  username: "",
-  authority: "",
-  sucursal: "",
-};
+const DEFAULT_VALUES = { nombre: '', email: '', username: '', authority: '', localidad: '' };
 
-const LABELS = {
-  nombre: "Nombre",
-  apellido: "Apellido",
-  email: "Email",
-  username: "Usuario",
-  authority: "Rol",
-  sucursal: "Sucursal",
-};
-
-const ListaUsuariosFiltros = ({ onFiltersChange }) => {
-  const focusTrapRef = useFocusTrap();
-
-  const form = useForm({ initialValues: DEFAULT_VALUES });
-
-  const formatValues = useCallback(
-    ([key, value]) => [
-      key,
-      {
-        label: LABELS[key],
-        values: value,
-      },
-    ],
-    []
+const formatValues = (values) =>
+  Object.fromEntries(
+    Object.entries(values)
+      .filter(([, value]) => !!value)
+      .map(([key, value]) => [key, { label: key, values: value }])
   );
 
-  const getFilledValues = useCallback(([key, value]) => {
-    if (key.includes("fecha")) return !isNull(value);
-    return !isEmpty(value);
-  }, []);
+const ListaUsuariosFiltros = ({ disabled, onFiltersChange }) => {
+  const [selectedQuickFilter, setSelectedQuickFilter] = useState(null);
+  const lastValuesRef = useRef(DEFAULT_VALUES);
+  const isQuickFilterChange = useRef(false);
 
-  const handleSubmit = useCallback(
-    (values) => {
-      const formattedValues = Object.entries(values)
-        .filter(getFilledValues)
-        .map(formatValues);
+  const debounceChange = useDebouncedCallback((values) => {
+    onFiltersChange(formatValues(values));
+  }, 500);
 
-      return onFiltersChange(Object.fromEntries(formattedValues));
+  const form = useForm({
+    mode: 'controlled',
+    initialValues: DEFAULT_VALUES,
+    enhanceGetInputProps: () => ({ disabled }),
+    onValuesChange: (values) => {
+      if (isQuickFilterChange.current) {
+        isQuickFilterChange.current = false;
+      } else {
+        setSelectedQuickFilter(null);
+      }
+
+      const textFieldChanged =
+        values.nombre !== lastValuesRef.current.nombre ||
+        values.email !== lastValuesRef.current.email ||
+        values.username !== lastValuesRef.current.username;
+      lastValuesRef.current = values;
+
+      if (textFieldChanged) {
+        debounceChange(values);
+        return;
+      }
+
+      debounceChange.cancel();
+      onFiltersChange(formatValues(values));
     },
-    [onFiltersChange, getFilledValues, formatValues]
-  );
+  });
+
+  const handleQuickFilter = (label) => {
+    const isDeselecting = selectedQuickFilter === label;
+    const next = isDeselecting ? null : label;
+    setSelectedQuickFilter(next);
+    isQuickFilterChange.current = true;
+    form.setValues(next ? QUICK_FILTERS.find((f) => f.label === label).getFilters() : DEFAULT_VALUES);
+  };
 
   return (
-    <form ref={focusTrapRef} onSubmit={form.onSubmit(handleSubmit)}>
-      <SimpleGrid cols={3}>
+    <Card component="search">
+      <Flex mb="md" gap="md">
         <TextInput
-          {...form.getInputProps("nombre")}
+          {...form.getInputProps('nombre')}
+          flex={1}
           label="Nombre"
           placeholder="Ej: Juan"
         />
 
         <TextInput
-          {...form.getInputProps("apellido")}
-          label="Apellido"
-          placeholder="Ej: Pérez"
-        />
-
-        <TextInput
-          {...form.getInputProps("email")}
+          {...form.getInputProps('email')}
+          flex={1}
           label="Email"
           placeholder="Ej: juan@example.com"
+          rightSection={<IconSearch size={18} />}
         />
 
         <TextInput
-          {...form.getInputProps("username")}
+          {...form.getInputProps('username')}
+          flex={1}
           label="Usuario"
           placeholder="Ej: jperez"
         />
 
         <Select
-          {...form.getInputProps("authority")}
+          {...form.getInputProps('authority')}
+          flex={1}
           clearable
           label="Rol"
-          placeholder="Seleccione el rol"
-          data={ROLES_FILTERS}
+          placeholder="Seleccioná un rol"
+          data={ROLES}
         />
 
         <TextInput
-          {...form.getInputProps("sucursal")}
-          label="Sucursal"
-          placeholder="Ej: Central"
+          {...form.getInputProps('localidad')}
+          flex={1}
+          label="Localidad"
+          placeholder="Ej: Rosario"
         />
-      </SimpleGrid>
+      </Flex>
 
-      <Group gap="xs" mt="md">
-        <Button type="submit" variant="light">
-          Aplicar filtros
-        </Button>
-
-        <Button variant="subtle" onClick={form.reset}>
-          Limpiar filtros
-        </Button>
-      </Group>
-    </form>
+      <Flex gap="xs">
+        {QUICK_FILTERS.map(({ label }) => (
+          <Chip
+            key={label}
+            disabled={disabled}
+            variant="light"
+            checked={selectedQuickFilter === label}
+            onChange={() => handleQuickFilter(label)}
+          >
+            {label}
+          </Chip>
+        ))}
+      </Flex>
+    </Card>
   );
 };
 

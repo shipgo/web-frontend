@@ -3,11 +3,13 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useParams } from "@hooks/useParams";
 import { envioApi } from "../../../api/envios.api";
 
+const PAGE_LIMIT = 10;
+
 /**
  * Hook para obtener envíos con paginación usando la API real
  * @param {number} pageLimit - Cantidad de elementos por página (default: 10)
  */
-export const useGetEnvios = (pageLimit = 10) => {
+export const useGetEnvios = (pageLimit = PAGE_LIMIT) => {
   const queryClient = useQueryClient();
   const paramsOptions = useParams();
 
@@ -22,7 +24,10 @@ export const useGetEnvios = (pageLimit = 10) => {
   const enviosQuery = useQuery({
     queryFn: async () => {
       const response = await envioApi.get(normalizedParams);
-      return response;
+      return {
+        total: response?.totalElements || 0,
+        results: response?.content || [],
+      };
     },
     queryKey: ["envios", JSON.stringify(normalizedParams)],
   });
@@ -32,9 +37,5 @@ export const useGetEnvios = (pageLimit = 10) => {
     enviosQuery.refetch();
   };
 
-  return {
-    enviosQuery,
-    refetch,
-    ...paramsOptions,
-  };
+  return { enviosQuery, refetch, PAGE_LIMIT: pageLimit, ...paramsOptions };
 };

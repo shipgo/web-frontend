@@ -1,56 +1,25 @@
-import { Fragment } from "react";
 import { useLocation } from "wouter";
 import {
-  ActionIcon,
   Avatar,
   Badge,
+  Checkbox,
   Group,
-  Menu,
   Stack,
   Table,
   Text,
 } from "@mantine/core";
 import {
-  IconDotsVertical,
   IconEdit,
-  IconFileDescription,
+  IconEye,
   IconKey,
   IconTrash,
   IconUserOff,
 } from "@tabler/icons-react";
 
 import { timeFromNow, toLocalDate } from "@utils/dates";
-import { useDeleteUsuario } from "../hooks/useDeleteUsuario";
+import { RowActionsMenu } from "@components";
 import { API_URLS } from "@constants/apiUrls";
-
-const ACTIONS = [
-  {
-    name: "Detalles",
-    items: [{ icon: <IconFileDescription size={18} />, label: "Ver detalles" }],
-  },
-  {
-    name: "Opciones",
-    items: [
-      { icon: <IconEdit size={18} />, label: "Editar", color: "blue" },
-      {
-        icon: <IconKey size={18} />,
-        label: "Resetear contraseña",
-        color: "orange",
-      },
-      { icon: <IconUserOff size={18} />, label: "Desactivar", color: "orange" },
-      { icon: <IconTrash size={18} />, label: "Eliminar", color: "red" },
-    ],
-  },
-];
-
-const COLUMNS = [
-  "Usuario",
-  "Email",
-  "Rol",
-  "Sucursal",
-  "Fecha de registro",
-  "Acciones",
-];
+import { useDeleteUsuario } from "../hooks/useDeleteUsuario";
 
 const getRolColor = (rol) => {
   const normalizedRol = rol?.toUpperCase();
@@ -74,56 +43,49 @@ const getRolLabel = (authorities) => {
   const rol = authorities[0];
   const rolName = rol.name || rol.authority || rol;
 
-  // Limpiar el nombre del rol
   return rolName.replace("ROLE_", "").replace(/_/g, " ");
 };
 
-const ListaUsuariosTabla = ({ items = [], onRefresh }) => {
+const ListaUsuariosTabla = ({
+  items = [],
+  selectedIds,
+  onToggle,
+  onToggleAll,
+  onRefresh,
+}) => {
   const [, navigate] = useLocation();
   const { confirmDelete } = useDeleteUsuario(onRefresh);
 
-  const handleEdit = (userId) => {
-    navigate(`~/usuarios/${userId}/editar`);
-  };
+  const handleEdit = (userId) => navigate(`~/usuarios/${userId}/editar`);
+  const handleViewDetails = (userId) => navigate(`~/usuarios/${userId}`);
 
-  const handleViewDetails = (userId) => {
-    navigate(`~/usuarios/${userId}`);
-  };
+  const getActions = (usuario) => [
+    { icon: <IconEye size={18} />, label: "Ver detalles", onClick: () => handleViewDetails(usuario.id) },
+    { icon: <IconEdit size={18} />, label: "Editar", color: "blue", onClick: () => handleEdit(usuario.id) },
+    { icon: <IconKey size={18} />, label: "Resetear contraseña", color: "orange" },
+    { icon: <IconUserOff size={18} />, label: "Desactivar", color: "orange" },
+    { icon: <IconTrash size={18} />, label: "Eliminar", color: "red", dividerBefore: true, onClick: () => confirmDelete(usuario) },
+  ];
 
-  const handleDelete = (usuario) => {
-    confirmDelete(usuario);
-  };
-
-  if (items.length === 0) {
-    return (
-      <Table>
-        <Table.Thead>
-          <Table.Tr>
-            {COLUMNS.map((column) => (
-              <Table.Th key={column}>{column}</Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          <Table.Tr>
-            <Table.Td colSpan={COLUMNS.length} style={{ textAlign: "center" }}>
-              No hay usuarios para mostrar
-            </Table.Td>
-          </Table.Tr>
-        </Table.Tbody>
-      </Table>
-    );
-  }
+  const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
+  const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
   return (
-    <Table stickyHeader highlightOnHover verticalSpacing="xs">
+    <Table stickyHeader highlightOnHover verticalSpacing="xs" horizontalSpacing="xs">
       <Table.Thead>
         <Table.Tr>
-          {COLUMNS.map((column) => (
-            <Table.Th key={column}>{column}</Table.Th>
-          ))}
+          <Table.Th w={40}>
+            <Checkbox checked={allSelected} indeterminate={indeterminate} onChange={onToggleAll} />
+          </Table.Th>
+          <Table.Th>Usuario</Table.Th>
+          <Table.Th>Email</Table.Th>
+          <Table.Th>Rol</Table.Th>
+          <Table.Th>Sucursal</Table.Th>
+          <Table.Th>Fecha de registro</Table.Th>
+          <Table.Th>Acciones</Table.Th>
         </Table.Tr>
       </Table.Thead>
+
       <Table.Tbody>
         {items.map((item) => {
           const fullName =
@@ -131,16 +93,21 @@ const ListaUsuariosTabla = ({ items = [], onRefresh }) => {
               ? `${item.nombre} ${item.apellido}`
               : item.nombre || item.username || "Sin nombre";
 
-          const avatar = item.profile;
           const email = item.email || "Sin email";
           const sucursal = item.sucursal?.nombre || "Sin sucursal";
-          const fechaRegistro =
-            item.fechaCreacion || item.createdAt || item.fecha;
+          const fechaRegistro = item.fechaCreacion || item.createdAt || item.fecha;
           const authorities = item.authorities || [];
           const rolLabel = getRolLabel(authorities);
 
           return (
-            <Table.Tr key={item.id}>
+            <Table.Tr
+              key={item.id}
+              bg={selectedIds.has(item.id) ? "var(--mantine-color-blue-light)" : undefined}
+            >
+              <Table.Td>
+                <Checkbox checked={selectedIds.has(item.id)} onChange={() => onToggle(item.id)} />
+              </Table.Td>
+
               <Table.Td>
                 <Group gap="sm">
                   {item.profile ? (
@@ -150,7 +117,7 @@ const ListaUsuariosTabla = ({ items = [], onRefresh }) => {
                       radius="xl"
                     />
                   ) : (
-                    <Avatar src={avatar} name={fullName} radius="xl" />
+                    <Avatar name={fullName} color="initials" radius="xl" />
                   )}
                   <Stack gap={0}>
                     <Text size="sm" fw={500}>
@@ -197,40 +164,7 @@ const ListaUsuariosTabla = ({ items = [], onRefresh }) => {
               </Table.Td>
 
               <Table.Td>
-                <Menu shadow="md" width={200}>
-                  <Menu.Target>
-                    <ActionIcon variant="subtle" size="input-sm">
-                      <IconDotsVertical size={18} />
-                    </ActionIcon>
-                  </Menu.Target>
-
-                  <Menu.Dropdown>
-                    {ACTIONS.map(({ name, items: actionItems }, index) => (
-                      <Fragment key={name}>
-                        <Menu.Label>{name}</Menu.Label>
-                        {actionItems.map(({ icon, label, color }) => (
-                          <Menu.Item
-                            key={label}
-                            color={color}
-                            leftSection={icon}
-                            onClick={() => {
-                              if (label === "Editar") {
-                                handleEdit(item.id);
-                              } else if (label === "Ver detalles") {
-                                handleViewDetails(item.id);
-                              } else if (label === "Eliminar") {
-                                handleDelete(item);
-                              }
-                            }}
-                          >
-                            {label}
-                          </Menu.Item>
-                        ))}
-                        {index === 0 && <Menu.Divider />}
-                      </Fragment>
-                    ))}
-                  </Menu.Dropdown>
-                </Menu>
+                <RowActionsMenu actions={getActions(item)} />
               </Table.Td>
             </Table.Tr>
           );

@@ -1,128 +1,90 @@
-import {
-  Button,
-  Card,
-  Center,
-  Collapse,
-  Divider,
-  Group,
-  Flex,
-  Pagination,
-  Stack,
-  Title,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { IconFilter } from "@tabler/icons-react";
-import { isEmpty } from "es-toolkit/compat";
+import { useEffect } from 'react';
+import { Card, Flex, Pagination, Text } from '@mantine/core';
+import { useSet } from '@mantine/hooks';
 
-import FiltersList from "@components/FiltersList";
-import ResultsCounter from "@components/ResultsCounter";
-import ScreenContainer from "@components/ScreenContainer";
+import PageContainer from '@components/PageContainer';
+import ScreenContainer from '@components/ScreenContainer';
+import SelectionBanner from '@components/SelectionBanner';
 
-import ListaUsuariosCrearUser from "./components/ListaUsuariosCrearUser";
-import ListaUsuariosFiltros from "./components/ListaUsuariosFiltros";
-import ListaUsuariosTabla from "./components/ListaUsuariosTabla";
+import ListaUsuariosHeader from './components/ListaUsuariosHeader';
+import ListaUsuariosFiltros from './components/ListaUsuariosFiltros';
+import ListaUsuariosTabla from './components/ListaUsuariosTabla';
 
-import { useGetUsuarios } from "./hooks/useGetUsuarios";
-
-const PAGE_LIMIT = 5;
+import { useGetUsuarios } from './hooks/useGetUsuarios';
 
 const ListaUsuarios = () => {
-  const [showFilters, { toggle }] = useDisclosure(false);
+  const { params, setPage, setFilters, refetch, usuariosQuery, PAGE_LIMIT } = useGetUsuarios();
+  const { data = {}, isFetching: isLoading, isError } = usuariosQuery;
 
-  const {
-    data,
-    isError,
-    isLoading,
-    refetchUsuarios,
-    setPage,
-    setFilters,
-    clearFilters,
-    removeFilter,
-    params: { filters, page },
-  } = useGetUsuarios(PAGE_LIMIT);
+  const selectedIds = useSet();
 
-  const showPagination = data.totalPages > 1 && !isLoading;
+  useEffect(() => {
+    selectedIds.clear();
+  }, [data.results]);
+
+  const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+  const onToggleAll = () => {
+    if (data.results?.every((i) => selectedIds.has(i.id))) {
+      data.results.forEach((i) => selectedIds.delete(i.id));
+    } else {
+      data.results?.forEach((i) => selectedIds.add(i.id));
+    }
+  };
+
+  const showPagination = data.total > PAGE_LIMIT;
 
   return (
-    <Stack m="auto" maw="1440" gap="lg" p="lg">
+    <PageContainer>
+      <ListaUsuariosHeader />
+
+      <ListaUsuariosFiltros onFiltersChange={setFilters} disabled={isLoading} />
+
+      <SelectionBanner
+        count={selectedIds.size}
+        singular="usuario seleccionado"
+        plural="usuarios seleccionados"
+        onClear={() => selectedIds.clear()}
+      />
+
       <Card>
-        <Flex justify="space-between" gap="xs" align="flex-end">
-          <Title order={2}>Usuarios</Title>
-
-          <Group gap="xs">
-            <ListaUsuariosCrearUser />
-
-            <Button
-              leftSection={<IconFilter />}
-              variant="light"
-              onClick={toggle}
-            >
-              Filtros
-            </Button>
-          </Group>
-        </Flex>
-
-        <Collapse in={showFilters}>
-          <Divider my="md" />
-          <ListaUsuariosFiltros onFiltersChange={setFilters} />
-        </Collapse>
-      </Card>
-
-      <Card component={Stack}>
         <ScreenContainer
-          onLoading={{
-            show: isLoading,
-            description: "Cargando usuarios...",
-          }}
-          onError={{
-            show: isError,
-            onClick: refetchUsuarios,
-            description: "Ocurrió un error al cargar los usuarios",
-          }}
+          onLoading={{ show: isLoading, description: 'Cargando usuarios...' }}
+          onError={{ show: isError, onClick: refetch, description: 'Ocurrió un error al cargar los usuarios' }}
           onEmptyData={{
-            show: data.total === 0 && Object.keys(filters).length === 0,
-            title: "Sin usuarios que mostrar",
-            description: "Parece que no hay usuarios registrados todavía",
+            show: data.total === 0 && Object.keys(params.filters).length === 0,
+            title: 'Sin usuarios que mostrar',
+            description: 'Parece que no hay usuarios cargados todavía',
           }}
           onEmptyFiltersData={{
-            show: data.total === 0 && !isEmpty(filters),
-            title: "Sin usuarios que mostrar",
-            description: "No se encontraron usuarios con los filtros aplicados",
+            show: data.total === 0 && Object.keys(params.filters).length > 0,
+            title: 'Sin resultados',
+            description: 'No se encontraron usuarios con los filtros aplicados',
           }}
         >
-          <Flex align="center" justify="space-between">
-            <FiltersList
-              filters={filters}
-              onClearFilters={clearFilters}
-              onFilterRemove={removeFilter}
-            />
-
-            <ResultsCounter
-              limit={PAGE_LIMIT}
-              currentPage={page}
-              onRefresh={refetchUsuarios}
-              amount={data.total}
-            />
-          </Flex>
-
           <ListaUsuariosTabla
             items={data.results}
-            onRefresh={refetchUsuarios}
+            selectedIds={selectedIds}
+            onToggle={onToggle}
+            onToggleAll={onToggleAll}
+            onRefresh={refetch}
           />
         </ScreenContainer>
       </Card>
 
-      {showPagination && (
-        <Center>
-          <Pagination
-            value={page}
-            variant="dots"
-            onChange={setPage}
-            total={data.totalPages}
-          />
-        </Center>
-      )}
-    </Stack>
+      <Flex align="center">
+        <Pagination
+          value={params.page}
+          onChange={setPage}
+          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+          disabled={!showPagination}
+        />
+        <Text c="dimmed" ml="auto">
+          {data.total > 0
+            ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+            : '0 resultados'}
+        </Text>
+      </Flex>
+    </PageContainer>
   );
 };
 

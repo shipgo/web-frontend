@@ -1,44 +1,67 @@
-import { Fragment } from "react";
+import { useMemo, useState } from 'react';
+import { Card, TextInput, Select, Stack, ScrollArea, Text } from '@mantine/core';
+import { IconSearch } from '@tabler/icons-react';
 
-import { IconPlus, IconSearch } from "@tabler/icons-react";
-import {
-  Card,
-  Group,
-  Title,
-  Button,
-  TextInput,
-  Divider,
-  Box,
-} from "@mantine/core";
-
-import MapListadoViajesItem from "./MapListadoViajesItem";
+import { ESTADO_CONFIG, SUCURSALES, VIAJES_MOCK } from '../mocks';
+import { useSelectedViaje } from '../contexts/selectedViaje';
+import MapListadoViajesItem from './MapListadoViajesItem';
 
 const MapListadoViajes = () => {
+  const { selectedSucursal: sucursal, setSelectedSucursal: setSucursal } = useSelectedViaje();
+  const [search, setSearch] = useState('');
+
+  const viajes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return VIAJES_MOCK
+      .filter((v) => {
+        const matchSucursal = sucursal === 'todas' || v.sucursal === sucursal;
+        const matchSearch =
+          !q ||
+          v.patente.toLowerCase().includes(q) ||
+          v.chofer.toLowerCase().includes(q);
+        return matchSucursal && matchSearch;
+      })
+      .sort((a, b) => ESTADO_CONFIG[a.estado].urgency - ESTADO_CONFIG[b.estado].urgency);
+  }, [sucursal, search]);
+
   return (
-    <Card flex="1" maw="400" h="100%">
-      <Group justify="space-between">
-        <Title order={4}>Listado de viajes</Title>
-        <Button size="xs" variant="light" leftSection={<IconPlus size={16} />}>
-          Nuevo viaje
-        </Button>
-      </Group>
+    <Card w={340} h="100%" p="md" style={{ flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+      <Stack gap="xs" mb="md">
+        <Select
+          size="sm"
+          placeholder="Filtrar por sucursal"
+          data={SUCURSALES}
+          value={sucursal}
+          onChange={(val) => setSucursal(val ?? 'todas')}
+          clearable={false}
+        />
+        <TextInput
+          size="sm"
+          radius="xl"
+          variant="filled"
+          placeholder="Buscar por patente o chofer"
+          value={search}
+          onChange={(e) => setSearch(e.currentTarget.value)}
+          rightSection={<IconSearch size={14} />}
+        />
+      </Stack>
 
-      <TextInput
-        my="md"
-        radius="xl"
-        variant="filled"
-        placeholder="Buscar viaje"
-        rightSection={<IconSearch cursor="pointer" size={16} />}
-      />
-
-      <Card withBorder shadow="none" p="0" style={{ overflowY: "auto" }}>
-        {Array.from({ length: 10 }).map((_, index) => (
-          <Fragment key={index}>
-            <MapListadoViajesItem viajeId={index} />
-            {index !== 9 && <Divider />}
-          </Fragment>
-        ))}
-      </Card>
+      <ScrollArea style={{ flex: 1 }} offsetScrollbars>
+        {viajes.length === 0 ? (
+          <Text c="dimmed" size="sm" ta="center" mt="xl">
+            Sin viajes para los filtros seleccionados
+          </Text>
+        ) : (
+          viajes.map((viaje, index) => (
+            <MapListadoViajesItem
+              key={viaje.id}
+              viaje={viaje}
+              isLast={index === viajes.length - 1}
+            />
+          ))
+        )}
+      </ScrollArea>
     </Card>
   );
 };

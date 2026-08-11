@@ -1,4 +1,4 @@
-import { Box, Checkbox, useMantineColorScheme } from "@mantine/core";
+import { Box, Checkbox, Radio, useMantineColorScheme } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
 
 const COLORS = {
@@ -15,8 +15,10 @@ const COLORS = {
 const SelectableItemList = ({
   children,
   onClick,
+  removable = false,
   selected = null,
   disabled = false,
+  singleSelection = false,
 }) => {
   const { hovered, ref } = useHover();
   const { colorScheme } = useMantineColorScheme();
@@ -29,24 +31,55 @@ const SelectableItemList = ({
     return "transparent";
   };
 
+  const getCursor = () => {
+    if (disabled) return "not-allowed";
+    if (removable) return "default";
+    return "pointer";
+  };
+
+  const renderSelectable = () => {
+    if (selected === null) return null;
+
+    if (singleSelection) {
+      return (
+        <Radio
+          readOnly
+          variant="outline"
+          checked={selected}
+          disabled={disabled}
+        />
+      );
+    }
+
+    return (
+      <Checkbox
+        readOnly
+        checked={selected}
+        variant="outline"
+        disabled={disabled}
+      />
+    );
+  };
+
+  const isClickable = !disabled && !removable;
+
   return (
     <Box
       p="md"
+      pr="lg"
       ref={ref}
       component="li"
-      onClick={!disabled && onClick}
+      onClick={isClickable ? onClick : undefined}
       bg={getBackgroundColor()}
       style={{
         gap: "1rem",
         display: "flex",
         flexDirection: "row",
         alignItems: "center",
-        cursor: disabled ? "not-allowed" : "pointer",
+        cursor: getCursor(),
       }}
     >
-      {selected !== null && (
-        <Checkbox readOnly checked={selected} disabled={disabled} />
-      )}
+      {renderSelectable()}
       {children}
     </Box>
   );

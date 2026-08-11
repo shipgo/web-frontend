@@ -18,7 +18,6 @@ import { IconBell, IconLogout, IconSearch } from "@tabler/icons-react";
 
 import { useAuth } from "@contexts/auth";
 import { useAuthStore } from "@stores/auth.store";
-import { API_URLS } from "@constants/apiUrls";
 
 const AppHeader = () => {
   const { user } = useAuth();
@@ -48,19 +47,18 @@ const AppHeader = () => {
 
   return (
     <AppShellHeader component={Flex} justify="center">
-      <Flex flex={1} maw={1440} px="xl">
+      <Flex flex={1} maw={1440} px="xl" py="xs">
         <Group>
           <TextInput
             w="400"
             type="search"
-            radius="xl"
             variant="filled"
             placeholder="Buscá envíos, viajes..."
             rightSection={<IconSearch size={20} />}
           />
         </Group>
 
-        <Group ml="auto" gap="xs">
+        <Group ml="auto">
           <Tooltip label="Notificaciones">
             <Indicator inline size={12} offset={5} processing>
               <ActionIcon
@@ -107,6 +105,7 @@ const AppHeader = () => {
 
             <Menu.Dropdown>
               <Menu.Item
+                color="red"
                 onClick={handleLogout}
                 leftSection={
                   <IconLogout style={{ width: rem(14), height: rem(14) }} />

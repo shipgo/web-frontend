@@ -1,14 +1,17 @@
 import { mapValues } from "es-toolkit";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 
 import { useParams } from "@hooks/useParams";
 import { viajeApi } from "../../../api/viajes.api";
+
+const PAGE_LIMIT = 10;
 
 /**
  * Hook para obtener viajes con paginación usando la API real
  * @param {number} pageLimit - Cantidad de elementos por página
  */
-export const useGetViajes = (pageLimit = 10) => {
+export const useGetViajes = (pageLimit = PAGE_LIMIT) => {
+  const queryClient = useQueryClient();
   const paramsOptions = useParams();
 
   // Normalizar parámetros para el backend
@@ -19,31 +22,21 @@ export const useGetViajes = (pageLimit = 10) => {
     ...mapValues(paramsOptions.params.filters, (filter) => filter.values),
   };
 
-  const {
-    isError,
-    data: backendData,
-    isFetching: isLoading,
-    refetch: refetchViajes,
-  } = useQuery({
+  const viajesQuery = useQuery({
     queryFn: async () => {
       const response = await viajeApi.get(normalizedParams);
-      return response;
+      return {
+        total: response?.totalElements || 0,
+        results: response?.content || [],
+      };
     },
     queryKey: ["viajes", JSON.stringify(normalizedParams)],
   });
 
-  // Transformar respuesta del backend al formato esperado por el componente
-  const data = {
-    total: backendData?.totalElements || 0,
-    results: backendData?.content || [],
-    totalPages: backendData?.totalPages || 0,
+  const refetch = () => {
+    queryClient.removeQueries({ queryKey: ["viajes"] });
+    viajesQuery.refetch();
   };
 
-  return {
-    data,
-    isError,
-    isLoading,
-    refetchViajes,
-    ...paramsOptions,
-  };
+  return { viajesQuery, refetch, PAGE_LIMIT: pageLimit, ...paramsOptions };
 };

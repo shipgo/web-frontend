@@ -1,0 +1,17 @@
+export default [
+  { id: 1, patente: 'ABC 123', marca: 'Ford', modelo: 'Transit', tipo: 'camioneta', capacidad: 3000, estado: 'disponible', fecha_incorporacion: '2023-03-10T00:00:00Z', chofer_asignado: null },
+  { id: 2, patente: 'DEF 456', marca: 'Mercedes', modelo: 'Sprinter', tipo: 'camioneta', capacidad: 4500, estado: 'en_ruta', fecha_incorporacion: '2022-07-22T00:00:00Z', chofer_asignado: { nombre: 'Juan Pérez', perfil: 'https://randomuser.me/api/portraits/thumb/men/1.jpg' } },
+  { id: 3, patente: 'GHI 789', marca: 'Volkswagen', modelo: 'Crafter', tipo: 'camion', capacidad: 7000, estado: 'en_mantenimiento', fecha_incorporacion: '2021-11-05T00:00:00Z', chofer_asignado: null },
+  { id: 4, patente: 'JKL 012', marca: 'Renault', modelo: 'Kangoo', tipo: 'auto', capacidad: 800, estado: 'disponible', fecha_incorporacion: '2024-01-18T00:00:00Z', chofer_asignado: null },
+  { id: 5, patente: 'MNO 345', marca: 'Toyota', modelo: 'Hilux', tipo: 'camioneta', capacidad: 1500, estado: 'en_ruta', fecha_incorporacion: '2023-08-30T00:00:00Z', chofer_asignado: { nombre: 'Diego Ramírez', perfil: 'https://randomuser.me/api/portraits/thumb/men/2.jpg' } },
+  { id: 6, patente: 'PQR 678', marca: 'Honda', modelo: 'CB 500', tipo: 'moto', capacidad: 50, estado: 'disponible', fecha_incorporacion: '2024-02-14T00:00:00Z', chofer_asignado: null },
+  { id: 7, patente: 'STU 901', marca: 'Fiat', modelo: 'Ducato', tipo: 'camioneta', capacidad: 3500, estado: 'en_ruta', fecha_incorporacion: '2022-04-09T00:00:00Z', chofer_asignado: { nombre: 'Carlos López', perfil: 'https://randomuser.me/api/portraits/thumb/men/3.jpg' } },
+  { id: 8, patente: 'VWX 234', marca: 'Yamaha', modelo: 'FZ 250', tipo: 'moto', capacidad: 50, estado: 'en_mantenimiento', fecha_incorporacion: '2023-12-01T00:00:00Z', chofer_asignado: null },
+  { id: 9, patente: 'YZA 567', marca: 'Iveco', modelo: 'Daily', tipo: 'camion', capacidad: 6000, estado: 'disponible', fecha_incorporacion: '2021-06-17T00:00:00Z', chofer_asignado: null },
+  { id: 10, patente: 'BCD 890', marca: 'Ford', modelo: 'Transit Connect', tipo: 'auto', capacidad: 1000, estado: 'en_ruta', fecha_incorporacion: '2024-04-03T00:00:00Z', chofer_asignado: { nombre: 'Gonzalo Sosa', perfil: 'https://randomuser.me/api/portraits/thumb/men/4.jpg' } },
+  { id: 11, patente: 'EFG 123', marca: 'Volkswagen', modelo: 'Amarok', tipo: 'camioneta', capacidad: 2000, estado: 'disponible', fecha_incorporacion: '2023-05-25T00:00:00Z', chofer_asignado: null },
+  { id: 12, patente: 'HIJ 456', marca: 'Honda', modelo: 'PCX 150', tipo: 'moto', capacidad: 30, estado: 'disponible', fecha_incorporacion: '2024-03-11T00:00:00Z', chofer_asignado: null },
+  { id: 13, patente: 'KLM 789', marca: 'Mercedes', modelo: 'Actros', tipo: 'camion', capacidad: 20000, estado: 'en_mantenimiento', fecha_incorporacion: '2020-09-28T00:00:00Z', chofer_asignado: null },
+  { id: 14, patente: 'NOP 012', marca: 'Renault', modelo: 'Master', tipo: 'camioneta', capacidad: 2800, estado: 'en_ruta', fecha_incorporacion: '2022-12-15T00:00:00Z', chofer_asignado: { nombre: 'Matías Rojas', perfil: 'https://randomuser.me/api/portraits/thumb/men/5.jpg' } },
+  { id: 15, patente: 'QRS 345', marca: 'Toyota', modelo: 'Land Cruiser', tipo: 'auto', capacidad: 500, estado: 'disponible', fecha_incorporacion: '2023-10-07T00:00:00Z', chofer_asignado: null },
+];

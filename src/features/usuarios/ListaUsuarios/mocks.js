@@ -1,0 +1,17 @@
+export default [
+  { id: 1, nombre: 'Martín García', email: 'mgarcia@empresa.com', telefono: '011-4444-0001', rol: 'admin', estado: 'activo', fecha_alta: '2024-01-10T09:00:00Z' },
+  { id: 2, nombre: 'Valeria Castro', email: 'vcastro@empresa.com', telefono: '011-4444-0002', rol: 'operador', estado: 'activo', fecha_alta: '2024-02-14T10:30:00Z' },
+  { id: 3, nombre: 'Juan Pérez', email: 'jperez@empresa.com', telefono: '011-4444-0003', rol: 'chofer', estado: 'activo', fecha_alta: '2024-03-05T08:00:00Z' },
+  { id: 4, nombre: 'Sofía Herrera', email: 'sherrera@empresa.com', telefono: '011-4444-0004', rol: 'operador', estado: 'inactivo', fecha_alta: '2024-03-20T11:00:00Z' },
+  { id: 5, nombre: 'Diego Ramírez', email: 'dramirez@empresa.com', telefono: '011-4444-0005', rol: 'chofer', estado: 'activo', fecha_alta: '2024-04-01T07:30:00Z' },
+  { id: 6, nombre: 'Natalia Díaz', email: 'ndiaz@empresa.com', telefono: '011-4444-0006', rol: 'chofer', estado: 'activo', fecha_alta: '2024-04-15T09:45:00Z' },
+  { id: 7, nombre: 'Carlos López', email: 'clopez@empresa.com', telefono: '011-4444-0007', rol: 'chofer', estado: 'inactivo', fecha_alta: '2024-05-03T08:15:00Z' },
+  { id: 8, nombre: 'Mariana Gómez', email: 'mgomez@empresa.com', telefono: '011-4444-0008', rol: 'operador', estado: 'activo', fecha_alta: '2024-05-20T10:00:00Z' },
+  { id: 9, nombre: 'Gonzalo Sosa', email: 'gsosa@empresa.com', telefono: '011-4444-0009', rol: 'chofer', estado: 'activo', fecha_alta: '2024-06-08T07:00:00Z' },
+  { id: 10, nombre: 'Lucía Fernández', email: 'lfernandez@empresa.com', telefono: '011-4444-0010', rol: 'admin', estado: 'activo', fecha_alta: '2024-06-25T09:30:00Z' },
+  { id: 11, nombre: 'Matías Rojas', email: 'mrojas@empresa.com', telefono: '011-4444-0011', rol: 'chofer', estado: 'activo', fecha_alta: '2024-07-10T08:00:00Z' },
+  { id: 12, nombre: 'Camila Torres', email: 'ctorres@empresa.com', telefono: '011-4444-0012', rol: 'operador', estado: 'inactivo', fecha_alta: '2024-08-01T10:30:00Z' },
+  { id: 13, nombre: 'Andrés Martínez', email: 'amartinez@empresa.com', telefono: '011-4444-0013', rol: 'chofer', estado: 'activo', fecha_alta: '2024-09-14T07:45:00Z' },
+  { id: 14, nombre: 'Paula Suárez', email: 'psuarez@empresa.com', telefono: '011-4444-0014', rol: 'operador', estado: 'activo', fecha_alta: '2024-10-02T09:00:00Z' },
+  { id: 15, nombre: 'Roberto Vega', email: 'rvega@empresa.com', telefono: '011-4444-0015', rol: 'chofer', estado: 'activo', fecha_alta: '2024-11-18T08:30:00Z' },
+];

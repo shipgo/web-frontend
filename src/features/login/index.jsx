@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
+import logo from "/src/assets/logoipsum-custom-logo.svg";
+
 import { omit } from "es-toolkit";
 import { IconExclamationMark } from "@tabler/icons-react";
 
@@ -9,6 +11,7 @@ import { useForm, isNotEmpty } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
   Button,
+  MantineProvider,
   PasswordInput,
   Stack,
   Text,
@@ -97,74 +100,79 @@ const LoginPage = () => {
   };
 
   return (
-    <Group align="flex-start" gap="0" wrap="nowrap">
-      <Card miw={FORM_WIDHT} mih="100svh" p="xl" withBorder>
-        <Stack
-          p="xl"
-          gap="lg"
-          my="auto"
-          component="form"
-          justify="center"
-          onSubmit={form.onSubmit((values) => handleFormSubmit(values))}
-        >
-          <LoadingOverlay visible={loading} />
+    <MantineProvider forceColorScheme="light">
+      <Group align="flex-start" gap="0" wrap="nowrap">
+        <Card miw={FORM_WIDHT} mih="100svh" p="xl" withBorder>
+          <Stack
+            p="xl"
+            gap="lg"
+            my="auto"
+            component="form"
+            justify="center"
+            onSubmit={form.onSubmit((values) => handleFormSubmit(values))}
+          >
+            <LoadingOverlay visible={loading} />
 
-          <Stack gap={0}>
-            <Title order={1}>Iniciar sesión</Title>
-            <Text>Completá con tus datos</Text>
-          </Stack>
-
-          <FocusTrap active>
-            <Stack active gap="xs">
-              <TextInput
-                {...form.getInputProps("username")}
-                autoFocus
-                size="md"
-                label="Usuario"
-                autoComplete="username"
-                disabled={loading}
-                key={form.key("username")}
-                placeholder="Ingresá tu usuario"
-              />
-              <PasswordInput
-                {...form.getInputProps("password")}
-                size="md"
-                label="Contraseña"
-                autoComplete="current-password"
-                disabled={loading}
-                key={form.key("password")}
-                placeholder="Introducí tu contraseña"
-              />
+            <Stack gap={0}>
+              <Image src={logo} w="300" fit="contain" />
+              <Title order={1}>Iniciar sesión</Title>
+              <Text>Completá con tus datos</Text>
             </Stack>
-          </FocusTrap>
 
-          <Group justify="space-between">
-            <Switch
-              {...form.getInputProps("remember", { type: "checkbox" })}
-              size="md"
-              label="Recordame"
-              key={form.key("remember")}
-            />
-            <Anchor href="/recuperar-cuenta">Olvidé mi contraseña</Anchor>
-          </Group>
+            <FocusTrap active>
+              <Stack active gap="xs">
+                <TextInput
+                  {...form.getInputProps("username")}
+                  autoFocus
+                  size="md"
+                  label="Usuario"
+                  autoComplete="username"
+                  disabled={loading}
+                  key={form.key("username")}
+                  placeholder="Ingresá tu usuario"
+                />
+                <PasswordInput
+                  {...form.getInputProps("password")}
+                  size="md"
+                  label="Contraseña"
+                  autoComplete="current-password"
+                  disabled={loading}
+                  key={form.key("password")}
+                  placeholder="Introducí tu contraseña"
+                />
+              </Stack>
+            </FocusTrap>
 
-          <Button size="lg" type="submit" disabled={loading}>
-            Iniciar sesión
-          </Button>
+            <Group justify="space-between">
+              <Switch
+                {...form.getInputProps("remember", { type: "checkbox" })}
+                size="md"
+                label="Recordame"
+                key={form.key("remember")}
+              />
+              <Anchor href="/recuperar-cuenta">Olvidé mi contraseña</Anchor>
+            </Group>
 
-          <Group justify="center">
-            <Anchor>Necesito ayuda</Anchor>
-            <Divider orientation="vertical" />
-            <Anchor>No tengo una cuenta</Anchor>
-          </Group>
-        </Stack>
-      </Card>
-      <Image
-        h="100svh"
-        src="src/assets/background.jpg"
-        miw={`calc(100svw - ${FORM_WIDHT})`}
-      />
-    </Group>
+            <Button size="lg" type="submit" disabled={loading}>
+              Iniciar sesión
+            </Button>
+
+            <Group justify="center">
+              <Anchor href="https://shipgo.gitbook.io/manual" target="_blank">
+                Necesito ayuda
+              </Anchor>
+              <Divider orientation="vertical" />
+              <Anchor>No tengo una cuenta</Anchor>
+            </Group>
+          </Stack>
+        </Card>
+        <Image
+          h="100svh"
+          src="src/assets/background.jpg"
+          miw={`calc(100svw - ${FORM_WIDHT})`}
+        />
+      </Group>
+    </MantineProvider>
   );
 };
 

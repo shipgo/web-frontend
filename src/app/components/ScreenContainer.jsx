@@ -1,30 +1,20 @@
-import { IconFilesOff, IconAlertTriangle } from "@tabler/icons-react";
+import { cloneElement } from 'react';
+import { IconFilesOff, IconAlertTriangle } from '@tabler/icons-react';
+import { Loader, EmptyState, Button, Card } from '@mantine/core';
 
-import {
-  Text,
-  Loader,
-  Stack,
-  useMantineTheme,
-  useMantineColorScheme,
-  Title,
-  Button,
-  Card,
-} from "@mantine/core";
-
-const Wrapper = ({ children, backgroundColor, className, styleProps }) => (
-  <Stack
-    gap="xs"
-    mih="17rem"
-    align="center"
-    justify="center"
+const Wrapper = ({ children, className, styleProps }) => (
+  <EmptyState
+    mih='17rem'
     component={Card}
-    shadow="none"
-    bg={backgroundColor}
-    className={`${className}`}
+    shadow='none'
+    bg='var(--mantine-color-body)'
+    radius='0'
+    className={className}
+    style={{ justifyContent: 'center' }}
     {...styleProps}
   >
     {children}
-  </Stack>
+  </EmptyState>
 );
 
 const ScreenContainer = ({
@@ -33,27 +23,17 @@ const ScreenContainer = ({
   onLoading,
   onEmptyData,
   onEmptyFiltersData,
-  className = "",
+  className = '',
   styleProps = {},
 }) => {
-  const { colors } = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
-
-  const titleColor = colorScheme === "dark" ? colors.dark[2] : colors.gray[7];
-  const textColor = colorScheme === "dark" ? colors.dark[2] : colors.gray[6];
-  const backgroundColor =
-    colorScheme === "dark" ? colors.dark[7] : colors.gray[0];
-
   if (onLoading?.show) {
     return (
       onLoading.children ?? (
-        <Wrapper
-          styleProps={styleProps}
-          className={`${className}`}
-          backgroundColor={backgroundColor}
-        >
-          <Loader type="bars" />
-          <Text c={textColor}>{onLoading.description ?? "Cargando..."}</Text>
+        <Wrapper styleProps={styleProps} className={className}>
+          <EmptyState.Indicator>
+            <Loader />
+          </EmptyState.Indicator>
+          <EmptyState.Description>{onLoading.description ?? 'Cargando...'}</EmptyState.Description>
         </Wrapper>
       )
     );
@@ -62,26 +42,20 @@ const ScreenContainer = ({
   if (onError?.show) {
     return (
       onError.children ?? (
-        <Wrapper
-          styleProps={styleProps}
-          className={`${className}`}
-          backgroundColor={backgroundColor}
-        >
-          <IconAlertTriangle color={titleColor} size={60} />
-
-          <Stack gap="0" align="center" justify="center">
-            <Title c={titleColor} order={3}>
-              {onError.title ?? "Oops"}
-            </Title>
-            <Text c={textColor}>
-              {onError.description ?? "Parece ser que ocurrió un error"}
-            </Text>
-          </Stack>
-
+        <Wrapper styleProps={styleProps} className={className}>
+          <EmptyState.Indicator>
+            <IconAlertTriangle size={50} color='var(--mantine-color-dimmed)' />
+          </EmptyState.Indicator>
+          <EmptyState.Title>{onError.title ?? 'Oops'}</EmptyState.Title>
+          <EmptyState.Description>
+            {onError.description ?? 'Parece ser que ocurrió un error'}
+          </EmptyState.Description>
           {onError.onClick && (
-            <Button variant="subtle" onClick={onError.onClick}>
-              Reintentar
-            </Button>
+            <EmptyState.Actions>
+              <Button variant='subtle' onClick={onError.onClick}>
+                Reintentar
+              </Button>
+            </EmptyState.Actions>
           )}
         </Wrapper>
       )
@@ -91,22 +65,18 @@ const ScreenContainer = ({
   if (onEmptyData?.show) {
     return (
       onEmptyData.children ?? (
-        <Wrapper
-          styleProps={styleProps}
-          className={`${className}`}
-          backgroundColor={backgroundColor}
-        >
-          <IconFilesOff color={titleColor} size={60} />
-
-          <Stack gap="0" align="center" justify="center">
-            <Title c={titleColor} order={3}>
-              {onEmptyData.title ?? "Sin datos"}
-            </Title>
-            <Text c={textColor}>
-              {onEmptyData.description ??
-                "Parece ser que no hay información que mostrar"}
-            </Text>
-          </Stack>
+        <Wrapper styleProps={styleProps} className={className}>
+          <EmptyState.Indicator>
+            {onEmptyData.icon ? (
+              cloneElement(onEmptyData.icon, { color: 'var(--mantine-color-dimmed)' })
+            ) : (
+              <IconFilesOff size={50} color='var(--mantine-color-dimmed)' />
+            )}
+          </EmptyState.Indicator>
+          <EmptyState.Title>{onEmptyData.title ?? 'Sin datos'}</EmptyState.Title>
+          <EmptyState.Description>
+            {onEmptyData.description ?? 'Parece ser que no hay información que mostrar'}
+          </EmptyState.Description>
         </Wrapper>
       )
     );
@@ -115,22 +85,15 @@ const ScreenContainer = ({
   if (onEmptyFiltersData?.show) {
     return (
       onEmptyFiltersData.children ?? (
-        <Wrapper
-          styleProps={styleProps}
-          className={`${className}`}
-          backgroundColor={backgroundColor}
-        >
-          <IconFilesOff color={titleColor} size={60} />
-
-          <Stack gap="0" align="center" justify="center">
-            <Title c={titleColor} order={3}>
-              {onEmptyFiltersData.title ?? "Sin datos"}
-            </Title>
-            <Text c={textColor}>
-              {onEmptyFiltersData.description ??
-                "Parece ser que no hay información que mostrar con estos filtros"}
-            </Text>
-          </Stack>
+        <Wrapper styleProps={styleProps} className={className}>
+          <EmptyState.Indicator>
+            <IconFilesOff size={50} color='var(--mantine-color-dimmed)' />
+          </EmptyState.Indicator>
+          <EmptyState.Title>{onEmptyFiltersData.title ?? 'Sin datos'}</EmptyState.Title>
+          <EmptyState.Description>
+            {onEmptyFiltersData.description ??
+              'Parece ser que no hay información que mostrar con estos filtros'}
+          </EmptyState.Description>
         </Wrapper>
       )
     );
