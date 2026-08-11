@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Card, Flex, Pagination, Text } from '@mantine/core';
+import { Card } from '@mantine/core';
 import { useSet } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 
@@ -7,6 +7,7 @@ import { useParams } from '@hooks/useParams';
 import ScreenContainer from '@components/ScreenContainer';
 import PageContainer from '@components/PageContainer';
 import SelectionBanner from '@components/SelectionBanner';
+import ListPagination from '@components/ListPagination';
 
 import ListaViajesHeader from './components/ListaViajesHeader';
 import ListaViajesTabla from './components/ListaViajesTabla';
@@ -96,8 +97,6 @@ const ListaViajes = () => {
     }
   };
 
-  const showPagination = data.total > PAGE_LIMIT;
-
   return (
     <PageContainer>
       <ListaViajesHeader />
@@ -135,19 +134,13 @@ const ListaViajes = () => {
         </ScreenContainer>
       </Card>
 
-      <Flex align="center">
-        <Pagination
-          value={params.page}
-          onChange={setPage}
-          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
-          disabled={!showPagination}
-        />
-        <Text c="dimmed" ml="auto">
-          {data.total > 0
-            ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
-            : '0 resultados'}
-        </Text>
-      </Flex>
+      <ListPagination
+        page={params.page}
+        onChange={setPage}
+        total={data.total}
+        pageLimit={PAGE_LIMIT}
+        isLoading={isLoading}
+      />
     </PageContainer>
   );
 };

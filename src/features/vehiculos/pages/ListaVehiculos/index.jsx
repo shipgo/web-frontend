@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { Card, Flex, Pagination, Text } from '@mantine/core';
+import { Card } from '@mantine/core';
 import { useSet } from '@mantine/hooks';
 
 import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
+import ListPagination from '@components/ListPagination';
 
 import ListaVehiculosHeader from './components/ListaVehiculosHeader';
 import ListaVehiculosFiltros from './components/ListaVehiculosFiltros';
@@ -30,8 +31,6 @@ const ListaVehiculos = () => {
       data.results?.forEach((i) => selectedIds.add(i.id));
     }
   };
-
-  const showPagination = data.total > PAGE_LIMIT;
 
   return (
     <PageContainer>
@@ -70,19 +69,13 @@ const ListaVehiculos = () => {
         </ScreenContainer>
       </Card>
 
-      <Flex align="center">
-        <Pagination
-          value={params.page}
-          onChange={setPage}
-          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
-          disabled={!showPagination}
-        />
-        <Text c="dimmed" ml="auto">
-          {data.total > 0
-            ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
-            : '0 resultados'}
-        </Text>
-      </Flex>
+      <ListPagination
+        page={params.page}
+        onChange={setPage}
+        total={data.total}
+        pageLimit={PAGE_LIMIT}
+        isLoading={isLoading}
+      />
     </PageContainer>
   );
 };
