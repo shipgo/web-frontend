@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
 import { useLocation } from "wouter";
-import { Box, Card, Group, Stack, Text, Title, Button } from "@mantine/core";
+import { Box, Group, Text, Title, Button } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
 
+import PageContainer from "@components/PageContainer";
 import { usuarioApi } from "@api";
 import UsuarioForm from "../components/UsuarioForm";
 
@@ -136,29 +137,21 @@ const CrearUsuario = () => {
   }, [navigate]);
 
   return (
-    <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-      {/* Header */}
-      <Card shadow="sm" p="lg" radius="md" withBorder>
-        <Group justify="space-between" align="center">
-          <Box>
-            <Title order={2} mb={4}>
-              Crear Nuevo Usuario
-            </Title>
-            <Text size="sm" c="dimmed">
-              Complete los datos del nuevo usuario del sistema
-            </Text>
-          </Box>
-          <Button
-            variant="light"
-            leftSection={<IconArrowLeft size={18} />}
-            onClick={handleCancel}
-          >
-            Volver al listado
-          </Button>
-        </Group>
-      </Card>
+    <PageContainer>
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title order={2}>Crear usuario</Title>
+          <Text c="dimmed">Completá los datos del nuevo usuario</Text>
+        </Box>
+        <Button
+          variant="subtle"
+          leftSection={<IconArrowLeft size={18} />}
+          onClick={handleCancel}
+        >
+          Volver
+        </Button>
+      </Group>
 
-      {/* Formulario */}
       <UsuarioForm
         form={form}
         onSubmit={handleSubmit}
@@ -166,7 +159,7 @@ const CrearUsuario = () => {
         onCancel={handleCancel}
         isEdit={false}
       />
-    </Stack>
+    </PageContainer>
   );
 };
 

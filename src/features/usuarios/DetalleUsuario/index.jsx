@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Button, Card, Group, Stack, Text } from "@mantine/core";
-import { IconArrowLeft, IconEdit, IconTrash } from "@tabler/icons-react";
+import { Button, Card, Group, Text } from "@mantine/core";
+import { IconArrowLeft, IconEdit } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 
+import PageContainer from "@components/PageContainer";
 import { usuarioApi } from "@api";
 import UsuarioPerfil from "../components/UsuarioPerfil";
 
@@ -48,43 +49,32 @@ const DetalleUsuario = () => {
 
   if (loading) {
     return (
-      <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-        <Card shadow="sm" p="lg" radius="md" withBorder>
-          <Text>Cargando información del usuario...</Text>
+      <PageContainer>
+        <Card>
+          <Text>Cargando usuario...</Text>
         </Card>
-      </Stack>
+      </PageContainer>
     );
   }
 
   return (
-    <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-      {/* Header con acciones */}
-      <Card shadow="sm" p="lg" radius="md" withBorder>
-        <Group justify="space-between" wrap="wrap">
-          <Button
-            variant="light"
-            leftSection={<IconArrowLeft size={18} />}
-            onClick={handleBack}
-          >
-            Volver al listado
-          </Button>
+    <PageContainer>
+      <Group justify="space-between" align="flex-end">
+        <Button
+          variant="subtle"
+          leftSection={<IconArrowLeft size={18} />}
+          onClick={handleBack}
+        >
+          Volver
+        </Button>
 
-          <Group gap="sm">
-            <Button
-              variant="light"
-              color="blue"
-              leftSection={<IconEdit size={18} />}
-              onClick={handleEdit}
-            >
-              Editar
-            </Button>
-          </Group>
-        </Group>
-      </Card>
+        <Button leftSection={<IconEdit size={18} />} onClick={handleEdit}>
+          Editar
+        </Button>
+      </Group>
 
-      {/* Perfil del usuario */}
       <UsuarioPerfil usuario={usuario} showAllInfo={true} />
-    </Stack>
+    </PageContainer>
   );
 };
 

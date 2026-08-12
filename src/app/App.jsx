@@ -28,18 +28,18 @@ const queryClient = new QueryClient({
 
 const App = () => {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <MantineProvider theme={THEME} defaultColorScheme="auto" cssVariablesResolver={v8CssVariablesResolver}>
-          <DatesProvider settings={DATE_PROVIDER_CONFIG}>
-            <ModalsProvider>
+    <QueryClientProvider client={queryClient}>
+      <MantineProvider theme={THEME} defaultColorScheme="auto" cssVariablesResolver={v8CssVariablesResolver}>
+        <DatesProvider settings={DATE_PROVIDER_CONFIG}>
+          <ModalsProvider>
+            <AuthProvider>
               <AppRoutes />
               <Notifications autoClose={NOTIFICATION_DELAY_IN_MS} />
-            </ModalsProvider>
-          </DatesProvider>
-        </MantineProvider>
-      </QueryClientProvider>
-    </AuthProvider>
+            </AuthProvider>
+          </ModalsProvider>
+        </DatesProvider>
+      </MantineProvider>
+    </QueryClientProvider>
   );
 };
 

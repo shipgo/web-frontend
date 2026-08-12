@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Box, Card, Group, Stack, Text, Title, Button } from "@mantine/core";
+import { Box, Card, Group, Text, Title, Button } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX, IconArrowLeft } from "@tabler/icons-react";
 
+import PageContainer from "@components/PageContainer";
 import { mantenimientoApi } from "@api";
 import MantenimientoForm from "../components/MantenimientoForm";
 import dayjs from "dayjs";
@@ -122,33 +123,29 @@ const EditarMantenimiento = () => {
 
   if (loadingMantenimiento) {
     return (
-      <Stack m="auto" maw="1200" gap="lg" p="lg">
+      <PageContainer>
         <Card>
           <Text>Cargando mantenimiento...</Text>
         </Card>
-      </Stack>
+      </PageContainer>
     );
   }
 
   return (
-    <Stack m="auto" maw="1200" gap="lg" p="lg">
-      <Card>
-        <Group justify="space-between">
-          <Box>
-            <Title order={2}>Editar Mantenimiento</Title>
-            <Text size="sm" c="dimmed" mt="xs">
-              Modifica los datos del mantenimiento
-            </Text>
-          </Box>
-          <Button
-            variant="subtle"
-            leftSection={<IconArrowLeft size={18} />}
-            onClick={handleCancel}
-          >
-            Volver
-          </Button>
-        </Group>
-      </Card>
+    <PageContainer>
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title order={2}>Editar mantenimiento</Title>
+          <Text c="dimmed">Modificá los datos del mantenimiento</Text>
+        </Box>
+        <Button
+          variant="subtle"
+          leftSection={<IconArrowLeft size={18} />}
+          onClick={handleCancel}
+        >
+          Volver
+        </Button>
+      </Group>
 
       <MantenimientoForm
         form={form}
@@ -157,7 +154,7 @@ const EditarMantenimiento = () => {
         onCancel={handleCancel}
         isEdit
       />
-    </Stack>
+    </PageContainer>
   );
 };
 

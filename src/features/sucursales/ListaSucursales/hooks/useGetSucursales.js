@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "@hooks/useParams";
 import { sucursalApi } from "../../api/sucursales.api";
 
+const EMPTY_RESULTS = [];
+
 /**
  * Hook para obtener sucursales con paginación usando la API real
  * @param {number} pageLimit - Cantidad de elementos por página
@@ -34,7 +36,7 @@ export const useGetSucursales = (pageLimit = 10) => {
   // Transformar respuesta del backend
   const data = {
     total: backendData?.totalElements || 0,
-    results: backendData?.content || [],
+    results: backendData?.content || EMPTY_RESULTS,
     totalPages: backendData?.totalPages || 0,
   };
 

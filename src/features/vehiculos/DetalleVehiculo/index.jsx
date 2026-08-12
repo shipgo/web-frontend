@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Button, Card, Group, Stack, Text } from "@mantine/core";
+import { Button, Card, Group, Text } from "@mantine/core";
 import { IconArrowLeft, IconEdit } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 
+import PageContainer from "@components/PageContainer";
 import { vehiculoApi } from "@api";
 import VehiculoPerfil from "../components/VehiculoPerfil";
 
@@ -48,43 +49,32 @@ const DetalleVehiculo = () => {
 
   if (loading) {
     return (
-      <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-        <Card shadow="sm" p="lg" radius="md" withBorder>
-          <Text>Cargando información del vehículo...</Text>
+      <PageContainer>
+        <Card>
+          <Text>Cargando vehículo...</Text>
         </Card>
-      </Stack>
+      </PageContainer>
     );
   }
 
   return (
-    <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-      {/* Header con acciones */}
-      <Card shadow="sm" p="lg" radius="md" withBorder>
-        <Group justify="space-between" wrap="wrap">
-          <Button
-            variant="light"
-            leftSection={<IconArrowLeft size={18} />}
-            onClick={handleBack}
-          >
-            Volver al listado
-          </Button>
+    <PageContainer>
+      <Group justify="space-between" align="flex-end">
+        <Button
+          variant="subtle"
+          leftSection={<IconArrowLeft size={18} />}
+          onClick={handleBack}
+        >
+          Volver
+        </Button>
 
-          <Group gap="sm">
-            <Button
-              variant="light"
-              color="blue"
-              leftSection={<IconEdit size={18} />}
-              onClick={handleEdit}
-            >
-              Editar
-            </Button>
-          </Group>
-        </Group>
-      </Card>
+        <Button leftSection={<IconEdit size={18} />} onClick={handleEdit}>
+          Editar
+        </Button>
+      </Group>
 
-      {/* Perfil del vehículo */}
       <VehiculoPerfil vehiculo={vehiculo} showAllInfo={true} />
-    </Stack>
+    </PageContainer>
   );
 };
 

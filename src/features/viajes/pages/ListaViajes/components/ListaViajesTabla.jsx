@@ -9,21 +9,22 @@ import {
   IconUserX,
 } from '@tabler/icons-react';
 import dayjs from 'dayjs';
+import { useLocation } from 'wouter';
 
 import { timeFromNow, toLocalDate } from '@utils/dates';
 import { RowActionsMenu } from '@components';
 
-const getActionsForRow = (estado) => {
+const getActionsForRow = (estado, { onEditar } = {}) => {
   const normalizedEstado = estado?.toUpperCase();
   const actions = {
     PLANIFICADO: [
       { icon: <IconRoute size={18} />, label: 'Ver hoja de ruta' },
-      { icon: <IconEdit size={18} />, label: 'Editar viaje' },
+      { icon: <IconEdit size={18} />, label: 'Editar viaje', onClick: onEditar },
       { icon: <IconTrash size={18} />, label: 'Cancelar viaje', color: 'red', dividerBefore: true },
     ],
     ASIGNADO: [
       { icon: <IconRoute size={18} />, label: 'Ver hoja de ruta' },
-      { icon: <IconEdit size={18} />, label: 'Editar viaje' },
+      { icon: <IconEdit size={18} />, label: 'Editar viaje', onClick: onEditar },
       { icon: <IconUserX size={18} />, label: 'Desvincular chofer' },
       { icon: <IconTrash size={18} />, label: 'Cancelar viaje', color: 'red', dividerBefore: true },
     ],
@@ -51,6 +52,7 @@ const showWarning = (item, fecha) =>
   dayjs(fecha).isBefore(dayjs());
 
 const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) => {
+  const [, navigate] = useLocation();
   const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
   const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
@@ -124,7 +126,11 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
               </Table.Td>
 
               <Table.Td>
-                <RowActionsMenu actions={getActionsForRow(item.estado)} />
+                <RowActionsMenu
+                  actions={getActionsForRow(item.estado, {
+                    onEditar: () => navigate(`/${item.id}/editar`),
+                  })}
+                />
               </Table.Td>
             </Table.Tr>
           );

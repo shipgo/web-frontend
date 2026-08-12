@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
 import { useLocation } from "wouter";
-import { Box, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Box, Button, Group, Text, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
 
+import PageContainer from "@components/PageContainer";
 import { mantenimientoApi } from "@api";
 import MantenimientoForm from "../components/MantenimientoForm";
 import dayjs from "dayjs";
@@ -81,24 +82,20 @@ const CrearMantenimiento = () => {
   }, [navigate]);
 
   return (
-    <Stack m="auto" maw="1200" gap="lg" p="lg">
-      <Card>
-        <Group justify="space-between">
-          <Box>
-            <Title order={2}>Programar Mantenimiento</Title>
-            <Text size="sm" c="dimmed" mt="xs">
-              Completa los datos para programar un nuevo mantenimiento
-            </Text>
-          </Box>
-          <Button
-            variant="subtle"
-            leftSection={<IconArrowLeft size={18} />}
-            onClick={handleCancel}
-          >
-            Volver
-          </Button>
-        </Group>
-      </Card>
+    <PageContainer>
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title order={2}>Programar mantenimiento</Title>
+          <Text c="dimmed">Completá los datos para programar un nuevo mantenimiento</Text>
+        </Box>
+        <Button
+          variant="subtle"
+          leftSection={<IconArrowLeft size={18} />}
+          onClick={handleCancel}
+        >
+          Volver
+        </Button>
+      </Group>
 
       <MantenimientoForm
         form={form}
@@ -106,7 +103,7 @@ const CrearMantenimiento = () => {
         loading={loading}
         onCancel={handleCancel}
       />
-    </Stack>
+    </PageContainer>
   );
 };
 

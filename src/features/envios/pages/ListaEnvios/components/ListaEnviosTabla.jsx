@@ -1,3 +1,4 @@
+import { useLocation } from 'wouter';
 import { Avatar, Badge, Checkbox, Group, Stack, Table, Text } from '@mantine/core';
 import {
   IconEdit,
@@ -10,32 +11,32 @@ import {
 import { timeFromNow, toLocalDate } from '@utils/dates';
 import { RowActionsMenu } from '@components';
 
-const ACTIONS = [
-  {
-    name: 'Detalles',
-    items: [
-      { icon: <IconMapSearch size={18} />, label: 'Localizar' },
-      { icon: <IconFileDescription size={18} />, label: 'Ver detalles' },
-    ],
-  },
-  {
-    name: 'Opciones',
-    items: [
-      { icon: <IconMessageReport size={18} />, label: 'Reportar', color: 'orange' },
-      { icon: <IconEdit size={18} />, label: 'Editar', color: 'blue' },
-      { icon: <IconTrash size={18} />, label: 'Eliminar', color: 'red' },
-    ],
-  },
-];
-
-const getActionsForRow = (estado) => {
+const getActionsForRow = (estado, { onEditar, onVerDetalles }) => {
   const disabledByState = {
     completado: ['Reportar', 'Editar', 'Eliminar', 'Localizar'],
     en_camino: ['Editar', 'Eliminar'],
     cancelado: ['Reportar', 'Editar', 'Eliminar', 'Localizar'],
   };
 
-  return ACTIONS.map((group) => ({
+  const actions = [
+    {
+      name: 'Detalles',
+      items: [
+        { icon: <IconMapSearch size={18} />, label: 'Localizar' },
+        { icon: <IconFileDescription size={18} />, label: 'Ver detalles', onClick: onVerDetalles },
+      ],
+    },
+    {
+      name: 'Opciones',
+      items: [
+        { icon: <IconMessageReport size={18} />, label: 'Reportar', color: 'orange' },
+        { icon: <IconEdit size={18} />, label: 'Editar', color: 'blue', onClick: onEditar },
+        { icon: <IconTrash size={18} />, label: 'Eliminar', color: 'red' },
+      ],
+    },
+  ];
+
+  return actions.map((group) => ({
     ...group,
     items: group.items.map((item) => ({
       ...item,
@@ -52,6 +53,7 @@ const STATUS_COLORS = {
 };
 
 const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) => {
+  const [, navigate] = useLocation();
   const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
   const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
@@ -121,7 +123,13 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
             </Table.Td>
 
             <Table.Td>
-              <RowActionsMenu actions={getActionsForRow(estado)} width={160} />
+              <RowActionsMenu
+                actions={getActionsForRow(estado, {
+                  onVerDetalles: () => navigate(`~/envios/${id}`),
+                  onEditar: () => navigate(`~/envios/editar/${id}`),
+                })}
+                width={160}
+              />
             </Table.Td>
           </Table.Tr>
         ))}

@@ -3,13 +3,12 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   Group,
   LoadingOverlay,
   Select,
   SimpleGrid,
   Stack,
-  Text,
+  Title,
   TextInput,
 } from "@mantine/core";
 import {
@@ -104,9 +103,7 @@ const SucursalForm = ({
       }
 
       try {
-        const localidadesRes = await localidadApi.getAll({
-          provinciaId: provinciaID,
-        });
+        const localidadesRes = await localidadApi.getByProvincia(provinciaID);
 
         setLocalidades(
           localidadesRes.map((l) => ({
@@ -138,29 +135,28 @@ const SucursalForm = ({
       <form onSubmit={form.onSubmit(onSubmit)}>
         <Stack gap="lg">
           {/* Información de la Sucursal */}
-          <Card withBorder shadow="sm" p="xl">
+          <Card>
             <Stack gap="md">
-              <Group gap="xs">
-                <IconBuilding size={24} />
-                <Box>
-                  <Text size="lg" fw={600}>
-                    Información de la Sucursal
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    Datos básicos de la sucursal
-                  </Text>
-                </Box>
+              <Group gap="0.75rem">
+                <IconBuilding size={20} />
+                <Title order={4}>Información de la sucursal</Title>
               </Group>
 
-              <Divider />
+              <TextInput
+                label="Nombre"
+                placeholder="Ej: Sucursal Centro"
+                leftSection={<IconBuilding size={18} />}
+                required
+                {...form.getInputProps("nombre")}
+              />
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <TextInput
-                  label="Nombre"
-                  placeholder="Ej: Sucursal Centro"
-                  leftSection={<IconBuilding size={18} />}
+                  label="Prefijo"
+                  placeholder="Ej: +54"
+                  leftSection={<IconPhone size={18} />}
                   required
-                  {...form.getInputProps("nombre")}
+                  {...form.getInputProps("prefijo")}
                 />
 
                 <TextInput
@@ -183,29 +179,30 @@ const SucursalForm = ({
           </Card>
 
           {/* Dirección */}
-          <Card withBorder shadow="sm" p="xl">
+          <Card>
             <Stack gap="md">
-              <Group gap="xs">
-                <IconMapPin size={24} />
-                <Box>
-                  <Text size="lg" fw={600}>
-                    Dirección
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    Ubicación de la sucursal
-                  </Text>
-                </Box>
+              <Group gap="0.75rem">
+                <IconMapPin size={20} />
+                <Title order={4}>Dirección</Title>
               </Group>
 
-              <Divider />
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <TextInput
+                  label="Calle"
+                  placeholder="Ej: Av. Colón"
+                  leftSection={<IconMapPin size={18} />}
+                  required
+                  {...form.getInputProps("nombreCalle")}
+                />
 
-              <TextInput
-                label="Dirección"
-                placeholder="Ej: Av. Colón 1234"
-                leftSection={<IconMapPin size={18} />}
-                required
-                {...form.getInputProps("direccion")}
-              />
+                <TextInput
+                  label="Número"
+                  placeholder="Ej: 1234"
+                  leftSection={<IconMapPin size={18} />}
+                  required
+                  {...form.getInputProps("numeroCalle")}
+                />
+              </SimpleGrid>
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <Select
@@ -239,8 +236,8 @@ const SucursalForm = ({
           </Card>
 
           {/* Botones de acción */}
-          <Group justify="flex-end" gap="sm">
-            <Button variant="default" onClick={onCancel} disabled={loading}>
+          <Group justify="flex-end" gap="xs">
+            <Button variant="subtle" color="red" onClick={onCancel} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" loading={loading}>

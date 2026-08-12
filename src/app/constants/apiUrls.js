@@ -23,6 +23,9 @@ export const API_URLS = {
   // Viajes
   VIAJE_URL: '/viaje',
   DETALLE_RECORRIDO_URL: '/detalleRecorrido',
+
+  // Tracking en tiempo real
+  TRACKING_URL: '/tracking',
   
   // Vehículos
   VEHICULO_URL: '/vehiculo',

@@ -1,21 +1,27 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Switch, Route, Redirect } from 'wouter';
 
-import HomePage from '@features/home';
-import MapaPage from '@features/mapa';
 import LoginPage from '@features/login';
-import MantenimientosRoutes from '@features/mantenimientos';
 
 import Layout from '../layout';
 import { useIsAuthenticated } from '@contexts/auth';
-import { useMantineColorScheme } from '@mantine/core';
+import { Center, Loader, useMantineColorScheme } from '@mantine/core';
 
-import DashboardRoutes from './dashboard.routes';
-import EnviosRoutes from './envios.routes';
-import ViajesRoutes from './viajes.routes';
-import UsuariosRoutes from './usuarios.routes';
-import SucursalesRoutes from './sucursales.routes';
-import VehiculosRoutes from './vehiculos.routes';
+const HomePage = lazy(() => import('@features/home'));
+const MapaPage = lazy(() => import('@features/mapa'));
+const MantenimientosRoutes = lazy(() => import('@features/mantenimientos'));
+const DashboardRoutes = lazy(() => import('./dashboard.routes'));
+const EnviosRoutes = lazy(() => import('./envios.routes'));
+const ViajesRoutes = lazy(() => import('./viajes.routes'));
+const UsuariosRoutes = lazy(() => import('./usuarios.routes'));
+const SucursalesRoutes = lazy(() => import('./sucursales.routes'));
+const VehiculosRoutes = lazy(() => import('@features/vehiculos'));
+
+const RouteFallback = () => (
+  <Center h="60vh">
+    <Loader size="lg" />
+  </Center>
+);
 
 const ProtectedRoutes = () => {
   const isAuthenticated = useIsAuthenticated();
@@ -29,17 +35,19 @@ const ProtectedRoutes = () => {
 
   return (
     <Layout>
-      <Switch>
-        <Route path='/' component={HomePage} />
-        <Route path='/dashboard' component={DashboardRoutes} nest />
-        <Route path='/mapa' component={MapaPage} />
-        <Route path='/envios' component={EnviosRoutes} nest />
-        <Route path='/viajes' component={ViajesRoutes} nest />
-        <Route path='/usuarios' component={UsuariosRoutes} nest />
-        <Route path='/sucursales' component={SucursalesRoutes} nest />
-        <Route path='/vehiculos' component={VehiculosRoutes} nest />
-        <Route path='/mantenimientos' component={MantenimientosRoutes} nest />
-      </Switch>
+      <Suspense fallback={<RouteFallback />}>
+        <Switch>
+          <Route path='/' component={HomePage} />
+          <Route path='/dashboard' component={DashboardRoutes} nest />
+          <Route path='/mapa' component={MapaPage} />
+          <Route path='/envios' component={EnviosRoutes} nest />
+          <Route path='/viajes' component={ViajesRoutes} nest />
+          <Route path='/usuarios' component={UsuariosRoutes} nest />
+          <Route path='/sucursales' component={SucursalesRoutes} nest />
+          <Route path='/vehiculos' component={VehiculosRoutes} nest />
+          <Route path='/mantenimientos' component={MantenimientosRoutes} nest />
+        </Switch>
+      </Suspense>
     </Layout>
   );
 };

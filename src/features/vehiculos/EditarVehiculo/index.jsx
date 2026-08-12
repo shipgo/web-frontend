@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Box, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Box, Button, Card, Group, Text, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconCheck, IconX } from "@tabler/icons-react";
+import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
 
+import PageContainer from "@components/PageContainer";
 import { vehiculoApi } from "@api";
 import VehiculoForm from "../components/VehiculoForm";
 
@@ -163,31 +164,30 @@ const EditarVehiculo = () => {
 
   if (loadingVehiculo) {
     return (
-      <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-        <Card shadow="sm" p="lg" radius="md" withBorder>
-          <Text>Cargando...</Text>
+      <PageContainer>
+        <Card>
+          <Text>Cargando vehículo...</Text>
         </Card>
-      </Stack>
+      </PageContainer>
     );
   }
 
   return (
-    <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-      {/* Header */}
-      <Card shadow="sm" p="lg" radius="md" withBorder>
-        <Group justify="space-between" align="center">
-          <Box>
-            <Title order={2} mb={4}>
-              Editar Vehículo
-            </Title>
-            <Text size="sm" c="dimmed">
-              Modifique los datos del vehículo {form.values.patente}
-            </Text>
-          </Box>
-        </Group>
-      </Card>
+    <PageContainer>
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title order={2}>Editar vehículo</Title>
+          <Text c="dimmed">Modificá los datos del vehículo {form.values.patente}</Text>
+        </Box>
+        <Button
+          variant="subtle"
+          leftSection={<IconArrowLeft size={18} />}
+          onClick={handleCancel}
+        >
+          Volver
+        </Button>
+      </Group>
 
-      {/* Formulario */}
       <VehiculoForm
         form={form}
         onSubmit={handleSubmit}
@@ -195,7 +195,7 @@ const EditarVehiculo = () => {
         onCancel={handleCancel}
         isEdit={true}
       />
-    </Stack>
+    </PageContainer>
   );
 };
 

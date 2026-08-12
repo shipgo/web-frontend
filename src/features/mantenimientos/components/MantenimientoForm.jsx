@@ -3,13 +3,12 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   Group,
   LoadingOverlay,
   Select,
   SimpleGrid,
   Stack,
-  Text,
+  Title,
   TextInput,
   Textarea,
 } from "@mantine/core";
@@ -121,21 +120,12 @@ const MantenimientoForm = ({
       <form onSubmit={form.onSubmit(onSubmit)}>
         <Stack gap="lg">
           {/* Información del Mecánico */}
-          <Card withBorder shadow="sm" p="xl">
+          <Card>
             <Stack gap="md">
-              <Group gap="xs">
-                <IconUser size={24} />
-                <Box>
-                  <Text size="lg" fw={600}>
-                    Información del Mecánico
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    Datos del mecánico responsable
-                  </Text>
-                </Box>
+              <Group gap="0.75rem">
+                <IconUser size={20} />
+                <Title order={4}>Información del mecánico</Title>
               </Group>
-
-              <Divider />
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <TextInput
@@ -158,21 +148,12 @@ const MantenimientoForm = ({
           </Card>
 
           {/* Información del Mantenimiento */}
-          <Card withBorder shadow="sm" p="xl">
+          <Card>
             <Stack gap="md">
-              <Group gap="xs">
-                <IconTools size={24} />
-                <Box>
-                  <Text size="lg" fw={600}>
-                    Información del Mantenimiento
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    Datos básicos del mantenimiento
-                  </Text>
-                </Box>
+              <Group gap="0.75rem">
+                <IconTools size={20} />
+                <Title order={4}>Información del mantenimiento</Title>
               </Group>
-
-              <Divider />
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <Select
@@ -221,8 +202,8 @@ const MantenimientoForm = ({
           </Card>
 
           {/* Botones de acción */}
-          <Group justify="flex-end" gap="sm">
-            <Button variant="default" onClick={onCancel} disabled={loading}>
+          <Group justify="flex-end" gap="xs">
+            <Button variant="subtle" color="red" onClick={onCancel} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" loading={loading}>

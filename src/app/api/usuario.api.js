@@ -22,20 +22,9 @@ export const usuarioApi = {
    * Obtener choferes
    */
   getChoferes: async (params = {}) => {
-    const response = await restclient.get(`${API_URLS.USER_URL}/choferes`, {
-      params,
+    const response = await restclient.get(`${API_URLS.USER_URL}/all`, {
+      params: { ...params, authority: "CHOFER" },
     });
-    return response.data;
-  },
-
-  /**
-   * Obtener choferes disponibles
-   */
-  getChoferesDisponibles: async (params = {}) => {
-    const response = await restclient.get(
-      `${API_URLS.USER_URL}/choferes/disponibles`,
-      { params }
-    );
     return response.data;
   },
 

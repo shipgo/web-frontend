@@ -78,7 +78,7 @@ const InfoItem = ({ icon, label, value, badge }) => (
 const MantenimientoPerfil = ({ mantenimiento }) => {
   if (!mantenimiento) {
     return (
-      <Card withBorder>
+      <Card>
         <Text c="dimmed">No se encontró información del mantenimiento</Text>
       </Card>
     );
@@ -110,23 +110,14 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
   const mecanicoCompleto = `${nombreMecanico} ${apellidoMecanico}`;
 
   return (
-    <Stack gap="lg">
+    <Stack>
       {/* Información del Mecánico */}
-      <Card withBorder shadow="sm" p="xl">
+      <Card>
         <Stack gap="md">
-          <Group gap="xs">
-            <IconUser size={24} />
-            <Box>
-              <Text size="lg" fw={600}>
-                Mecánico Responsable
-              </Text>
-              <Text size="sm" c="dimmed">
-                Información del mecánico asignado
-              </Text>
-            </Box>
+          <Group gap="0.75rem">
+            <IconUser size={20} />
+            <Title order={4}>Mecánico responsable</Title>
           </Group>
-
-          <Divider />
 
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <InfoItem
@@ -144,21 +135,12 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
       </Card>
 
       {/* Información del Vehículo */}
-      <Card withBorder shadow="sm" p="xl">
+      <Card>
         <Stack gap="md">
-          <Group gap="xs">
-            <IconCar size={24} />
-            <Box>
-              <Text size="lg" fw={600}>
-                Vehículo
-              </Text>
-              <Text size="sm" c="dimmed">
-                Información del vehículo en mantenimiento
-              </Text>
-            </Box>
+          <Group gap="0.75rem">
+            <IconCar size={20} />
+            <Title order={4}>Vehículo</Title>
           </Group>
-
-          <Divider />
 
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             <InfoItem
@@ -181,21 +163,12 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
       </Card>
 
       {/* Información del Mantenimiento */}
-      <Card withBorder shadow="sm" p="xl">
+      <Card>
         <Stack gap="md">
-          <Group gap="xs">
-            <IconTools size={24} />
-            <Box>
-              <Text size="lg" fw={600}>
-                Datos del Mantenimiento
-              </Text>
-              <Text size="sm" c="dimmed">
-                Detalles del mantenimiento programado
-              </Text>
-            </Box>
+          <Group gap="0.75rem">
+            <IconTools size={20} />
+            <Title order={4}>Datos del mantenimiento</Title>
           </Group>
-
-          <Divider />
 
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             <InfoItem

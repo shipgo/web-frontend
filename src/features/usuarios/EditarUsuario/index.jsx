@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Box, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Box, Button, Card, Group, Text, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
 
+import PageContainer from "@components/PageContainer";
 import { usuarioApi } from "@api";
 import UsuarioForm from "../components/UsuarioForm";
 
@@ -195,31 +196,30 @@ const EditarUsuario = () => {
 
   if (loadingUser) {
     return (
-      <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-        <Card shadow="sm" p="lg" radius="md" withBorder>
-          <Text>Cargando...</Text>
+      <PageContainer>
+        <Card>
+          <Text>Cargando usuario...</Text>
         </Card>
-      </Stack>
+      </PageContainer>
     );
   }
 
   return (
-    <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-      {/* Header */}
-      <Card shadow="sm" p="lg" radius="md" withBorder>
-        <Group justify="space-between" align="center">
-          <Box>
-            <Title order={2} mb={4}>
-              Editar Usuario
-            </Title>
-            <Text size="sm" c="dimmed">
-              Modifique los datos del usuario {form.values.username}
-            </Text>
-          </Box>
-        </Group>
-      </Card>
+    <PageContainer>
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title order={2}>Editar usuario</Title>
+          <Text c="dimmed">Modificá los datos del usuario {form.values.username}</Text>
+        </Box>
+        <Button
+          variant="subtle"
+          leftSection={<IconArrowLeft size={18} />}
+          onClick={handleCancel}
+        >
+          Volver
+        </Button>
+      </Group>
 
-      {/* Formulario */}
       <UsuarioForm
         form={form}
         onSubmit={handleSubmit}
@@ -227,7 +227,7 @@ const EditarUsuario = () => {
         onCancel={handleCancel}
         isEdit={true}
       />
-    </Stack>
+    </PageContainer>
   );
 };
 

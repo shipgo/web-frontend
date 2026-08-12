@@ -1,23 +1,13 @@
-import {
-  Button,
-  Card,
-  Center,
-  Collapse,
-  Divider,
-  Flex,
-  Pagination,
-  Stack,
-  Title,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { IconFilter, IconPlus } from "@tabler/icons-react";
-import { isEmpty } from "es-toolkit/compat";
-import { Link } from "wouter";
+import { useEffect } from "react";
+import { Card, Flex, Pagination, Text } from "@mantine/core";
+import { useSet } from "@mantine/hooks";
 
-import FiltersList from "@components/FiltersList";
-import ResultsCounter from "@components/ResultsCounter";
+import PageContainer from "@components/PageContainer";
 import ScreenContainer from "@components/ScreenContainer";
+import SelectionBanner from "@components/SelectionBanner";
 
+import ListaSucursalesHeader from "./components/ListaSucursalesHeader";
+import ListaSucursalesFiltros from "./components/ListaSucursalesFiltros";
 import ListaSucursalesTabla from "./components/ListaSucursalesTabla";
 
 import { useGetSucursales } from "./hooks/useGetSucursales";
@@ -25,53 +15,49 @@ import { useGetSucursales } from "./hooks/useGetSucursales";
 const PAGE_LIMIT = 10;
 
 const ListaSucursales = () => {
-  const [showFilters, { toggle }] = useDisclosure(false);
-
   const {
     data,
     isError,
     isLoading,
     refetchSucursales,
     setPage,
-    clearFilters,
-    removeFilter,
+    setFilters,
     params: { filters, page },
   } = useGetSucursales(PAGE_LIMIT);
 
-  const showPagination = data.totalPages > 1 && !isLoading;
+  const selectedIds = useSet();
+
+  useEffect(() => {
+    selectedIds.clear();
+  }, [data.results]);
+
+  const onToggle = (id) => (selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id));
+  const onToggleAll = () => {
+    if (data.results?.every((i) => selectedIds.has(i.id))) {
+      data.results.forEach((i) => selectedIds.delete(i.id));
+    } else {
+      data.results?.forEach((i) => selectedIds.add(i.id));
+    }
+  };
+
+  const showPagination = data.total > PAGE_LIMIT;
 
   return (
-    <Stack m="auto" maw="1440" gap="lg" p="lg">
+    <PageContainer>
+      <ListaSucursalesHeader />
+
+      <ListaSucursalesFiltros onFiltersChange={setFilters} disabled={isLoading} />
+
+      <SelectionBanner
+        count={selectedIds.size}
+        singular="sucursal seleccionada"
+        plural="sucursales seleccionadas"
+        onClear={() => selectedIds.clear()}
+      />
+
       <Card>
-        <Flex justify="space-between" gap="xs" align="flex-end">
-          <Title order={2}>Sucursales</Title>
-
-          <Button
-            ml="auto"
-            to="/sucursales/crear"
-            component={Link}
-            leftSection={<IconPlus />}
-          >
-            Agregar sucursal
-          </Button>
-
-          <Button leftSection={<IconFilter />} variant="light" onClick={toggle}>
-            Filtros
-          </Button>
-        </Flex>
-
-        <Collapse in={showFilters}>
-          <Divider my="md" />
-          {/* Aquí irían los filtros específicos de sucursales */}
-        </Collapse>
-      </Card>
-
-      <Card component={Stack}>
         <ScreenContainer
-          onLoading={{
-            show: isLoading,
-            description: "Cargando sucursales...",
-          }}
+          onLoading={{ show: isLoading, description: "Cargando sucursales..." }}
           onError={{
             show: isError,
             onClick: refetchSucursales,
@@ -83,43 +69,36 @@ const ListaSucursales = () => {
             description: "Parece que no hay sucursales registradas todavía",
           }}
           onEmptyFiltersData={{
-            show: data.total === 0 && !isEmpty(filters),
-            title: "Sin sucursales que mostrar",
+            show: data.total === 0 && Object.keys(filters).length > 0,
+            title: "Sin resultados",
             description: "No se encontraron sucursales con los filtros aplicados",
           }}
         >
-          <Flex align="center" justify="space-between">
-            <FiltersList
-              filters={filters}
-              onClearFilters={clearFilters}
-              onFilterRemove={removeFilter}
-            />
-
-            <ResultsCounter
-              limit={PAGE_LIMIT}
-              currentPage={page}
-              onRefresh={refetchSucursales}
-              amount={data.total}
-            />
-          </Flex>
-
-          <ListaSucursalesTabla items={data.results} />
+          <ListaSucursalesTabla
+            items={data.results}
+            selectedIds={selectedIds}
+            onToggle={onToggle}
+            onToggleAll={onToggleAll}
+            onRefresh={refetchSucursales}
+          />
         </ScreenContainer>
       </Card>
 
-      {showPagination && (
-        <Center>
-          <Pagination
-            value={page}
-            variant="dots"
-            onChange={setPage}
-            total={data.totalPages}
-          />
-        </Center>
-      )}
-    </Stack>
+      <Flex align="center">
+        <Pagination
+          value={page}
+          onChange={setPage}
+          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+          disabled={!showPagination}
+        />
+        <Text c="dimmed" ml="auto">
+          {data.total > 0
+            ? `Mostrando ${(page - 1) * PAGE_LIMIT + 1} - ${Math.min(page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+            : "0 resultados"}
+        </Text>
+      </Flex>
+    </PageContainer>
   );
 };
 
 export default ListaSucursales;
-

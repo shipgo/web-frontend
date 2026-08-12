@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import {
   ActionIcon,
   Badge,
+  Checkbox,
   Group,
   Menu,
   Stack,
@@ -40,6 +41,7 @@ const ACTIONS = [
 ];
 
 const COLUMNS = [
+  "",
   "Patente",
   "Marca/Modelo",
   "Tipo",
@@ -64,7 +66,13 @@ const getEstadoColor = (estado) => {
   return colores[normalizedEstado] || "gray";
 };
 
-const ListaVehiculosTabla = ({ items = [], onRefresh }) => {
+const ListaVehiculosTabla = ({
+  items = [],
+  selectedIds = new Set(),
+  onToggle = () => {},
+  onToggleAll = () => {},
+  onRefresh,
+}) => {
   const [, navigate] = useLocation();
   const { confirmDelete } = useDeleteVehiculo(onRefresh);
 
@@ -101,11 +109,17 @@ const ListaVehiculosTabla = ({ items = [], onRefresh }) => {
     );
   }
 
+  const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
+  const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
+
   return (
     <Table stickyHeader highlightOnHover verticalSpacing="xs">
       <Table.Thead>
         <Table.Tr>
-          {COLUMNS.map((column) => (
+          <Table.Th w={40}>
+            <Checkbox checked={allSelected} indeterminate={indeterminate} onChange={onToggleAll} />
+          </Table.Th>
+          {COLUMNS.slice(1).map((column) => (
             <Table.Th key={column}>{column}</Table.Th>
           ))}
         </Table.Tr>
@@ -113,8 +127,8 @@ const ListaVehiculosTabla = ({ items = [], onRefresh }) => {
       <Table.Tbody>
         {items.map((item) => {
           const patente = item.patente || "Sin patente";
-          const marca = item.marca?.nombre || item.marca || "Sin marca";
-          const modelo = item.modelo?.nombre || item.modelo || "Sin modelo";
+          const marca = item.modelo?.marca?.nombre || "Sin marca";
+          const modelo = item.modelo?.nombre || "Sin modelo";
           const tipoVehiculo =
             item.tipoVehiculo?.nombre || item.tipo || "Sin tipo";
           const sucursal = item.sucursal?.nombre || "Sin sucursal";
@@ -122,7 +136,14 @@ const ListaVehiculosTabla = ({ items = [], onRefresh }) => {
           const fechaRegistro = item.anioCompra;
 
           return (
-            <Table.Tr key={item.id}>
+            <Table.Tr
+              key={item.id}
+              bg={selectedIds.has(item.id) ? "var(--mantine-color-blue-light)" : undefined}
+            >
+              <Table.Td>
+                <Checkbox checked={selectedIds.has(item.id)} onChange={() => onToggle(item.id)} />
+              </Table.Td>
+
               <Table.Td>
                 <Text size="sm" fw={600}>
                   {patente}
@@ -176,7 +197,11 @@ const ListaVehiculosTabla = ({ items = [], onRefresh }) => {
               <Table.Td>
                 <Menu shadow="md" width={200}>
                   <Menu.Target>
-                    <ActionIcon variant="subtle" size="input-sm">
+                    <ActionIcon
+                      variant="subtle"
+                      size="input-sm"
+                      aria-label={`Acciones de ${patente}`}
+                    >
                       <IconDotsVertical size={18} />
                     </ActionIcon>
                   </Menu.Target>

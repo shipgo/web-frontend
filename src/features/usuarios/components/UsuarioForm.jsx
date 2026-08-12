@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import {
-  Box,
   Button,
   Card,
-  Divider,
   Group,
   LoadingOverlay,
   MultiSelect,
   Select,
   SimpleGrid,
   Stack,
-  Text,
+  Title,
   TextInput,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
@@ -19,7 +17,6 @@ import {
   IconMail,
   IconMapPin,
   IconBriefcase,
-  IconCheck,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 
@@ -188,29 +185,20 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
-      <Stack gap="lg">
+      <Stack>
         {/* Información Personal */}
-        <Card shadow="sm" p="xl" radius="md" withBorder pos="relative">
+        <Card pos="relative">
           <LoadingOverlay
             visible={catalogsLoading}
             overlayProps={{ radius: "md", blur: 2 }}
           />
 
-          <Group gap="sm" mb="lg">
-            <IconUser size={24} stroke={1.5} />
-            <Box>
-              <Text fw={600} size="lg">
-                Información Personal
-              </Text>
-              <Text size="sm" c="dimmed">
-                Datos personales y de identificación
-              </Text>
-            </Box>
-          </Group>
+          <Stack gap="md">
+            <Group gap="0.75rem">
+              <IconUser size={20} />
+              <Title order={4}>Información personal</Title>
+            </Group>
 
-          <Divider mb="lg" />
-
-          <Stack gap="lg">
             <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
               <TextInput
                 label="Usuario"
@@ -269,22 +257,13 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
         </Card>
 
         {/* Información de Contacto */}
-        <Card shadow="sm" p="xl" radius="md" withBorder>
-          <Group gap="sm" mb="lg">
-            <IconMail size={24} stroke={1.5} />
-            <Box>
-              <Text fw={600} size="lg">
-                Información de Contacto
-              </Text>
-              <Text size="sm" c="dimmed">
-                Datos de contacto del usuario
-              </Text>
-            </Box>
-          </Group>
+        <Card>
+          <Stack gap="md">
+            <Group gap="0.75rem">
+              <IconMail size={20} />
+              <Title order={4}>Información de contacto</Title>
+            </Group>
 
-          <Divider mb="lg" />
-
-          <Stack gap="lg">
             <TextInput
               label="Email"
               placeholder="Ej: juan@example.com"
@@ -310,22 +289,13 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
         </Card>
 
         {/* Dirección */}
-        <Card shadow="sm" p="xl" radius="md" withBorder>
-          <Group gap="sm" mb="lg">
-            <IconMapPin size={24} stroke={1.5} />
-            <Box>
-              <Text fw={600} size="lg">
-                Dirección
-              </Text>
-              <Text size="sm" c="dimmed">
-                Ubicación del domicilio del usuario
-              </Text>
-            </Box>
-          </Group>
+        <Card>
+          <Stack gap="md">
+            <Group gap="0.75rem">
+              <IconMapPin size={20} />
+              <Title order={4}>Dirección</Title>
+            </Group>
 
-          <Divider mb="lg" />
-
-          <Stack gap="lg">
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <TextInput
                 label="Nombre de Calle"
@@ -370,64 +340,50 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
         </Card>
 
         {/* Información Laboral */}
-        <Card shadow="sm" p="xl" radius="md" withBorder>
-          <Group gap="sm" mb="lg">
-            <IconBriefcase size={24} stroke={1.5} />
-            <Box>
-              <Text fw={600} size="lg">
-                Información Laboral
-              </Text>
-              <Text size="sm" c="dimmed">
-                Roles y permisos en el sistema
-              </Text>
-            </Box>
-          </Group>
+        <Card>
+          <Stack gap="md">
+            <Group gap="0.75rem">
+              <IconBriefcase size={20} />
+              <Title order={4}>Información laboral</Title>
+            </Group>
 
-          <Divider mb="lg" />
-
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-            <MultiSelect
-              label="Roles"
-              placeholder="Seleccione los roles"
-              required
-              data={authorities}
-              searchable
-              filter={filterIgnoreAccents}
-              hidePickedOptions
-              {...form.getInputProps("authorities")}
-            />
-            {isSuper && (
-              <Select
-                label="Sucursal"
-                placeholder={
-                  isAdmin ? "Sucursal asignada" : "Seleccione (opcional)"
-                }
-                data={sucursales}
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+              <MultiSelect
+                label="Roles"
+                placeholder="Seleccione los roles"
+                required
+                data={authorities}
                 searchable
                 filter={filterIgnoreAccents}
-                clearable={isSuper}
-                {...form.getInputProps("sucursalID")}
+                hidePickedOptions
+                {...form.getInputProps("authorities")}
               />
-            )}
-          </SimpleGrid>
+              {isSuper && (
+                <Select
+                  label="Sucursal"
+                  placeholder={
+                    isAdmin ? "Sucursal asignada" : "Seleccione (opcional)"
+                  }
+                  data={sucursales}
+                  searchable
+                  filter={filterIgnoreAccents}
+                  clearable={isSuper}
+                  {...form.getInputProps("sucursalID")}
+                />
+              )}
+            </SimpleGrid>
+          </Stack>
         </Card>
 
         {/* Botones de acción */}
-        <Card shadow="sm" p="lg" radius="md" withBorder>
-          <Group justify="flex-end" gap="md">
-            <Button variant="light" color="gray" onClick={onCancel} size="md">
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              loading={loading}
-              size="md"
-              leftSection={<IconCheck size={18} />}
-            >
-              {isEdit ? "Guardar Cambios" : "Crear Usuario"}
-            </Button>
-          </Group>
-        </Card>
+        <Group justify="flex-end" gap="xs">
+          <Button variant="subtle" color="red" disabled={loading} onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit" loading={loading}>
+            {isEdit ? "Guardar cambios" : "Crear usuario"}
+          </Button>
+        </Group>
       </Stack>
     </form>
   );

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Box, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Box, Button, Card, Group, Text, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconArrowLeft, IconEdit, IconX } from "@tabler/icons-react";
 
+import PageContainer from "@components/PageContainer";
 import { mantenimientoApi } from "@api";
 import MantenimientoPerfil from "../components/MantenimientoPerfil";
 
@@ -41,11 +42,11 @@ const DetalleMantenimiento = () => {
 
   if (loading) {
     return (
-      <Stack m="auto" maw="1200" gap="lg" p="lg">
+      <PageContainer>
         <Card>
           <Text>Cargando mantenimiento...</Text>
         </Card>
-      </Stack>
+      </PageContainer>
     );
   }
 
@@ -53,37 +54,33 @@ const DetalleMantenimiento = () => {
   const canEdit = estado !== "COMPLETADO" && estado !== "CANCELADO";
 
   return (
-    <Stack m="auto" maw="1200" gap="lg" p="lg">
-      <Card>
-        <Group justify="space-between">
-          <Box>
-            <Title order={2}>Detalle del Mantenimiento</Title>
-            <Text size="sm" c="dimmed" mt="xs">
-              Información completa del mantenimiento #{id}
-            </Text>
-          </Box>
-          <Group>
-            {canEdit && (
-              <Button
-                leftSection={<IconEdit size={18} />}
-                onClick={() => navigate(`~/mantenimientos/${id}/editar`)}
-              >
-                Editar
-              </Button>
-            )}
+    <PageContainer>
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title order={2}>Detalle del mantenimiento</Title>
+          <Text c="dimmed">Información completa del mantenimiento</Text>
+        </Box>
+        <Group gap="xs">
+          {canEdit && (
             <Button
-              variant="subtle"
-              leftSection={<IconArrowLeft size={18} />}
-              onClick={() => navigate("~/mantenimientos")}
+              leftSection={<IconEdit size={18} />}
+              onClick={() => navigate(`~/mantenimientos/${id}/editar`)}
             >
-              Volver
+              Editar
             </Button>
-          </Group>
+          )}
+          <Button
+            variant="subtle"
+            leftSection={<IconArrowLeft size={18} />}
+            onClick={() => navigate("~/mantenimientos")}
+          >
+            Volver
+          </Button>
         </Group>
-      </Card>
+      </Group>
 
       <MantenimientoPerfil mantenimiento={mantenimiento} />
-    </Stack>
+    </PageContainer>
   );
 };
 

@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
 import { useLocation } from "wouter";
-import { Box, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Box, Button, Group, Text, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
 
+import PageContainer from "@components/PageContainer";
 import { vehiculoApi } from "@api";
 import VehiculoForm from "../components/VehiculoForm";
 
@@ -118,29 +119,21 @@ const CrearVehiculo = () => {
   }, [navigate]);
 
   return (
-    <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
-      {/* Header */}
-      <Card shadow="sm" p="lg" radius="md" withBorder>
-        <Group justify="space-between" align="center">
-          <Box>
-            <Title order={2} mb={4}>
-              Crear Nuevo Vehículo
-            </Title>
-            <Text size="sm" c="dimmed">
-              Complete los datos del nuevo vehículo del sistema
-            </Text>
-          </Box>
-          <Button
-            variant="light"
-            leftSection={<IconArrowLeft size={18} />}
-            onClick={handleCancel}
-          >
-            Volver al listado
-          </Button>
-        </Group>
-      </Card>
+    <PageContainer>
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title order={2}>Crear vehículo</Title>
+          <Text c="dimmed">Completá los datos del nuevo vehículo</Text>
+        </Box>
+        <Button
+          variant="subtle"
+          leftSection={<IconArrowLeft size={18} />}
+          onClick={handleCancel}
+        >
+          Volver
+        </Button>
+      </Group>
 
-      {/* Formulario */}
       <VehiculoForm
         form={form}
         onSubmit={handleSubmit}
@@ -148,7 +141,7 @@ const CrearVehiculo = () => {
         onCancel={handleCancel}
         isEdit={false}
       />
-    </Stack>
+    </PageContainer>
   );
 };
 

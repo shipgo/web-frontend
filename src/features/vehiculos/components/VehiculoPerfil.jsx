@@ -1,7 +1,6 @@
 import {
   Badge,
   Card,
-  Divider,
   Group,
   SimpleGrid,
   Stack,
@@ -20,23 +19,27 @@ import {
 
 import { toLocalDate } from "@utils/dates";
 
-const InfoItem = ({ icon: Icon, label, value, color = "blue" }) => (
-  <Group gap="sm" wrap="nowrap">
-    <Icon
-      size={20}
-      stroke={1.5}
-      style={{ color: `var(--mantine-color-${color}-6)` }}
-    />
-    <Stack gap={0} style={{ flex: 1 }}>
-      <Text size="xs" c="dimmed" fw={500}>
-        {label}
-      </Text>
-      <Text size="sm" fw={500}>
-        {value || "No especificado"}
-      </Text>
-    </Stack>
-  </Group>
-);
+const InfoItem = ({ icon, label, value, color = "blue" }) => {
+  const Icon = icon;
+
+  return (
+    <Group gap="sm" wrap="nowrap">
+      <Icon
+        size={20}
+        stroke={1.5}
+        style={{ color: `var(--mantine-color-${color}-6)` }}
+      />
+      <Stack gap={0} style={{ flex: 1 }}>
+        <Text size="xs" c="dimmed" fw={500}>
+          {label}
+        </Text>
+        <Text size="sm" fw={500}>
+          {value || "No especificado"}
+        </Text>
+      </Stack>
+    </Group>
+  );
+};
 
 const getStatusColor = (status) => {
   const normalizedStatus = status?.toLowerCase();
@@ -65,7 +68,7 @@ const getStatusLabel = (status) => {
 const VehiculoPerfil = ({ vehiculo, showAllInfo = true }) => {
   if (!vehiculo) {
     return (
-      <Card shadow="sm" p="xl" radius="md" withBorder>
+      <Card>
         <Text c="dimmed">No se encontró información del vehículo</Text>
       </Card>
     );
@@ -79,9 +82,9 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true }) => {
   const status = vehiculo.estado || vehiculo.status;
 
   return (
-    <Stack gap="lg">
+    <Stack>
       {/* Información Principal */}
-      <Card shadow="sm" p="xl" radius="md" withBorder>
+      <Card>
         <Stack gap="md">
           <Group justify="space-between" wrap="wrap">
             <div>
@@ -101,8 +104,6 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true }) => {
               </Badge>
             )}
           </Group>
-
-          <Divider />
 
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
             <InfoItem
@@ -135,97 +136,94 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true }) => {
       {showAllInfo && (
         <>
           {/* Especificaciones Técnicas */}
-          <Card shadow="sm" p="xl" radius="md" withBorder>
-            <Group gap="sm" mb="md">
-              <IconGasStation size={24} stroke={1.5} />
-              <Text fw={600} size="lg">
-                Especificaciones Técnicas
-              </Text>
-            </Group>
-            <Divider mb="lg" />
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-              <InfoItem
-                icon={IconGasStation}
-                label="Combustible"
-                value={vehiculo.combustible?.nombre}
-                color="red"
-              />
-              <InfoItem
-                icon={IconGauge}
-                label="Consumo Promedio"
-                value={
-                  vehiculo.consumoPromedio
-                    ? `${vehiculo.consumoPromedio} L/100km`
-                    : null
-                }
-                color="orange"
-              />
-            </SimpleGrid>
+          <Card>
+            <Stack gap="md">
+              <Group gap="0.75rem">
+                <IconGasStation size={20} stroke={1.5} />
+                <Title order={4}>Especificaciones técnicas</Title>
+              </Group>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                <InfoItem
+                  icon={IconGasStation}
+                  label="Combustible"
+                  value={vehiculo.combustible?.nombre}
+                  color="red"
+                />
+                <InfoItem
+                  icon={IconGauge}
+                  label="Consumo Promedio"
+                  value={
+                    vehiculo.consumoPromedio
+                      ? `${vehiculo.consumoPromedio} L/100km`
+                      : null
+                  }
+                  color="orange"
+                />
+              </SimpleGrid>
+            </Stack>
           </Card>
 
           {/* Información de Ruedas y Capacidad */}
-          <Card shadow="sm" p="xl" radius="md" withBorder>
-            <Group gap="sm" mb="md">
-              <IconRuler size={24} stroke={1.5} />
-              <Text fw={600} size="lg">
-                Ruedas y Capacidad
-              </Text>
-            </Group>
-            <Divider mb="lg" />
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-              <InfoItem
-                icon={IconRuler}
-                label="Tipo de Rueda"
-                value={vehiculo.tipoRueda?.nombre || vehiculo.tipo_rueda?.nombre}
-                color="violet"
-              />
-              <InfoItem
-                icon={IconId}
-                label="Cantidad de Ruedas"
-                value={vehiculo.cantidadRuedas}
-                color="violet"
-              />
-              <InfoItem
-                icon={IconWeight}
-                label="Peso Máximo"
-                value={
-                  vehiculo.pesoMaximo
-                    ? `${vehiculo.pesoMaximo.toLocaleString("es-AR")} kg`
-                    : null
-                }
-                color="violet"
-              />
-            </SimpleGrid>
+          <Card>
+            <Stack gap="md">
+              <Group gap="0.75rem">
+                <IconRuler size={20} stroke={1.5} />
+                <Title order={4}>Ruedas y capacidad</Title>
+              </Group>
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+                <InfoItem
+                  icon={IconRuler}
+                  label="Tipo de Rueda"
+                  value={vehiculo.tipoRueda?.nombre || vehiculo.tipo_rueda?.nombre}
+                  color="violet"
+                />
+                <InfoItem
+                  icon={IconId}
+                  label="Cantidad de Ruedas"
+                  value={vehiculo.cantidadRuedas}
+                  color="violet"
+                />
+                <InfoItem
+                  icon={IconWeight}
+                  label="Peso Máximo"
+                  value={
+                    vehiculo.pesoMaximo
+                      ? `${vehiculo.pesoMaximo.toLocaleString("es-AR")} kg`
+                      : null
+                  }
+                  color="violet"
+                />
+              </SimpleGrid>
+            </Stack>
           </Card>
 
           {/* Información Adicional */}
           {(vehiculo.sucursal || vehiculo.fechaCreacion || vehiculo.createdAt) && (
-            <Card shadow="sm" p="xl" radius="md" withBorder>
-              <Group gap="sm" mb="md">
-                <IconCalendar size={24} stroke={1.5} />
-                <Text fw={600} size="lg">
-                  Información Adicional
-                </Text>
-              </Group>
-              <Divider mb="lg" />
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-                {vehiculo.sucursal && (
-                  <InfoItem
-                    icon={IconCar}
-                    label="Sucursal"
-                    value={vehiculo.sucursal.nombre}
-                    color="green"
-                  />
-                )}
-                {(vehiculo.fechaCreacion || vehiculo.createdAt) && (
-                  <InfoItem
-                    icon={IconCalendar}
-                    label="Fecha de Registro"
-                    value={toLocalDate(vehiculo.fechaCreacion || vehiculo.createdAt)}
-                    color="green"
-                  />
-                )}
-              </SimpleGrid>
+            <Card>
+              <Stack gap="md">
+                <Group gap="0.75rem">
+                  <IconCalendar size={20} stroke={1.5} />
+                  <Title order={4}>Información adicional</Title>
+                </Group>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                  {vehiculo.sucursal && (
+                    <InfoItem
+                      icon={IconCar}
+                      label="Sucursal"
+                      value={vehiculo.sucursal.nombre}
+                      color="green"
+                    />
+                  )}
+                  {(vehiculo.fechaCreacion || vehiculo.createdAt) && (
+                    <InfoItem
+                      icon={IconCalendar}
+                      label="Fecha de Registro"
+                      value={toLocalDate(vehiculo.fechaCreacion || vehiculo.createdAt)}
+                      color="green"
+                    />
+                  )}
+                </SimpleGrid>
+              </Stack>
             </Card>
           )}
         </>

@@ -3,7 +3,6 @@ import {
   Avatar,
   Badge,
   Card,
-  Divider,
   Group,
   SimpleGrid,
   Stack,
@@ -70,7 +69,7 @@ const getRolLabel = (authority) => {
 const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
   if (!usuario) {
     return (
-      <Card shadow="sm" p="xl" radius="md" withBorder>
+      <Card>
         <Text c="dimmed">No se encontró información del usuario</Text>
       </Card>
     );
@@ -89,9 +88,9 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
   const authorities = usuario.authorities || [];
 
   return (
-    <Stack gap="lg">
+    <Stack>
       {/* Información Principal */}
-      <Card shadow="sm" p="xl" radius="md" withBorder>
+      <Card>
         <Group align="flex-start" gap="xl" wrap="nowrap">
           {/* Avatar */}
           <Avatar
@@ -138,157 +137,153 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
       {showAllInfo && (
         <>
           {/* Información Personal */}
-          <Card shadow="sm" p="xl" radius="md" withBorder>
-            <Group gap="sm" mb="md">
-              <IconUser size={24} stroke={1.5} />
-              <Text fw={600} size="lg">
-                Información Personal
-              </Text>
-            </Group>
-            <Divider mb="lg" />
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-              <InfoItem
-                icon={IconUser}
-                label="Nombre completo"
-                value={fullName}
-              />
-              <InfoItem
-                icon={IconId}
-                label="Tipo de documento"
-                value={usuario.tipoDocumento?.nombre}
-              />
-              <InfoItem icon={IconId} label="DNI" value={usuario.dni} />
-              <InfoItem
-                icon={IconUser}
-                label="Sexo"
-                value={usuario.sexo?.nombre}
-              />
-              <InfoItem
-                icon={IconCalendar}
-                label="Fecha de nacimiento"
-                value={
-                  usuario.fechaNacimiento
-                    ? toLocalDate(usuario.fechaNacimiento)
-                    : null
-                }
-              />
-              <InfoItem
-                icon={IconCalendar}
-                label="Fecha de registro"
-                value={
-                  usuario.fechaCreacion
-                    ? toLocalDate(usuario.fechaCreacion)
-                    : null
-                }
-              />
-            </SimpleGrid>
+          <Card>
+            <Stack gap="md">
+              <Group gap="0.75rem">
+                <IconUser size={20} stroke={1.5} />
+                <Title order={4}>Información personal</Title>
+              </Group>
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+                <InfoItem
+                  icon={IconUser}
+                  label="Nombre completo"
+                  value={fullName}
+                />
+                <InfoItem
+                  icon={IconId}
+                  label="Tipo de documento"
+                  value={usuario.tipoDocumento?.nombre}
+                />
+                <InfoItem icon={IconId} label="DNI" value={usuario.dni} />
+                <InfoItem
+                  icon={IconUser}
+                  label="Sexo"
+                  value={usuario.sexo?.nombre}
+                />
+                <InfoItem
+                  icon={IconCalendar}
+                  label="Fecha de nacimiento"
+                  value={
+                    usuario.fechaNacimiento
+                      ? toLocalDate(usuario.fechaNacimiento)
+                      : null
+                  }
+                />
+                <InfoItem
+                  icon={IconCalendar}
+                  label="Fecha de registro"
+                  value={
+                    usuario.fechaCreacion
+                      ? toLocalDate(usuario.fechaCreacion)
+                      : null
+                  }
+                />
+              </SimpleGrid>
+            </Stack>
           </Card>
 
           {/* Información de Contacto */}
-          <Card shadow="sm" p="xl" radius="md" withBorder>
-            <Group gap="sm" mb="md">
-              <IconPhone size={24} stroke={1.5} />
-              <Text fw={600} size="lg">
-                Información de Contacto
-              </Text>
-            </Group>
-            <Divider mb="lg" />
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-              <InfoItem
-                icon={IconAt}
-                label="Email"
-                value={usuario.email}
-                color="cyan"
-              />
-              <InfoItem
-                icon={IconPhone}
-                label="Teléfono"
-                value={
-                  usuario.prefijo && usuario.telefono
-                    ? `${usuario.prefijo} ${usuario.telefono}`
-                    : null
-                }
-                color="green"
-              />
-            </SimpleGrid>
+          <Card>
+            <Stack gap="md">
+              <Group gap="0.75rem">
+                <IconPhone size={20} stroke={1.5} />
+                <Title order={4}>Información de contacto</Title>
+              </Group>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                <InfoItem
+                  icon={IconAt}
+                  label="Email"
+                  value={usuario.email}
+                  color="cyan"
+                />
+                <InfoItem
+                  icon={IconPhone}
+                  label="Teléfono"
+                  value={
+                    usuario.prefijo && usuario.telefono
+                      ? `${usuario.prefijo} ${usuario.telefono}`
+                      : null
+                  }
+                  color="green"
+                />
+              </SimpleGrid>
+            </Stack>
           </Card>
 
           {/* Dirección */}
-          <Card shadow="sm" p="xl" radius="md" withBorder>
-            <Group gap="sm" mb="md">
-              <IconMapPin size={24} stroke={1.5} />
-              <Text fw={600} size="lg">
-                Dirección
-              </Text>
-            </Group>
-            <Divider mb="lg" />
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-              <InfoItem
-                icon={IconMapPin}
-                label="Calle"
-                value={
-                  usuario.nombreCalle && usuario.numeroCalle
-                    ? `${usuario.nombreCalle} ${usuario.numeroCalle}`
-                    : null
-                }
-                color="red"
-              />
-              <InfoItem
-                icon={IconMapPin}
-                label="Localidad"
-                value={usuario.localidad?.nombre}
-                color="red"
-              />
-              <InfoItem
-                icon={IconMapPin}
-                label="Provincia"
-                value={usuario.localidad?.provincia?.nombre}
-                color="red"
-              />
-            </SimpleGrid>
+          <Card>
+            <Stack gap="md">
+              <Group gap="0.75rem">
+                <IconMapPin size={20} stroke={1.5} />
+                <Title order={4}>Dirección</Title>
+              </Group>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                <InfoItem
+                  icon={IconMapPin}
+                  label="Calle"
+                  value={
+                    usuario.nombreCalle && usuario.numeroCalle
+                      ? `${usuario.nombreCalle} ${usuario.numeroCalle}`
+                      : null
+                  }
+                  color="red"
+                />
+                <InfoItem
+                  icon={IconMapPin}
+                  label="Localidad"
+                  value={usuario.localidad?.nombre}
+                  color="red"
+                />
+                <InfoItem
+                  icon={IconMapPin}
+                  label="Provincia"
+                  value={usuario.localidad?.provincia?.nombre}
+                  color="red"
+                />
+              </SimpleGrid>
+            </Stack>
           </Card>
 
           {/* Información Laboral */}
-          <Card shadow="sm" p="xl" radius="md" withBorder>
-            <Group gap="sm" mb="md">
-              <IconBriefcase size={24} stroke={1.5} />
-              <Text fw={600} size="lg">
-                Información Laboral
-              </Text>
-            </Group>
-            <Divider mb="lg" />
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-              <InfoItem
-                icon={IconBuilding}
-                label="Sucursal"
-                value={usuario.sucursal?.nombre}
-                color="violet"
-              />
-              <Stack gap="xs">
-                <Group gap="xs">
-                  <IconBriefcase
-                    size={20}
-                    stroke={1.5}
-                    style={{ color: "var(--mantine-color-violet-6)" }}
-                  />
-                  <Text size="xs" c="dimmed" fw={500}>
-                    Roles asignados
-                  </Text>
-                </Group>
-                <Group gap="xs">
-                  {authorities.map((auth, index) => (
-                    <Badge
-                      key={index}
-                      color={getRolColor(auth.name || auth.authority || auth)}
-                      variant="filled"
-                      size="md"
-                    >
-                      {getRolLabel(auth)}
-                    </Badge>
-                  ))}
-                </Group>
-              </Stack>
-            </SimpleGrid>
+          <Card>
+            <Stack gap="md">
+              <Group gap="0.75rem">
+                <IconBriefcase size={20} stroke={1.5} />
+                <Title order={4}>Información laboral</Title>
+              </Group>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                <InfoItem
+                  icon={IconBuilding}
+                  label="Sucursal"
+                  value={usuario.sucursal?.nombre}
+                  color="violet"
+                />
+                <Stack gap="xs">
+                  <Group gap="xs">
+                    <IconBriefcase
+                      size={20}
+                      stroke={1.5}
+                      style={{ color: "var(--mantine-color-violet-6)" }}
+                    />
+                    <Text size="xs" c="dimmed" fw={500}>
+                      Roles asignados
+                    </Text>
+                  </Group>
+                  <Group gap="xs">
+                    {authorities.map((auth, index) => (
+                      <Badge
+                        key={index}
+                        color={getRolColor(auth.name || auth.authority || auth)}
+                        variant="filled"
+                        size="md"
+                      >
+                        {getRolLabel(auth)}
+                      </Badge>
+                    ))}
+                  </Group>
+                </Stack>
+              </SimpleGrid>
+            </Stack>
           </Card>
         </>
       )}

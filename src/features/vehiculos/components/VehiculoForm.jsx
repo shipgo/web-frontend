@@ -1,27 +1,17 @@
 import { useEffect, useState } from "react";
 import {
-  Box,
   Button,
   Card,
-  Divider,
   Group,
   LoadingOverlay,
   NumberInput,
   Select,
   SimpleGrid,
   Stack,
-  Text,
+  Title,
   TextInput,
 } from "@mantine/core";
-import {
-  IconCar,
-  IconGasStation,
-  IconCalendar,
-  IconRuler,
-  IconCheck,
-  IconGauge,
-  IconWeight,
-} from "@tabler/icons-react";
+import { IconCar, IconRuler, IconGauge } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 
 import {
@@ -167,29 +157,20 @@ const VehiculoForm = ({
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
-      <Stack gap="lg">
+      <Stack>
         {/* Información del Vehículo */}
-        <Card shadow="sm" p="xl" radius="md" withBorder pos="relative">
+        <Card pos="relative">
           <LoadingOverlay
             visible={catalogsLoading}
             overlayProps={{ radius: "md", blur: 2 }}
           />
 
-          <Group gap="sm" mb="lg">
-            <IconCar size={24} stroke={1.5} />
-            <Box>
-              <Text fw={600} size="lg">
-                Información del Vehículo
-              </Text>
-              <Text size="sm" c="dimmed">
-                Datos básicos del vehículo
-              </Text>
-            </Box>
-          </Group>
+          <Stack gap="md">
+            <Group gap="0.75rem">
+              <IconCar size={20} />
+              <Title order={4}>Información del vehículo</Title>
+            </Group>
 
-          <Divider mb="lg" />
-
-          <Stack gap="lg">
             <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
               <TextInput
                 label="Patente"
@@ -219,9 +200,6 @@ const VehiculoForm = ({
                   form.setFieldValue("modeloID", null);
                 }}
               />
-            </SimpleGrid>
-
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
               <Select
                 label="Modelo"
                 placeholder="Seleccione primero una marca"
@@ -255,110 +233,89 @@ const VehiculoForm = ({
         </Card>
 
         {/* Especificaciones Técnicas */}
-        <Card shadow="sm" p="xl" radius="md" withBorder>
-          <Group gap="sm" mb="lg">
-            <IconGauge size={24} stroke={1.5} />
-            <Box>
-              <Text fw={600} size="lg">
-                Especificaciones Técnicas
-              </Text>
-              <Text size="sm" c="dimmed">
-                Características técnicas del vehículo
-              </Text>
-            </Box>
-          </Group>
+        <Card>
+          <Stack gap="md">
+            <Group gap="0.75rem">
+              <IconGauge size={20} />
+              <Title order={4}>Especificaciones técnicas</Title>
+            </Group>
 
-          <Divider mb="lg" />
-
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-            <Select
-              label="Combustible"
-              placeholder="Seleccione"
-              required
-              data={combustibles}
-              searchable
-              filter={filterIgnoreAccents}
-              {...form.getInputProps("combustibleID")}
-            />
-            <NumberInput
-              label="Consumo Promedio"
-              placeholder="Ej: 8.5"
-              required
-              min={1}
-              step={0.1}
-              decimalScale={2}
-              suffix=" L/100km"
-              decimalSeparator=","
-              {...form.getInputProps("consumoPromedio")}
-            />
-          </SimpleGrid>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+              <Select
+                label="Combustible"
+                placeholder="Seleccione"
+                required
+                data={combustibles}
+                searchable
+                filter={filterIgnoreAccents}
+                {...form.getInputProps("combustibleID")}
+              />
+              <NumberInput
+                label="Consumo Promedio"
+                placeholder="Ej: 8.5"
+                required
+                min={1}
+                step={0.1}
+                decimalScale={2}
+                suffix=" L/100km"
+                decimalSeparator=","
+                {...form.getInputProps("consumoPromedio")}
+              />
+            </SimpleGrid>
+          </Stack>
         </Card>
 
         {/* Información de Ruedas */}
-        <Card shadow="sm" p="xl" radius="md" withBorder>
-          <Group gap="sm" mb="lg">
-            <IconRuler size={24} stroke={1.5} />
-            <Box>
-              <Text fw={600} size="lg">
-                Información de Ruedas y Capacidad
-              </Text>
-              <Text size="sm" c="dimmed">
-                Detalles sobre ruedas y capacidad de carga
-              </Text>
-            </Box>
-          </Group>
+        <Card>
+          <Stack gap="md">
+            <Group gap="0.75rem">
+              <IconRuler size={20} />
+              <Title order={4}>Información de ruedas y capacidad</Title>
+            </Group>
 
-          <Divider mb="lg" />
-
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-            <Select
-              label="Tipo de Rueda"
-              placeholder="Seleccione"
-              required
-              data={tiposRueda}
-              searchable
-              filter={filterIgnoreAccents}
-              {...form.getInputProps("tipoRuedaID")}
-            />
-            <NumberInput
-              label="Cantidad de Ruedas"
-              placeholder="Ej: 4"
-              required
-              min={2}
-              max={20}
-              {...form.getInputProps("cantidadRuedas")}
-            />
-            <NumberInput
-              label="Peso Máximo"
-              placeholder="Ej: 1500"
-              required
-              min={0}
-              step={0.1}
-              decimalScale={2}
-              suffix=" kg"
-              thousandSeparator="."
-              decimalSeparator=","
-              {...form.getInputProps("pesoMaximo")}
-            />
-          </SimpleGrid>
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+              <Select
+                label="Tipo de Rueda"
+                placeholder="Seleccione"
+                required
+                data={tiposRueda}
+                searchable
+                filter={filterIgnoreAccents}
+                {...form.getInputProps("tipoRuedaID")}
+              />
+              <NumberInput
+                label="Cantidad de Ruedas"
+                placeholder="Ej: 4"
+                required
+                min={2}
+                max={20}
+                {...form.getInputProps("cantidadRuedas")}
+              />
+              <NumberInput
+                label="Peso Máximo"
+                placeholder="Ej: 1500"
+                required
+                min={0}
+                step={0.1}
+                decimalScale={2}
+                suffix=" kg"
+                thousandSeparator="."
+                decimalSeparator=","
+                {...form.getInputProps("pesoMaximo")}
+              />
+            </SimpleGrid>
+          </Stack>
         </Card>
 
         {/* Botones de acción */}
-        <Card shadow="sm" p="lg" radius="md" withBorder>
-          <Group justify="flex-end" gap="md">
-            <Button variant="light" color="gray" onClick={onCancel} size="md">
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              loading={loading}
-              size="md"
-              leftSection={<IconCheck size={18} />}
-            >
-              {isEdit ? "Guardar Cambios" : "Crear Vehículo"}
-            </Button>
-          </Group>
-        </Card>
+        <Group justify="flex-end" gap="xs">
+          <Button variant="subtle" color="red" disabled={loading} onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit" loading={loading}>
+            {isEdit ? "Guardar cambios" : "Crear vehículo"}
+          </Button>
+        </Group>
       </Stack>
     </form>
   );
