@@ -8,9 +8,10 @@ import 'dayjs/locale/es';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
-// dayjs no publica `es-AR`; `es` comparte nombres de mes/día y formato
-// D/M/YYYY con Argentina. El número (peso) usa `Intl` con `es-AR`.
-dayjs.locale('es');
+// dayjs no publica `es-AR`; `es` comparte nombres de mes/día y formato D/M/YYYY
+// con Argentina. Se aplica por llamada (`.locale('es')`), sin tocar el locale
+// global de dayjs. El número (peso) usa `Intl` con `es-AR`.
+const LOCALE_DAYJS = 'es';
 
 export const LOCALE = 'es-AR';
 const DATE_FORMAT = 'DD/MM/YYYY';
@@ -19,7 +20,7 @@ export const EMPTY = '—';
 
 /** Fecha corta: `31/12/2026` (o `—` si no es válida). */
 export const formatFecha = (value, format = DATE_FORMAT) => {
-  const d = dayjs(value);
+  const d = dayjs(value).locale(LOCALE_DAYJS);
   return value != null && d.isValid() ? d.format(format) : EMPTY;
 };
 
@@ -29,7 +30,7 @@ export const formatFechaHora = (value, format = DATE_TIME_FORMAT) =>
 
 /** Relativo a ahora: `hace 3 días`. */
 export const formatDesdeAhora = (value) => {
-  const d = dayjs(value);
+  const d = dayjs(value).locale(LOCALE_DAYJS);
   return value != null && d.isValid() ? d.fromNow() : EMPTY;
 };
 
