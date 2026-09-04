@@ -1,0 +1,95 @@
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { screen } from "@testing-library/react";
+
+import { renderWithProviders } from "../../test/renderWithProviders";
+
+const mockUseAuth = vi.fn();
+vi.mock("@contexts/auth", () => ({
+  useAuth: () => mockUseAuth(),
+  useIsAuthenticated: () => mockUseAuth().isAuthenticated,
+}));
+
+vi.mock("../layout", () => ({
+  default: ({ children }) => <div data-testid="layout">{children}</div>,
+}));
+
+vi.mock("@components/MobileOnlyScreen", () => ({
+  default: () => <div>Pantalla usá la app</div>,
+}));
+
+vi.mock("@features/login", () => ({ default: () => <div>Login</div> }));
+vi.mock("@features/home", () => ({ default: () => <div>Home</div> }));
+vi.mock("@features/mapa", () => ({ default: () => <div>Mapa</div> }));
+vi.mock("@features/mantenimientos", () => ({
+  default: () => <div>Mantenimientos</div>,
+}));
+vi.mock("./dashboard.routes", () => ({ default: () => <div>Dashboard</div> }));
+vi.mock("./envios.routes", () => ({ default: () => <div>Envios</div> }));
+vi.mock("./viajes.routes", () => ({ default: () => <div>Viajes</div> }));
+vi.mock("./usuarios.routes", () => ({ default: () => <div>Usuarios</div> }));
+vi.mock("./sucursales.routes", () => ({ default: () => <div>Sucursales</div> }));
+vi.mock("@features/vehiculos", () => ({ default: () => <div>Vehiculos</div> }));
+
+import AppRoutes from "./index";
+
+const setAuth = (auth) => mockUseAuth.mockReturnValue(auth);
+
+describe("AppRoutes", () => {
+  beforeEach(() => {
+    mockUseAuth.mockReset();
+  });
+
+  it("no autenticado en una ruta protegida termina en /login", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/envios" });
+
+    expect(await screen.findByText("Login")).toBeInTheDocument();
+  });
+
+  it("CHOFER ve la pantalla 'usá la app' sin el layout de gestión", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_CHOFER" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(await screen.findByText("Pantalla usá la app")).toBeInTheDocument();
+    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
+  });
+
+  it("ADMIN accede a /envios dentro del layout", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/envios" });
+
+    expect(await screen.findByText("Envios")).toBeInTheDocument();
+    expect(screen.getByTestId("layout")).toBeInTheDocument();
+  });
+
+  it("ADMIN entrando a /sucursales (SUPERUSER-only) es redirigido a Home", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/sucursales" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("Sucursales")).not.toBeInTheDocument();
+  });
+
+  it("SUPERUSER accede a /sucursales", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_SUPERUSER" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/sucursales" });
+
+    expect(await screen.findByText("Sucursales")).toBeInTheDocument();
+  });
+});

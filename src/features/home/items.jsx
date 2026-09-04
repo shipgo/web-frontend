@@ -9,6 +9,8 @@ import {
   IconMap,
 } from '@tabler/icons-react';
 
+import { ROLES_WEB } from '@domain/roles';
+
 const ITEMS = [
   {
     title: 'Gestionar',
@@ -20,6 +22,7 @@ const ITEMS = [
         icon: <IconMap size={28} />,
         color: 'blue',
         to: '/mapa',
+        roles: ROLES_WEB,
       },
       {
         title: 'Viajes',
@@ -27,6 +30,7 @@ const ITEMS = [
         icon: <IconRoute size={28} />,
         color: 'indigo',
         to: '/viajes',
+        roles: ROLES_WEB,
       },
       {
         title: 'Envíos',
@@ -34,6 +38,7 @@ const ITEMS = [
         icon: <IconPackages size={28} />,
         color: 'teal',
         to: '/envios',
+        roles: ROLES_WEB,
       },
       {
         title: 'Dashboard',
@@ -41,6 +46,7 @@ const ITEMS = [
         icon: <IconChartBar size={28} />,
         color: 'violet',
         to: '/dashboard',
+        roles: ROLES_WEB,
       },
     ],
   },
@@ -53,6 +59,7 @@ const ITEMS = [
         icon: <IconUsers size={28} />,
         color: 'orange',
         to: '/usuarios',
+        roles: ROLES_WEB,
       },
       {
         title: 'Vehículos',
@@ -60,6 +67,7 @@ const ITEMS = [
         icon: <IconTruckDelivery size={28} />,
         color: 'red',
         to: '/vehiculos',
+        roles: ROLES_WEB,
       },
     ],
   },
