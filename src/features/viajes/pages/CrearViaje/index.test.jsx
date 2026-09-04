@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppShell } from "@mantine/core";
 
@@ -69,6 +69,30 @@ vi.mock("react-virtuoso", () => ({
     return <div>{rows}</div>;
   },
 }));
+
+// `DateTimePicker` real (calendario + selector de hora en un popover) es
+// muy costoso de manejar con userEvent en jsdom. Se reemplaza por un input
+// de texto simple: `getInputProps('campo')` en Mantine siempre expone
+// `{ value: Date|null, onChange: (Date|null) => void }` sin importar el
+// picker concreto, así que el resto de `SeccionDetalles`/el form no se
+// entera del cambio. Escribir "yyyy-MM-ddTHH:mm" (sin "Z") hace que
+// `new Date(...)` lo interprete como hora LOCAL (spec ECMA-262), igual que
+// el `DateTimePicker` real — deterministico sin importar el TZ del runner.
+vi.mock("@mantine/dates", async () => {
+  const actual = await vi.importActual("@mantine/dates");
+  return {
+    ...actual,
+    DateTimePicker: ({ label, value, onChange }) => (
+      <input
+        aria-label={label}
+        value={value ? value.toISOString() : ""}
+        onChange={(event) =>
+          onChange(event.target.value ? new Date(event.target.value) : null)
+        }
+      />
+    ),
+  };
+});
 
 const mockGetParaViaje = vi.fn();
 const mockGetDisponibles = vi.fn();
@@ -182,5 +206,126 @@ describe("CrearViaje", () => {
       expect(mockNavigate).toHaveBeenCalledWith("~/viajes"),
     );
     expect(mockSaveViaje).not.toHaveBeenCalled();
+  });
+
+  it("postea el ViajeReqDTO completo (fechas + vehículo + chofer + envío) y navega al éxito", async () => {
+    mockGetDisponibles.mockResolvedValue([
+      {
+        id: 9,
+        patente: "AB123CD",
+        pesoMaximo: 3000,
+        modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+      },
+    ]);
+    mockGetChoferesDisponibles.mockResolvedValue([
+      { id: 15, nombre: "Juan", apellido: "Perez", email: "juan@shipgo.dev" },
+    ]);
+    mockSaveViaje.mockResolvedValue({ id: 99, estado: "planificado" });
+
+    const user = userEvent.setup();
+    renderWithProviders(<CrearViaje />);
+
+    // 1. envío: entrega a destino final
+    const item = await screen.findByText("SHG-DEV-0001");
+    await user.click(item);
+    await user.click(
+      await screen.findByRole("button", { name: /marcar envíos para/i }),
+    );
+    await user.click(await screen.findByText(/entrega a destino final/i));
+
+    // 2. fechas planificadas (habilita las queries de disponibilidad)
+    fireEvent.change(screen.getByLabelText(/salida planificada/i), {
+      target: { value: "2026-09-10T08:00" },
+    });
+    fireEvent.change(screen.getByLabelText(/llegada planificada/i), {
+      target: { value: "2026-09-10T18:00" },
+    });
+
+    await waitFor(() => {
+      expect(mockGetDisponibles).toHaveBeenCalledWith(
+        expect.objectContaining({
+          desde: "2026-09-10T08:00:00",
+          hasta: "2026-09-10T18:00:00",
+        }),
+      );
+      expect(mockGetChoferesDisponibles).toHaveBeenCalledWith(
+        expect.objectContaining({
+          desde: "2026-09-10T08:00:00",
+          hasta: "2026-09-10T18:00:00",
+        }),
+      );
+    });
+
+    // 3. vehículo + chofer
+    await user.click(await screen.findByText("AB123CD"));
+    await user.click(await screen.findByText("Juan Perez"));
+
+    // 4. submit
+    await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+    await waitFor(() => expect(mockSaveViaje).toHaveBeenCalledTimes(1));
+
+    expect(mockSaveViaje).toHaveBeenCalledWith({
+      viaje: {
+        fechaHoraInicioPlanificada: "2026-09-10T08:00:00",
+        fechaHoraFinPlanificada: "2026-09-10T18:00:00",
+        vehiculoID: 9,
+        choferesID: [15],
+      },
+      enviosPuntoEntrega: [
+        { enviosID: [200], puntoEntregaID: 5, sucursalDestinoID: null },
+      ],
+    });
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith("~/viajes"),
+    );
+    expect(await screen.findByText(/viaje creado/i)).toBeInTheDocument();
+  });
+
+  it("muestra un toast de error y NO navega si el POST falla", async () => {
+    mockGetDisponibles.mockResolvedValue([
+      {
+        id: 9,
+        patente: "AB123CD",
+        pesoMaximo: 3000,
+        modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+      },
+    ]);
+    mockGetChoferesDisponibles.mockResolvedValue([
+      { id: 15, nombre: "Juan", apellido: "Perez", email: "juan@shipgo.dev" },
+    ]);
+    mockSaveViaje.mockRejectedValue({
+      response: { data: { message: "El vehículo ya no está disponible." } },
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(<CrearViaje />);
+
+    const item = await screen.findByText("SHG-DEV-0001");
+    await user.click(item);
+    await user.click(
+      await screen.findByRole("button", { name: /marcar envíos para/i }),
+    );
+    await user.click(await screen.findByText(/entrega a destino final/i));
+
+    fireEvent.change(screen.getByLabelText(/salida planificada/i), {
+      target: { value: "2026-09-10T08:00" },
+    });
+    fireEvent.change(screen.getByLabelText(/llegada planificada/i), {
+      target: { value: "2026-09-10T18:00" },
+    });
+
+    await user.click(await screen.findByText("AB123CD"));
+    await user.click(await screen.findByText("Juan Perez"));
+
+    await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+    await waitFor(() => expect(mockSaveViaje).toHaveBeenCalledTimes(1));
+
+    expect(
+      await screen.findByText(/el vehículo ya no está disponible/i),
+    ).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalledWith("~/viajes");
   });
 });
