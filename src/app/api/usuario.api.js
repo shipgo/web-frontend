@@ -46,12 +46,14 @@ export const usuarioApi = {
   ...usuarioCrud,
 
   /**
-   * `GET /api/user/all?authority=CHOFER` — choferes de la sucursal / empresa (según rol).
+   * `GET /api/user/all?authority=ROLE_CHOFER` — choferes de la sucursal / empresa (según rol).
+   * El backend hace match `contains` sobre el name del rol, así que el valor canónico
+   * `ROLE_CHOFER` matchea igual que `CHOFER`.
    * @param {UserFilter} [params]
    */
   getChoferes: async (params = {}) => {
     const response = await restclient.get(`${API_URLS.USER_URL}/all`, {
-      params: { ...params, authority: 'CHOFER' },
+      params: { ...params, authority: 'ROLE_CHOFER' },
     });
     return response.data;
   },
