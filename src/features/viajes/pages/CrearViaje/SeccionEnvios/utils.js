@@ -1,12 +1,14 @@
-export const getGroupProperties = (selectedPackages) => {
-  const packagesByCategory = Array.from(selectedPackages.entries());
+/**
+ * Cada entrada de `enviosIncluidos` ya es 1:1 con un recorrido (`label` para
+ * mostrar + `packages` = envíos de ese recorrido), ver
+ * `ListadoEnviosPendientes.handleOnSelectedAction`.
+ */
+export const getGroupProperties = (enviosIncluidos) => {
+  const entries = Array.from(enviosIncluidos.entries());
 
-  const groupLabels = packagesByCategory.map(
-    ([, { sucursal }]) => sucursal?.nombre ?? "Entrega local",
-  );
-
-  const groupedPackages = packagesByCategory.map(([, values]) =>
-    Array.from(values.packages.values()),
+  const groupLabels = entries.map(([, { label }]) => label);
+  const groupedPackages = entries.map(([, { packages }]) =>
+    Array.from(packages.values()),
   );
 
   const packagesFlat = groupedPackages.flat();

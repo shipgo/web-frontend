@@ -2,14 +2,24 @@ import { Card, Stack, Group } from "@mantine/core";
 
 import { Map as MapComponent } from "@components";
 import ScreenContainer from "@components/ScreenContainer";
+import { useAuth } from "@contexts/auth";
+
 import useRouteCalculation from "../hooks/useRouteCalculation";
+import { getGroupProperties } from "../SeccionEnvios/utils";
+import { useFormContext } from "../contexts/EnviosFormContext";
 
 import SeccionHeader from "./SeccionHeader";
 import PaquetesTimeline from "./PaquetesTimeline";
 
 const SeccionResumen = () => {
+  const { user } = useAuth();
   const {
-    data,
+    values: { enviosIncluidos, fechaHoraInicioPlanificada },
+  } = useFormContext();
+
+  const { groupLabels, groupCounts } = getGroupProperties(enviosIncluidos);
+
+  const {
     isPending,
     returnOrigin,
     setReturnOrigin,
@@ -45,19 +55,18 @@ const SeccionResumen = () => {
             "Ocurrió un error al calcular el trayecto. Intentá nuevamente.",
           onClick: handleRouteCalculation,
         }}
-        onEmptyData={{
-          show: data === undefined,
-          title: "No hay ruta calculada",
-          description:
-            "Seleccioná al menos un envío y clickeá en el botón para generar el trayecto sugerido",
-        }}
       >
         <Group pos="relative">
           <Card withBorder shadow="0" p="0" h={400} flex={1}>
             <MapComponent />
           </Card>
 
-          <PaquetesTimeline route={data} />
+          <PaquetesTimeline
+            groupLabels={groupLabels}
+            groupCounts={groupCounts}
+            fechaSalida={fechaHoraInicioPlanificada}
+            sucursalOrigen={user?.sucursal?.nombre}
+          />
         </Group>
       </ScreenContainer>
     </Card>

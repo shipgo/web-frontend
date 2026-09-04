@@ -1,87 +1,79 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
-  Avatar,
-  Box,
   Button,
   Card,
   Group,
   ScrollArea,
-  Text,
   TextInput,
   Title,
 } from "@mantine/core";
-import { useQuery } from "@tanstack/react-query";
-import { IconSearch, IconQrcode } from "@tabler/icons-react";
+import { IconSearch } from "@tabler/icons-react";
 
 import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
 
 import ItemChofer from "./ItemChofer";
+import { useFormContext } from "../contexts/EnviosFormContext";
+import { useChoferesDisponibles } from "../hooks/useChoferesDisponibles";
+import { useDisponibilidadParams } from "../hooks/useDisponibilidadParams";
 
-const CHOFERES = [
-  {
-    id: 1,
-    nombre: "Juan Perez",
-    email: "juan.perez@gmail.com",
-    telefono: "1234567890",
-  },
-  {
-    id: 2,
-    nombre: "Daniel Gomez",
-    email: "daniel.gomez@gmail.com",
-    telefono: "1234567890",
-  },
-  {
-    id: 3,
-    nombre: "Martin Garcia",
-    email: "juan.perez@gmail.com",
-    telefono: "1234567890",
-  },
-  {
-    id: 4,
-    nombre: "Lucas Garcia",
-    email: "lucas.garcia@gmail.com",
-    telefono: "1234567890",
-  },
-  {
-    id: 5,
-    nombre: "Andres Martinez",
-    email: "andres.martinez@gmail.com",
-    telefono: "1234567890",
-  },
-  {
-    id: 6,
-    nombre: "Fernando Ramirez",
-    email: "lucas.garcia@gmail.com",
-    telefono: "1234567890",
-  },
-  {
-    id: 7,
-    nombre: "Diego Lopez",
-    email: "diego.lopez@gmail.com",
-    telefono: "1234567890",
-  },
-];
+const filterChoferes = (choferes, search) => {
+  if (!search) return choferes;
+  const term = search.trim().toLowerCase();
+  if (!term) return choferes;
+
+  return choferes.filter((chofer) =>
+    [chofer.nombre, chofer.apellido, chofer.email, chofer.telefono]
+      .filter(Boolean)
+      .some((field) => String(field).toLowerCase().includes(term)),
+  );
+};
 
 const ListadoChoferes = () => {
-  const [selectedChofer, setSelectedChofer] = useState(null);
+  const [searchValue, setSearchValue] = useState("");
 
-  const choferesQuery = useQuery({
-    queryKey: ["choferes"],
-    queryFn: () =>
-      new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(CHOFERES);
-        }, 1000);
-      }),
-  });
+  const {
+    setFieldValue,
+    values: { choferes: choferesSeleccionados },
+  } = useFormContext();
 
-  const { refetch, isError, isFetching, data: choferes = [] } = choferesQuery;
+  const { desde, hasta } = useDisponibilidadParams();
+  const fechasSeleccionadas = Boolean(desde && hasta);
 
-  const handleRefetch = () => {
-    refetch();
-    setSelectedChofer(null);
+  const choferesQuery = useChoferesDisponibles({ desde, hasta });
+  const { data = [], isFetching, isError, refetch } = choferesQuery;
+
+  // Igual que con el vehículo: si cambian las fechas y alguno de los
+  // choferes ya seleccionados deja de estar disponible, se lo saca.
+  useEffect(() => {
+    if (choferesSeleccionados.length === 0 || isFetching) return;
+    const disponiblesIds = new Set(data.map((chofer) => chofer.id));
+    const vigentes = choferesSeleccionados.filter((chofer) =>
+      disponiblesIds.has(chofer.id),
+    );
+    if (vigentes.length !== choferesSeleccionados.length) {
+      setFieldValue("choferes", vigentes);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  const choferes = filterChoferes(data, searchValue);
+
+  const toggleChofer = (chofer) => {
+    const yaSeleccionado = choferesSeleccionados.some(
+      (c) => c.id === chofer.id,
+    );
+
+    if (yaSeleccionado) {
+      setFieldValue(
+        "choferes",
+        choferesSeleccionados.filter((c) => c.id !== chofer.id),
+      );
+      return;
+    }
+
+    setFieldValue("choferes", [...choferesSeleccionados, chofer]);
   };
 
   return (
@@ -89,11 +81,7 @@ const ListadoChoferes = () => {
       <Card.Section withBorder p="md">
         <Group justify="space-between">
           <Title order={5}>Choferes disponibles</Title>
-          <Button
-            variant="subtle"
-            onClick={handleRefetch}
-            disabled={isFetching}
-          >
+          <Button variant="subtle" onClick={refetch} disabled={isFetching}>
             Actualizar listado
           </Button>
         </Group>
@@ -103,6 +91,7 @@ const ListadoChoferes = () => {
             flex={1}
             rightSection={<IconSearch size={16} />}
             placeholder="Buscá por nombre, mail o teléfono..."
+            onChange={(event) => setSearchValue(event.target.value)}
           />
         </Group>
       </Card.Section>
@@ -114,42 +103,29 @@ const ListadoChoferes = () => {
         onError={{
           show: isError,
           title: "Error al cargar los choferes",
-          description: "Error al cargar los choferes",
+          description: "Error al cargar los choferes disponibles",
           onClick: refetch,
         }}
         onLoading={{
           show: isFetching,
-          description: "Cargando choferes...",
+          description: "Cargando choferes disponibles...",
         }}
         onEmptyData={{
-          show: choferes.length === 0,
-          title: "No hay choferes disponibles",
-          description: "No hay choferes disponibles para seleccionar",
+          show: !isFetching && !isError && choferes.length === 0,
+          title: fechasSeleccionadas
+            ? "No hay choferes disponibles"
+            : "Seleccioná las fechas del viaje",
+          description: fechasSeleccionadas
+            ? "No hay choferes disponibles para la ventana de fechas seleccionada"
+            : "Completá la fecha de salida y llegada planificadas en \"Detalles del viaje\" para ver los choferes disponibles",
         }}
       >
         <ScrollArea p="0" m="0" flex={1} component="ul">
-          <SelectableItemList
-            singleSelection
-            selected={selectedChofer === null}
-            onClick={() => setSelectedChofer(null)}
-          >
-            <Avatar>
-              <IconQrcode />
-            </Avatar>
-
-            <Box>
-              <Text>Asignación por QR</Text>
-              <Text c="dimmed" size="sm">
-                El viaje quedará abierto para auto-asignación
-              </Text>
-            </Box>
-          </SelectableItemList>
           {choferes.map((chofer) => (
             <SelectableItemList
-              singleSelection
               key={chofer.id}
-              selected={selectedChofer === chofer.id}
-              onClick={() => setSelectedChofer(chofer.id)}
+              selected={choferesSeleccionados.some((c) => c.id === chofer.id)}
+              onClick={() => toggleChofer(chofer)}
             >
               <ItemChofer chofer={chofer} />
             </SelectableItemList>

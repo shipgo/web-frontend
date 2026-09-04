@@ -1,9 +1,19 @@
-import { IconMessageDots, IconFlag3 } from "@tabler/icons-react";
+import { IconFlag3, IconPin } from "@tabler/icons-react";
 import { Card, ScrollArea, Text, ThemeIcon, Timeline } from "@mantine/core";
-import { IconPin } from "@tabler/icons-react";
-import { IconGitPullRequest } from "@tabler/icons-react";
 
-const PaquetesTimeline = () => {
+import { formatFechaHora } from "@domain/format";
+
+/**
+ * Paradas reales del viaje: una por cada entrada de `enviosIncluidos`
+ * (`groupLabels`/`groupCounts`, ver `SeccionEnvios/utils.getGroupProperties`),
+ * en el mismo orden en que se van a mandar como `enviosPuntoEntrega`.
+ */
+const PaquetesTimeline = ({
+  groupLabels = [],
+  groupCounts = [],
+  fechaSalida,
+  sucursalOrigen,
+}) => {
   return (
     <Card withBorder shadow="0" p="0" h={400} maw="35%">
       <ScrollArea flex={1}>
@@ -17,81 +27,36 @@ const PaquetesTimeline = () => {
             title="Salida"
           >
             <Text c="dimmed" size="sm">
-              Sucursal Centro
+              {sucursalOrigen ?? "Sucursal de origen"}
             </Text>
             <Text size="xs" mt={4}>
-              (8:00am estimado)
+              {fechaSalida
+                ? `(${formatFechaHora(fechaSalida)} planificado)`
+                : "(sin fecha planificada todavía)"}
             </Text>
           </Timeline.Item>
 
-          <Timeline.Item bullet={<IconPin size={12} />} title="Calle Falsa 123">
-            <Text c="dimmed" size="sm">
-              Villa María, Córdoba
-            </Text>
-            <Text size="xs" mt={4}>
-              (3 paquetes)
-            </Text>
-          </Timeline.Item>
-
-          <Timeline.Item
-            title="Pull request"
-            bullet={<IconGitPullRequest size={12} />}
-          >
-            <Text c="dimmed" size="sm">
-              You&apos;ve submitted a pull request
-              <Text variant="link" component="span" inherit>
-                Fix incorrect notification message (#187)
+          {groupLabels.length === 0 && (
+            <Timeline.Item bullet={<IconPin size={12} />} title="Sin paradas">
+              <Text c="dimmed" size="sm">
+                Seleccioná envíos en la sección de arriba para ver las paradas
+                del viaje
               </Text>
-            </Text>
-            <Text size="xs" mt={4}>
-              34 minutes ago
-            </Text>
-          </Timeline.Item>
+            </Timeline.Item>
+          )}
 
-          <Timeline.Item
-            title="Code review"
-            bullet={<IconMessageDots size={12} />}
-          >
-            <Text c="dimmed" size="sm">
-              <Text variant="link" component="span" inherit>
-                Robert Gluesticker
-              </Text>{" "}
-              left a code review on your pull request
-            </Text>
-            <Text size="xs" mt={4}>
-              12 minutes ago
-            </Text>
-          </Timeline.Item>
-
-          <Timeline.Item
-            title="Code review"
-            bullet={<IconMessageDots size={12} />}
-          >
-            <Text c="dimmed" size="sm">
-              <Text variant="link" component="span" inherit>
-                Robert Gluesticker
-              </Text>{" "}
-              left a code review on your pull request
-            </Text>
-            <Text size="xs" mt={4}>
-              12 minutes ago
-            </Text>
-          </Timeline.Item>
-
-          <Timeline.Item
-            title="Code review"
-            bullet={<IconMessageDots size={12} />}
-          >
-            <Text c="dimmed" size="sm">
-              <Text variant="link" component="span" inherit>
-                Robert Gluesticker
-              </Text>{" "}
-              left a code review on your pull request
-            </Text>
-            <Text size="xs" mt={4}>
-              12 minutes ago
-            </Text>
-          </Timeline.Item>
+          {groupLabels.map((label, index) => (
+            <Timeline.Item
+              key={`${label}-${index}`}
+              bullet={<IconPin size={12} />}
+              title={label}
+            >
+              <Text c="dimmed" size="sm">
+                ({groupCounts[index]}{" "}
+                {groupCounts[index] === 1 ? "envío" : "envíos"})
+              </Text>
+            </Timeline.Item>
+          ))}
         </Timeline>
       </ScrollArea>
     </Card>
