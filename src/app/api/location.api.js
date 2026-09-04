@@ -1,59 +1,40 @@
-import { restclient } from "@config/restclient";
-import { API_URLS } from "@constants/apiUrls";
-import { createCrudApi } from "./base.api";
+import { restclient } from '@config/restclient';
+import { API_URLS } from '@constants/apiUrls';
+import { createReadOnlyApi } from './base.api';
 
 /**
- * API de Provincias
+ * API de Provincias — `/api/provincias` (catálogo read-only, ENDPOINTS.md §17).
+ * `getAll` acepta `ProvinciaFilter { nombre, sort }`.
  */
-export const provinciaApi = {
-  ...createCrudApi(API_URLS.PROVINCIAS_URL),
-
-  /**
-   * Obtener todas las provincias (sin paginación)
-   */
-  getAll: async () => {
-    const response = await restclient.get(API_URLS.PROVINCIAS_URL + "/all");
-    return response.data;
-  },
-};
+export const provinciaApi = createReadOnlyApi(API_URLS.PROVINCIAS_URL);
 
 /**
- * API de Localidades
+ * API de Localidades — `/api/localidades` (catálogo read-only, ENDPOINTS.md §17).
+ * No hay endpoint de búsqueda por texto libre: buscar por nombre = `getAll({ nombre })`
+ * (`LocalidadFilter { nombre, provincia, sort }`).
  */
 export const localidadApi = {
-  ...createCrudApi(API_URLS.LOCALIDADES_URL),
+  ...createReadOnlyApi(API_URLS.LOCALIDADES_URL),
 
   /**
-   * Obtener localidades por provincia
+   * `GET /api/localidades/provincia/{provinciaID}` — localidades de una provincia (`LocalidadDTO[]`).
+   * @param {number|string} provinciaId
    */
-  getByProvincia: async (provinciaId, params = {}) => {
+  getByProvincia: async (provinciaId) => {
     const response = await restclient.get(
       `${API_URLS.LOCALIDADES_URL}/provincia/${provinciaId}`,
-      { params }
-    );
-    return response.data;
-  },
-
-  /**
-   * Buscar localidades por nombre
-   */
-  search: async (query, params = {}) => {
-    const response = await restclient.get(
-      `${API_URLS.LOCALIDADES_URL}/search`,
-      {
-        params: { q: query, ...params },
-      }
     );
     return response.data;
   },
 };
 
 /**
- * API consolidada de ubicaciones
+ * API consolidada de ubicaciones (fachada usada por los forms).
  */
 export const locationApi = {
   getProvincias: () => provinciaApi.getAll(),
   getLocalidadesByProvincia: (provinciaId) =>
     localidadApi.getByProvincia(provinciaId),
-  searchLocalidades: (query) => localidadApi.search(query),
+  /** Buscar localidades por nombre → `GET /api/localidades/all?nombre=<q>`. */
+  searchLocalidades: (nombre) => localidadApi.getAll({ nombre }),
 };
