@@ -21,6 +21,7 @@ import {
 } from "@tabler/icons-react";
 
 import { toLocalDate } from "@utils/dates";
+import { rolBadge } from "@domain/roles";
 
 const InfoItem = ({ icon: Icon, label, value, color = "blue" }) => (
   <Group gap="sm" wrap="nowrap">
@@ -40,25 +41,6 @@ const InfoItem = ({ icon: Icon, label, value, color = "blue" }) => (
   </Group>
 );
 
-const getRolColor = (rol) => {
-  const normalizedRol = rol?.toUpperCase();
-  const colores = {
-    ADMIN: "red",
-    ROLE_ADMIN: "red",
-    SUPER: "violet",
-    ROLE_SUPER: "violet",
-    CHOFER: "blue",
-    ROLE_CHOFER: "blue",
-    SUPERVISOR: "yellow",
-    ROLE_SUPERVISOR: "yellow",
-  };
-  return colores[normalizedRol] || "gray";
-};
-
-const getRolLabel = (authority) => {
-  const rolName = authority?.name || authority?.authority || authority || "";
-  return rolName.replace("ROLE_", "").replace(/_/g, " ");
-};
 
 /**
  * Componente reutilizable para mostrar el perfil/detalle de un usuario
@@ -119,16 +101,14 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
             </div>
 
             <Group gap="xs">
-              {authorities.map((auth, index) => (
-                <Badge
-                  key={index}
-                  color={getRolColor(auth.name || auth.authority || auth)}
-                  variant="light"
-                  size="lg"
-                >
-                  {getRolLabel(auth)}
-                </Badge>
-              ))}
+              {authorities.map((auth, index) => {
+                const rol = rolBadge(auth);
+                return (
+                  <Badge key={index} color={rol.color} variant="light" size="lg">
+                    {rol.label}
+                  </Badge>
+                );
+              })}
             </Group>
           </Stack>
         </Group>
@@ -270,16 +250,14 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
                     </Text>
                   </Group>
                   <Group gap="xs">
-                    {authorities.map((auth, index) => (
-                      <Badge
-                        key={index}
-                        color={getRolColor(auth.name || auth.authority || auth)}
-                        variant="filled"
-                        size="md"
-                      >
-                        {getRolLabel(auth)}
-                      </Badge>
-                    ))}
+                    {authorities.map((auth, index) => {
+                      const rol = rolBadge(auth);
+                      return (
+                        <Badge key={index} color={rol.color} variant="filled" size="md">
+                          {rol.label}
+                        </Badge>
+                      );
+                    })}
                   </Group>
                 </Stack>
               </SimpleGrid>

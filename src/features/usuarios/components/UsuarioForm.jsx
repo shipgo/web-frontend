@@ -23,8 +23,16 @@ import { notifications } from "@mantine/notifications";
 import { sucursalApi, authorityApi } from "@api";
 import { catalogsApi, locationApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
+import {
+  rolLabel,
+  ROLE_ADMIN,
+  ROLE_CARGA,
+  ROLE_CHOFER,
+  ROLE_SUPERUSER,
+} from "@domain/roles";
 
-const AUTHORITIES = ["ROLE_SUPER", "ROLE_ADMIN", "ROLE_CHOFER"];
+// Roles asignables desde el panel web (el backend valida el resto).
+const AUTHORITIES = [ROLE_SUPERUSER, ROLE_ADMIN, ROLE_CHOFER, ROLE_CARGA];
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -60,8 +68,8 @@ const filterIgnoreAccents = ({ options, search }) => {
  */
 const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
   const { user } = useAuthStore();
-  const isSuper = user?.hasRole("ROLE_SUPER");
-  const isAdmin = user?.hasRole("ROLE_ADMIN");
+  const isSuper = user?.hasRole(ROLE_SUPERUSER);
+  const isAdmin = user?.hasRole(ROLE_ADMIN);
 
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [sucursales, setSucursales] = useState([]);
@@ -104,14 +112,14 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
 
         const authoritiesData = AUTHORITIES.map((a) => ({
           value: a,
-          label: a.replace("ROLE_", ""),
+          label: rolLabel(a),
         }));
 
         if (isSuper) {
           setAuthorities(authoritiesData);
         } else {
           setAuthorities(
-            authoritiesData.filter((auth) => auth.value !== "ROLE_SUPER")
+            authoritiesData.filter((auth) => auth.value !== ROLE_SUPERUSER)
           );
         }
 

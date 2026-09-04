@@ -5,11 +5,19 @@ import { useDebouncedCallback } from '@mantine/hooks';
 import { Card, Chip, Flex, Select, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 
-const ROLES = ['ROLE_ADMIN', 'ROLE_USER', 'ROLE_CHOFER'];
+import {
+  rolOptions,
+  ROLE_ADMIN,
+  ROLE_CARGA,
+  ROLE_CHOFER,
+  ROLE_SUPERUSER,
+} from '@domain/roles';
+
+const ROLES = rolOptions([ROLE_SUPERUSER, ROLE_ADMIN, ROLE_CHOFER, ROLE_CARGA]);
 
 const QUICK_FILTERS = [
-  { label: 'Choferes', getFilters: () => ({ nombre: '', email: '', username: '', authority: 'ROLE_CHOFER', localidad: '' }) },
-  { label: 'Administradores', getFilters: () => ({ nombre: '', email: '', username: '', authority: 'ROLE_ADMIN', localidad: '' }) },
+  { label: 'Choferes', getFilters: () => ({ nombre: '', email: '', username: '', authority: ROLE_CHOFER, localidad: '' }) },
+  { label: 'Administradores', getFilters: () => ({ nombre: '', email: '', username: '', authority: ROLE_ADMIN, localidad: '' }) },
 ];
 
 const DEFAULT_VALUES = { nombre: '', email: '', username: '', authority: '', localidad: '' };
