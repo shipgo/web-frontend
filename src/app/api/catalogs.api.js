@@ -1,52 +1,329 @@
-import { createCrudApi } from "./base.api";
-import { API_URLS } from "@constants/apiUrls";
+import { restclient } from '@config/restclient';
+import { API_URLS } from '@constants/apiUrls';
+import {
+  createCrudApi,
+  createReadOnlyApi,
+  notImplemented,
+} from './base.api';
 
 /**
- * API de Categorías
+ * API de Categorías — `/api/categoria` (ENDPOINTS.md §16). CRUD completo.
+ * Filtro `NombreFilter { nombre, sort }`.
  */
 export const categoriaApi = createCrudApi(API_URLS.CATEGORIA_URL);
 
 /**
- * API de Sexo
+ * API de Sexo — `/api/sexo` (catálogo read-only, ENDPOINTS.md §17).
  */
-export const sexoApi = createCrudApi(API_URLS.SEXO_URL);
+export const sexoApi = createReadOnlyApi(API_URLS.SEXO_URL);
 
 /**
- * API de Tipos de Documento
+ * API de Tipos de Documento — `/api/tipoDocumento` (catálogo read-only, ENDPOINTS.md §17).
  */
-export const tipoDocumentoApi = createCrudApi(API_URLS.TIPO_DOC_URL);
+export const tipoDocumentoApi = createReadOnlyApi(API_URLS.TIPO_DOC_URL);
 
 /**
- * API de Calificación de Chofer
+ * API de Calificaciones de Chofer — `/api/calificacionChofer` (ENDPOINTS.md §18).
+ * NO existe `/all`. El listado es por página (`/pagina/{pagina}`) o por query
+ * (`idViaje` | `nombre` | `apellido` | `calificacion` + `pagina`).
  */
-export const calificacionChoferApi = createCrudApi(
-  API_URLS.CALIFICACION_CHOFER_URL
-);
+export const calificacionChoferApi = {
+  /**
+   * `GET /api/calificacionChofer/{id}` — calificaciones de un chofer (`CalificacionChofer[]`).
+   * @param {number|string} choferId
+   */
+  getByChofer: async (choferId) => {
+    const response = await restclient.get(
+      `${API_URLS.CALIFICACION_CHOFER_URL}/${choferId}`,
+    );
+    return response.data;
+  },
+
+  /**
+   * `GET /api/calificacionChofer/pagina/{pagina}` — `Page<CalificacionChofer>` (size 4).
+   * @param {number} pagina
+   */
+  getPagina: async (pagina) => {
+    const response = await restclient.get(
+      `${API_URLS.CALIFICACION_CHOFER_URL}/pagina/${pagina}`,
+    );
+    return response.data;
+  },
+
+  /**
+   * `GET /api/calificacionChofer?{idViaje|nombre|apellido|calificacion}&pagina` — `Page` filtrado.
+   * @param {{ idViaje?: number, nombre?: string, apellido?: string, calificacion?: number, pagina?: number }} params
+   */
+  getFiltrado: async (params = {}) => {
+    const response = await restclient.get(API_URLS.CALIFICACION_CHOFER_URL, {
+      params,
+    });
+    return response.data;
+  },
+
+  /**
+   * `POST /api/calificacionChofer`
+   * @param {Object} data - entidad `CalificacionChofer`.
+   */
+  save: async (data) => {
+    const response = await restclient.post(
+      API_URLS.CALIFICACION_CHOFER_URL,
+      data,
+    );
+    return response.data;
+  },
+
+  /**
+   * `PUT /api/calificacionChofer/{id}`
+   * @param {number|string} id
+   * @param {Object} data
+   */
+  update: async (id, data) => {
+    const response = await restclient.put(
+      `${API_URLS.CALIFICACION_CHOFER_URL}/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  /**
+   * `DELETE /api/calificacionChofer/{calificacionChoferId}`
+   * @param {number|string} id
+   */
+  delete: async (id) => {
+    const response = await restclient.delete(
+      `${API_URLS.CALIFICACION_CHOFER_URL}/${id}`,
+    );
+    return response.data;
+  },
+};
 
 /**
- * API de Calificación de Ruta
+ * API de Calificaciones de Ruta — `/api/calificacionRuta` (ENDPOINTS.md §19).
+ * El listado es `GET /all` (NO el path base `GET /api/calificacionRuta`).
  */
-export const calificacionRutaApi = createCrudApi(
-  API_URLS.CALIFICACION_RUTA_URL
-);
+export const calificacionRutaApi = {
+  /**
+   * `GET /api/calificacionRuta/all`
+   */
+  getAll: async () => {
+    const response = await restclient.get(
+      `${API_URLS.CALIFICACION_RUTA_URL}/all`,
+    );
+    return response.data;
+  },
+
+  /**
+   * `GET /api/calificacionRuta/{id}`
+   * @param {number|string} id
+   */
+  getById: async (id) => {
+    const response = await restclient.get(
+      `${API_URLS.CALIFICACION_RUTA_URL}/${id}`,
+    );
+    return response.data;
+  },
+
+  /**
+   * `POST /api/calificacionRuta`
+   * @param {Object} data - entidad `CalificacionRuta`.
+   */
+  save: async (data) => {
+    const response = await restclient.post(
+      API_URLS.CALIFICACION_RUTA_URL,
+      data,
+    );
+    return response.data;
+  },
+
+  /**
+   * `PUT /api/calificacionRuta/{id}`
+   * @param {number|string} id
+   * @param {Object} data
+   */
+  update: async (id, data) => {
+    const response = await restclient.put(
+      `${API_URLS.CALIFICACION_RUTA_URL}/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  /**
+   * `DELETE /api/calificacionRuta/{calificacionRutaId}`
+   * @param {number|string} id
+   */
+  delete: async (id) => {
+    const response = await restclient.delete(
+      `${API_URLS.CALIFICACION_RUTA_URL}/${id}`,
+    );
+    return response.data;
+  },
+};
 
 /**
- * API de Huella de Carbono
+ * API de Huella de Carbono — `/api/huellaCarbono` (ENDPOINTS.md §20).
+ * ⚠️ Hoy TODO el controller es público (sin token). No hay `GET /{id}` ni update.
  */
-export const huellaCarbonoApi = createCrudApi(API_URLS.HUELLA_CARBONO_URL);
+export const huellaCarbonoApi = {
+  /**
+   * `GET /api/huellaCarbono?fechaInicio&fechaFin` — `HuellaCarbono[]` en el período.
+   * @param {{ fechaInicio: string, fechaFin: string }} params  `yyyy-MM-dd'T'HH:mm:ss`.
+   */
+  getByPeriodo: async (params) => {
+    const response = await restclient.get(API_URLS.HUELLA_CARBONO_URL, {
+      params,
+    });
+    return response.data;
+  },
+
+  /**
+   * `GET /api/huellaCarbono/all` — `HuellaCarbono[]`.
+   */
+  getAll: async () => {
+    const response = await restclient.get(
+      `${API_URLS.HUELLA_CARBONO_URL}/all`,
+    );
+    return response.data;
+  },
+
+  /**
+   * `GET /api/huellaCarbono/comparar?fechaInicio&fechaFin` — `Double` (% vs período base).
+   * @param {{ fechaInicio: string, fechaFin: string }} params
+   */
+  comparar: async (params) => {
+    const response = await restclient.get(
+      `${API_URLS.HUELLA_CARBONO_URL}/comparar`,
+      { params },
+    );
+    return response.data;
+  },
+
+  /**
+   * `POST /api/huellaCarbono`
+   * @param {Object} data - entidad `HuellaCarbono`.
+   */
+  save: async (data) => {
+    const response = await restclient.post(
+      API_URLS.HUELLA_CARBONO_URL,
+      data,
+    );
+    return response.data;
+  },
+
+  /**
+   * `DELETE /api/huellaCarbono/{huellaCarbonoId}`
+   * @param {number|string} id
+   */
+  delete: async (id) => {
+    const response = await restclient.delete(
+      `${API_URLS.HUELLA_CARBONO_URL}/${id}`,
+    );
+    return response.data;
+  },
+};
 
 /**
- * API de Notificaciones
+ * API de Notificaciones — `/api/notificaciones` (ENDPOINTS.md §21).
+ * El listado es del usuario logueado (`GET /api/notificaciones`, sin `/all`).
+ * El update lleva el id en el body, NO en el path. No hay `GET /{id}`.
  */
-export const notificacionesApi = createCrudApi(API_URLS.NOTIFICACIONES_URL);
+export const notificacionesApi = {
+  /**
+   * `GET /api/notificaciones` — `Notificacion[]` del usuario logueado.
+   */
+  getMias: async () => {
+    const response = await restclient.get(API_URLS.NOTIFICACIONES_URL);
+    return response.data;
+  },
+
+  /**
+   * `POST /api/notificaciones`
+   * @param {Object} data - entidad `Notificacion`.
+   */
+  save: async (data) => {
+    const response = await restclient.post(API_URLS.NOTIFICACIONES_URL, data);
+    return response.data;
+  },
+
+  /**
+   * `PUT /api/notificaciones` — el id va DENTRO de `data`.
+   * @param {Object} data - entidad `Notificacion` con `id`.
+   */
+  update: async (data) => {
+    const response = await restclient.put(API_URLS.NOTIFICACIONES_URL, data);
+    return response.data;
+  },
+
+  /**
+   * `DELETE /api/notificaciones/{id}`
+   * @param {number|string} id
+   */
+  delete: async (id) => {
+    const response = await restclient.delete(
+      `${API_URLS.NOTIFICACIONES_URL}/${id}`,
+    );
+    return response.data;
+  },
+};
 
 /**
- * API de Empresa
+ * API de Empresa — `/api/empresa` (ENDPOINTS.md §15).
+ * Sólo existen `POST` / `PUT /{id}` / `DELETE /{id}`.
+ * ⚠️ NO hay ningún GET de empresa (ni detalle ni listado) → SHG-BE-022.
  */
-export const empresaApi = createCrudApi(API_URLS.EMPRESA_URL);
+export const empresaApi = {
+  // TODO SHG-BE-022: no existe `GET /api/empresa` ni `GET /api/empresa/{id}`.
+  // Necesario para el panel SUPERUSER. Lanza error explícito hasta que exista.
+  getAll: notImplemented(
+    'SHG-BE-022',
+    'GET de empresa (listado) para el panel SUPERUSER',
+  ),
+  get: notImplemented(
+    'SHG-BE-022',
+    'GET de empresa (listado paginado) para el panel SUPERUSER',
+  ),
+  getById: notImplemented(
+    'SHG-BE-022',
+    'GET /api/empresa/{id} (detalle de empresa)',
+  ),
+
+  /**
+   * `POST /api/empresa` — crea empresa + sucursal inicial. Devuelve `UserDTO`.
+   * @param {{ nombre: string, sucursal: Object }} data  `EmpresaReqDTO`.
+   */
+  save: async (data) => {
+    const response = await restclient.post(API_URLS.EMPRESA_URL, data);
+    return response.data;
+  },
+
+  /**
+   * `PUT /api/empresa/{id}`
+   * @param {number|string} id
+   * @param {{ nombre: string, sucursal: Object }} data  `EmpresaReqDTO`.
+   */
+  update: async (id, data) => {
+    const response = await restclient.put(
+      `${API_URLS.EMPRESA_URL}/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  /**
+   * `DELETE /api/empresa/{id}`
+   * @param {number|string} id
+   */
+  delete: async (id) => {
+    const response = await restclient.delete(
+      `${API_URLS.EMPRESA_URL}/${id}`,
+    );
+    return response.data;
+  },
+};
 
 /**
- * API agregada de catálogos con métodos convenientes
+ * Atajos de catálogos usados por los forms (todos resuelven contra `GET /api/<cat>/all`).
  */
 export const catalogsApi = {
   getSexos: () => sexoApi.getAll(),

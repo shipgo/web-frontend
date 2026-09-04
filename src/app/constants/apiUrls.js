@@ -1,66 +1,79 @@
+/**
+ * Mapa canónico de URLs de la API ShipGo.
+ *
+ * Fuente de verdad: `planning/ENDPOINTS.md` (generado desde `rest/*Controller.java`
+ * + verificado contra `/v3/api-docs`). Todos los paths cuelgan de `/api`
+ * (la instancia axios usa `baseURL: '/api'`), así que acá van SIN el prefijo `/api`.
+ *
+ * Regla: cada valor de este objeto tiene que corresponder a un controller real
+ * verificado en `ENDPOINTS.md`. No se agregan sufijos de conveniencia que el
+ * backend no expone. Ver `CONTRACTS.md §6`.
+ */
 export const API_URLS = {
-  // Auth
-  LOGIN_URL: '/login',
-  LOGOUT_URL: '/logout',
-  REFRESH_TOKEN_URL: '/refresh',
-  WHOAMI_URL: '/whoami',
-  CHANGE_PASSWORD_URL: '/changePassword',
-  
-  // Recovery
-  RECUPERAR_CUENTA_URL: '/user/resetPassword',
-  RECUPERAR_CUENTA_CONTRASEÑA_URL: '/user/changePassword',
-  TOKEN_URL: '/token',
-  
-  // Users
-  USER_URL: '/user',
-  USER_FILES: '/user/files',
-  
-  // Envíos
-  ENVIO_URL: '/envio',
-  DETALLE_ENVIO_URL: '/detalleEnvio',
-  PUNTO_ENTREGA_URL: '/puntoEntrega',
-  
-  // Viajes
-  VIAJE_URL: '/viaje',
-  DETALLE_RECORRIDO_URL: '/detalleRecorrido',
+  // --- Autenticación y sesión (ENDPOINTS.md §1) ---
+  LOGIN_URL: '/login', // POST form-urlencoded, lo maneja Spring Security
+  LOGOUT_URL: '/logout', // POST, lo maneja Spring Security
+  REFRESH_TOKEN_URL: '/refresh', // GET
+  WHOAMI_URL: '/whoami', // GET
+  SIGNUP_URL: '/signup', // POST UserReqDTO (SU/AD)
+  CHANGE_PASSWORD_URL: '/changePassword', // POST ChangePasswordForm (usuario logueado)
+  TOKEN_URL: '/token', // GET /token/{token} — valida token de reset
 
-  // Tracking en tiempo real
+  // --- Recuperación de contraseña (públicos) ---
+  RECUPERAR_CUENTA_URL: '/user/resetPassword', // POST { userEmail }
+  RECUPERAR_CUENTA_CONTRASEÑA_URL: '/user/changePassword', // POST { token, newPassword }
+
+  // --- Usuarios (ENDPOINTS.md §2) ---
+  USER_URL: '/user',
+
+  // --- Authorities / roles (ENDPOINTS.md §3) — el recurso "rol" no existe en la API ---
+  AUTHORITY_URL: '/authority',
+
+  // --- Envíos (ENDPOINTS.md §4) ---
+  ENVIO_URL: '/envio',
+  DETALLE_ENVIO_URL: '/detalleEnvio', // §5
+  PUNTO_ENTREGA_URL: '/puntoEntrega', // §6
+
+  // --- Viajes (ENDPOINTS.md §7) ---
+  VIAJE_URL: '/viaje',
+  DETALLE_RECORRIDO_URL: '/detalleRecorrido', // §8
+
+  // --- Tracking en tiempo real (ENDPOINTS.md §9) ---
   TRACKING_URL: '/tracking',
-  
-  // Vehículos
+
+  // --- Vehículos y catálogo de flota (ENDPOINTS.md §10-13) ---
   VEHICULO_URL: '/vehiculo',
   MARCA_URL: '/marca',
   MODELO_URL: '/modelo',
   TIPO_VEHICULO_URL: '/tipoVehiculo',
   COMBUSTIBLE_URL: '/combustible',
   TIPO_RUEDA_URL: '/tipoRueda',
-  
-  // Mantenimientos
   MANTENIMIENTO_URL: '/mantenimiento',
   TIPO_MANTENIMIENTO_URL: '/tipoMantenimiento',
-  
-  // Catálogos
-  CATEGORIA_URL: '/categoria',
+
+  // --- Sucursales / Empresa (ENDPOINTS.md §14-15) ---
   SUCURSAL_URL: '/sucursal',
-  ROL_URL: '/rol',
-  
-  // Ubicaciones
-  LOCALIDADES_URL: '/localidades',
-  PROVINCIAS_URL: '/provincias',
-  
-  // Files
-  FILES_URL: '/files',
-  
-  // Otros
-  CALIFICACION_CHOFER_URL: '/calificacionChofer',
-  CALIFICACION_RUTA_URL: '/calificacionRuta',
-  HUELLA_CARBONO_URL: '/huellaCarbono',
-  NOTIFICACIONES_URL: '/notificaciones',
   EMPRESA_URL: '/empresa',
-  AUTHORITY_URL: '/authority',
+
+  // --- Categorías (ENDPOINTS.md §16) ---
+  CATEGORIA_URL: '/categoria',
+
+  // --- Catálogos read-only (ENDPOINTS.md §17) ---
   SEXO_URL: '/sexo',
   TIPO_DOC_URL: '/tipoDocumento',
-  SIGNUP_URL: '/signup',
-  RESET_CREDENTIALS_URL: '/user/reset-credentials',
-};
+  PROVINCIAS_URL: '/provincias',
+  LOCALIDADES_URL: '/localidades',
 
+  // --- Calificaciones (ENDPOINTS.md §18-19) ---
+  CALIFICACION_CHOFER_URL: '/calificacionChofer',
+  CALIFICACION_RUTA_URL: '/calificacionRuta',
+
+  // --- Huella de carbono (ENDPOINTS.md §20) ---
+  HUELLA_CARBONO_URL: '/huellaCarbono',
+
+  // --- Notificaciones (ENDPOINTS.md §21) ---
+  NOTIFICACIONES_URL: '/notificaciones',
+
+  // --- Archivos (ENDPOINTS.md §22) — subir foto de perfil = POST /api/files ---
+  FILES_URL: '/files',
+};

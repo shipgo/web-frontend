@@ -4,6 +4,11 @@ import { API_URLS } from "@constants/apiUrls";
 export const restclient = Axios.create({
   withCredentials: true, // Envía cookies automáticamente
   baseURL: "/api", // Proxy de Vite manejará la redirección
+  // Contrato de listados (CONTRACTS.md §4): los params de tipo array se envían
+  // como parámetro REPETIDO sin corchetes ni índices — `estado=creado&estado=en_camino`,
+  // NO `estado=creado,en_camino` ni `estado[]=...`. `sort` viaja como string
+  // (`?sort=campo:asc` / `campo:desc`, NO el `campo,asc` de Spring).
+  paramsSerializer: { indexes: null },
 });
 
 // Variable para controlar el refresh en progreso
