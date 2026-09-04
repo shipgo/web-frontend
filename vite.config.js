@@ -27,6 +27,7 @@ export default defineConfig({
       { find: "@hooks", replacement: "/src/app/hooks" },
       { find: "@providers", replacement: "/src/app/providers" },
       { find: "@utils", replacement: "/src/app/utils" },
+      { find: "@domain", replacement: "/src/app/domain" },
       { find: "@features", replacement: "/src/features" },
       { find: "@api", replacement: "/src/app/api" },
       { find: "@stores", replacement: "/src/app/stores" },

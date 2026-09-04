@@ -19,32 +19,8 @@ import {
 import { timeFromNow, toLocalDate } from "@utils/dates";
 import { RowActionsMenu } from "@components";
 import { API_URLS } from "@constants/apiUrls";
+import { rolBadge } from "@domain/roles";
 import { useDeleteUsuario } from "../hooks/useDeleteUsuario";
-
-const getRolColor = (rol) => {
-  const normalizedRol = rol?.toUpperCase();
-  const colores = {
-    ADMIN: "red",
-    ROLE_ADMIN: "red",
-    ADMINISTRADOR: "red",
-    CHOFER: "blue",
-    ROLE_CHOFER: "blue",
-    SUPERVISOR: "yellow",
-    ROLE_SUPERVISOR: "yellow",
-    USUARIO: "gray",
-    ROLE_USUARIO: "gray",
-  };
-  return colores[normalizedRol] || "gray";
-};
-
-const getRolLabel = (authorities) => {
-  if (!authorities || authorities.length === 0) return "Usuario";
-
-  const rol = authorities[0];
-  const rolName = rol.name || rol.authority || rol;
-
-  return rolName.replace("ROLE_", "").replace(/_/g, " ");
-};
 
 const ListaUsuariosTabla = ({
   items = [],
@@ -97,7 +73,7 @@ const ListaUsuariosTabla = ({
           const sucursal = item.sucursal?.nombre || "Sin sucursal";
           const fechaRegistro = item.fechaCreacion || item.createdAt || item.fecha;
           const authorities = item.authorities || [];
-          const rolLabel = getRolLabel(authorities);
+          const rol = rolBadge(authorities[0]);
 
           return (
             <Table.Tr
@@ -135,12 +111,8 @@ const ListaUsuariosTabla = ({
               </Table.Td>
 
               <Table.Td>
-                <Badge
-                  color={getRolColor(authorities[0]?.name || authorities[0])}
-                  variant="light"
-                  radius="md"
-                >
-                  {rolLabel}
+                <Badge color={rol.color} variant="light" radius="md">
+                  {rol.label}
                 </Badge>
               </Table.Td>
 

@@ -13,6 +13,9 @@
       "@hooks/*": ["./src/app/hooks/*"],
       "@providers/*": ["./src/app/providers/*"],
       "@utils/*": ["./src/app/utils/*"],
+      "@domain/*": ["./src/app/domain/*"],
+      "@api/*": ["./src/app/api/*"],
+      "@stores/*": ["./src/app/stores/*"],
       "@features/*": ["./src/features/*"]
     }
   },

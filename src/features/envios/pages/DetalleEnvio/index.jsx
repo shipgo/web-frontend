@@ -27,18 +27,7 @@ import {
 
 import PageContainer from "@components/PageContainer";
 import { envioApi } from "@api";
-
-const ESTADO_COLORS = {
-  CREADO: "gray",
-  ASIGNADO: "blue",
-  EN_SUCURSAL: "cyan",
-  EN_VEHICULO: "indigo",
-  EN_CAMINO: "orange",
-  ENTREGADO: "green",
-  RECHAZADO: "red",
-};
-
-const NO_EDITABLE_ESTADOS = ["ENTREGADO", "RECHAZADO"];
+import { esEstadoTerminal, estadoBadge } from "@domain/estados";
 
 const InfoItem = ({ icon, label, value }) => (
   <Box>
@@ -106,8 +95,8 @@ const DetalleEnvio = () => {
     );
   }
 
-  const estado = envio.estado?.toUpperCase();
-  const canEdit = !NO_EDITABLE_ESTADOS.includes(estado);
+  const estadoInfo = estadoBadge("envio", envio.estado);
+  const canEdit = !esEstadoTerminal("envio", envio.estado);
   const destino = envio.destino ?? {};
   const localidad = destino.localidad ?? {};
   const provincia = localidad.provincia ?? {};
@@ -122,9 +111,9 @@ const DetalleEnvio = () => {
           <Box>
             <Group gap="xs" mb={4}>
               <Title order={2}>Detalle del envío</Title>
-              {estado && (
-                <Badge color={ESTADO_COLORS[estado] ?? "gray"} variant="light">
-                  {envio.estado}
+              {envio.estado && (
+                <Badge color={estadoInfo.color} variant="light">
+                  {estadoInfo.label}
                 </Badge>
               )}
             </Group>

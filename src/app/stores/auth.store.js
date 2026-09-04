@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import { restclient } from "@config/restclient";
 import { API_URLS } from "@constants/apiUrls";
+import {
+  hasAnyRole,
+  hasRole,
+  isAdminOrSuper,
+  rolesDe,
+  ROLE_ADMIN,
+  ROLE_SUPERUSER,
+} from "@domain/roles";
 
 /**
  * Usuario class con métodos auxiliares
@@ -53,15 +61,27 @@ export class Usuario {
   }
 
   getAuthorities() {
-    return this.authorities.map((auth) => auth.name || auth);
+    return rolesDe(this);
   }
 
   hasRole(role) {
-    return this.authorities.some((auth) => auth.name === role);
+    return hasRole(this, role);
+  }
+
+  hasAnyRole(roles) {
+    return hasAnyRole(this, roles);
   }
 
   isAdmin() {
-    return this.hasRole("ROLE_ADMIN");
+    return hasRole(this, ROLE_ADMIN);
+  }
+
+  isSuperUser() {
+    return hasRole(this, ROLE_SUPERUSER);
+  }
+
+  isAdminOrSuper() {
+    return isAdminOrSuper(this);
   }
 }
 
