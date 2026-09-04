@@ -66,6 +66,7 @@ const ListaEnvios = () => {
             selectedIds={selectedIds}
             onToggle={onToggle}
             onToggleAll={onToggleAll}
+            onRefresh={refetch}
           />
         </ScreenContainer>
       </Card>
