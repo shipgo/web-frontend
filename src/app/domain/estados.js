@@ -84,3 +84,24 @@ export const estadoOptions = (entidad) =>
     value,
     label,
   }));
+
+/**
+ * Estados terminales por entidad: la máquina de estados del backend ya no
+ * permite salir de ellos, así que el front no ofrece editar / accionar sobre
+ * una entidad que está en uno de estos.
+ */
+export const ESTADOS_TERMINALES = {
+  envio: ['entregado', 'rechazado'],
+  viaje: ['finalizado', 'cancelado'],
+  recorrido: ['finalizado', 'finalizado_con_problemas'],
+  vehiculo: [],
+};
+
+/**
+ * `true` si el estado es terminal para esa entidad (p. ej. un envío
+ * `entregado` / `rechazado` ya no es editable).
+ * @param {'envio'|'viaje'|'recorrido'|'vehiculo'} entidad
+ * @param {string} valor valor canónico del backend
+ */
+export const esEstadoTerminal = (entidad, valor) =>
+  (ESTADOS_TERMINALES[entidad] ?? []).includes(normalizarEstado(valor));

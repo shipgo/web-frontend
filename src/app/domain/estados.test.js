@@ -5,6 +5,8 @@ import {
   ESTADO_RECORRIDO,
   ESTADO_VEHICULO,
   ESTADO_VIAJE,
+  ESTADOS_TERMINALES,
+  esEstadoTerminal,
   estadoBadge,
   estadoLabel,
   estadoOptions,
@@ -84,5 +86,38 @@ describe("estadoLabel / estadoOptions", () => {
     const opciones = estadoOptions("recorrido");
     expect(opciones).toContainEqual({ value: "en_camino", label: "En camino" });
     expect(estadoOptions("marciano")).toEqual([]);
+  });
+});
+
+describe("esEstadoTerminal", () => {
+  it("las claves de ESTADOS_TERMINALES existen en su mapa de estados", () => {
+    expect(ESTADOS_TERMINALES.envio.every((v) => v in ESTADO_ENVIO)).toBe(true);
+    expect(ESTADOS_TERMINALES.viaje.every((v) => v in ESTADO_VIAJE)).toBe(true);
+    expect(ESTADOS_TERMINALES.recorrido.every((v) => v in ESTADO_RECORRIDO)).toBe(true);
+  });
+
+  it("true para estados terminales de envío", () => {
+    expect(esEstadoTerminal("envio", "entregado")).toBe(true);
+    expect(esEstadoTerminal("envio", "rechazado")).toBe(true);
+    expect(esEstadoTerminal("envio", "ENTREGADO")).toBe(true);
+  });
+
+  it("false para estados en curso o desconocidos", () => {
+    expect(esEstadoTerminal("envio", "en_camino")).toBe(false);
+    expect(esEstadoTerminal("envio", "creado")).toBe(false);
+    expect(esEstadoTerminal("envio", null)).toBe(false);
+    expect(esEstadoTerminal("envio", "lo_que_sea")).toBe(false);
+  });
+
+  it("cubre viaje y recorrido, y vehículo no tiene terminales", () => {
+    expect(esEstadoTerminal("viaje", "finalizado")).toBe(true);
+    expect(esEstadoTerminal("viaje", "cancelado")).toBe(true);
+    expect(esEstadoTerminal("viaje", "en_camino")).toBe(false);
+    expect(esEstadoTerminal("recorrido", "finalizado_con_problemas")).toBe(true);
+    expect(esEstadoTerminal("vehiculo", "fuera_de_servicio")).toBe(false);
+  });
+
+  it("entidad desconocida => false", () => {
+    expect(esEstadoTerminal("marciano", "x")).toBe(false);
   });
 });

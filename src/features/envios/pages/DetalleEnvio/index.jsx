@@ -27,9 +27,7 @@ import {
 
 import PageContainer from "@components/PageContainer";
 import { envioApi } from "@api";
-import { estadoBadge, normalizarEstado } from "@domain/estados";
-
-const ESTADOS_NO_EDITABLES = ["entregado", "rechazado"];
+import { esEstadoTerminal, estadoBadge } from "@domain/estados";
 
 const InfoItem = ({ icon, label, value }) => (
   <Box>
@@ -98,7 +96,7 @@ const DetalleEnvio = () => {
   }
 
   const estadoInfo = estadoBadge("envio", envio.estado);
-  const canEdit = !ESTADOS_NO_EDITABLES.includes(normalizarEstado(envio.estado));
+  const canEdit = !esEstadoTerminal("envio", envio.estado);
   const destino = envio.destino ?? {};
   const localidad = destino.localidad ?? {};
   const provincia = localidad.provincia ?? {};
