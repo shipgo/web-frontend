@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   ActionIcon,
+  Badge,
   Box,
   Button,
   Card,
@@ -32,8 +33,10 @@ import {
 import PageContainer from "@components/PageContainer";
 import ScreenContainer from "@components/ScreenContainer";
 import { envioApi, categoriaApi, provinciaApi, localidadApi } from "@api";
+import { esEstadoTerminal, estadoBadge } from "@domain/estados";
 
 import DetalleEnvioModal from "./components/DetalleEnvioModal";
+import { buildEnvioReqDTO } from "../../utils";
 
 const INITIAL_VALUES = {
   nombre: "",
@@ -61,8 +64,10 @@ const EditarEnvio = () => {
   const [categorias, setCategorias] = useState([]);
   const [provincias, setProvincias] = useState([]);
   const [localidades, setLocalidades] = useState([]);
-  // Metadata que no forma parte de los inputs del form pero se necesita al armar el payload
-  const [destinoMeta, setDestinoMeta] = useState({ id: null, latitud: 0, longitud: 0 });
+  // Envío tal como vino del backend: se guarda completo (no sólo lo que
+  // entra en el form) para poder reenviar `destino.id`/`latitud`/`longitud`
+  // al armar el payload (`buildEnvioReqDTO`) y para chequear el estado.
+  const [envioOriginal, setEnvioOriginal] = useState(null);
 
   const form = useForm({
     mode: "controlled",
@@ -174,11 +179,7 @@ const EditarEnvio = () => {
         });
         form.resetDirty();
 
-        setDestinoMeta({
-          id: destino.id ?? null,
-          latitud: destino.latitud ?? 0,
-          longitud: destino.longitud ?? 0,
-        });
+        setEnvioOriginal(envio);
       } catch (error) {
         console.error("Error cargando envío:", error);
         notifications.show({
@@ -209,31 +210,25 @@ const EditarEnvio = () => {
     form.removeListItem("detalleEnvios", index);
   };
 
+  // Estados terminales (`entregado`/`rechazado`, `@domain/estados`): la
+  // máquina de estados del backend ya no permite modificarlos, así que esta
+  // pantalla bloquea el form entero en vez de dejar que el PUT falle.
+  const esEditable = useMemo(
+    () => Boolean(envioOriginal && !esEstadoTerminal("envio", envioOriginal.estado)),
+    [envioOriginal]
+  );
+
   const handleSubmit = form.onSubmit(async (values) => {
+    if (!envioOriginal || !esEditable) return;
+
     setIsSubmitting(true);
     try {
-      const payload = {
-        nombre: values.nombre,
-        apellido: values.apellido,
-        emailRemitente: values.emailRemitente,
-        emailReceptor: values.emailReceptor,
-        prefijo: values.prefijo,
-        telefono: values.telefono,
-        destino: {
-          id: destinoMeta.id ?? undefined,
-          nombreCalle: values.nombreCalle,
-          numeroCalle: values.numeroCalle,
-          localidad: { id: Number(values.localidadID) },
-          latitud: destinoMeta.latitud ?? 0,
-          longitud: destinoMeta.longitud ?? 0,
-        },
-        detalleEnvios: values.detalleEnvios.map((d) => ({
-          id: d.id ?? undefined,
-          categoria: { id: Number(d.categoriaID) },
-          descripcion: d.descripcion || null,
-          peso: Number(d.peso),
-        })),
-      };
+      const destino = envioOriginal.destino ?? {};
+      const payload = buildEnvioReqDTO(values, {
+        id: destino.id ?? null,
+        latitud: destino.latitud ?? 0,
+        longitud: destino.longitud ?? 0,
+      });
 
       await envioApi.update(id, payload);
 
@@ -247,12 +242,28 @@ const EditarEnvio = () => {
       navigate("~/envios");
     } catch (error) {
       console.error("Error actualizando envío:", error);
+
+      // 400 de validación de campos (`ApiFieldError`, `CONTRACTS.md §5`): sin
+      // esperar el helper global de `SHG-FE-021`, mismo patrón puntual que
+      // `SHG-FE-016`/`SHG-FE-010` (`form.setErrors` a partir de
+      // `error.response.data.fields` + toast con `message`). El
+      // `EnvioReqDTO` es plano (no anidado como `ViajeReqDTO`), así que no
+      // hace falta sacarle ningún prefijo a los `field`.
+      const responseData = error?.response?.data;
+      if (Array.isArray(responseData?.fields) && responseData.fields.length > 0) {
+        form.setErrors(
+          Object.fromEntries(
+            responseData.fields.map(({ field, error: fieldError }) => [
+              field,
+              fieldError,
+            ])
+          )
+        );
+      }
+
       notifications.show({
         title: "Error",
-        message:
-          error?.response?.data?.mensaje ||
-          error?.response?.data?.message ||
-          "No se pudo actualizar el envío",
+        message: responseData?.message || "No se pudo actualizar el envío",
         color: "red",
         icon: <IconX />,
       });
@@ -266,6 +277,43 @@ const EditarEnvio = () => {
       <PageContainer>
         <Card>
           <Text>Cargando envío...</Text>
+        </Card>
+      </PageContainer>
+    );
+  }
+
+  if (envioOriginal && !esEditable) {
+    const { label, color } = estadoBadge("envio", envioOriginal.estado);
+
+    return (
+      <PageContainer>
+        <Group justify="space-between" align="flex-end">
+          <Box>
+            <Title order={2}>Editar envío</Title>
+            <Text c="dimmed">
+              Este envío no se puede editar en su estado actual
+            </Text>
+          </Box>
+          <Button
+            variant="subtle"
+            leftSection={<IconArrowLeft size={18} />}
+            onClick={() => navigate("~/envios")}
+          >
+            Volver
+          </Button>
+        </Group>
+
+        <Card withBorder>
+          <Stack align="center" py="xl" gap="sm">
+            <Badge color={color} size="lg">
+              {label}
+            </Badge>
+            <Text c="dimmed" ta="center">
+              No se pueden editar envíos en estado &quot;Entregado&quot; o
+              &quot;Rechazado&quot;.
+            </Text>
+            <Button onClick={() => navigate("~/envios")}>Volver</Button>
+          </Stack>
         </Card>
       </PageContainer>
     );

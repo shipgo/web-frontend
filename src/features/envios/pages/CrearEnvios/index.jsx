@@ -22,6 +22,7 @@ import { CREAR_ENVIO_SCHEMA, INITIAL_VALUES } from "./constants/schema";
 import SeccionOrigen from "./components/SeccionOrigen";
 import SeccionCarga from "./components/SeccionCarga";
 import Footer from "./components/Footer";
+import { buildEnvioReqDTO } from "../../utils";
 
 const CrearEnvios = () => {
   const [, navigate] = useLocation();
@@ -55,26 +56,7 @@ const CrearEnvios = () => {
   const handleSubmit = form.onSubmit(async (values) => {
     setIsSubmitting(true);
     try {
-      const payload = {
-        nombre: values.nombre,
-        apellido: values.apellido,
-        emailRemitente: values.emailRemitente,
-        emailReceptor: values.emailReceptor,
-        prefijo: values.prefijo,
-        telefono: values.telefono,
-        destino: {
-          nombreCalle: values.nombreCalle,
-          numeroCalle: values.numeroCalle,
-          localidad: { id: Number(values.localidadID) },
-          latitud: values.coordenadas?.lat,
-          longitud: values.coordenadas?.lng,
-        },
-        detalleEnvios: values.detalleEnvios.map((paquete) => ({
-          categoria: { id: Number(paquete.categoriaID) },
-          descripcion: paquete.descripcion || null,
-          peso: Number(paquete.peso),
-        })),
-      };
+      const payload = buildEnvioReqDTO(values);
 
       const envio = await envioApi.save(payload);
 

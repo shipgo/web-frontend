@@ -130,4 +130,58 @@ describe("EditarEnvio", () => {
       })
     );
   });
+
+  it("muestra el error de campo devuelto por PUT /api/envio/{id} (400 de validación, CONTRACTS.md §5)", async () => {
+    const user = userEvent.setup();
+    envioApi.update.mockRejectedValue({
+      response: {
+        data: {
+          statusCode: 400,
+          message: "Error en la validación de los campos.",
+          fields: [{ field: "telefono", error: "El teléfono no es válido." }],
+        },
+      },
+    });
+
+    renderWithProviders(
+      <Route path="/envios/editar/:id" component={EditarEnvio} />,
+      { route: "/envios/editar/9" }
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+    });
+
+    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+    await waitFor(() => {
+      expect(envioApi.update).toHaveBeenCalledTimes(1);
+    });
+
+    expect(
+      await screen.findByText("El teléfono no es válido.")
+    ).toBeInTheDocument();
+  });
+
+  it("no permite editar un envío en estado terminal (entregado/rechazado)", async () => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+
+    renderWithProviders(
+      <Route path="/envios/editar/:id" component={EditarEnvio} />,
+      { route: "/envios/editar/9" }
+    );
+
+    await waitFor(() => {
+      expect(envioApi.getById).toHaveBeenCalledWith("9");
+    });
+
+    expect(
+      await screen.findByText(/no se puede editar en su estado actual/i)
+    ).toBeInTheDocument();
+
+    expect(screen.queryByLabelText(/^nombre/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /guardar cambios/i })
+    ).not.toBeInTheDocument();
+  });
 });
