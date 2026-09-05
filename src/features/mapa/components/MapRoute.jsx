@@ -4,9 +4,13 @@ import { IconBuilding, IconCheck, IconPhone, IconTruck, IconX } from '@tabler/ic
 import { Layer, Marker, Popup, Source, useMap } from 'react-map-gl/mapbox';
 import { LngLatBounds } from 'mapbox-gl';
 
+import { estadoBadge, esEstadoTerminal } from '@domain/estados';
+import { formatTelefono } from '@domain/format';
 import { useGetRoute } from '../hooks/useGetRoute';
 import { useSelectedViaje } from '../contexts/selectedViaje';
-import { ESTADO_CONFIG, VIAJES_MOCK } from '../mocks';
+import { useViajesConUbicacion } from '../hooks/useViajesConUbicacion';
+import { getEstadoVisualViaje } from '../utils/estadoVisual';
+import { direccionDeRecorrido } from '../utils/recorridos';
 
 const getRouteGradient = (progress) => {
   if (progress <= 0) {
@@ -24,12 +28,12 @@ const getRouteGradient = (progress) => {
   ];
 };
 
-const StopMarker = ({ stop, index, isDelivered, onClick }) => (
+const StopMarker = ({ parada, index, isDelivered, onClick }) => (
   <Marker
-    longitude={stop.coords[0]}
-    latitude={stop.coords[1]}
+    longitude={parada.coords[0]}
+    latitude={parada.coords[1]}
     anchor="center"
-    onClick={(e) => { e.originalEvent.stopPropagation(); onClick(stop); }}
+    onClick={(e) => { e.originalEvent.stopPropagation(); onClick(parada); }}
   >
     <div
       style={{
@@ -56,59 +60,71 @@ const StopMarker = ({ stop, index, isDelivered, onClick }) => (
 
 const MapRoute = () => {
   const { selectedViajeId } = useSelectedViaje();
-  const { route, isFetching } = useGetRoute(selectedViajeId);
-  const { current: map } = useMap();
-  const [selectedStop, setSelectedStop] = useState(null);
+  const { viajes } = useViajesConUbicacion();
+  const selectedViaje = viajes.find((v) => v.id === selectedViajeId);
 
-  const selectedViaje = VIAJES_MOCK.find((v) => v.id === selectedViajeId);
+  const { viaje, paradas, progreso, route } = useGetRoute(
+    selectedViajeId,
+    selectedViaje?.currentLocation,
+  );
+  const { current: map } = useMap();
+  const [selectedParada, setSelectedParada] = useState(null);
+
+  const paradasConCoords = useMemo(() => paradas.filter((p) => p.coords), [paradas]);
+  const paradasEntregadas = progreso?.paradasEntregadas ?? 0;
 
   const deliveredProgress = useMemo(() => {
-    if (!route?.legDistances || !selectedViaje || selectedViaje.deliveredStops === 0) return 0;
+    if (!route?.legDistances || paradasEntregadas === 0) return 0;
     const completed = route.legDistances
-      .slice(0, selectedViaje.deliveredStops)
+      .slice(0, paradasEntregadas)
       .reduce((sum, d) => sum + d, 0);
     return route.totalDistance > 0 ? completed / route.totalDistance : 0;
-  }, [route, selectedViaje]);
+  }, [route, paradasEntregadas]);
 
   useEffect(() => {
-    setSelectedStop(null);
-    if (!map || !selectedViaje) return;
+    setSelectedParada(null);
+    if (!map || !selectedViaje?.currentLocation) return;
     map.flyTo({ center: selectedViaje.currentLocation, zoom: 14, duration: 1200 });
+    // Sólo al cambiar de viaje seleccionado: no volver a centrar la cámara
+    // en cada ping de ubicación del mismo viaje (eso lo maneja el usuario).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedViajeId]);
 
   useEffect(() => {
     if (!map || !route || !selectedViaje) return;
-    const truckWaypoint = route.waypoints[selectedViaje.deliveredStops];
+    const truckWaypoint = route.waypoints[paradasEntregadas] ?? route.waypoints[0];
     const bounds = new LngLatBounds();
     bounds.extend(truckWaypoint);
     route.waypoints.forEach((wp) => bounds.extend(wp));
     map.fitBounds(bounds, { padding: 200, duration: 2000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route, map, selectedViajeId]);
 
   if (!selectedViaje) return null;
 
-  const estado = ESTADO_CONFIG[selectedViaje.estado];
-  const truckPos = route
-    ? route.waypoints[selectedViaje.deliveredStops]
-    : selectedViaje.currentLocation;
+  const estadoVisual = getEstadoVisualViaje(selectedViaje, selectedViaje.ultimaActualizacion);
+  const truckPos = route ? route.waypoints[paradasEntregadas] : selectedViaje.currentLocation;
+  const origenSucursal = viaje?.sucursal?.puntoEntrega;
+
+  if (!truckPos) return null;
 
   return (
     <>
       <Marker longitude={truckPos[0]} latitude={truckPos[1]} anchor="bottom" style={{ cursor: 'default' }}>
-        <Tooltip label={`${selectedViaje.patente} · ${selectedViaje.chofer} · ETA ${selectedViaje.eta}`} withArrow>
-          <ThemeIcon color={estado.color} size="lg" radius="xl">
+        <Tooltip label={`${selectedViaje.patente} · ${selectedViaje.choferNombre} · ${estadoVisual.label}`} withArrow>
+          <ThemeIcon color={estadoVisual.color} size="lg" radius="xl">
             <IconTruck size={18} />
           </ThemeIcon>
         </Tooltip>
       </Marker>
 
-      {selectedViaje.deliveredStops > 0 && (
+      {origenSucursal && paradasEntregadas > 0 && (
         <Marker
-          longitude={selectedViaje.originLocation[0]}
-          latitude={selectedViaje.originLocation[1]}
+          longitude={origenSucursal.longitud}
+          latitude={origenSucursal.latitud}
           anchor="center"
         >
-          <Tooltip label="Origen del viaje" withArrow>
+          <Tooltip label={`Origen: ${viaje.sucursal.nombre}`} withArrow>
             <ThemeIcon color="dark" size="md" radius="xl" variant="filled">
               <IconBuilding size={14} />
             </ThemeIcon>
@@ -116,48 +132,64 @@ const MapRoute = () => {
         </Marker>
       )}
 
-      {selectedViaje.stops.map((stop, i) => (
+      {paradasConCoords.map((parada, i) => (
         <StopMarker
-          key={`stop-${i}`}
-          stop={stop}
+          key={parada.id ?? `stop-${i}`}
+          parada={parada}
           index={i}
-          isDelivered={i < selectedViaje.deliveredStops}
-          onClick={setSelectedStop}
+          isDelivered={esEstadoTerminal('recorrido', parada.estado)}
+          onClick={setSelectedParada}
         />
       ))}
 
-      {selectedStop && (
+      {selectedParada && (
         <Popup
-          longitude={selectedStop.coords[0]}
-          latitude={selectedStop.coords[1]}
+          longitude={selectedParada.coords[0]}
+          latitude={selectedParada.coords[1]}
           anchor="top"
           closeButton={false}
-          onClose={() => setSelectedStop(null)}
-          maxWidth="240px"
+          onClose={() => setSelectedParada(null)}
+          maxWidth="260px"
           style={{ padding: 0 }}
         >
-          <Stack gap={6} p="sm" style={{ minWidth: 200 }}>
+          <Stack gap={6} p="sm" style={{ minWidth: 220 }}>
             <Group justify="space-between" align="flex-start" wrap="nowrap" gap="xs">
               <Stack gap={2}>
-                <Text size="sm" fw={700} style={{ lineHeight: 1.2 }}>{selectedStop.clientName}</Text>
-                <Text size="xs" c="dimmed">{selectedStop.address}</Text>
+                <Text size="sm" fw={700} style={{ lineHeight: 1.2 }}>
+                  {direccionDeRecorrido(selectedParada)}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  {estadoBadge('recorrido', selectedParada.estado).label}
+                </Text>
               </Stack>
-              <Group gap={4} style={{ flexShrink: 0 }}>
-                <ActionIcon
-                  variant="subtle"
-                  color="green"
-                  size="sm"
-                  component="a"
-                  href={`tel:${selectedStop.phone}`}
-                >
-                  <IconPhone size={14} />
-                </ActionIcon>
-                <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setSelectedStop(null)}>
-                  <IconX size={14} />
-                </ActionIcon>
-              </Group>
+              <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setSelectedParada(null)}>
+                <IconX size={14} />
+              </ActionIcon>
             </Group>
-            <Text size="xs" c="dimmed">Horario pactado: {selectedStop.timeSlot}</Text>
+
+            {(selectedParada.detalleRecorridos ?? []).map((detalle) => {
+              const envio = detalle.envio;
+              if (!envio) return null;
+              const nombre = [envio.nombre, envio.apellido].filter(Boolean).join(' ')
+                || `Envío ${envio.codigoSeguimiento ?? envio.id}`;
+
+              return (
+                <Group key={detalle.id} justify="space-between" wrap="nowrap" gap="xs">
+                  <Text size="xs">{nombre}</Text>
+                  {envio.telefono && (
+                    <ActionIcon
+                      variant="subtle"
+                      color="green"
+                      size="sm"
+                      component="a"
+                      href={`tel:${formatTelefono(envio)}`}
+                    >
+                      <IconPhone size={14} />
+                    </ActionIcon>
+                  )}
+                </Group>
+              );
+            })}
           </Stack>
         </Popup>
       )}
