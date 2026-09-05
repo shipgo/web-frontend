@@ -26,4 +26,15 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    files: ['**/*.{js,jsx}', '!**/*.test.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: ['**/mocks.js', '**/PACKAGES.json'],
+        },
+      ],
+    },
+  },
 ])
