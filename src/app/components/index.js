@@ -1,5 +1,6 @@
 export { default as PublicRoute } from "@components/PublicRoute";
 export { default as ProtectedRoute } from "@components/ProtectedRoute";
+export { default as MobileOnlyScreen } from "@components/MobileOnlyScreen";
 export { default as FiltersList } from "@components/FiltersList";
 export { default as ResultsCounter } from "@components/ResultsCounter";
 export { default as ScreenContainer } from "@components/ScreenContainer";

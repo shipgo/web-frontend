@@ -21,10 +21,16 @@ import {
 
 import { ADMIN, PAGES } from "../constants/items";
 import { IconMap } from "@tabler/icons-react";
+import { useAuth } from "@contexts/auth";
+import { hasAnyRole } from "@domain/roles";
 
 const AppNavbar = () => {
   const [location] = useLocation();
   const { toggleColorScheme, colorScheme } = useMantineColorScheme();
+  const { user } = useAuth();
+
+  const pages = PAGES.filter(({ roles }) => hasAnyRole(user, roles));
+  const admin = ADMIN.filter(({ roles }) => hasAnyRole(user, roles));
 
   return (
     <AppShellNavbar>
@@ -48,33 +54,41 @@ const AppNavbar = () => {
         leftSection={<IconMap size={18} />}
       />
 
-      <Text size="xs" fw="bold" m="12" tt="uppercase">
-        Gestionar
-      </Text>
-      {PAGES.map(({ label, to, icon }) => (
-        <NavLink
-          to={to}
-          key={label}
-          label={label}
-          component={Link}
-          leftSection={icon}
-          active={location.startsWith(to)}
-        />
-      ))}
+      {pages.length > 0 && (
+        <>
+          <Text size="xs" fw="bold" m="12" tt="uppercase">
+            Gestionar
+          </Text>
+          {pages.map(({ label, to, icon }) => (
+            <NavLink
+              to={to}
+              key={label}
+              label={label}
+              component={Link}
+              leftSection={icon}
+              active={location.startsWith(to)}
+            />
+          ))}
+        </>
+      )}
 
-      <Text size="xs" fw="bold" m="12" tt="uppercase">
-        Administrar
-      </Text>
-      {ADMIN.map(({ label, to, icon }) => (
-        <NavLink
-          to={to}
-          key={label}
-          label={label}
-          component={Link}
-          leftSection={icon}
-          active={location.startsWith(to)}
-        />
-      ))}
+      {admin.length > 0 && (
+        <>
+          <Text size="xs" fw="bold" m="12" tt="uppercase">
+            Administrar
+          </Text>
+          {admin.map(({ label, to, icon }) => (
+            <NavLink
+              to={to}
+              key={label}
+              label={label}
+              component={Link}
+              leftSection={icon}
+              active={location.startsWith(to)}
+            />
+          ))}
+        </>
+      )}
 
       <NavLink
         mt="auto"
