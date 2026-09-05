@@ -14,8 +14,8 @@ vi.mock("@api/viaje.api", () => ({
 }));
 
 vi.mock("@api", () => ({
-  vehiculoApi: { getAll: vi.fn() },
-  usuarioApi: { getChoferes: vi.fn() },
+  vehiculoApi: { getDisponibles: vi.fn() },
+  usuarioApi: { getChoferesDisponibles: vi.fn() },
 }));
 
 import { viajeApi } from "@api/viaje.api";
@@ -24,8 +24,9 @@ import EditarViaje from "./index";
 
 const EXISTING_VIAJE = {
   id: 42,
-  fechaHoraInicio: "2026-08-01T10:00:00",
-  fechaHoraFin: "2026-08-01T18:00:00",
+  estado: "planificado",
+  fechaHoraInicio: null,
+  fechaHoraFin: null,
   fechaHoraInicioPlanificada: "2026-08-01T09:00:00",
   fechaHoraFinPlanificada: "2026-08-01T17:00:00",
   vehiculo: { id: 5, patente: "AB123CD", modelo: { nombre: "Hilux" } },
@@ -62,8 +63,8 @@ describe("EditarViaje", () => {
 
     viajeApi.getById.mockResolvedValue(EXISTING_VIAJE);
     viajeApi.update.mockResolvedValue({ id: 42 });
-    vehiculoApi.getAll.mockResolvedValue(VEHICULOS);
-    usuarioApi.getChoferes.mockResolvedValue(CHOFERES);
+    vehiculoApi.getDisponibles.mockResolvedValue(VEHICULOS);
+    usuarioApi.getChoferesDisponibles.mockResolvedValue(CHOFERES);
   });
 
   it("prefills the vehículo, choferes and planned dates from the fetched viaje", async () => {
@@ -89,9 +90,27 @@ describe("EditarViaje", () => {
     expect(screen.getByLabelText(/llegada planificada/i)).toHaveTextContent(
       "01/08/2026 17:00"
     );
+
+    // Usa los endpoints de disponibilidad (SHG-BE-006), no `getAll`/`getChoferes`,
+    // reinyectando el viaje propio (`viajeIdExcluido`) para que su vehículo/chofer
+    // actuales no cuenten como "ocupados por sí mismos".
+    await waitFor(() => {
+      expect(vehiculoApi.getDisponibles).toHaveBeenCalledWith({
+        desde: "2026-08-01T09:00:00",
+        hasta: "2026-08-01T17:00:00",
+        sucursalId: undefined,
+        viajeIdExcluido: 42,
+      });
+      expect(usuarioApi.getChoferesDisponibles).toHaveBeenCalledWith({
+        desde: "2026-08-01T09:00:00",
+        hasta: "2026-08-01T17:00:00",
+        sucursalId: undefined,
+        viajeIdExcluido: 42,
+      });
+    });
   });
 
-  it("submits the edited vehículo/choferes/fechas while keeping the existing envíos grouping", async () => {
+  it("submits the edited vehículo/choferes/fechas while keeping the existing envíos grouping, without sending fechas reales", async () => {
     const user = userEvent.setup();
     renderWithProviders(
       <Route path="/viajes/:id/editar" component={EditarViaje} />,
@@ -117,18 +136,53 @@ describe("EditarViaje", () => {
     const [calledId, payload] = viajeApi.update.mock.calls[0];
     expect(calledId).toBe("42");
 
-    expect(payload.viaje).toEqual(
-      expect.objectContaining({
-        vehiculoID: 6,
-        choferesID: [10],
-        fechaHoraInicio: EXISTING_VIAJE.fechaHoraInicio,
-        fechaHoraFin: EXISTING_VIAJE.fechaHoraFin,
-      })
-    );
+    // `fechaHoraInicio`/`fechaHoraFin` (reales) no se mandan (CONTRACTS.md §8,
+    // SHG-BE-021): son nullable y las completa el backend server-side.
+    expect(payload.viaje).not.toHaveProperty("fechaHoraInicio");
+    expect(payload.viaje).not.toHaveProperty("fechaHoraFin");
+
+    // Las planificadas van en formato `LocalDateTime` (sin offset/zona ni
+    // milisegundos) — NO `.toISOString()`.
+    expect(payload.viaje).toEqual({
+      fechaHoraInicioPlanificada: "2026-08-01T09:00:00",
+      fechaHoraFinPlanificada: "2026-08-01T17:00:00",
+      vehiculoID: 6,
+      choferesID: [10],
+    });
 
     expect(payload.enviosPuntoEntrega).toEqual([
       { enviosID: [200, 201], puntoEntregaID: 3, sucursalDestinoID: null },
       { enviosID: [202], puntoEntregaID: null, sucursalDestinoID: 7 },
     ]);
+  });
+
+  it("blocks editing (no form, no submit) when the viaje is not in creado/planificado", async () => {
+    viajeApi.getById.mockResolvedValue({
+      ...EXISTING_VIAJE,
+      estado: "en_camino",
+    });
+
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => {
+      expect(viajeApi.getById).toHaveBeenCalledWith("42");
+    });
+
+    expect(
+      await screen.findByText(/no se puede editar en su estado actual/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("combobox", { name: /^vehículo/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /guardar cambios/i })
+    ).not.toBeInTheDocument();
+
+    expect(vehiculoApi.getDisponibles).not.toHaveBeenCalled();
+    expect(usuarioApi.getChoferesDisponibles).not.toHaveBeenCalled();
   });
 });

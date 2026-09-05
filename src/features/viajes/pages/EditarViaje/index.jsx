@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
+  Badge,
   Box,
   Button,
   Card,
@@ -15,36 +16,36 @@ import {
 import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { useQuery } from "@tanstack/react-query";
 import { IconCalendar, IconCheck, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
 
-import { usuarioApi, vehiculoApi } from "@api";
+import { estadoBadge, normalizarEstado } from "@domain/estados";
 import { viajeApi } from "../../api/viajes.api";
+import { useGetVehiculosDisponibles } from "../CrearViaje/hooks/useGetVehiculosDisponibles";
+import { useChoferesDisponibles } from "../CrearViaje/hooks/useChoferesDisponibles";
+import { useDisponibilidadParams } from "./hooks/useDisponibilidadParams";
+import {
+  buildViajeReqDTO,
+  choferLabel,
+  vehiculoLabel,
+} from "./utils";
 
 /**
- * Reconstruye el arreglo `enviosPuntoEntrega` a partir de los recorridos
- * existentes del viaje, agrupando los envíos ya asignados a cada recorrido.
- * Esta pantalla no permite modificar qué envíos viajan ni su punto de
- * entrega/sucursal destino: solo reenvía lo que ya existía para que el PUT
- * (que exige el contrato completo) no pierda esa información.
+ * Estados de viaje en los que esta pantalla permite editar. Más restrictivo
+ * a propósito que `DetalleViaje/acciones.js` (`puedeEditar`, que sólo
+ * bloquea los terminales `finalizado`/`cancelado` para decidir si se
+ * muestra el botón "Editar"): acá el criterio de aceptación de `SHG-FE-010`
+ * pide limitarlo a `creado`/`planificado`. Motivo concreto: `ViajeService.update`
+ * (backend) hace `modelMapper.map(viajeR.getViaje(), viaje)` sin resguardar
+ * `fechaHoraInicio`/`fechaHoraFin` reales — si el viaje ya se inició
+ * (`en_camino`/`en_proceso_de_carga`/`con_problemas`), esas fechas reales ya
+ * están seteadas y un PUT que no las reenvíe (`SHG-BE-021`, ver `utils.js`)
+ * las pisaría con `null`. En `creado`/`planificado` esas fechas siempre son
+ * `null`, así que no hay riesgo. Si `DetalleViaje` termina mostrando
+ * "Editar" para un viaje que esta pantalla bloquea, es una inconsistencia a
+ * reconciliar aparte (documentado en `planning/coordination/frontend.md`).
  */
-const buildEnviosPuntoEntrega = (recorridos = []) =>
-  recorridos.map((recorrido) => ({
-    enviosID: (recorrido.detalleRecorridos || []).map(
-      (detalle) => detalle.envio?.id
-    ),
-    puntoEntregaID: recorrido.puntoEntrega?.id ?? null,
-    sucursalDestinoID: recorrido.sucursalDestino?.id ?? null,
-  }));
-
-const vehiculoLabel = (vehiculo) =>
-  [vehiculo.patente, vehiculo.modelo?.nombre].filter(Boolean).join(" - ");
-
-const choferLabel = (chofer) =>
-  [chofer.nombre, chofer.apellido].filter(Boolean).join(" ") ||
-  chofer.username ||
-  `Chofer ${chofer.id}`;
+const ESTADOS_EDITABLES = ["creado", "planificado"];
 
 const EditarViaje = () => {
   const { id } = useParams();
@@ -82,14 +83,33 @@ const EditarViaje = () => {
     },
   });
 
-  const vehiculosQuery = useQuery({
-    queryKey: ["viajes", "editar", "vehiculos"],
-    queryFn: () => vehiculoApi.getAll(),
+  const esEditable = useMemo(
+    () =>
+      Boolean(
+        viajeOriginal &&
+          ESTADOS_EDITABLES.includes(normalizarEstado(viajeOriginal.estado)),
+      ),
+    [viajeOriginal],
+  );
+
+  const { desde, hasta } = useDisponibilidadParams(
+    form.values.fechaHoraInicioPlanificada,
+    form.values.fechaHoraFinPlanificada,
+  );
+  const viajeIdExcluido = id ? Number(id) : undefined;
+
+  // Si el viaje no es editable no tiene sentido pedir disponibilidad (la
+  // pantalla ya bloquea el form entero más abajo).
+  const vehiculosQuery = useGetVehiculosDisponibles({
+    desde: esEditable ? desde : undefined,
+    hasta: esEditable ? hasta : undefined,
+    viajeIdExcluido,
   });
 
-  const choferesQuery = useQuery({
-    queryKey: ["viajes", "editar", "choferes"],
-    queryFn: () => usuarioApi.getChoferes(),
+  const choferesQuery = useChoferesDisponibles({
+    desde: esEditable ? desde : undefined,
+    hasta: esEditable ? hasta : undefined,
+    viajeIdExcluido,
   });
 
   useEffect(() => {
@@ -133,28 +153,12 @@ const EditarViaje = () => {
 
   const handleSubmit = useCallback(
     async (values) => {
-      if (!viajeOriginal) return;
+      if (!viajeOriginal || !esEditable) return;
 
       try {
         setLoading(true);
 
-        const payload = {
-          viaje: {
-            fechaHoraInicio: viajeOriginal.fechaHoraInicio,
-            fechaHoraFin: viajeOriginal.fechaHoraFin,
-            fechaHoraInicioPlanificada: dayjs(
-              values.fechaHoraInicioPlanificada
-            ).toISOString(),
-            fechaHoraFinPlanificada: dayjs(
-              values.fechaHoraFinPlanificada
-            ).toISOString(),
-            vehiculoID: Number(values.vehiculoID),
-            choferesID: values.choferesID.map(Number),
-          },
-          enviosPuntoEntrega: buildEnviosPuntoEntrega(
-            viajeOriginal.recorridos
-          ),
-        };
+        const payload = buildViajeReqDTO(values, viajeOriginal);
 
         await viajeApi.update(id, payload);
 
@@ -168,10 +172,27 @@ const EditarViaje = () => {
         navigate(`~/viajes/${id}`);
       } catch (error) {
         console.error("Error actualizando viaje:", error);
+
+        // 400 de validación de campos (`ApiFieldError`, CONTRACTS.md §5): manejo
+        // básico por campo hasta que exista el helper global de SHG-FE-021.
+        // El backend valida sobre `ViajeReqDTO.viaje` anidado, así que los
+        // `field` vienen prefijados "viaje." (ej. "viaje.vehiculoID"); se
+        // saca ese prefijo para que matcheen los nombres planos del form.
+        const responseData = error?.response?.data;
+        if (Array.isArray(responseData?.fields) && responseData.fields.length > 0) {
+          form.setErrors(
+            Object.fromEntries(
+              responseData.fields.map(({ field, error: fieldError }) => [
+                field.replace(/^viaje\./, ""),
+                fieldError,
+              ])
+            )
+          );
+        }
+
         notifications.show({
           title: "Error",
-          message:
-            error.response?.data?.message || "No se pudo actualizar el viaje",
+          message: responseData?.message || "No se pudo actualizar el viaje",
           color: "red",
           icon: <IconX />,
         });
@@ -179,7 +200,7 @@ const EditarViaje = () => {
         setLoading(false);
       }
     },
-    [id, navigate, viajeOriginal]
+    [id, navigate, viajeOriginal, esEditable, form]
   );
 
   const handleVolver = useCallback(() => {
@@ -189,8 +210,10 @@ const EditarViaje = () => {
   const vehiculos = vehiculosQuery.data || [];
   const choferes = choferesQuery.data || [];
 
-  // El vehículo/chofer actualmente asignado puede no figurar en los listados
-  // de "disponibles"; lo agregamos igual para no perder la selección vigente.
+  // El vehículo/chofer actualmente asignado puede no figurar en "disponibles"
+  // (por ejemplo si la ventana de fechas cambió respecto de la original); lo
+  // agregamos igual para no perder la selección vigente y que el usuario
+  // pueda guardar sin verse forzado a cambiar de recurso.
   const vehiculoOptions = [
     ...vehiculos,
     ...(viajeOriginal?.vehiculo &&
@@ -217,6 +240,44 @@ const EditarViaje = () => {
       <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
         <Card shadow="sm" p="lg" radius="md" withBorder>
           <Text>Cargando...</Text>
+        </Card>
+      </Stack>
+    );
+  }
+
+  if (viajeOriginal && !esEditable) {
+    const { label, color } = estadoBadge("viaje", viajeOriginal.estado);
+
+    return (
+      <Stack m="auto" maw="1400" gap="xl" p={{ base: "md", sm: "lg" }}>
+        <Card shadow="sm" p="lg" radius="md" withBorder>
+          <Group justify="space-between" align="center">
+            <Box>
+              <Title order={2} mb={4}>
+                Editar viaje #{id}
+              </Title>
+              <Text size="sm" c="dimmed">
+                Este viaje no se puede editar en su estado actual
+              </Text>
+            </Box>
+
+            <Button variant="subtle" onClick={handleVolver}>
+              Volver
+            </Button>
+          </Group>
+        </Card>
+
+        <Card shadow="sm" p="lg" radius="md" withBorder>
+          <Stack align="center" py="xl" gap="sm">
+            <Badge color={color} size="lg">
+              {label}
+            </Badge>
+            <Text c="dimmed" ta="center">
+              Sólo se pueden editar viajes en estado &quot;Creado&quot; o
+              &quot;Planificado&quot;.
+            </Text>
+            <Button onClick={handleVolver}>Volver al detalle</Button>
+          </Stack>
         </Card>
       </Stack>
     );
