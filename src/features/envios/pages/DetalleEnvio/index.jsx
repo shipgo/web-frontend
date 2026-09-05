@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   ActionIcon,
@@ -41,8 +41,10 @@ import PageContainer from "@components/PageContainer";
 import { envioApi } from "@api";
 import { esEstadoTerminal, estadoBadge, estadoLabel } from "@domain/estados";
 import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
-import { isAdminOrSuper } from "@domain/roles";
 import { useAuthStore } from "@stores/auth.store";
+
+import { puedeAccionarEntrega } from "./acciones";
+import { useEnvioAcciones } from "./hooks/useEnvioAcciones";
 
 const InfoItem = ({ icon, label, value }) => (
   <Box>
@@ -57,18 +59,6 @@ const InfoItem = ({ icon, label, value }) => (
     </Text>
   </Box>
 );
-
-/** Botón deshabilitado con nota — la transición de estado real la implementa SHG-FE-007. */
-const PlaceholderButton = ({ show, color, icon, label, onClick }) => {
-  if (!show) return null;
-  return (
-    <Tooltip label="Próximamente (SHG-FE-007)" withArrow>
-      <Button variant="light" color={color} leftSection={icon} disabled onClick={onClick}>
-        {label}
-      </Button>
-    </Tooltip>
-  );
-};
 
 const fechaHistorial = (item) => item.fechaHoraInicio ?? item.fecha;
 
@@ -93,30 +83,32 @@ const DetalleEnvio = () => {
   const [envio, setEnvio] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadEnvio = useCallback(async () => {
     if (!id) return;
 
-    const loadEnvio = async () => {
-      try {
-        setLoading(true);
-        const data = await envioApi.getById(id);
-        setEnvio(data);
-      } catch (error) {
-        console.error("Error cargando envío:", error);
-        notifications.show({
-          title: "Error",
-          message: "No se pudo cargar la información del envío",
-          color: "red",
-          icon: <IconX />,
-        });
-        navigate("~/envios");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadEnvio();
+    try {
+      setLoading(true);
+      const data = await envioApi.getById(id);
+      setEnvio(data);
+    } catch (error) {
+      console.error("Error cargando envío:", error);
+      notifications.show({
+        title: "Error",
+        message: "No se pudo cargar la información del envío",
+        color: "red",
+        icon: <IconX />,
+      });
+      navigate("~/envios");
+    } finally {
+      setLoading(false);
+    }
   }, [id, navigate]);
+
+  useEffect(() => {
+    loadEnvio();
+  }, [loadEnvio]);
+
+  const { confirmEntregar, confirmFalloEntrega } = useEnvioAcciones(id, { onSuccess: loadEnvio });
 
   if (loading) {
     return (
@@ -140,7 +132,7 @@ const DetalleEnvio = () => {
 
   const estadoInfo = estadoBadge("envio", envio.estado);
   const canEdit = !esEstadoTerminal("envio", envio.estado);
-  const canAccionarEstado = isAdminOrSuper(user) && !esEstadoTerminal("envio", envio.estado);
+  const canAccionarEstado = puedeAccionarEntrega(user, envio.estado);
   const destino = envio.destino ?? {};
   const localidad = destino.localidad ?? {};
   const provincia = localidad.provincia ?? {};
@@ -155,13 +147,6 @@ const DetalleEnvio = () => {
   const detalleRecorridos = envio.detalleRecorridos ?? [];
   const recorridoActual = detalleRecorridos[detalleRecorridos.length - 1]?.recorrido ?? null;
   const viajeAsociado = recorridoActual?.viaje ?? null;
-
-  const showAccionPendiente = () =>
-    notifications.show({
-      title: "Próximamente",
-      message: "Esta acción se habilita en una futura actualización (SHG-FE-007).",
-      color: "blue",
-    });
 
   return (
     <PageContainer>
@@ -204,20 +189,26 @@ const DetalleEnvio = () => {
                 Editar
               </Button>
             )}
-            <PlaceholderButton
-              show={canAccionarEstado}
-              color="green"
-              icon={<IconTruckDelivery size={18} />}
-              label="Entregar"
-              onClick={showAccionPendiente}
-            />
-            <PlaceholderButton
-              show={canAccionarEstado}
-              color="red"
-              icon={<IconBan size={18} />}
-              label="Marcar fallo"
-              onClick={showAccionPendiente}
-            />
+            {canAccionarEstado && (
+              <Button
+                variant="light"
+                color="green"
+                leftSection={<IconTruckDelivery size={18} />}
+                onClick={confirmEntregar}
+              >
+                Entregar
+              </Button>
+            )}
+            {canAccionarEstado && (
+              <Button
+                variant="light"
+                color="red"
+                leftSection={<IconBan size={18} />}
+                onClick={confirmFalloEntrega}
+              >
+                Marcar fallo
+              </Button>
+            )}
             <Button
               variant="subtle"
               leftSection={<IconArrowLeft size={18} />}

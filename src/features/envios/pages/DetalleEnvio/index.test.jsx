@@ -1,4 +1,5 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Route } from "wouter";
 
@@ -7,6 +8,8 @@ import { renderWithProviders } from "../../../../test/renderWithProviders";
 vi.mock("@api", () => ({
   envioApi: {
     getById: vi.fn(),
+    entregar: vi.fn(),
+    falloEntrega: vi.fn(),
   },
 }));
 
@@ -143,18 +146,129 @@ describe("DetalleEnvio", () => {
     expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument();
   });
 
-  it("muestra las acciones de estado deshabilitadas (SHG-FE-007) para un ADMIN", async () => {
-    useAuthStore.setState({
-      user: new Usuario({ id: 1, username: "admin1", authorities: ["ROLE_ADMIN"] }),
-      isAuthenticated: true,
+  describe("acciones de estado (SHG-FE-007)", () => {
+    beforeEach(() => {
+      useAuthStore.setState({
+        user: new Usuario({ id: 1, username: "admin1", authorities: ["ROLE_ADMIN"] }),
+        isAuthenticated: true,
+      });
     });
 
-    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
-      route: "/envios/9",
+    it("no muestra los botones de acción para un usuario sin rol admin/superuser", async () => {
+      useAuthStore.setState({
+        user: new Usuario({ id: 2, username: "carga1", authorities: ["ROLE_CARGA"] }),
+        isAuthenticated: true,
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /entregar/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /marcar fallo/i })).not.toBeInTheDocument();
     });
 
-    const entregarBtn = await screen.findByRole("button", { name: /entregar/i });
-    expect(entregarBtn).toBeDisabled();
-    expect(screen.getByRole("button", { name: /marcar fallo/i })).toBeDisabled();
+    it("no muestra los botones de acción si el estado no es en_camino/en_vehiculo", async () => {
+      envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "en_sucursal" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /entregar/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /marcar fallo/i })).not.toBeInTheDocument();
+    });
+
+    it("muestra los botones habilitados para un ADMIN con el envío en_camino", async () => {
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      const entregarBtn = await screen.findByRole("button", { name: /entregar/i });
+      expect(entregarBtn).toBeEnabled();
+      expect(screen.getByRole("button", { name: /marcar fallo/i })).toBeEnabled();
+    });
+
+    it("entrega el envío tras confirmar y refetchea el detalle", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      await waitFor(() => {
+        expect(envioApi.entregar).toHaveBeenCalledWith("9");
+      });
+      expect(await screen.findByText("Envío entregado")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("el modal de fallo de entrega no confirma sin motivo (obligatorio)", async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /marcar fallo/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Marcar fallo de entrega" }));
+
+      expect(within(dialog).getByText("El motivo es obligatorio")).toBeInTheDocument();
+      expect(envioApi.falloEntrega).not.toHaveBeenCalled();
+    });
+
+    it("registra el fallo de entrega con motivo y refetchea el detalle", async () => {
+      const user = userEvent.setup();
+      envioApi.falloEntrega.mockResolvedValue({ ...EXISTING_ENVIO, estado: "rechazado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /marcar fallo/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/motivo/i), "Destinatario ausente");
+      await user.click(within(dialog).getByRole("button", { name: "Marcar fallo de entrega" }));
+
+      await waitFor(() => {
+        expect(envioApi.falloEntrega).toHaveBeenCalledWith("9", { motivo: "Destinatario ausente" });
+      });
+      expect(await screen.findByText("Fallo de entrega registrado")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("muestra una advertencia si el backend rechaza la transición (409)", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockRejectedValue({
+        response: { status: 409, data: { message: "El envío no está en camino" } },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      expect(await screen.findByText("No se puede completar la acción")).toBeInTheDocument();
+      expect(screen.getByText("El envío no está en camino")).toBeInTheDocument();
+    });
   });
 });
