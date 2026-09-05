@@ -1,4 +1,4 @@
-import { Button, Flex } from '@mantine/core';
+import { Box, Button, Flex } from '@mantine/core';
 import { Link } from 'wouter';
 import { IconPlus } from '@tabler/icons-react';
 
@@ -10,6 +10,7 @@ import MapListadoViajes from './components/MapListadoViajes';
 import MapCard from './components/MapCard';
 import MapTruckMarkers from './components/MapTruckMarkers';
 import MapRoute from './components/MapRoute';
+import MapDetalles from './components/MapDetalles';
 
 const Mapa = () => (
   <SelectedViajeProvider>
@@ -28,10 +29,13 @@ const Mapa = () => (
         </PageHeader>
         <Flex flex={1} gap="md" style={{ minHeight: 0 }}>
           <MapListadoViajes />
-          <MapCard>
-            <MapTruckMarkers />
-            <MapRoute />
-          </MapCard>
+          <Box style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+            <MapCard style={{ position: 'absolute', inset: 0 }}>
+              <MapTruckMarkers />
+              <MapRoute />
+            </MapCard>
+            <MapDetalles />
+          </Box>
         </Flex>
       </PageContainer>
     </TrackingProvider>

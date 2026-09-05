@@ -2,19 +2,23 @@ import { ActionIcon, Badge, Box, Divider, Group, Text, Tooltip } from '@mantine/
 import { useHover } from '@mantine/hooks';
 import { IconBrandWhatsapp } from '@tabler/icons-react';
 
+import { formatFechaHora } from '@domain/format';
 import { useSelectedViaje } from '../contexts/selectedViaje';
-import { ESTADO_CONFIG } from '../mocks';
+import { getEstadoVisualViaje } from '../utils/estadoVisual';
 
 const MapListadoViajesItem = ({ viaje, isLast }) => {
   const { hovered, ref } = useHover();
   const { selectedViajeId, setSelectedViajeId } = useSelectedViaje();
 
   const isSelected = selectedViajeId === viaje.id;
-  const estado = ESTADO_CONFIG[viaje.estado];
+  const estado = getEstadoVisualViaje(viaje, viaje.ultimaActualizacion);
+  const chofer = viaje.chofer;
 
   const handleWhatsApp = (e) => {
     e.stopPropagation();
-    window.open(`https://wa.me/54${viaje.telefono}`, '_blank');
+    const digitos = `${chofer?.prefijo ?? ''}${chofer?.telefono ?? ''}`.replace(/\D/g, '');
+    if (!digitos) return;
+    window.open(`https://wa.me/54${digitos}`, '_blank');
   };
 
   return (
@@ -39,31 +43,29 @@ const MapListadoViajesItem = ({ viaje, isLast }) => {
         <Group justify="space-between">
           <Group gap={6}>
             <Text size="sm" c="dimmed">
-              {viaje.chofer}
+              {viaje.choferNombre}
             </Text>
-            <Tooltip label="Contactar por WhatsApp" position="right">
-              <ActionIcon
-                variant="subtle"
-                color="green"
-                size="sm"
-                onClick={handleWhatsApp}
-              >
-                <IconBrandWhatsapp size={14} />
-              </ActionIcon>
-            </Tooltip>
+            {chofer?.telefono && (
+              <Tooltip label="Contactar por WhatsApp" position="right">
+                <ActionIcon
+                  variant="subtle"
+                  color="green"
+                  size="sm"
+                  onClick={handleWhatsApp}
+                >
+                  <IconBrandWhatsapp size={14} />
+                </ActionIcon>
+              </Tooltip>
+            )}
           </Group>
           <Text size="xs" c="dimmed">
-            {viaje.sucursal}
+            {viaje.sucursalNombre}
           </Text>
         </Group>
 
         <Group gap="xs" mt={4}>
           <Text size="xs" c="dimmed">
-            ETA: {viaje.eta}
-          </Text>
-          <Text size="xs" c="dimmed">·</Text>
-          <Text size="xs" c="dimmed">
-            {viaje.paquetesRestantes} paquetes restantes
+            Llegada estimada: {formatFechaHora(viaje.fechaHoraFinPlanificada)}
           </Text>
         </Group>
       </Box>
