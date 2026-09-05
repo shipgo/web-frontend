@@ -8,6 +8,7 @@ import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 import { usuarioApi } from "@api";
 import UsuarioForm from "../components/UsuarioForm";
+import { toBackendDate } from "../utils";
 
 const CrearUsuario = () => {
   const [, navigate] = useLocation();
@@ -73,17 +74,10 @@ const CrearUsuario = () => {
       try {
         setLoading(true);
 
-        // Preparar fecha de nacimiento
-        let fechaNacimiento = null;
-        if (values.fechaNacimiento) {
-          if (values.fechaNacimiento instanceof Date) {
-            fechaNacimiento = values.fechaNacimiento
-              .toISOString()
-              .split("T")[0];
-          } else if (typeof values.fechaNacimiento === "string") {
-            fechaNacimiento = values.fechaNacimiento;
-          }
-        }
+        // `fechaNacimiento` es `LocalDate` en el backend (`UserReqDTO`): va como
+        // `YYYY-MM-DD`, sin hora ni offset (no usar `.toISOString()`, ver bitácora
+        // SHG-FE-008/SHG-FE-016 en planning/coordination/frontend.md).
+        const fechaNacimiento = toBackendDate(values.fechaNacimiento);
 
         // Preparar datos para el backend
         const userData = {
@@ -118,10 +112,24 @@ const CrearUsuario = () => {
         navigate("~/usuarios");
       } catch (error) {
         console.error("Error creando usuario:", error);
+
+        // 400 de validación de campos (`ApiFieldError`, CONTRACTS.md §5): manejo
+        // básico por campo hasta que exista el helper global de SHG-FE-021.
+        const responseData = error?.response?.data;
+        if (Array.isArray(responseData?.fields) && responseData.fields.length > 0) {
+          form.setErrors(
+            Object.fromEntries(
+              responseData.fields.map(({ field, error: fieldError }) => [
+                field,
+                fieldError,
+              ])
+            )
+          );
+        }
+
         notifications.show({
           title: "Error",
-          message:
-            error.response?.data?.message || "No se pudo crear el usuario",
+          message: responseData?.message || "No se pudo crear el usuario",
           color: "red",
           icon: <IconX />,
         });
@@ -129,7 +137,7 @@ const CrearUsuario = () => {
         setLoading(false);
       }
     },
-    [navigate]
+    [navigate, form]
   );
 
   const handleCancel = useCallback(() => {

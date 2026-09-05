@@ -25,14 +25,18 @@ import { catalogsApi, locationApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
 import {
   rolLabel,
+  normalizarRol,
   ROLE_ADMIN,
   ROLE_CARGA,
   ROLE_CHOFER,
   ROLE_SUPERUSER,
 } from "@domain/roles";
 
-// Roles asignables desde el panel web (el backend valida el resto).
-const AUTHORITIES = [ROLE_SUPERUSER, ROLE_ADMIN, ROLE_CHOFER, ROLE_CARGA];
+// Roles asignables desde el panel web (CONTRACTS.md §3): CHOFER/CARGA se dan de
+// alta acá pero solo operan desde la app; ROLE_CUSTOMER nunca se asigna desde acá
+// (se auto-registra). Se usa como allow-list para filtrar el catálogo real de
+// `authorityApi.getAll()` — no como fuente de datos en sí.
+const ASSIGNABLE_ROLES = [ROLE_SUPERUSER, ROLE_ADMIN, ROLE_CHOFER, ROLE_CARGA];
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -110,18 +114,21 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
           resultIndex++;
         }
 
-        const authoritiesData = AUTHORITIES.map((a) => ({
-          value: a,
-          label: rolLabel(a),
-        }));
+        // `results[resultIndex]` es la respuesta de `authorityApi.getAll()` (catálogo
+        // real del backend, `GET /api/authority/all`). Se filtra a los roles
+        // asignables desde la web y, si quien crea/edita no es SUPERUSER, se saca
+        // ROLE_SUPERUSER de las opciones (solo un SUPERUSER puede crear otro).
+        const authoritiesRaw = results[resultIndex] || [];
+        const authoritiesData = authoritiesRaw
+          .map((a) => normalizarRol(a))
+          .filter((rol) => ASSIGNABLE_ROLES.includes(rol))
+          .map((rol) => ({ value: rol, label: rolLabel(rol) }));
 
-        if (isSuper) {
-          setAuthorities(authoritiesData);
-        } else {
-          setAuthorities(
-            authoritiesData.filter((auth) => auth.value !== ROLE_SUPERUSER)
-          );
-        }
+        setAuthorities(
+          isSuper
+            ? authoritiesData
+            : authoritiesData.filter((auth) => auth.value !== ROLE_SUPERUSER)
+        );
 
         setTiposDocumento(
           results[resultIndex + 1].map((t) => ({
@@ -190,6 +197,16 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
 
     loadLocalidades();
   }, [form.values.provinciaID]);
+
+  // Un ADMIN no elige sucursal para el usuario que crea/edita: siempre queda
+  // asignado a la sucursal propia del ADMIN (CONTRACTS.md §3). No se muestra el
+  // Select para ADMIN (más abajo) y acá se fuerza el valor en el form.
+  useEffect(() => {
+    if (!isSuper && user?.sucursal?.id) {
+      form.setFieldValue("sucursalID", user.sucursal.id.toString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuper, user?.sucursal?.id]);
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
@@ -366,17 +383,22 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
                 hidePickedOptions
                 {...form.getInputProps("authorities")}
               />
-              {isSuper && (
+              {isSuper ? (
                 <Select
                   label="Sucursal"
-                  placeholder={
-                    isAdmin ? "Sucursal asignada" : "Seleccione (opcional)"
-                  }
+                  placeholder="Seleccione (opcional)"
                   data={sucursales}
                   searchable
                   filter={filterIgnoreAccents}
-                  clearable={isSuper}
+                  clearable
                   {...form.getInputProps("sucursalID")}
+                />
+              ) : (
+                <TextInput
+                  label="Sucursal"
+                  description="Los usuarios que crees quedan asignados a tu sucursal"
+                  value={user?.sucursal?.nombre || ""}
+                  disabled
                 />
               )}
             </SimpleGrid>
