@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 
 import { useForm } from "@mantine/form";
 import { DatePickerInput } from "@mantine/dates";
@@ -8,68 +8,100 @@ import { Card, Chip, Flex, MultiSelect, TextInput } from "@mantine/core";
 import dayjs from "dayjs";
 import { IconSearch } from "@tabler/icons-react";
 
+import { estadoOptions } from "@domain/estados";
+
+const ESTADO_OPTIONS = estadoOptions("viaje");
+
+const DEFAULT_VALUES = { search: "", estado: [], date: [null, null] };
+
+/**
+ * `ViajeFilter.fechaDesde`/`fechaHasta` son `LocalDateTime` sin offset — Jackson
+ * no acepta el sufijo `Z` de `.toISOString()` (ver bug documentado en SHG-FE-008).
+ */
+const toLocalDateTimeString = (date) => dayjs(date).format("YYYY-MM-DDTHH:mm:ss");
+
+/**
+ * Convierte los valores del form (`search`, `estado`, `date`) al shape crudo de
+ * `ViajeFilter` (CONTRACTS.md §4, cerrado por SHG-BE-005): `search`, `estado[]`
+ * (valores canónicos), `fechaDesde`/`fechaHasta` sobre `fechaHoraInicioPlanificada`.
+ */
+const buildFilterParams = ({ search, estado, date }) => {
+  const [desde, hasta] = date;
+  return {
+    search: search?.trim() || undefined,
+    estado: estado?.length ? estado : undefined,
+    fechaDesde: desde ? toLocalDateTimeString(dayjs(desde).startOf("day")) : undefined,
+    fechaHasta: hasta ? toLocalDateTimeString(dayjs(hasta).endOf("day")) : undefined,
+  };
+};
+
+/** `useParams`/`useGetViajes` esperan cada filtro como `{ label, values }`. */
+const formatValues = (params) =>
+  Object.fromEntries(
+    Object.entries(params)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => [key, { label: key, values: value }]),
+  );
+
 const QUICK_FILTERS = [
   {
     label: "Salen hoy",
-    getDefaultFilters: () => ({
-      status: ["Planificado", "Asignado"],
-      date: [dayjs(), dayjs()],
+    formValues: () => ({
       search: "",
+      estado: ["planificado"],
+      date: [dayjs().toDate(), dayjs().toDate()],
     }),
   },
   {
     label: "Atrasados",
-    getDefaultFilters: () => ({
-      status: ["Planificado", "Asignado"],
-      date: [null, null],
-      search: "",
-    }),
+    // CONTRACTS.md §4: estado=planificado + fechaHasta=<ahora>. No es un rango de
+    // día (necesita el instante exacto), así que se pisan los params que generaría
+    // el campo `date` en lugar de derivarlos de él.
+    formValues: () => ({ search: "", estado: ["planificado"], date: [null, null] }),
+    buildParams: () => ({ estado: ["planificado"], fechaHasta: toLocalDateTimeString(dayjs()) }),
   },
   {
     label: "En curso",
-    getDefaultFilters: () => ({
-      status: ["En curso"],
-      date: [null, null],
-      search: "",
-    }),
+    formValues: () => ({ search: "", estado: ["en_camino"], date: [null, null] }),
   },
   {
     label: "Últimos 7 días",
-    getDefaultFilters: () => ({
-      status: [],
-      date: [dayjs().subtract(7, "day"), dayjs()],
+    formValues: () => ({
       search: "",
+      estado: [],
+      date: [dayjs().subtract(7, "day").toDate(), dayjs().toDate()],
     }),
   },
 ];
-const DEFAULT_FILTER = QUICK_FILTERS[0];
-const DEFAULT_VALUES = {
-  search: "",
-  status: [],
-  date: [null, null],
-};
 
 const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
-  const [selectedQuickFilter, setSelectedQuickFilter] = useState(
-    DEFAULT_FILTER.label,
-  );
+  const [selectedQuickFilter, setSelectedQuickFilter] = useState(null);
 
-  const lastSearchRef = useRef(DEFAULT_FILTER.search);
+  const lastSearchRef = useRef("");
   const isQuickFilterChange = useRef(false);
+  const quickFilterOverrideRef = useRef(null);
 
-  const debounceSearch = useDebouncedCallback((valores) => {
-    onFiltersChange(valores);
-  }, 500);
+  const emitFilters = (values) => {
+    const override = quickFilterOverrideRef.current;
+    const params = override
+      ? { search: values.search?.trim() || undefined, ...override }
+      : buildFilterParams(values);
+    onFiltersChange(formatValues(params));
+  };
+
+  const debounceChange = useDebouncedCallback(emitFilters, 500);
 
   const form = useForm({
     mode: "controlled",
-    initialValues: DEFAULT_FILTER.getDefaultFilters(),
+    initialValues: DEFAULT_VALUES,
     enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
-      if (isQuickFilterChange.current) {
-        isQuickFilterChange.current = false;
-      } else {
+      const isQuick = isQuickFilterChange.current;
+      isQuickFilterChange.current = false;
+
+      if (!isQuick) {
         setSelectedQuickFilter(null);
+        quickFilterOverrideRef.current = null;
       }
 
       if (values.date[0] && !values.date[1]) return;
@@ -77,28 +109,32 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
       const searchChanged = values.search !== lastSearchRef.current;
       lastSearchRef.current = values.search;
 
-      if (searchChanged) {
-        debounceSearch(values);
+      if (isQuick) {
+        debounceChange.cancel();
+        emitFilters(values);
         return;
       }
 
-      debounceSearch.cancel();
-      onFiltersChange(values);
+      if (searchChanged) {
+        debounceChange(values);
+        return;
+      }
+
+      debounceChange.cancel();
+      emitFilters(values);
     },
   });
 
   const handleQuickFilterChange = (clickedFilterLabel) => {
     const isDeselecting = selectedQuickFilter === clickedFilterLabel;
     const nextFilter = isDeselecting ? null : clickedFilterLabel;
+    const filter = QUICK_FILTERS.find((quickFilter) => quickFilter.label === nextFilter);
 
     setSelectedQuickFilter(nextFilter);
     isQuickFilterChange.current = true;
+    quickFilterOverrideRef.current = filter?.buildParams?.() ?? null;
 
-    const newValues = nextFilter
-      ? QUICK_FILTERS.find((filter) => filter.label === nextFilter)?.getDefaultFilters()
-      : DEFAULT_VALUES;
-
-    form.setValues(newValues);
+    form.setValues(filter ? filter.formValues() : DEFAULT_VALUES);
   };
 
   return (
@@ -108,7 +144,7 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
           {...form.getInputProps("search")}
           flex={1}
           label="Buscar viaje"
-          placeholder="Ingresá el nombre del viaje, patente o chofer..."
+          placeholder="Patente del vehículo o nombre del chofer..."
           rightSection={<IconSearch size={18} />}
         />
 
@@ -116,22 +152,18 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
           {...form.getInputProps("date")}
           flex={1}
           type="range"
+          clearable
           label="Rango de fechas"
           placeholder="Seleccioná un rango de fecha"
         />
 
         <MultiSelect
-          {...form.getInputProps("status")}
+          {...form.getInputProps("estado")}
           flex={1}
           label="Estados"
           placeholder="Seleccioná..."
-          data={[
-            "Planificado",
-            "Asignado",
-            "En curso",
-            "Finalizado",
-            "Interrumpido",
-          ]}
+          data={ESTADO_OPTIONS}
+          clearable
         />
       </Flex>
 

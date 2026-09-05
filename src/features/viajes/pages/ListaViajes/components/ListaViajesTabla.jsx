@@ -12,44 +12,73 @@ import dayjs from 'dayjs';
 import { useLocation } from 'wouter';
 
 import { timeFromNow, toLocalDate } from '@utils/dates';
+import { estadoBadge, normalizarEstado } from '@domain/estados';
 import { RowActionsMenu } from '@components';
 
+// Fases en las que el viaje todavía se puede editar/cancelar desde acá.
+const ESTADOS_EDITABLES = ['creado', 'planificado', 'en_proceso_de_carga'];
+// Fases "en ruta": tiene sentido monitorear / reportar un incidente.
+const ESTADOS_EN_RUTA = ['en_camino', 'con_problemas'];
+
 const getActionsForRow = (estado, { onEditar } = {}) => {
-  const normalizedEstado = estado?.toUpperCase();
-  const actions = {
-    PLANIFICADO: [
-      { icon: <IconRoute size={18} />, label: 'Ver hoja de ruta' },
-      { icon: <IconEdit size={18} />, label: 'Editar viaje', onClick: onEditar },
-      { icon: <IconTrash size={18} />, label: 'Cancelar viaje', color: 'red', dividerBefore: true },
-    ],
-    ASIGNADO: [
-      { icon: <IconRoute size={18} />, label: 'Ver hoja de ruta' },
-      { icon: <IconEdit size={18} />, label: 'Editar viaje', onClick: onEditar },
-      { icon: <IconUserX size={18} />, label: 'Desvincular chofer' },
-      { icon: <IconTrash size={18} />, label: 'Cancelar viaje', color: 'red', dividerBefore: true },
-    ],
-    'EN CURSO': [
+  const valor = normalizarEstado(estado);
+  const actions = [{ icon: <IconRoute size={18} />, label: 'Ver hoja de ruta' }];
+
+  if (ESTADOS_EDITABLES.includes(valor)) {
+    actions.push({ icon: <IconEdit size={18} />, label: 'Editar viaje', onClick: onEditar });
+    if (valor === 'en_proceso_de_carga') {
+      actions.push({ icon: <IconUserX size={18} />, label: 'Desvincular chofer' });
+    }
+    actions.push({ icon: <IconTrash size={18} />, label: 'Cancelar viaje', color: 'red', dividerBefore: true });
+  }
+
+  if (ESTADOS_EN_RUTA.includes(valor)) {
+    actions.push(
       { icon: <IconMapSearch size={18} />, label: 'Monitorear' },
       { icon: <IconMessageReport size={18} />, label: 'Reportar incidente' },
-    ],
-    FINALIZADO: [{ icon: <IconRoute size={18} />, label: 'Ver hoja de ruta' }],
-    INTERRUMPIDO: [{ icon: <IconRoute size={18} />, label: 'Ver hoja de ruta' }],
-  };
-  return actions[normalizedEstado] ?? [];
-};
+    );
+  }
 
-const STATUS_COLORS = {
-  'EN CURSO': 'blue',
-  FINALIZADO: 'green',
-  PLANIFICADO: 'orange',
-  INTERRUMPIDO: 'red',
-  ASIGNADO: 'yellow',
+  return actions;
 };
 
 const showWarning = (item, fecha) =>
-  ['PLANIFICADO', 'ASIGNADO'].includes(item.estado?.toUpperCase()) &&
-  fecha &&
+  ESTADOS_EDITABLES.includes(normalizarEstado(item.estado)) &&
+  !!fecha &&
   dayjs(fecha).isBefore(dayjs());
+
+const nombreCompleto = (persona) =>
+  persona?.nombre && persona?.apellido
+    ? `${persona.nombre} ${persona.apellido}`
+    : persona?.nombre || persona?.username || 'Sin nombre';
+
+const ChoferCell = ({ chofer, choferes = [] }) => {
+  if (chofer) {
+    return (
+      <Group gap="0.5rem" wrap="nowrap">
+        <Avatar name={nombreCompleto(chofer)} color="initials" size="sm" />
+        <Text size="sm">{nombreCompleto(chofer)}</Text>
+      </Group>
+    );
+  }
+
+  if (choferes.length > 0) {
+    return (
+      <Stack gap={0}>
+        <Text size="sm">{nombreCompleto(choferes[0])}</Text>
+        {choferes.length > 1 && (
+          <Text size="xs" c="dimmed">+{choferes.length - 1} más</Text>
+        )}
+      </Stack>
+    );
+  }
+
+  return <Text size="sm" c="dimmed">Sin chofer asignado</Text>;
+};
+
+const recorridosCount = (item) => item.recorridos?.length ?? 0;
+const enviosCount = (item) =>
+  item.recorridos?.reduce((total, recorrido) => total + (recorrido.detalleRecorridos?.length ?? 0), 0) ?? 0;
 
 const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) => {
   const [, navigate] = useLocation();
@@ -64,29 +93,37 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
             <Checkbox checked={allSelected} indeterminate={indeterminate} onChange={onToggleAll} />
           </Table.Th>
           <Table.Th>ID Viaje</Table.Th>
-          <Table.Th>Fecha programada</Table.Th>
+          <Table.Th>Fecha planificada</Table.Th>
           <Table.Th>Estado</Table.Th>
-          <Table.Th>Recursos</Table.Th>
+          <Table.Th>Chofer</Table.Th>
+          <Table.Th>Vehículo</Table.Th>
+          <Table.Th>Recorridos / Envíos</Table.Th>
           <Table.Th>Acciones</Table.Th>
         </Table.Tr>
       </Table.Thead>
 
       <Table.Tbody>
         {items.map((item) => {
-          const chofer = item.chofer;
-          const vehiculo = item.vehiculo;
-          const fecha = item.fechaHoraInicioPlanificada || item.fechaHoraInicio;
+          const { label: estadoLabel, color: estadoColor } = estadoBadge('viaje', item.estado);
+          const fecha = item.fechaHoraInicioPlanificada;
+          const cantidadRecorridos = recorridosCount(item);
+          const cantidadEnvios = enviosCount(item);
 
           return (
-            <Table.Tr key={item.id} bg={selectedIds.has(item.id) ? 'var(--mantine-color-blue-light)' : undefined}>
-              <Table.Td>
+            <Table.Tr
+              key={item.id}
+              onClick={() => navigate(`/${item.id}`)}
+              style={{ cursor: 'pointer' }}
+              bg={selectedIds.has(item.id) ? 'var(--mantine-color-blue-light)' : undefined}
+            >
+              <Table.Td onClick={(event) => event.stopPropagation()}>
                 <Checkbox checked={selectedIds.has(item.id)} onChange={() => onToggle(item.id)} />
               </Table.Td>
 
               <Table.Td>{item.id}</Table.Td>
 
               <Table.Td>
-                <Group>
+                <Group gap="xs" align="center" wrap="nowrap">
                   <Stack gap="0">
                     <Text size="sm">{toLocalDate(fecha)}</Text>
                     <Text size="xs" fw="bold">{timeFromNow(fecha)}</Text>
@@ -100,32 +137,26 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
               </Table.Td>
 
               <Table.Td>
-                <Badge color={STATUS_COLORS[item.estado?.toUpperCase()] ?? 'gray'} variant="light" radius="md">
-                  {item.estado || 'Sin estado'}
+                <Badge color={estadoColor} variant="light" radius="md">
+                  {estadoLabel}
                 </Badge>
               </Table.Td>
 
               <Table.Td>
-                {chofer ? (
-                  <Group gap="0.5rem">
-                    <Avatar name={chofer.nombre || chofer.username} color="initials" size="sm" />
-                    <Stack gap={0}>
-                      <Text size="sm">
-                        {chofer.nombre && chofer.apellido
-                          ? `${chofer.nombre} ${chofer.apellido}`
-                          : chofer.nombre || chofer.username || 'Sin nombre'}
-                      </Text>
-                      {vehiculo && (
-                        <Text size="xs" fw={600}>{vehiculo.patente || 'Sin vehículo'}</Text>
-                      )}
-                    </Stack>
-                  </Group>
-                ) : (
-                  <Text size="sm" c="dimmed">Sin chofer asignado</Text>
-                )}
+                <ChoferCell chofer={item.chofer} choferes={item.choferes} />
               </Table.Td>
 
               <Table.Td>
+                <Text size="sm" fw={600}>{item.vehiculo?.patente || 'Sin vehículo'}</Text>
+              </Table.Td>
+
+              <Table.Td>
+                <Text size="sm">
+                  {cantidadRecorridos} recorrido{cantidadRecorridos === 1 ? '' : 's'} · {cantidadEnvios} envío{cantidadEnvios === 1 ? '' : 's'}
+                </Text>
+              </Table.Td>
+
+              <Table.Td onClick={(event) => event.stopPropagation()}>
                 <RowActionsMenu
                   actions={getActionsForRow(item.estado, {
                     onEditar: () => navigate(`/${item.id}/editar`),
