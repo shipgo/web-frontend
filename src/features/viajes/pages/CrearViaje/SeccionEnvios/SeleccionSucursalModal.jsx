@@ -1,5 +1,3 @@
-import React from "react";
-
 import { useForm } from "@mantine/form";
 import { modals } from "@mantine/modals";
 import { Button, Group, Select, Stack } from "@mantine/core";
@@ -7,13 +5,13 @@ import { Button, Group, Select, Stack } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 
 import ScreenContainer from "@components/ScreenContainer";
+import { sucursalApi } from "@api";
 
-const SUCURSALES = [
-  { id: "1", nombre: "Sucursal A" },
-  { id: "2", nombre: "Sucursal B" },
-  { id: "3", nombre: "Sucursal C" },
-];
-
+/**
+ * `GET /api/sucursal/sucursalesRestantes` (SU/AD) — sucursales a las que se
+ * puede transferir un envío (no requiere `GET /api/sucursal/all`, que es
+ * SU-only).
+ */
 const SeleccionSucursalModal = ({
   selectedPackagesAmount,
   onSelectedSucursal,
@@ -22,22 +20,16 @@ const SeleccionSucursalModal = ({
     isError,
     isFetching,
     refetch,
-    data: sucursales,
+    data: sucursales = [],
   } = useQuery({
-    queryKey: ["sucursales"],
-    initialData: [],
-    queryFn: () =>
-      new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(SUCURSALES);
-        }, 1000);
-      }),
-    select: (data) =>
-      data.map((sucursal) => ({
-        value: sucursal.id,
-        label: sucursal.nombre,
-      })),
+    queryKey: ["sucursales-restantes"],
+    queryFn: () => sucursalApi.getSucursalesRestantes(),
   });
+
+  const options = sucursales.map((sucursal) => ({
+    value: String(sucursal.id),
+    label: sucursal.nombre,
+  }));
 
   const { getInputProps, onSubmit } = useForm({
     initialValues: {
@@ -47,7 +39,10 @@ const SeleccionSucursalModal = ({
 
   const handleClose = () => modals.close("seleccion-sucursal");
   const handleSubmit = ({ sucursal }) => {
-    const selectedSucursal = SUCURSALES.find((s) => s.id === sucursal);
+    const selectedSucursal = sucursales.find(
+      (s) => String(s.id) === sucursal,
+    );
+    if (!selectedSucursal) return;
     onSelectedSucursal(selectedSucursal);
     handleClose();
   };
@@ -72,7 +67,7 @@ const SeleccionSucursalModal = ({
         <Select
           {...getInputProps("sucursal")}
           searchable
-          data={sucursales}
+          data={options}
           label="Sucursal a transferir"
           placeholder="Seleccioná una sucursal"
           description={`Vas a transferir ${selectedPackagesAmount} paquete${selectedPackagesAmount > 1 ? "s" : ""} a esta sucursal`}

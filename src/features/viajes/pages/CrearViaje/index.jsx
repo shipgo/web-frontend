@@ -51,10 +51,6 @@ const CrearViaje = () => {
         >
           Necesito ayuda
         </Button>
-
-        <Button color="red" variant="light">
-          Cancelar
-        </Button>
       </Flex>
 
       <EnviosFormProvider>

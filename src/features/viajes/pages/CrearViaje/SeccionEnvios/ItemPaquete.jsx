@@ -1,15 +1,7 @@
-import {
-  Badge,
-  Flex,
-  Group,
-  NumberFormatter,
-  Stack,
-  Text,
-  ThemeIcon,
-} from "@mantine/core";
-import { IconTrash } from "@tabler/icons-react";
+import { Badge, Flex, Group, Stack, Text, ThemeIcon } from "@mantine/core";
+import { IconMapPin, IconTrash } from "@tabler/icons-react";
 
-import { IconMapPin } from "@tabler/icons-react";
+import { formatDireccion, formatPeso } from "@domain/format";
 
 const ItemPaquete = ({ item, onRemove, isIncludedInTrip = false }) => {
   return (
@@ -17,7 +9,7 @@ const ItemPaquete = ({ item, onRemove, isIncludedInTrip = false }) => {
       <Stack gap="0.25rem" mr="auto">
         <Group gap="xs">
           <Text size="sm" fw="500">
-            #{item.id}
+            {item.codigoSeguimiento ?? `#${item.id}`}
           </Text>
 
           {isIncludedInTrip && (
@@ -29,14 +21,12 @@ const ItemPaquete = ({ item, onRemove, isIncludedInTrip = false }) => {
 
         <Flex align="center" gap="0.25rem" c="dimmed">
           <IconMapPin size={20} />
-          <Text size="sm">
-            {item.direccion}, {item.localidad}, {item.provincia}
-          </Text>
+          <Text size="sm">{formatDireccion(item.destino, { completa: true })}</Text>
         </Flex>
       </Stack>
 
       <Text size="sm" c="dimmed">
-        <NumberFormatter suffix=" kg" value={item.peso} />
+        {formatPeso(item.peso)}
       </Text>
 
       {onRemove && (

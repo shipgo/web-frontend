@@ -1,12 +1,10 @@
 import { IconInfoCircle } from "@tabler/icons-react";
 
-import dayjs from "dayjs";
 import { DateTimePicker } from "@mantine/dates";
 import {
   Box,
   Card,
   Group,
-  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -15,7 +13,14 @@ import {
   Title,
 } from "@mantine/core";
 
+import { useAuth } from "@contexts/auth";
+
+import { useFormContext } from "./contexts/EnviosFormContext";
+
 const SeccionDetalles = () => {
+  const { user } = useAuth();
+  const { getInputProps } = useFormContext();
+
   return (
     <Card>
       <Stack>
@@ -27,32 +32,33 @@ const SeccionDetalles = () => {
           <Box>
             <Title order={4}>Detalles del viaje</Title>
             <Text c="dimmed" size="sm">
-              Seleccioná la posible fecha de salida del viaje y la sucursal de
-              origen del mismo
+              Seleccioná la fecha y hora planificadas de salida y llegada del
+              viaje
             </Text>
           </Box>
         </Group>
 
-        <SimpleGrid cols={3}>
+        <SimpleGrid cols={{ base: 1, sm: 3 }}>
           <DateTimePicker
-            label="Fecha tentativa de salida"
+            label="Salida planificada"
             placeholder="Seleccioná una fecha"
-            defaultValue={new Date()}
-            excludeDate={(date) => dayjs(date).isBefore(new Date())}
+            valueFormat="DD/MM/YYYY HH:mm"
+            {...getInputProps("fechaHoraInicioPlanificada")}
           />
 
-          <Select
-            disabled
-            label="Sucursal de origen"
-            defaultValue="Sucursal 1"
-            placeholder="Seleccioná una sucursal"
-            data={["Sucursal 1", "Sucursal 2", "Sucursal 3"]}
+          <DateTimePicker
+            label="Llegada planificada"
+            placeholder="Seleccioná una fecha"
+            valueFormat="DD/MM/YYYY HH:mm"
+            {...getInputProps("fechaHoraFinPlanificada")}
           />
 
           <TextInput
-            label="Nombre/Identificador del Viaje (Opcional)"
-            placeholder="Nombre/Identificador del Viaje"
-            defaultValue="Viaje a Sucursal Sur - 30/07/2025"
+            disabled
+            label="Sucursal de origen"
+            description="La define tu usuario — no se puede cambiar acá"
+            value={user?.sucursal?.nombre ?? "—"}
+            readOnly
           />
         </SimpleGrid>
       </Stack>

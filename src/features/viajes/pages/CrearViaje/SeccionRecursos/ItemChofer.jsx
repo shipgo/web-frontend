@@ -1,15 +1,21 @@
 import { Avatar, Stack, Text } from "@mantine/core";
 
+import { formatTelefono } from "@domain/format";
+
 const ItemChofer = ({ chofer }) => {
+  const nombreCompleto =
+    [chofer.nombre, chofer.apellido].filter(Boolean).join(" ") ||
+    chofer.username;
+
   return (
     <>
-      <Avatar name={chofer.nombre} />
+      <Avatar name={nombreCompleto} />
       <Stack gap="0">
         <Text size="sm" fw="500">
-          {chofer.nombre}
+          {nombreCompleto}
         </Text>
         <Text size="sm" c="dimmed">
-          {chofer.telefono}
+          {chofer.email || formatTelefono(chofer.prefijo, chofer.telefono)}
         </Text>
       </Stack>
     </>
