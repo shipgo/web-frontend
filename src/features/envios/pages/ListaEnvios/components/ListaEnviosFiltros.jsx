@@ -8,23 +8,62 @@ import { IconSearch } from '@tabler/icons-react';
 
 import dayjs from 'dayjs';
 
-const ESTADOS = ['pendiente', 'en camino', 'completado', 'cancelado'];
+import { estadoOptions } from '@domain/estados';
 
+const ESTADO_OPTIONS = estadoOptions('envio');
+
+const DEFAULT_VALUES = { search: '', destino: '', estado: [], date: [null, null] };
+
+/**
+ * Quick-filters → combinaciones reales de `EnvioFilter` (CONTRACTS.md §4 / SHG-BE-004):
+ * - "Pendientes" y "Salen hoy" comparten `estado=en_sucursal`; "Salen hoy" además
+ *   acota `fechaDesde`/`fechaHasta` al día de hoy (fecha de alta).
+ * - "En camino" usa el estado canónico `en_camino` directamente.
+ */
 const QUICK_FILTERS = [
-  { label: 'Pendientes', getFilters: () => ({ estado: ['pendiente'], search: '', date: [null, null] }) },
-  { label: 'En camino', getFilters: () => ({ estado: ['en camino'], search: '', date: [null, null] }) },
-  { label: 'Últimos 7 días', getFilters: () => ({ estado: [], search: '', date: [dayjs().subtract(7, 'day'), dayjs()] }) },
+  {
+    label: 'Pendientes',
+    getValues: () => ({ ...DEFAULT_VALUES, estado: ['en_sucursal'] }),
+  },
+  {
+    label: 'Salen hoy',
+    getValues: () => ({
+      ...DEFAULT_VALUES,
+      estado: ['en_sucursal'],
+      date: [dayjs().startOf('day'), dayjs().endOf('day')],
+    }),
+  },
+  {
+    label: 'En camino',
+    getValues: () => ({ ...DEFAULT_VALUES, estado: ['en_camino'] }),
+  },
 ];
 
-const DEFAULT_VALUES = { search: '', estado: [], date: [null, null] };
+/** Arma el objeto de filtros que consume `useGetEnvios` (`{ [param]: { label, values } }`). */
+const buildFilters = (values) => {
+  const filters = {};
+
+  if (values.search) filters.search = { label: 'search', values: values.search };
+  if (values.destino) filters.destino = { label: 'destino', values: values.destino };
+  if (values.estado?.length) filters.estado = { label: 'estado', values: values.estado };
+
+  const [desde, hasta] = values.date ?? [null, null];
+  if (desde) {
+    filters.fechaDesde = { label: 'fechaDesde', values: dayjs(desde).format('YYYY-MM-DD') };
+  }
+  if (hasta) {
+    filters.fechaHasta = { label: 'fechaHasta', values: dayjs(hasta).format('YYYY-MM-DD') };
+  }
+
+  return filters;
+};
 
 const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
   const [selectedQuickFilter, setSelectedQuickFilter] = useState(null);
-  const lastSearchRef = useRef('');
   const isQuickFilterChange = useRef(false);
 
-  const debounceSearch = useDebouncedCallback((values) => {
-    onFiltersChange(values);
+  const debounceChange = useDebouncedCallback((values) => {
+    onFiltersChange(buildFilters(values));
   }, 500);
 
   const form = useForm({
@@ -38,18 +77,10 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
         setSelectedQuickFilter(null);
       }
 
+      // Evitar disparar el filtro con un rango de fechas incompleto (sólo el "desde" seleccionado).
       if (values.date[0] && !values.date[1]) return;
 
-      const searchChanged = values.search !== lastSearchRef.current;
-      lastSearchRef.current = values.search;
-
-      if (searchChanged) {
-        debounceSearch(values);
-        return;
-      }
-
-      debounceSearch.cancel();
-      onFiltersChange(values);
+      debounceChange(values);
     },
   });
 
@@ -58,7 +89,11 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
     const next = isDeselecting ? null : label;
     setSelectedQuickFilter(next);
     isQuickFilterChange.current = true;
-    form.setValues(next ? QUICK_FILTERS.find((f) => f.label === label).getFilters() : DEFAULT_VALUES);
+    debounceChange.cancel();
+
+    const nextValues = next ? QUICK_FILTERS.find((f) => f.label === label).getValues() : DEFAULT_VALUES;
+    form.setValues(nextValues);
+    onFiltersChange(buildFilters(nextValues));
   };
 
   return (
@@ -68,7 +103,15 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
           {...form.getInputProps('search')}
           flex={1}
           label="Buscar envío"
-          placeholder="Código, dirección o localidad..."
+          placeholder="Nombre, apellido o código de seguimiento..."
+          rightSection={<IconSearch size={18} />}
+        />
+
+        <TextInput
+          {...form.getInputProps('destino')}
+          flex={1}
+          label="Destino"
+          placeholder="Calle, localidad o provincia..."
           rightSection={<IconSearch size={18} />}
         />
 
@@ -77,7 +120,7 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
           flex={1}
           type="range"
           clearable
-          label="Rango de fechas"
+          label="Fecha de alta"
           placeholder="Seleccioná un rango"
         />
 
@@ -86,7 +129,8 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
           flex={1}
           label="Estado"
           placeholder="Seleccioná..."
-          data={ESTADOS}
+          data={ESTADO_OPTIONS}
+          clearable
         />
       </Flex>
 
