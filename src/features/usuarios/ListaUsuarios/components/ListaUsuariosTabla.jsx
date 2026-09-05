@@ -21,6 +21,7 @@ import { RowActionsMenu } from "@components";
 import { API_URLS } from "@constants/apiUrls";
 import { rolBadge } from "@domain/roles";
 import { useDeleteUsuario } from "../hooks/useDeleteUsuario";
+import { usePasswordReset } from "../../hooks/usePasswordReset";
 
 const ListaUsuariosTabla = ({
   items = [],
@@ -31,6 +32,7 @@ const ListaUsuariosTabla = ({
 }) => {
   const [, navigate] = useLocation();
   const { confirmDelete } = useDeleteUsuario(onRefresh);
+  const { confirmReset } = usePasswordReset();
 
   const handleEdit = (userId) => navigate(`~/usuarios/${userId}/editar`);
   const handleViewDetails = (userId) => navigate(`~/usuarios/${userId}`);
@@ -38,7 +40,7 @@ const ListaUsuariosTabla = ({
   const getActions = (usuario) => [
     { icon: <IconEye size={18} />, label: "Ver detalles", onClick: () => handleViewDetails(usuario.id) },
     { icon: <IconEdit size={18} />, label: "Editar", color: "blue", onClick: () => handleEdit(usuario.id) },
-    { icon: <IconKey size={18} />, label: "Resetear contraseña", color: "orange" },
+    { icon: <IconKey size={18} />, label: "Resetear contraseña", color: "orange", onClick: () => confirmReset(usuario) },
     { icon: <IconUserOff size={18} />, label: "Desactivar", color: "orange" },
     { icon: <IconTrash size={18} />, label: "Eliminar", color: "red", dividerBefore: true, onClick: () => confirmDelete(usuario) },
   ];

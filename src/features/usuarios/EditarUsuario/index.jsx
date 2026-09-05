@@ -7,15 +7,27 @@ import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import { usuarioApi } from "@api";
+import { useAuthStore } from "@stores/auth.store";
 import UsuarioForm from "../components/UsuarioForm";
+import FotoPerfilUpload from "../components/FotoPerfilUpload";
 import { toBackendDate } from "../utils";
 
 const EditarUsuario = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
+  const currentUser = useAuthStore((state) => state.user);
+  const setAuthUser = useAuthStore((state) => state.setUser);
 
   const [loading, setLoading] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const [fullName, setFullName] = useState("");
+
+  // La subida de foto (`POST /api/files`) siempre asocia la imagen al usuario
+  // LOGUEADO (ver JSDoc de `FotoPerfilUpload`) — no hay endpoint para que un
+  // SU/AD suba la foto de otro empleado. Sólo tiene sentido mostrar el control
+  // cuando quien edita es el dueño de este perfil.
+  const isSelf = Boolean(currentUser?.id) && String(currentUser.id) === id;
 
   const form = useForm({
     initialValues: {
@@ -107,6 +119,13 @@ const EditarUsuario = () => {
           localidadID: userData.localidad?.id?.toString() || null,
           provinciaID: userData.localidad?.provincia?.id?.toString() || null,
         });
+
+        setProfile(userData.profile || null);
+        setFullName(
+          userData.nombre && userData.apellido
+            ? `${userData.nombre} ${userData.apellido}`
+            : userData.username || ""
+        );
       } catch (error) {
         console.error("Error cargando usuario:", error);
         notifications.show({
@@ -202,6 +221,16 @@ const EditarUsuario = () => {
     navigate("~/usuarios");
   }, [navigate]);
 
+  const handleFotoUploaded = useCallback(
+    (usuarioActualizado) => {
+      setProfile(usuarioActualizado?.profile || null);
+      // El usuario logueado es siempre el dueño de la foto (ver FotoPerfilUpload) —
+      // actualizamos el store para que el avatar del header se refresque también.
+      setAuthUser(usuarioActualizado);
+    },
+    [setAuthUser]
+  );
+
   if (loadingUser) {
     return (
       <PageContainer>
@@ -227,6 +256,14 @@ const EditarUsuario = () => {
           Volver
         </Button>
       </Group>
+
+      {isSelf && (
+        <FotoPerfilUpload
+          profile={profile}
+          fullName={fullName}
+          onUploaded={handleFotoUploaded}
+        />
+      )}
 
       <UsuarioForm
         form={form}
