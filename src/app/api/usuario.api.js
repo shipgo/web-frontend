@@ -39,11 +39,33 @@ const usuarioCrud = createCrudApi(API_URLS.USER_URL);
  *
  * `get` / `getAll` aceptan {@link UserFilter}. No hay un endpoint de usuarios por
  * rol vía path: filtrar por rol es `getAll({ authority: 'ROLE_CHOFER' })`.
- * El force-reset de credenciales de admin por id no existe — se usa el flujo público
- * `POST /api/user/resetPassword { userEmail }` (ver `auth.store.js`).
+ *
+ * **Reset de credenciales (SHG-FE-017):** no existe un endpoint de admin para fijar
+ * la contraseña de otro usuario directamente (verificado contra `UserController`/
+ * `PasswordTokenController` del repo `backend`: `POST /api/changePassword` exige
+ * `oldPassword` del propio usuario logueado, y `POST /api/user/changePassword` exige
+ * un token que sólo le llega por mail al dueño de la cuenta). La única acción posible
+ * desde el panel es disparar el mismo mail de recuperación que usa el flujo público
+ * de "olvidé mi contraseña" — ver {@link usuarioApi.requestPasswordReset}.
  */
 export const usuarioApi = {
   ...usuarioCrud,
+
+  /**
+   * `POST /api/user/resetPassword { userEmail }` — dispara el mail de recuperación
+   * de contraseña para el usuario dueño de ese email (token con expiración,
+   * `PasswordResetToken` + `PasswordTokenController`). Público en el backend
+   * (`WebSecurityConfig`, permitAll), pero acá lo dispara un SU/AD autenticado desde
+   * `DetalleUsuario`/`ListaUsuarios` para el email de un empleado — no hay forma de
+   * fijar la contraseña nueva directamente, sólo de reenviar este mail.
+   * @param {string} userEmail
+   */
+  requestPasswordReset: async (userEmail) => {
+    const response = await restclient.post(API_URLS.RECUPERAR_CUENTA_URL, {
+      userEmail,
+    });
+    return response.data;
+  },
 
   /**
    * `GET /api/user/all?authority=ROLE_CHOFER` — choferes de la sucursal / empresa (según rol).
