@@ -7,7 +7,7 @@ import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
 const Footer = ({ onSubmit, isSubmitting }) => {
   const form = useEnvioFormContext();
   const [, navigate] = useLocation();
-  const { nombreDestinatario, paquetes } = form.values;
+  const { nombre, apellido, detalleEnvios } = form.values;
 
   const handleCancel = () => {
     if (!form.isDirty()) {
@@ -29,8 +29,12 @@ const Footer = ({ onSubmit, isSubmitting }) => {
     });
   };
 
-  const totalBultos = paquetes.length;
-  const totalPeso = paquetes.reduce((sum, p) => sum + (p.peso ?? 0), 0);
+  const nombreDestinatario = `${nombre ?? ""} ${apellido ?? ""}`.trim();
+  const totalBultos = detalleEnvios.length;
+  const totalPeso = detalleEnvios.reduce(
+    (sum, p) => sum + (Number(p.peso) || 0),
+    0,
+  );
 
   return (
     <AppShellFooter component={Flex} justify="center">
