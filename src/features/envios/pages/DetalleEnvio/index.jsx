@@ -1,33 +1,48 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
+  ActionIcon,
+  Anchor,
   Badge,
   Box,
   Button,
   Card,
+  CopyButton,
   Divider,
   Group,
   SimpleGrid,
   Stack,
   Table,
   Text,
+  Timeline,
   Title,
+  Tooltip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
   IconArrowLeft,
+  IconBan,
+  IconBuilding,
+  IconCheck,
+  IconCircleDot,
+  IconCopy,
   IconEdit,
   IconMail,
   IconMapPin,
   IconPackage,
   IconPhone,
+  IconRoute,
+  IconTruckDelivery,
   IconUser,
   IconX,
 } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import { envioApi } from "@api";
-import { esEstadoTerminal, estadoBadge } from "@domain/estados";
+import { esEstadoTerminal, estadoBadge, estadoLabel } from "@domain/estados";
+import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
+import { isAdminOrSuper } from "@domain/roles";
+import { useAuthStore } from "@stores/auth.store";
 
 const InfoItem = ({ icon, label, value }) => (
   <Box>
@@ -43,9 +58,37 @@ const InfoItem = ({ icon, label, value }) => (
   </Box>
 );
 
+/** Botón deshabilitado con nota — la transición de estado real la implementa SHG-FE-007. */
+const PlaceholderButton = ({ show, color, icon, label, onClick }) => {
+  if (!show) return null;
+  return (
+    <Tooltip label="Próximamente (SHG-FE-007)" withArrow>
+      <Button variant="light" color={color} leftSection={icon} disabled onClick={onClick}>
+        {label}
+      </Button>
+    </Tooltip>
+  );
+};
+
+const fechaHistorial = (item) => item.fechaHoraInicio ?? item.fecha;
+
+/** `puntoEntrega` y `sucursalDestino` son XOR (ver CONTRACTS.md §8). */
+const destinoRecorrido = (recorrido) => {
+  if (!recorrido) return "-";
+  if (recorrido.puntoEntrega) return formatDireccion(recorrido.puntoEntrega, { completa: true });
+  if (recorrido.sucursalDestino) {
+    const direccion = recorrido.sucursalDestino.puntoEntrega
+      ? formatDireccion(recorrido.sucursalDestino.puntoEntrega, { completa: true })
+      : null;
+    return [`Sucursal: ${recorrido.sucursalDestino.nombre ?? "—"}`, direccion].filter(Boolean).join(" · ");
+  }
+  return "-";
+};
+
 const DetalleEnvio = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
+  const user = useAuthStore((state) => state.user);
 
   const [envio, setEnvio] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,12 +140,28 @@ const DetalleEnvio = () => {
 
   const estadoInfo = estadoBadge("envio", envio.estado);
   const canEdit = !esEstadoTerminal("envio", envio.estado);
+  const canAccionarEstado = isAdminOrSuper(user) && !esEstadoTerminal("envio", envio.estado);
   const destino = envio.destino ?? {};
   const localidad = destino.localidad ?? {};
   const provincia = localidad.provincia ?? {};
   const direccion = [destino.nombreCalle, destino.numeroCalle].filter(Boolean).join(" ");
   const detalleEnvios = envio.detalleEnvios ?? [];
   const pesoTotal = detalleEnvios.reduce((sum, d) => sum + (d.peso ?? 0), 0);
+
+  const historial = [...(envio.historialEstado ?? [])].sort(
+    (a, b) => new Date(fechaHistorial(a)) - new Date(fechaHistorial(b)),
+  );
+
+  const detalleRecorridos = envio.detalleRecorridos ?? [];
+  const recorridoActual = detalleRecorridos[detalleRecorridos.length - 1]?.recorrido ?? null;
+  const viajeAsociado = recorridoActual?.viaje ?? null;
+
+  const showAccionPendiente = () =>
+    notifications.show({
+      title: "Próximamente",
+      message: "Esta acción se habilita en una futura actualización (SHG-FE-007).",
+      color: "blue",
+    });
 
   return (
     <PageContainer>
@@ -117,11 +176,24 @@ const DetalleEnvio = () => {
                 </Badge>
               )}
             </Group>
-            <Text size="sm" c="dimmed">
-              {envio.codigoSeguimiento
-                ? `Código de seguimiento: ${envio.codigoSeguimiento}`
-                : `Envío #${id}`}
-            </Text>
+            <Group gap={4}>
+              <Text size="sm" c="dimmed">
+                {envio.codigoSeguimiento
+                  ? `Código de seguimiento: ${envio.codigoSeguimiento}`
+                  : `Envío #${id}`}
+              </Text>
+              {envio.codigoSeguimiento && (
+                <CopyButton value={envio.codigoSeguimiento} timeout={1500}>
+                  {({ copied, copy }) => (
+                    <Tooltip label={copied ? "Copiado" : "Copiar código"} withArrow>
+                      <ActionIcon color={copied ? "teal" : "gray"} variant="subtle" size="sm" onClick={copy}>
+                        {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                </CopyButton>
+              )}
+            </Group>
           </Box>
           <Group>
             {canEdit && (
@@ -132,6 +204,20 @@ const DetalleEnvio = () => {
                 Editar
               </Button>
             )}
+            <PlaceholderButton
+              show={canAccionarEstado}
+              color="green"
+              icon={<IconTruckDelivery size={18} />}
+              label="Entregar"
+              onClick={showAccionPendiente}
+            />
+            <PlaceholderButton
+              show={canAccionarEstado}
+              color="red"
+              icon={<IconBan size={18} />}
+              label="Marcar fallo"
+              onClick={showAccionPendiente}
+            />
             <Button
               variant="subtle"
               leftSection={<IconArrowLeft size={18} />}
@@ -141,6 +227,35 @@ const DetalleEnvio = () => {
             </Button>
           </Group>
         </Group>
+      </Card>
+
+      <Card withBorder shadow="sm" p="xl">
+        <Stack gap="md">
+          <Group gap="xs">
+            <IconBuilding size={24} />
+            <Box>
+              <Text size="lg" fw={600}>
+                Origen y seguimiento
+              </Text>
+              <Text size="sm" c="dimmed">
+                Sucursal de origen y fecha de entrega
+              </Text>
+            </Box>
+          </Group>
+          <Divider />
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+            <InfoItem
+              icon={<IconBuilding size={16} />}
+              label="Sucursal de origen"
+              value={envio.sucursal?.nombre}
+            />
+            <InfoItem
+              icon={<IconMapPin size={16} />}
+              label="Fecha de entrega"
+              value={envio.fechaEntrega ? formatFecha(envio.fechaEntrega) : null}
+            />
+          </SimpleGrid>
+        </Stack>
       </Card>
 
       <Card withBorder shadow="sm" p="xl">
@@ -249,6 +364,85 @@ const DetalleEnvio = () => {
                 ))}
               </Table.Tbody>
             </Table>
+          )}
+        </Stack>
+      </Card>
+
+      <Card withBorder shadow="sm" p="xl">
+        <Stack gap="md">
+          <Group gap="xs">
+            <IconRoute size={24} />
+            <Box>
+              <Text size="lg" fw={600}>
+                Viaje / recorrido
+              </Text>
+              <Text size="sm" c="dimmed">
+                Estado del recorrido asignado a este envío
+              </Text>
+            </Box>
+          </Group>
+          <Divider />
+          {!recorridoActual || !viajeAsociado ? (
+            <Text c="dimmed" size="sm">
+              Este envío todavía no fue asignado a un viaje.
+            </Text>
+          ) : (
+            <Group justify="space-between" wrap="wrap">
+              <Box>
+                <Group gap="xs" mb={4}>
+                  <Anchor fw={600} onClick={() => navigate(`~/viajes/${viajeAsociado.id}`)}>
+                    Viaje #{viajeAsociado.id}
+                  </Anchor>
+                  <Badge color={estadoBadge("recorrido", recorridoActual.estado).color} variant="light">
+                    {estadoLabel("recorrido", recorridoActual.estado)}
+                  </Badge>
+                </Group>
+                <Text size="sm" c="dimmed">
+                  {destinoRecorrido(recorridoActual)}
+                </Text>
+              </Box>
+              <Button
+                variant="light"
+                leftSection={<IconRoute size={16} />}
+                onClick={() => navigate(`~/viajes/${viajeAsociado.id}`)}
+              >
+                Ver viaje
+              </Button>
+            </Group>
+          )}
+        </Stack>
+      </Card>
+
+      <Card withBorder shadow="sm" p="xl">
+        <Stack gap="md">
+          <Title order={4}>Historial de estados</Title>
+          {historial.length === 0 ? (
+            <Text c="dimmed" size="sm">
+              Este envío todavía no tiene historial de estados.
+            </Text>
+          ) : (
+            <Timeline active={historial.length - 1} bulletSize={22} lineWidth={2}>
+              {historial.map((item, index) => {
+                const { color } = estadoBadge("envio", item.estado);
+                return (
+                  <Timeline.Item
+                    key={item.id ?? index}
+                    bullet={<IconCircleDot size={14} />}
+                    color={color}
+                    title={estadoLabel("envio", item.estado)}
+                  >
+                    <Text size="xs" c="dimmed">
+                      {formatFechaHora(fechaHistorial(item))}
+                    </Text>
+                    {item.motivo && (
+                      <Text size="sm" mt={2}>
+                        {item.motivo}
+                      </Text>
+                    )}
+                  </Timeline.Item>
+                );
+              })}
+            </Timeline>
           )}
         </Stack>
       </Card>

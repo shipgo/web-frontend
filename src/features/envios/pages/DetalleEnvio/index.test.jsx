@@ -11,6 +11,7 @@ vi.mock("@api", () => ({
 }));
 
 import { envioApi } from "@api";
+import { useAuthStore, Usuario } from "@stores/auth.store";
 import DetalleEnvio from "./index";
 
 const EXISTING_ENVIO = {
@@ -21,8 +22,10 @@ const EXISTING_ENVIO = {
   emailReceptor: "receptor@test.com",
   prefijo: "351",
   telefono: "1234567",
-  estado: "CREADO",
+  estado: "en_camino",
   codigoSeguimiento: "ABC123XYZ",
+  fechaEntrega: "2026-09-10",
+  sucursal: { id: 1, nombre: "Sucursal Centro" },
   destino: {
     id: 3,
     nombreCalle: "Av. Colón",
@@ -36,12 +39,30 @@ const EXISTING_ENVIO = {
   detalleEnvios: [
     { id: 11, categoria: { id: 1, nombre: "Documentación" }, descripcion: "Sobre", peso: 0.5 },
   ],
+  historialEstado: [
+    { id: 1, estado: "creado", fechaHoraInicio: "2026-09-01T08:00:00" },
+    { id: 2, estado: "en_sucursal", fechaHoraInicio: "2026-09-01T09:00:00" },
+    { id: 3, estado: "en_camino", fechaHoraInicio: "2026-09-02T10:00:00" },
+  ],
+  detalleRecorridos: [
+    {
+      id: 50,
+      recorrido: {
+        id: 5,
+        estado: "en_camino",
+        orden: 1,
+        puntoEntrega: { nombreCalle: "Av. Colón", numeroCalle: "1234" },
+        viaje: { id: 77 },
+      },
+    },
+  ],
 };
 
 describe("DetalleEnvio", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     envioApi.getById.mockResolvedValue(EXISTING_ENVIO);
+    useAuthStore.setState({ user: null, isAuthenticated: false });
   });
 
   it("renders sender, receiver, destino and package info from the API response", async () => {
@@ -57,9 +78,83 @@ describe("DetalleEnvio", () => {
     expect(screen.getByText("remitente@test.com")).toBeInTheDocument();
     expect(screen.getByText("receptor@test.com")).toBeInTheDocument();
     expect(screen.getByText("351 1234567")).toBeInTheDocument();
-    expect(screen.getByText("Av. Colón 1234")).toBeInTheDocument();
+    expect(screen.getAllByText("Av. Colón 1234").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Córdoba").length).toBeGreaterThan(0);
     expect(screen.getByText("Documentación")).toBeInTheDocument();
     expect(screen.getByText("ABC123XYZ", { exact: false })).toBeInTheDocument();
+  });
+
+  it("renders the estado badge via @domain/estados", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect((await screen.findAllByText("En camino")).length).toBeGreaterThan(0);
+  });
+
+  it("renders sucursal de origen and fecha de entrega", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(await screen.findByText("Sucursal Centro")).toBeInTheDocument();
+    expect(screen.getByText("10/09/2026")).toBeInTheDocument();
+  });
+
+  it("renders the historial de estados timeline ordered by fecha", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(await screen.findByText("Historial de estados")).toBeInTheDocument();
+    expect(screen.getByText("Creado")).toBeInTheDocument();
+    expect(screen.getByText("En sucursal")).toBeInTheDocument();
+    expect(screen.getAllByText("En camino").length).toBeGreaterThan(0);
+  });
+
+  it("renders the viaje asociado with a link to DetalleViaje and estado del recorrido", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(await screen.findByText("Viaje #77")).toBeInTheDocument();
+  });
+
+  it("muestra un mensaje cuando el envío no está asignado a un viaje", async () => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, detalleRecorridos: [] });
+
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(
+      await screen.findByText("Este envío todavía no fue asignado a un viaje."),
+    ).toBeInTheDocument();
+  });
+
+  it("no muestra el botón Editar cuando el estado es terminal", async () => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    await screen.findByText("Juan García");
+    expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument();
+  });
+
+  it("muestra las acciones de estado deshabilitadas (SHG-FE-007) para un ADMIN", async () => {
+    useAuthStore.setState({
+      user: new Usuario({ id: 1, username: "admin1", authorities: ["ROLE_ADMIN"] }),
+      isAuthenticated: true,
+    });
+
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    const entregarBtn = await screen.findByRole("button", { name: /entregar/i });
+    expect(entregarBtn).toBeDisabled();
+    expect(screen.getByRole("button", { name: /marcar fallo/i })).toBeDisabled();
   });
 });
