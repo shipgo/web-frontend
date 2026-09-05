@@ -1,11 +1,17 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { Route } from 'wouter';
 
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 
 vi.mock('@api', () => ({
-  viajeApi: { getById: vi.fn() },
+  viajeApi: {
+    getById: vi.fn(),
+    iniciar: vi.fn(),
+    finalizar: vi.fn(),
+    cancelar: vi.fn(),
+  },
   trackingApi: { getUltimaUbicacion: vi.fn() },
 }));
 
@@ -19,6 +25,7 @@ vi.mock('react-map-gl/mapbox', () => ({
 }));
 
 import { trackingApi, viajeApi } from '@api';
+import { useAuthStore, Usuario } from '@stores/auth.store';
 import DetalleViaje from './index';
 
 const EXISTING_VIAJE = {
@@ -64,6 +71,10 @@ describe('DetalleViaje', () => {
     vi.clearAllMocks();
     viajeApi.getById.mockResolvedValue(EXISTING_VIAJE);
     trackingApi.getUltimaUbicacion.mockResolvedValue({ latitud: -31.41, longitud: -64.19 });
+    useAuthStore.setState({
+      user: new Usuario({ id: 1, username: 'admin1', authorities: ['ROLE_ADMIN'] }),
+      isAuthenticated: true,
+    });
   });
 
   it('carga el viaje y muestra header, recorridos, historial y envíos', async () => {
@@ -100,5 +111,91 @@ describe('DetalleViaje', () => {
     });
 
     expect(await screen.findByText('No se pudo cargar el viaje')).toBeInTheDocument();
+  });
+
+  describe('acciones de ciclo de vida (SHG-FE-012)', () => {
+    const VIAJE_PLANIFICADO = { ...EXISTING_VIAJE, estado: 'planificado' };
+
+    it('inicia un viaje planificado tras confirmar y refetchea el detalle', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+      viajeApi.iniciar.mockResolvedValue({ ...VIAJE_PLANIFICADO, estado: 'en_camino' });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Iniciar' }));
+
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, iniciar' }));
+
+      await waitFor(() => {
+        expect(viajeApi.iniciar).toHaveBeenCalledWith('42');
+      });
+      expect(await screen.findByText('Viaje iniciado')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('cancela un viaje planificado con motivo opcional', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+      viajeApi.cancelar.mockResolvedValue({ ...VIAJE_PLANIFICADO, estado: 'cancelado' });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+
+      const dialog = await screen.findByRole('dialog');
+      await user.type(within(dialog).getByLabelText('Motivo (opcional)'), 'Vehículo con desperfecto');
+      await user.click(within(dialog).getByRole('button', { name: 'Cancelar viaje' }));
+
+      await waitFor(() => {
+        expect(viajeApi.cancelar).toHaveBeenCalledWith('42', { motivo: 'Vehículo con desperfecto' });
+      });
+      expect(await screen.findByText('Viaje cancelado')).toBeInTheDocument();
+    });
+
+    it('cancela un viaje sin motivo (opcional)', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+      viajeApi.cancelar.mockResolvedValue({ ...VIAJE_PLANIFICADO, estado: 'cancelado' });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Cancelar viaje' }));
+
+      await waitFor(() => {
+        expect(viajeApi.cancelar).toHaveBeenCalledWith('42', { motivo: undefined });
+      });
+    });
+
+    it('muestra una advertencia si el backend rechaza la transición (409)', async () => {
+      const user = userEvent.setup();
+      viajeApi.finalizar.mockRejectedValue({
+        response: { status: 409, data: { message: 'El viaje no está en camino' } },
+      });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Finalizar' }));
+
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, finalizar' }));
+
+      expect(await screen.findByText('No se puede completar la acción')).toBeInTheDocument();
+      expect(screen.getByText('El viaje no está en camino')).toBeInTheDocument();
+    });
   });
 });

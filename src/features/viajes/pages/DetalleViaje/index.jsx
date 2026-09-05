@@ -1,5 +1,4 @@
 import { Card } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { useLocation, useParams } from 'wouter';
 
 import PageContainer from '@components/PageContainer';
@@ -9,20 +8,15 @@ import DetalleViajeHeader from './components/DetalleViajeHeader';
 import HistorialTimeline from './components/HistorialTimeline';
 import RecorridosList from './components/RecorridosList';
 import ViajeMapa from './components/ViajeMapa';
+import { useViajeAcciones } from './hooks/useViajeAcciones';
 import { useViajeDetalle } from './hooks/useViajeDetalle';
-
-const showAccionPendiente = () =>
-  notifications.show({
-    title: 'Próximamente',
-    message: 'Esta acción se habilita en una futura actualización (SHG-FE-012).',
-    color: 'blue',
-  });
 
 const DetalleViaje = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const { viajeQuery, ubicacionQuery } = useViajeDetalle(id);
   const { data: viaje, isLoading, isError, refetch } = viajeQuery;
+  const { confirmIniciar, confirmFinalizar, confirmCancelar } = useViajeAcciones(id, { onSuccess: refetch });
 
   return (
     <PageContainer>
@@ -47,7 +41,9 @@ const DetalleViaje = () => {
               id={id}
               onVolver={() => navigate('~/viajes')}
               onEditar={() => navigate(`~/viajes/${id}/editar`)}
-              onAccionPendiente={showAccionPendiente}
+              onIniciar={confirmIniciar}
+              onFinalizar={confirmFinalizar}
+              onCancelar={confirmCancelar}
             />
           )}
         </ScreenContainer>
