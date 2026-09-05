@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "wouter";
 import {
   Box,
   Breadcrumbs,
@@ -9,11 +9,14 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 
 import { schemaResolver } from "@mantine/form";
 
+import { envioApi, categoriaApi } from "@api";
 import { EnvioFormProvider, useEnvioForm } from "./contexts/CrearEnvioContext";
 import { CREAR_ENVIO_SCHEMA, INITIAL_VALUES } from "./constants/schema";
 import SeccionOrigen from "./components/SeccionOrigen";
@@ -21,7 +24,9 @@ import SeccionCarga from "./components/SeccionCarga";
 import Footer from "./components/Footer";
 
 const CrearEnvios = () => {
+  const [, navigate] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categorias, setCategorias] = useState([]);
 
   const form = useEnvioForm({
     mode: "controlled",
@@ -29,10 +34,84 @@ const CrearEnvios = () => {
     validate: schemaResolver(CREAR_ENVIO_SCHEMA, { sync: true }),
   });
 
-  const handleSubmit = form.onSubmit(() => {
+  useEffect(() => {
+    categoriaApi
+      .getAll()
+      .then((data) =>
+        setCategorias(
+          (data ?? []).map((c) => ({ value: String(c.id), label: c.nombre })),
+        ),
+      )
+      .catch(() => {
+        notifications.show({
+          title: "Error",
+          message: "No se pudieron cargar las categorías",
+          color: "red",
+          icon: <IconX />,
+        });
+      });
+  }, []);
+
+  const handleSubmit = form.onSubmit(async (values) => {
     setIsSubmitting(true);
-    // TODO: conectar con API
-    setTimeout(() => setIsSubmitting(false), 2000);
+    try {
+      const payload = {
+        nombre: values.nombre,
+        apellido: values.apellido,
+        emailRemitente: values.emailRemitente,
+        emailReceptor: values.emailReceptor,
+        prefijo: values.prefijo,
+        telefono: values.telefono,
+        destino: {
+          nombreCalle: values.nombreCalle,
+          numeroCalle: values.numeroCalle,
+          localidad: { id: Number(values.localidadID) },
+          latitud: values.coordenadas?.lat,
+          longitud: values.coordenadas?.lng,
+        },
+        detalleEnvios: values.detalleEnvios.map((paquete) => ({
+          categoria: { id: Number(paquete.categoriaID) },
+          descripcion: paquete.descripcion || null,
+          peso: Number(paquete.peso),
+        })),
+      };
+
+      const envio = await envioApi.save(payload);
+
+      notifications.show({
+        title: "Envío creado",
+        message: envio?.codigoSeguimiento
+          ? `Código de seguimiento: ${envio.codigoSeguimiento}`
+          : "El envío se creó correctamente",
+        color: "green",
+        icon: <IconCheck />,
+      });
+
+      navigate(envio?.id ? `~/envios/${envio.id}` : "~/envios");
+    } catch (error) {
+      console.error("Error creando envío:", error);
+
+      const data = error?.response?.data;
+      const fieldErrors = data?.fieldErrors ?? data?.errors;
+      if (Array.isArray(fieldErrors)) {
+        fieldErrors.forEach((fieldError) => {
+          const field = fieldError?.field ?? fieldError?.campo;
+          const message =
+            fieldError?.message ?? fieldError?.mensaje ?? fieldError?.error;
+          if (field && message) form.setFieldError(field, message);
+        });
+      }
+
+      notifications.show({
+        title: "Error",
+        message:
+          data?.mensaje || data?.message || "No se pudo crear el envío",
+        color: "red",
+        icon: <IconX />,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   });
 
   return (
@@ -71,7 +150,7 @@ const CrearEnvios = () => {
       <EnvioFormProvider form={form}>
         <Stack>
           <SeccionOrigen />
-          <SeccionCarga />
+          <SeccionCarga categorias={categorias} />
         </Stack>
         <Footer onSubmit={handleSubmit} isSubmitting={isSubmitting} />
       </EnvioFormProvider>
