@@ -5,6 +5,7 @@ import {
   TextInput,
   Select,
   MultiSelect,
+  NumberInput,
   Tooltip,
   Modal,
   Textarea,
@@ -51,6 +52,17 @@ export const THEME = createTheme({
         label: {
           marginBlockEnd: "0.5rem",
         },
+      },
+    }),
+    NumberInput: NumberInput.extend({
+      styles: {
+        label: {
+          marginBlockEnd: "0.5rem",
+        },
+      },
+      defaultProps: {
+        autoCorrect: "off",
+        autoComplete: "off",
       },
     }),
     Textarea: Textarea.extend({
