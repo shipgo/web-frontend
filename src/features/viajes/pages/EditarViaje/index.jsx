@@ -35,15 +35,18 @@ import {
  * a propósito que `DetalleViaje/acciones.js` (`puedeEditar`, que sólo
  * bloquea los terminales `finalizado`/`cancelado` para decidir si se
  * muestra el botón "Editar"): acá el criterio de aceptación de `SHG-FE-010`
- * pide limitarlo a `creado`/`planificado`. Motivo concreto: `ViajeService.update`
- * (backend) hace `modelMapper.map(viajeR.getViaje(), viaje)` sin resguardar
- * `fechaHoraInicio`/`fechaHoraFin` reales — si el viaje ya se inició
- * (`en_camino`/`en_proceso_de_carga`/`con_problemas`), esas fechas reales ya
- * están seteadas y un PUT que no las reenvíe (`SHG-BE-021`, ver `utils.js`)
- * las pisaría con `null`. En `creado`/`planificado` esas fechas siempre son
- * `null`, así que no hay riesgo. Si `DetalleViaje` termina mostrando
- * "Editar" para un viaje que esta pantalla bloquea, es una inconsistencia a
- * reconciliar aparte (documentado en `planning/coordination/frontend.md`).
+ * pide limitarlo a `creado`/`planificado`. Motivo: `CONTRACTS.md §8`/
+ * `SHG-BE-021` establecen que el cliente en creación y edición manda sólo
+ * las 2 fechas planificadas, nunca `fechaHoraInicio`/`fechaHoraFin` reales
+ * (esas las completa el backend server-side al iniciar/finalizar). Editar
+ * un viaje ya iniciado no tiene sentido para el MVP de todos modos, así que
+ * se restringe la pantalla a los estados donde esas fechas reales siempre
+ * son `null`. (El `ModelMapper` global tiene `setSkipNullEnabled(true)`, o
+ * sea que de todos modos no pisaría un valor ya seteado con `null` si se
+ * reenviara — no es un riesgo de overwrite, es simplemente lo que pide el
+ * contrato.) Si `DetalleViaje` termina mostrando "Editar" para un viaje que
+ * esta pantalla bloquea, es una inconsistencia a reconciliar aparte
+ * (`SHG-FE-029`, ver `planning/coordination/frontend.md`).
  */
 const ESTADOS_EDITABLES = ["creado", "planificado"];
 

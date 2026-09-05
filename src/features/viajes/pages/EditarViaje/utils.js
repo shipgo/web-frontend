@@ -47,13 +47,14 @@ export const choferLabel = (chofer) =>
  * viaje original (para no perder los envíos/recorridos ya asignados).
  *
  * `fechaHoraInicio`/`fechaHoraFin` (las fechas REALES) no se mandan: según
- * `SHG-BE-021`/`CONTRACTS.md §8`, son nullable y las completa el backend
- * server-side (`iniciar`/`finalizar`). Esta pantalla sólo edita viajes en
- * `creado`/`planificado`, donde esas fechas siempre son `null` — mandarlas
- * de nuevo (aunque sea el mismo valor `null` reenviado) es innecesario y,
- * si algún día se editara un viaje ya iniciado, sería activamente peligroso:
- * `ViajeService.update` hace `modelMapper.map(viajeR.getViaje(), viaje)`,
- * que pisaría la fecha real ya seteada con lo que mande el cliente.
+ * `SHG-BE-021`/`CONTRACTS.md §8`, el cliente en creación y edición manda
+ * sólo las 2 fechas planificadas — esas fechas reales son nullable y las
+ * completa el backend server-side (`iniciar`/`finalizar`). Es una regla del
+ * contrato, no una necesidad técnica: el `ModelMapper` global tiene
+ * `setSkipNullEnabled(true)`, así que reenviar `null` no pisaría un valor ya
+ * seteado. Esta pantalla además sólo edita viajes en `creado`/`planificado`
+ * (ver `ESTADOS_EDITABLES` en `index.jsx`), donde esas fechas reales siempre
+ * son `null` de todos modos.
  */
 export const buildViajeReqDTO = (values, viajeOriginal) => ({
   viaje: {
