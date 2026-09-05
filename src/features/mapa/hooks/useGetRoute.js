@@ -34,6 +34,9 @@ const fetchDirections = (waypoints) => {
  *   típicamente la última ubicación SSE/`.../last` del viaje) + coords de
  *   las paradas, en orden. Si todavía no hay ninguna posición conocida, se
  *   usa la sucursal de origen del viaje como punto de partida.
+ * - `route.totalDuration`/`legDurations` (segundos): el backend NO expone ETA
+ *   (`ViajeEstadoDTO`, `SHG-BE-015`) — el panel de detalle (`SHG-FE-014`) usa
+ *   estos valores para calcular la hora estimada de llegada.
  *
  * @param {number|string|null} viajeId
  * @param {[number, number]|null} [posicionActual] `[lng, lat]`
@@ -73,7 +76,9 @@ export const useGetRoute = (viajeId, posicionActual) => {
     select: (data) => ({
       geometry: data.routes[0].geometry,
       totalDistance: data.routes[0].distance,
+      totalDuration: data.routes[0].duration,
       legDistances: data.routes[0].legs.map((leg) => leg.distance),
+      legDurations: data.routes[0].legs.map((leg) => leg.duration),
       waypoints: data.waypoints.map((wp) => wp.location),
     }),
   });
