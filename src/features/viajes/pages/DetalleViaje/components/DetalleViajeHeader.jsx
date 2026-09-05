@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Divider, Group, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core';
+import { Badge, Box, Button, Divider, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import {
   IconArrowLeft,
   IconBan,
@@ -27,18 +27,7 @@ const InfoItem = ({ label, value }) => (
 const choferLabel = (chofer) =>
   [chofer?.nombre, chofer?.apellido].filter(Boolean).join(' ') || chofer?.username || '—';
 
-const PlaceholderButton = ({ show, disabled, color, icon, label, onClick }) => {
-  if (!show) return null;
-  return (
-    <Tooltip label="Próximamente (SHG-FE-012)" disabled={!disabled} withArrow>
-      <Button variant="light" color={color} leftSection={icon} disabled={disabled} onClick={onClick}>
-        {label}
-      </Button>
-    </Tooltip>
-  );
-};
-
-const DetalleViajeHeader = ({ viaje, id, onVolver, onEditar, onAccionPendiente }) => {
+const DetalleViajeHeader = ({ viaje, id, onVolver, onEditar, onIniciar, onFinalizar, onCancelar }) => {
   const user = useAuthStore((state) => state.user);
   const estadoInfo = estadoBadge('viaje', viaje.estado);
   const choferes = viaje.choferes?.length ? viaje.choferes : viaje.chofer ? [viaje.chofer] : [];
@@ -67,30 +56,21 @@ const DetalleViajeHeader = ({ viaje, id, onVolver, onEditar, onAccionPendiente }
             </Button>
           )}
 
-          <PlaceholderButton
-            show={puedeIniciar(user, viaje.estado)}
-            disabled
-            color="blue"
-            icon={<IconPlayerPlay size={18} />}
-            label="Iniciar"
-            onClick={onAccionPendiente}
-          />
-          <PlaceholderButton
-            show={puedeFinalizar(user, viaje.estado)}
-            disabled
-            color="green"
-            icon={<IconFlagCheck size={18} />}
-            label="Finalizar"
-            onClick={onAccionPendiente}
-          />
-          <PlaceholderButton
-            show={puedeCancelar(user, viaje.estado)}
-            disabled
-            color="red"
-            icon={<IconBan size={18} />}
-            label="Cancelar"
-            onClick={onAccionPendiente}
-          />
+          {puedeIniciar(user, viaje.estado) && (
+            <Button variant="light" color="blue" leftSection={<IconPlayerPlay size={18} />} onClick={onIniciar}>
+              Iniciar
+            </Button>
+          )}
+          {puedeFinalizar(user, viaje.estado) && (
+            <Button variant="light" color="green" leftSection={<IconFlagCheck size={18} />} onClick={onFinalizar}>
+              Finalizar
+            </Button>
+          )}
+          {puedeCancelar(user, viaje.estado) && (
+            <Button variant="light" color="red" leftSection={<IconBan size={18} />} onClick={onCancelar}>
+              Cancelar
+            </Button>
+          )}
 
           <Button variant="subtle" leftSection={<IconArrowLeft size={18} />} onClick={onVolver}>
             Volver
