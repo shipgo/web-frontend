@@ -5,11 +5,16 @@ import LoginPage from '@features/login';
 
 import Layout from '../layout';
 import ProtectedRoute from '@components/ProtectedRoute';
+import PublicRoute from '@components/PublicRoute';
 import MobileOnlyScreen from '@components/MobileOnlyScreen';
 import { useAuth, useIsAuthenticated } from '@contexts/auth';
 import { hasAnyRole, ROLE_SUPERUSER, ROLES_WEB } from '@domain/roles';
 import { Center, Loader, useMantineColorScheme } from '@mantine/core';
 
+const RecuperarCuentaPage = lazy(() => import('@features/login/RecuperarCuenta'));
+const RecuperarCuentaTokenPage = lazy(
+  () => import('@features/login/RecuperarCuentaToken'),
+);
 const HomePage = lazy(() => import('@features/home'));
 const MapaPage = lazy(() => import('@features/mapa'));
 const MantenimientosRoutes = lazy(() => import('@features/mantenimientos'));
@@ -99,6 +104,23 @@ const AppRoutes = () => {
   return (
     <Switch>
       <Route path='/login' component={LoginPage} />
+      {/* Rutas públicas de recuperación de cuenta (SHG-FE-023). `restclient.js` y
+          `AuthProvider` ya tratan cualquier path bajo `/recuperar-cuenta` como
+          público; `PublicRoute` además saca al Home si ya hay sesión. */}
+      <Route path='/recuperar-cuenta/:token'>
+        <PublicRoute>
+          <Suspense fallback={<RouteFallback />}>
+            <RecuperarCuentaTokenPage />
+          </Suspense>
+        </PublicRoute>
+      </Route>
+      <Route path='/recuperar-cuenta'>
+        <PublicRoute>
+          <Suspense fallback={<RouteFallback />}>
+            <RecuperarCuentaPage />
+          </Suspense>
+        </PublicRoute>
+      </Route>
       <Route component={ProtectedRoutes} />
     </Switch>
   );

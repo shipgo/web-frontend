@@ -4,8 +4,9 @@ import { useAuthStore } from "@stores/auth.store";
 import { AuthContext } from "@contexts/auth";
 import { Center, Loader } from "@mantine/core";
 
-// Rutas públicas que no requieren autenticación
-const PUBLIC_ROUTES = ["/login", "/recuperar-cuenta", "/verificar-cuenta"];
+// Rutas públicas que no requieren autenticación (SHG-FE-023). El match es por
+// `startsWith`, así que `/recuperar-cuenta/:token` también queda cubierto.
+const PUBLIC_ROUTES = ["/login", "/recuperar-cuenta"];
 
 const AuthProvider = ({ children }) => {
   const [, setLocation] = useLocation();

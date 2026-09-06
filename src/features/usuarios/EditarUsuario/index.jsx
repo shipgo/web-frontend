@@ -12,6 +12,7 @@ import { usuarioApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
 import UsuarioForm from "../components/UsuarioForm";
 import FotoPerfilUpload from "../components/FotoPerfilUpload";
+import CambiarPasswordCard from "../components/CambiarPasswordCard";
 import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA } from "../constants/schema";
 import { toBackendDate } from "../utils";
 
@@ -213,6 +214,11 @@ const EditarUsuario = () => {
         onCancel={handleCancel}
         isEdit={true}
       />
+
+      {/* Cambio de contraseña propio (SHG-FE-023): sólo sobre tu propio perfil.
+          `POST /api/changePassword` exige la contraseña actual — es distinto del
+          "Resetear contraseña" admin→otro de `DetalleUsuario` (SHG-FE-017). */}
+      {isSelf && <CambiarPasswordCard />}
     </PageContainer>
   );
 };
