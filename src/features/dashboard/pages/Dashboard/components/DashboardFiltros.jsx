@@ -77,7 +77,6 @@ const DashboardFiltros = ({ value, onChange }) => {
           onChange={handleDateChange}
           type="range"
           clearable
-          allowSingleDateInRange
           label="Rango de fechas"
           placeholder="Seleccioná un rango"
           w={260}
