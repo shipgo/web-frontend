@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MantineProvider } from "@mantine/core";
+import { AppShell, MantineProvider } from "@mantine/core";
 
 const mockNavigate = vi.fn();
 
@@ -35,8 +35,14 @@ vi.mock("@api", () => ({
   },
 }));
 
+// `SucursalForm` monta `<PageFooter>` (`AppShellFooter`), que necesita un
+// `<AppShell>` ancestro — lo provee `src/app/layout` en la app real.
 const renderWithProviders = (ui) =>
-  render(<MantineProvider>{ui}</MantineProvider>);
+  render(
+    <MantineProvider>
+      <AppShell footer={{ height: 60 }}>{ui}</AppShell>
+    </MantineProvider>
+  );
 
 describe("EditarSucursal", () => {
   beforeEach(() => {

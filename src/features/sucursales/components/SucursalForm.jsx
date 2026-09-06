@@ -17,10 +17,12 @@ import {
   IconPhone,
   IconMapPin,
   IconMail,
+  IconX,
 } from "@tabler/icons-react";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
+import PageFooter from "@components/PageFooter";
 import { provinciaApi, localidadApi } from "@api";
 
 const normalizeText = (text) => {
@@ -65,6 +67,19 @@ const SucursalForm = ({
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [provincias, setProvincias] = useState([]);
   const [localidades, setLocalidades] = useState([]);
+
+  // Toast cuando el submit falla la validación de Zod — el botón ahora vive en el
+  // `<PageFooter>` (fuera del `<form>`), así que dispara `form.onSubmit` por
+  // `onClick` como hace `CrearViaje/Footer.jsx`.
+  const handleInvalid = (errors) => {
+    const firstError = Object.values(errors).find(Boolean);
+    notifications.show({
+      color: "red",
+      title: "Revisá el formulario",
+      message: firstError || "Completá los datos requeridos",
+      icon: <IconX />,
+    });
+  };
 
   // Cancelar con confirmación si hay cambios sin guardar — mismo criterio que el
   // `Footer` de Vehículos/Usuarios (SHG-FE-034/033).
@@ -157,7 +172,7 @@ const SucursalForm = ({
         loaderProps={{ type: "bars" }}
       />
 
-      <form onSubmit={form.onSubmit(onSubmit)}>
+      <form onSubmit={form.onSubmit(onSubmit, handleInvalid)}>
         <Stack gap="lg">
           {/* Información de la Sucursal */}
           <Card>
@@ -259,24 +274,28 @@ const SucursalForm = ({
               </SimpleGrid>
             </Stack>
           </Card>
-
-          {/* Botones de acción — mismo patrón visual que el `Footer` compartido
-              de `CrearEnvios`/`CrearViaje` (Cancelar `light` rojo + submit) */}
-          <Group justify="flex-end" gap="xs">
-            <Button
-              variant="light"
-              color="red"
-              onClick={handleCancel}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" loading={loading}>
-              {isEdit ? "Guardar cambios" : "Crear sucursal"}
-            </Button>
-          </Group>
         </Stack>
       </form>
+
+      {/* Footer canónico (`SHG-FE-036`): el botón vive en `AppShell.footer`, fuera
+          del `<form>`, así que el submit se recablea a `onClick`. Se preserva el
+          confirm-al-cancelar-si-dirty. */}
+      <PageFooter>
+        <Button
+          variant="light"
+          color="red"
+          onClick={handleCancel}
+          disabled={loading}
+        >
+          Cancelar
+        </Button>
+        <Button
+          loading={loading}
+          onClick={() => form.onSubmit(onSubmit, handleInvalid)()}
+        >
+          {isEdit ? "Guardar cambios" : "Crear sucursal"}
+        </Button>
+      </PageFooter>
     </Box>
   );
 };

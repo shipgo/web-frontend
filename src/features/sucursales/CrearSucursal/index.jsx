@@ -28,7 +28,9 @@ const CrearSucursal = () => {
 
         const payload = {
           nombre: values.nombre,
-          email: values.email,
+          // `email` es opcional (SHG-BE-008): mandamos `null` en vez de "" cuando
+          // no se informó, para no persistir un string vacío.
+          email: values.email?.trim() || null,
           prefijo: values.prefijo,
           telefono: values.telefono,
           puntoEntrega: {
