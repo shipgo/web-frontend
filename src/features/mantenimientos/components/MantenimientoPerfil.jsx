@@ -1,5 +1,4 @@
 import {
-  Badge,
   Box,
   Card,
   Divider,
@@ -18,41 +17,9 @@ import {
   IconUser,
 } from "@tabler/icons-react";
 
-import { toLocalDate } from "@utils/dates";
+import { EMPTY, formatFechaHora } from "@domain/format";
 
-const getEstadoColor = (estado) => {
-  const normalizedEstado = estado?.toUpperCase();
-  const colores = {
-    PENDIENTE: "yellow",
-    EN_PROCESO: "blue",
-    "EN PROCESO": "blue",
-    COMPLETADO: "green",
-    CANCELADO: "red",
-    VENCIDO: "red",
-  };
-  return colores[normalizedEstado] || "gray";
-};
-
-const formatCurrency = (value) => {
-  if (!value) return "Sin costo";
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-  }).format(value);
-};
-
-const formatDateTime = (date) => {
-  if (!date) return "Sin fecha";
-  return new Date(date).toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const InfoItem = ({ icon, label, value, badge }) => (
+const InfoItem = ({ icon, label, value }) => (
   <Box>
     <Group gap="xs" mb={4}>
       {icon}
@@ -60,20 +27,18 @@ const InfoItem = ({ icon, label, value, badge }) => (
         {label}
       </Text>
     </Group>
-    {badge ? (
-      <Badge color={badge.color} variant="light" size="lg">
-        {value}
-      </Badge>
-    ) : (
-      <Text size="sm" fw={500}>
-        {value || "-"}
-      </Text>
-    )}
+    <Text size="sm" fw={500}>
+      {value || EMPTY}
+    </Text>
   </Box>
 );
 
 /**
- * Componente reutilizable para mostrar el perfil/detalle de un mantenimiento
+ * Detalle de un `MantenimientoDTO` (backend, `dto/MantenimientoDTO.java`):
+ * `nombreMecanico`, `apellidoMecanico`, `descripcion`, `fechaHoraMantenimiento`,
+ * `fechaHoraRegistro`, `tipoMantenimiento`, `vehiculo`, `sucursal`.
+ * NO hay estado ni costo — `Mantenimiento` es un registro histórico sin ciclo
+ * de vida (ver bitácora de `SHG-FE-020`).
  */
 const MantenimientoPerfil = ({ mantenimiento }) => {
   if (!mantenimiento) {
@@ -85,33 +50,16 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
   }
 
   const vehiculo = mantenimiento.vehiculo;
-  const patente = vehiculo?.patente || "Sin patente";
+  const patente = vehiculo?.patente;
   const marcaModelo = vehiculo
-    ? `${vehiculo.marca?.nombre || vehiculo.marca || ""} ${
-        vehiculo.modelo?.nombre || vehiculo.modelo || ""
-      }`.trim() || "Sin datos"
-    : "Sin vehículo";
-
-  const tipoMantenimiento =
-    mantenimiento.tipoMantenimiento?.nombre ||
-    mantenimiento.tipo?.nombre ||
-    "Sin tipo";
-
-  const fechaMantenimiento =
-    mantenimiento.fechaHoraMantenimiento || mantenimiento.fechaProgramada || mantenimiento.fecha;
-  const fechaRegistro = mantenimiento.fechaHoraRegistro || mantenimiento.fechaCreacion;
-  const estado = mantenimiento.estado || "PENDIENTE";
-  const sucursal =
-    vehiculo?.sucursal?.nombre || mantenimiento.sucursal?.nombre || "Sin sucursal";
-  const descripcion = mantenimiento.descripcion || "Sin descripción";
-  
-  const nombreMecanico = mantenimiento.nombreMecanico || "Sin nombre";
-  const apellidoMecanico = mantenimiento.apellidoMecanico || "Sin apellido";
-  const mecanicoCompleto = `${nombreMecanico} ${apellidoMecanico}`;
+    ? `${vehiculo.modelo?.marca?.nombre ?? ""} ${vehiculo.modelo?.nombre ?? ""}`.trim()
+    : null;
+  const tipoMantenimiento = mantenimiento.tipoMantenimiento?.nombre;
+  const sucursal = mantenimiento.sucursal?.nombre;
+  const descripcion = mantenimiento.descripcion?.trim();
 
   return (
     <Stack>
-      {/* Información del Mecánico */}
       <Card>
         <Stack gap="md">
           <Group gap="0.75rem">
@@ -123,18 +71,17 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
             <InfoItem
               icon={<IconUser size={16} />}
               label="Nombre"
-              value={nombreMecanico}
+              value={mantenimiento.nombreMecanico}
             />
             <InfoItem
               icon={<IconUser size={16} />}
               label="Apellido"
-              value={apellidoMecanico}
+              value={mantenimiento.apellidoMecanico}
             />
           </SimpleGrid>
         </Stack>
       </Card>
 
-      {/* Información del Vehículo */}
       <Card>
         <Stack gap="md">
           <Group gap="0.75rem">
@@ -143,14 +90,10 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
           </Group>
 
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+            <InfoItem icon={<IconCar size={16} />} label="Patente" value={patente} />
             <InfoItem
               icon={<IconCar size={16} />}
-              label="Patente"
-              value={patente}
-            />
-            <InfoItem
-              icon={<IconCar size={16} />}
-              label="Marca y Modelo"
+              label="Marca y modelo"
               value={marcaModelo}
             />
             <InfoItem
@@ -162,7 +105,6 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
         </Stack>
       </Card>
 
-      {/* Información del Mantenimiento */}
       <Card>
         <Stack gap="md">
           <Group gap="0.75rem">
@@ -178,25 +120,25 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
             />
             <InfoItem
               icon={<IconCalendar size={16} />}
-              label="Fecha del Mantenimiento"
-              value={fechaMantenimiento ? formatDateTime(fechaMantenimiento) : "Sin fecha"}
+              label="Fecha del mantenimiento"
+              value={
+                mantenimiento.fechaHoraMantenimiento
+                  ? formatFechaHora(mantenimiento.fechaHoraMantenimiento)
+                  : null
+              }
             />
-            {fechaRegistro && (
-              <InfoItem
-                icon={<IconCalendar size={16} />}
-                label="Fecha de Registro"
-                value={formatDateTime(fechaRegistro)}
-              />
-            )}
             <InfoItem
-              icon={<IconFileDescription size={16} />}
-              label="Estado"
-              value={estado}
-              badge={{ color: getEstadoColor(estado) }}
+              icon={<IconCalendar size={16} />}
+              label="Fecha de registro"
+              value={
+                mantenimiento.fechaHoraRegistro
+                  ? formatFechaHora(mantenimiento.fechaHoraRegistro)
+                  : null
+              }
             />
           </SimpleGrid>
 
-          {descripcion && descripcion !== "Sin descripción" && (
+          {descripcion && (
             <>
               <Divider />
               <Box>
@@ -217,4 +159,3 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
 };
 
 export default MantenimientoPerfil;
-

@@ -1,190 +1,125 @@
-import { Fragment } from "react";
+import { useLocation } from "wouter";
+import { Checkbox, Stack, Table, Text } from "@mantine/core";
 import {
-  ActionIcon,
-  Badge,
-  Group,
-  Menu,
-  Stack,
-  Table,
-  Text,
-} from "@mantine/core";
-import {
-  IconDotsVertical,
   IconEdit,
   IconFileDescription,
-  IconCheck,
   IconTrash,
-  IconCar,
 } from "@tabler/icons-react";
-import { useLocation } from "wouter";
 
+import { RowActionsMenu } from "@components";
 import { timeFromNow, toLocalDateTime } from "@utils/dates";
+
 import { useDeleteMantenimiento } from "../hooks/useDeleteMantenimiento";
 
-const ACTIONS = [
+const getActionsForRow = ({ onVerDetalles, onEditar, onEliminar }) => [
   {
     name: "Detalles",
     items: [
-      { icon: <IconFileDescription size={18} />, label: "Ver detalles" },
-      { icon: <IconCar size={18} />, label: "Ver vehículo" },
+      {
+        icon: <IconFileDescription size={18} />,
+        label: "Ver detalles",
+        onClick: onVerDetalles,
+      },
     ],
   },
   {
     name: "Opciones",
     items: [
-      { icon: <IconCheck size={18} />, label: "Completar", color: "green" },
-      { icon: <IconEdit size={18} />, label: "Editar", color: "blue" },
-      { icon: <IconTrash size={18} />, label: "Eliminar", color: "red" },
+      { icon: <IconEdit size={18} />, label: "Editar", color: "blue", onClick: onEditar },
+      { icon: <IconTrash size={18} />, label: "Eliminar", color: "red", onClick: onEliminar },
     ],
   },
 ];
 
-const COLUMNS = [
-  "Vehículo",
-  "Tipo de mantenimiento",
-  "Fecha programada",
-  "Costo",
-  "Estado",
-  "Sucursal",
-  "Acciones",
-];
-
-const getEstadoColor = (estado) => {
-  const normalizedEstado = estado?.toUpperCase();
-  const colores = {
-    PENDIENTE: "yellow",
-    EN_PROCESO: "blue",
-    "EN PROCESO": "blue",
-    COMPLETADO: "green",
-    CANCELADO: "red",
-    VENCIDO: "red",
-  };
-  return colores[normalizedEstado] || "gray";
+const marcaModelo = (vehiculo) => {
+  if (!vehiculo) return null;
+  const marca = vehiculo.modelo?.marca?.nombre ?? "";
+  const modelo = vehiculo.modelo?.nombre ?? "";
+  return `${marca} ${modelo}`.trim() || null;
 };
 
-const shouldDisableAction = (estado, label) => {
-  const normalizedEstado = estado?.toUpperCase();
-  const disableActions = {
-    COMPLETADO: ["Completar", "Editar"],
-    CANCELADO: ["Completar", "Editar"],
-  };
-  return disableActions[normalizedEstado]?.includes(label) ?? false;
-};
-
-const formatCurrency = (value) => {
-  if (!value) return "Sin costo";
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-  }).format(value);
-};
-
-const ListaMantenimientosTabla = ({ items = [], onRefresh }) => {
+const ListaMantenimientosTabla = ({
+  items = [],
+  selectedIds,
+  onToggle,
+  onToggleAll,
+  onRefresh,
+}) => {
   const [, navigate] = useLocation();
-  const { openDeleteModal } = useDeleteMantenimiento(onRefresh);
+  const { confirmDelete } = useDeleteMantenimiento(onRefresh);
 
-  const handleAction = (action, item) => {
-    switch (action) {
-      case "Ver detalles":
-        navigate(`~/mantenimientos/${item.id}`);
-        break;
-      case "Ver vehículo":
-        if (item.vehiculo?.id) {
-          navigate(`~/vehiculos/${item.vehiculo.id}`);
-        }
-        break;
-      case "Completar":
-        // TODO: Implementar acción de completar
-        console.log("Completar mantenimiento", item.id);
-        break;
-      case "Editar":
-        navigate(`~/mantenimientos/${item.id}/editar`);
-        break;
-      case "Eliminar":
-        openDeleteModal(item);
-        break;
-      default:
-        break;
-    }
-  };
-
-  if (items.length === 0) {
-    return (
-      <Table>
-        <Table.Thead>
-          <Table.Tr>
-            {COLUMNS.map((column) => (
-              <Table.Th key={column}>{column}</Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          <Table.Tr>
-            <Table.Td colSpan={COLUMNS.length} style={{ textAlign: "center" }}>
-              No hay mantenimientos para mostrar
-            </Table.Td>
-          </Table.Tr>
-        </Table.Tbody>
-      </Table>
-    );
-  }
+  const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
+  const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
   return (
-    <Table stickyHeader highlightOnHover verticalSpacing="xs">
+    <Table stickyHeader highlightOnHover verticalSpacing="xs" horizontalSpacing="xs">
       <Table.Thead>
         <Table.Tr>
-          {COLUMNS.map((column) => (
-            <Table.Th key={column}>{column}</Table.Th>
-          ))}
+          <Table.Th w={40}>
+            <Checkbox
+              checked={allSelected}
+              indeterminate={indeterminate}
+              onChange={onToggleAll}
+            />
+          </Table.Th>
+          <Table.Th>Vehículo</Table.Th>
+          <Table.Th>Tipo</Table.Th>
+          <Table.Th>Mecánico</Table.Th>
+          <Table.Th>Fecha de mantenimiento</Table.Th>
+          <Table.Th>Sucursal</Table.Th>
+          <Table.Th>Acciones</Table.Th>
         </Table.Tr>
       </Table.Thead>
+
       <Table.Tbody>
         {items.map((item) => {
           const vehiculo = item.vehiculo;
-          const patente = vehiculo?.patente || "Sin patente";
-          const marcaModelo = vehiculo
-            ? `${vehiculo.marca?.nombre || vehiculo.marca || ""} ${
-                vehiculo.modelo?.nombre || vehiculo.modelo || ""
-              }`.trim() || "Sin datos"
-            : "Sin vehículo";
-
-          const tipoMantenimiento =
-            item.tipoMantenimiento?.nombre ||
-            item.tipo?.nombre ||
-            item.tipo ||
-            "Sin tipo";
-
-          const fechaProgramada = item.fechaHoraMantenimiento;
-          const costo = item.costo || item.costoEstimado || 0;
-          const estado = item.estado || "PENDIENTE";
-          const sucursal =
-            vehiculo?.sucursal?.nombre ||
-            item.sucursal?.nombre ||
-            "Sin sucursal";
+          const patente = vehiculo?.patente ?? "-";
+          const tipo = item.tipoMantenimiento?.nombre ?? "-";
+          const mecanico =
+            `${item.nombreMecanico ?? ""} ${item.apellidoMecanico ?? ""}`.trim() || "-";
+          const sucursal = item.sucursal?.nombre ?? "-";
+          const fecha = item.fechaHoraMantenimiento;
 
           return (
-            <Table.Tr key={item.id}>
+            <Table.Tr
+              key={item.id}
+              bg={selectedIds.has(item.id) ? "var(--mantine-color-blue-light)" : undefined}
+            >
+              <Table.Td>
+                <Checkbox
+                  checked={selectedIds.has(item.id)}
+                  onChange={() => onToggle(item.id)}
+                />
+              </Table.Td>
+
               <Table.Td>
                 <Stack gap={0}>
                   <Text size="sm" fw={600}>
                     {patente}
                   </Text>
-                  <Text size="xs" c="dimmed">
-                    {marcaModelo}
-                  </Text>
+                  {marcaModelo(vehiculo) && (
+                    <Text size="xs" c="dimmed">
+                      {marcaModelo(vehiculo)}
+                    </Text>
+                  )}
                 </Stack>
               </Table.Td>
 
               <Table.Td>
-                <Text size="sm">{tipoMantenimiento}</Text>
+                <Text size="sm">{tipo}</Text>
               </Table.Td>
 
               <Table.Td>
-                {fechaProgramada ? (
-                  <Stack gap="0">
-                    <Text size="sm">{toLocalDateTime(fechaProgramada)}</Text>
+                <Text size="sm">{mecanico}</Text>
+              </Table.Td>
+
+              <Table.Td>
+                {fecha ? (
+                  <Stack gap={0}>
+                    <Text size="sm">{toLocalDateTime(fecha)}</Text>
                     <Text size="xs" fw="bold">
-                      {timeFromNow(fechaProgramada)}
+                      {timeFromNow(fecha)}
                     </Text>
                   </Stack>
                 ) : (
@@ -195,53 +130,18 @@ const ListaMantenimientosTabla = ({ items = [], onRefresh }) => {
               </Table.Td>
 
               <Table.Td>
-                <Text size="sm" fw={500}>
-                  {formatCurrency(costo)}
-                </Text>
-              </Table.Td>
-
-              <Table.Td>
-                <Badge
-                  color={getEstadoColor(estado)}
-                  variant="light"
-                  radius="md"
-                >
-                  {estado}
-                </Badge>
-              </Table.Td>
-
-              <Table.Td>
                 <Text size="sm">{sucursal}</Text>
               </Table.Td>
 
               <Table.Td>
-                <Menu shadow="md" width={200}>
-                  <Menu.Target>
-                    <ActionIcon variant="subtle" size="input-sm">
-                      <IconDotsVertical size={18} />
-                    </ActionIcon>
-                  </Menu.Target>
-
-                  <Menu.Dropdown>
-                    {ACTIONS.map(({ name, items: actionItems }, index) => (
-                      <Fragment key={name}>
-                        <Menu.Label>{name}</Menu.Label>
-                        {actionItems.map(({ icon, label, color }) => (
-                          <Menu.Item
-                            key={label}
-                            color={color}
-                            leftSection={icon}
-                            disabled={shouldDisableAction(estado, label)}
-                            onClick={() => handleAction(label, item)}
-                          >
-                            {label}
-                          </Menu.Item>
-                        ))}
-                        {index === 0 && <Menu.Divider />}
-                      </Fragment>
-                    ))}
-                  </Menu.Dropdown>
-                </Menu>
+                <RowActionsMenu
+                  actions={getActionsForRow({
+                    onVerDetalles: () => navigate(`~/mantenimientos/${item.id}`),
+                    onEditar: () => navigate(`~/mantenimientos/${item.id}/editar`),
+                    onEliminar: () => confirmDelete(item),
+                  })}
+                  width={160}
+                />
               </Table.Td>
             </Table.Tr>
           );

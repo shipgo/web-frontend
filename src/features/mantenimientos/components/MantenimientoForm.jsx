@@ -185,7 +185,7 @@ const MantenimientoForm = ({
                 placeholder="Selecciona la fecha"
                 leftSection={<IconCalendar size={18} />}
                 valueFormat="DD/MM/YYYY HH:mm"
-                minDate={new Date()}
+                minDate={isEdit ? undefined : new Date()}
                 required
                 {...form.getInputProps("fechaHoraMantenimiento")}
               />
@@ -207,7 +207,7 @@ const MantenimientoForm = ({
               Cancelar
             </Button>
             <Button type="submit" loading={loading}>
-              {isEdit ? "Guardar cambios" : "Crear mantenimiento"}
+              {isEdit ? "Guardar cambios" : "Registrar mantenimiento"}
             </Button>
           </Group>
         </Stack>

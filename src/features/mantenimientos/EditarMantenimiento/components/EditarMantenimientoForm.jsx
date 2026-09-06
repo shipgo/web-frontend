@@ -6,19 +6,32 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
-import { mantenimientoApi } from "../api/mantenimientos.api";
+import { mantenimientoApi } from "../../api/mantenimientos.api";
 
-import MantenimientoForm from "../components/MantenimientoForm";
-import { MANTENIMIENTO_SCHEMA, INITIAL_VALUES } from "../constants/schema";
-import { buildMantenimientoReqDTO } from "../utils";
+import MantenimientoForm from "../../components/MantenimientoForm";
+import { MANTENIMIENTO_SCHEMA } from "../../constants/schema";
+import {
+  buildMantenimientoFormValues,
+  buildMantenimientoReqDTO,
+} from "../../utils";
 
-const CrearMantenimiento = () => {
+/**
+ * Comparte con `CrearMantenimiento` el `MantenimientoForm`, el schema Zod
+ * (`MANTENIMIENTO_SCHEMA`, vía `schemaResolver`) y el builder del payload
+ * (`buildMantenimientoReqDTO`). Diferencias: precarga con
+ * `buildMantenimientoFormValues` y `PUT` en vez de `POST`.
+ *
+ * `fechaHoraRegistro` se reenvía explícitamente: el `update` del backend hace
+ * `modelMapper.map(reqDTO, entidad)`, que pisaría `fechaHoraRegistro` con `null`
+ * si no se manda (mismo riesgo que documentó `SHG-FE-010` para `ViajeReqDTO`).
+ */
+const EditarMantenimientoForm = ({ id, mantenimiento }) => {
   const [, navigate] = useLocation();
   const [loading, setLoading] = useState(false);
 
   const form = useForm({
     mode: "controlled",
-    initialValues: INITIAL_VALUES,
+    initialValues: buildMantenimientoFormValues(mantenimiento),
     validate: schemaResolver(MANTENIMIENTO_SCHEMA, { sync: true }),
   });
 
@@ -27,23 +40,22 @@ const CrearMantenimiento = () => {
       try {
         setLoading(true);
 
-        const payload = buildMantenimientoReqDTO(values);
-        await mantenimientoApi.save(payload);
+        const payload = buildMantenimientoReqDTO(values, {
+          fechaHoraRegistro: mantenimiento.fechaHoraRegistro,
+        });
+        await mantenimientoApi.update(id, payload);
 
         notifications.show({
-          title: "Mantenimiento registrado",
-          message: "El mantenimiento se registró correctamente",
+          title: "Mantenimiento actualizado",
+          message: "Los cambios se guardaron correctamente",
           color: "green",
           icon: <IconCheck />,
         });
 
         navigate("~/mantenimientos");
       } catch (error) {
-        console.error("Error creando mantenimiento:", error);
+        console.error("Error actualizando mantenimiento:", error);
 
-        // 400 de validación de campos (`ApiFieldError`, `CONTRACTS.md §5`): mismo
-        // patrón puntual que `SHG-FE-016`/`SHG-FE-031` (`form.setErrors` desde
-        // `error.response.data.fields` + toast) hasta que exista `SHG-FE-021`.
         const responseData = error?.response?.data;
         if (Array.isArray(responseData?.fields) && responseData.fields.length > 0) {
           form.setErrors(
@@ -58,7 +70,7 @@ const CrearMantenimiento = () => {
 
         notifications.show({
           title: "Error",
-          message: responseData?.message || "No se pudo registrar el mantenimiento",
+          message: responseData?.message || "No se pudo actualizar el mantenimiento",
           color: "red",
           icon: <IconX />,
         });
@@ -66,7 +78,7 @@ const CrearMantenimiento = () => {
         setLoading(false);
       }
     },
-    [navigate, form],
+    [id, navigate, form, mantenimiento.fechaHoraRegistro],
   );
 
   const handleCancel = useCallback(() => {
@@ -77,8 +89,8 @@ const CrearMantenimiento = () => {
     <PageContainer>
       <PageBreadcrumbsHeader
         entidad="Mantenimientos"
-        accion="Crear mantenimiento"
-        descripcion="Completá los datos para registrar un nuevo mantenimiento"
+        accion="Editar mantenimiento"
+        descripcion={`Modificá los datos del mantenimiento #${id}`}
       />
 
       <MantenimientoForm
@@ -86,9 +98,10 @@ const CrearMantenimiento = () => {
         onSubmit={handleSubmit}
         loading={loading}
         onCancel={handleCancel}
+        isEdit
       />
     </PageContainer>
   );
 };
 
-export default CrearMantenimiento;
+export default EditarMantenimientoForm;
