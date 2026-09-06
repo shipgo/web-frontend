@@ -1,123 +1,108 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
-import { useForm } from '@mantine/form';
 import { DatePickerInput } from '@mantine/dates';
 import { Card, Chip, Flex, Select } from '@mantine/core';
 
 import {
+  DEFAULT_QUICK_FILTER,
   QUICK_FILTERS,
-  SUCURSALES,
-  getTodayDateRange,
-  getSucursalLabel,
+  getQuickFilterRange,
 } from '../dashboard.helpers';
+import { useSucursalesOptions } from '../hooks/useDashboardData';
 
-const isSameDate = (a, b) => a?.valueOf() === b?.valueOf();
+/**
+ * Filtros del dashboard: rango de fechas + selector de sucursal + quick-filters de
+ * período. Cada cambio emite el estado completo de filtros al padre, que lo
+ * traduce a `params` y dispara el refetch real (TanStack Query).
+ *
+ * El **selector de sucursal es sólo para SUPERUSER** (`CONTRACTS.md §3`): un ADMIN
+ * siempre ve su propia sucursal y el backend ignora cualquier `sucursalId` que le
+ * mande, así que ni se muestra el control. El gate sale de
+ * `useSucursalesOptions().isSuperUser` (deriva de `useAuthStore`).
+ */
+const DashboardFiltros = ({ value, onChange }) => {
+  const { isSuperUser, options: sucursalOptions } = useSucursalesOptions();
 
-const DashboardFiltros = ({ onFiltersChange }) => {
-  const [activeFilterLabel, setActiveFilterLabel] = useState('Hoy');
+  const [date, setDate] = useState(value.date);
+  const [sucursalId, setSucursalId] = useState(value.sucursalId);
+  const [activeQuick, setActiveQuick] = useState(value.quickFilterLabel);
 
-  // Ref mirror of activeFilterLabel to avoid stale closure inside onValuesChange.
-  const activeFilterLabelRef = useRef('Hoy');
-
-  // Signals that the next onValuesChange was triggered programmatically, not by the user.
-  const applyingQuickFilterRef = useRef(false);
-
-  // Stores the last known date to detect whether date or sucursal changed.
-  // Compared by value (.valueOf()), not by reference, since Mantine clones form values internally.
-  const lastDateRef = useRef(getTodayDateRange());
-
-  const syncActiveFilter = (label) => {
-    setActiveFilterLabel(label);
-    activeFilterLabelRef.current = label;
+  const emit = (next) => {
+    const sucursalLabel =
+      next.sucursalId != null
+        ? sucursalOptions.find((s) => s.value === next.sucursalId)?.label ?? null
+        : null;
+    onChange({ ...next, sucursalLabel });
   };
 
-  const buildFiltersPayload = (date, sucursalValue, quickFilterLabel) => ({
-    date,
-    sucursal: sucursalValue,
-    quickFilterLabel,
-    sucursalLabel: getSucursalLabel(sucursalValue),
-  });
+  const handleDateChange = (nextDate) => {
+    // Esperar a que el usuario elija las dos puntas del rango.
+    if (nextDate[0] && !nextDate[1]) {
+      setDate(nextDate);
+      return;
+    }
 
-  const form = useForm({
-    mode: 'controlled',
-    initialValues: { date: getTodayDateRange(), sucursal: null },
-    onValuesChange: (values) => {
-      if (applyingQuickFilterRef.current) {
-        applyingQuickFilterRef.current = false;
-        lastDateRef.current = values.date;
-        return;
-      }
+    // Rango limpiado por completo → volver al quick-filter default.
+    if (!nextDate[0] && !nextDate[1]) {
+      const range = getQuickFilterRange(DEFAULT_QUICK_FILTER);
+      setDate(range);
+      setActiveQuick(DEFAULT_QUICK_FILTER);
+      emit({ date: range, sucursalId, quickFilterLabel: DEFAULT_QUICK_FILTER });
+      return;
+    }
 
-      const prevDate = lastDateRef.current;
-      const dateChanged =
-        !isSameDate(values.date[0], prevDate[0]) || !isSameDate(values.date[1], prevDate[1]);
+    setDate(nextDate);
+    setActiveQuick(null);
+    emit({ date: nextDate, sucursalId, quickFilterLabel: null });
+  };
 
-      lastDateRef.current = values.date;
+  const handleQuickFilter = (label) => {
+    if (activeQuick === label) return;
+    const range = getQuickFilterRange(label);
+    setActiveQuick(label);
+    setDate(range);
+    emit({ date: range, sucursalId, quickFilterLabel: label });
+  };
 
-      if (!values.date[0] && !values.date[1]) {
-        const todayRange = getTodayDateRange();
-        syncActiveFilter('Hoy');
-        applyingQuickFilterRef.current = true;
-        form.setValues({ date: todayRange, sucursal: values.sucursal });
-        onFiltersChange?.(buildFiltersPayload(todayRange, values.sucursal, 'Hoy'));
-        return;
-      }
-
-      // Wait until the user picks both ends of the range.
-      if (values.date[0] && !values.date[1]) return;
-
-      if (dateChanged) syncActiveFilter(null);
-
-      onFiltersChange?.(
-        buildFiltersPayload(
-          values.date,
-          values.sucursal,
-          dateChanged ? null : activeFilterLabelRef.current,
-        ),
-      );
-    },
-  });
-
-  const handleChipSelect = (label) => {
-    if (activeFilterLabel === label) return;
-
-    const currentSucursal = form.getValues().sucursal;
-    const dateRange = QUICK_FILTERS.find((f) => f.label === label).getDateRange();
-    syncActiveFilter(label);
-    applyingQuickFilterRef.current = true;
-    form.setValues({ date: dateRange, sucursal: currentSucursal });
-    onFiltersChange?.(buildFiltersPayload(dateRange, currentSucursal, label));
+  const handleSucursalChange = (nextSucursalId) => {
+    setSucursalId(nextSucursalId);
+    emit({ date, sucursalId: nextSucursalId, quickFilterLabel: activeQuick });
   };
 
   return (
     <Card component="search">
-      <Flex gap="md" align="flex-end" mb="md">
+      <Flex gap="md" align="flex-end" mb="md" wrap="wrap">
         <DatePickerInput
-          {...form.getInputProps('date')}
+          value={date}
+          onChange={handleDateChange}
           type="range"
           clearable
+          allowSingleDateInRange
           label="Rango de fechas"
           placeholder="Seleccioná un rango"
           w={260}
         />
-        <Select
-          {...form.getInputProps('sucursal')}
-          label="Sucursal"
-          placeholder="Todas las sucursales"
-          data={SUCURSALES}
-          w={220}
-          searchable
-          clearable
-        />
+        {isSuperUser && (
+          <Select
+            value={sucursalId}
+            onChange={handleSucursalChange}
+            label="Sucursal"
+            placeholder="Todas las sucursales"
+            data={sucursalOptions}
+            w={220}
+            searchable
+            clearable
+          />
+        )}
       </Flex>
 
-      <Flex gap="xs">
+      <Flex gap="xs" wrap="wrap">
         {QUICK_FILTERS.map(({ label }) => (
           <Chip
             key={label}
             variant="light"
-            checked={activeFilterLabel === label}
-            onChange={() => handleChipSelect(label)}
+            checked={activeQuick === label}
+            onChange={() => handleQuickFilter(label)}
           >
             {label}
           </Chip>

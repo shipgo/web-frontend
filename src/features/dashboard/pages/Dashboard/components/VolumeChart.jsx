@@ -1,43 +1,36 @@
-import { Card, Group, Stack, Text, ThemeIcon, Tooltip } from "@mantine/core";
-import { BarChart } from "@mantine/charts";
-import { IconChartBar, IconInfoCircle } from "@tabler/icons-react";
-import ScreenContainer from "@components/ScreenContainer";
+import { BarChart } from '@mantine/charts';
+import { IconChartBar } from '@tabler/icons-react';
 
-const VOLUMEN_SEMANAL = [
-  { dia: "Lunes", paquetes: 98 },
-  { dia: "Martes", paquetes: 134 },
-  { dia: "Miércoles", paquetes: 117 },
-  { dia: "Jueves", paquetes: 155 },
-  { dia: "Viernes", paquetes: 142 },
-  { dia: "Sábado", paquetes: 76 },
-  { dia: "Domingo", paquetes: 31 },
-];
+import ChartCard from './ChartCard';
+import { isSerieVacia, mapVolumenPorDia } from '../dashboard.mappers';
 
-const VolumeChart = ({ periodoLabel, isLoading }) => (
-  <Card h="100%">
-    <Group gap="xs" mb="md">
-      <ThemeIcon variant="light" color="blue" size="xl">
-        <IconChartBar />
-      </ThemeIcon>
-      <Stack gap={0}>
-        <Group gap={4} align="center">
-          <Text size="sm" fw={600}>Volumen de paquetes</Text>
-          <Tooltip label="Total de paquetes procesados por día en el período seleccionado." withArrow>
-            <IconInfoCircle size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
-          </Tooltip>
-        </Group>
-        <Text size="xs" c="dimmed">{periodoLabel}</Text>
-      </Stack>
-    </Group>
-    <ScreenContainer onLoading={{ show: isLoading }} styleProps={{ bg: 'transparent', mih: '220px' }}>
+/**
+ * Volumen de envíos dados de alta por día — `series.volumenPorDia` (`SHG-BE-003`).
+ * El backend rellena los días en 0, así que el eje X no tiene huecos.
+ */
+const VolumeChart = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
+  const data = mapVolumenPorDia(series);
+
+  return (
+    <ChartCard
+      title="Volumen de envíos"
+      tooltip="Envíos dados de alta por día en el período seleccionado."
+      icon={<IconChartBar />}
+      color="blue"
+      subtitle={periodoLabel}
+      isLoading={isLoading}
+      isError={isError}
+      isEmpty={isSerieVacia(data, 'cantidad')}
+      onRetry={onRetry}
+    >
       <BarChart
         h={260}
-        data={VOLUMEN_SEMANAL}
-        dataKey="dia"
-        series={[{ name: "paquetes", color: "blue.5", label: "Paquetes" }]}
+        data={data}
+        dataKey="fecha"
+        series={[{ name: 'cantidad', color: 'blue.5', label: 'Envíos' }]}
       />
-    </ScreenContainer>
-  </Card>
-);
+    </ChartCard>
+  );
+};
 
 export default VolumeChart;
