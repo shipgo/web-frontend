@@ -6,9 +6,12 @@ import { z } from "zod";
  * `EditarVehiculo`, para alinear con el patrón canónico de `CrearEnvios`
  * (`schemaResolver` + Zod).
  *
- * OJO: esto es SÓLO la migración de la validación. La forma del payload y su
- * alineación con `VehiculoReqDTO` / modelos por marca son responsabilidad de
- * `SHG-FE-018` (sigue `todo`), no de esta tarea.
+ * Reglas alineadas con `VehiculoReqDTO` (backend, `SHG-BE-008`):
+ * - `anioCompra` (Long) — `@Min(1900)`.
+ * - `kilometraje` (Integer) — `@Min(0)`.
+ * - `cantidadRuedas` (Integer) — `@Min(4)`.
+ * - `pesoMaximo` (Double) — `@DecimalMin("0.0")` (el front exige `> 0`).
+ * - `consumoPromedio` (Double) — `@DecimalMin("0.1")`.
  */
 
 const currentYear = new Date().getFullYear();
@@ -45,7 +48,7 @@ export const VEHICULO_SCHEMA = z.object({
   cantidadRuedas: numberField(
     z
       .number({ error: "El campo cantidad de ruedas no puede estar vacío" })
-      .gte(2, "La cantidad de ruedas debe ser al menos 2"),
+      .gte(4, "La cantidad de ruedas debe ser al menos 4"),
   ),
   pesoMaximo: numberField(
     z
@@ -55,7 +58,7 @@ export const VEHICULO_SCHEMA = z.object({
   consumoPromedio: numberField(
     z
       .number({ error: "El campo consumo promedio no puede estar vacío" })
-      .gt(0, "El consumo promedio debe ser mayor a 0"),
+      .gte(0.1, "El consumo promedio debe ser mayor o igual a 0.1"),
   ),
 });
 

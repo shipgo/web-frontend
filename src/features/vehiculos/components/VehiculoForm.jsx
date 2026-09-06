@@ -119,7 +119,9 @@ const VehiculoForm = () => {
     loadCatalogs();
   }, []);
 
-  // Cargar modelos cuando cambia la marca
+  // Cargar modelos cuando cambia la marca.
+  // `GET /api/modelo/all?marcaId=<id>` — filtro `ModeloFilter.marcaId` (exact
+  // match), resuelto por `SHG-BE-007`. No hay path dedicado `/modelo/marca/{id}`.
   useEffect(() => {
     const loadModelos = async () => {
       const marcaID = form.values.marcaID;
@@ -248,7 +250,7 @@ const VehiculoForm = () => {
               label="Consumo Promedio"
               placeholder="Ej: 8.5"
               required
-              min={1}
+              min={0.1}
               step={0.1}
               decimalScale={2}
               suffix=" L/100km"
@@ -281,7 +283,7 @@ const VehiculoForm = () => {
               label="Cantidad de Ruedas"
               placeholder="Ej: 4"
               required
-              min={2}
+              min={4}
               max={20}
               {...form.getInputProps("cantidadRuedas")}
             />

@@ -31,6 +31,9 @@ const CrearVehiculo = () => {
     try {
       setLoading(true);
 
+      // Payload = `VehiculoReqDTO` exacto (SHG-BE-008): IDs + `anioCompra` como
+      // enteros (Long/Integer server-side), `pesoMaximo` / `consumoPromedio`
+      // como Double. Los `Select` guardan strings y los `NumberInput` numbers.
       const vehiculoData = {
         patente: values.patente,
         tipoVehiculoID: parseInt(values.tipoVehiculoID),
