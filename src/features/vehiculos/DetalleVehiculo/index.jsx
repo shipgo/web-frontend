@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Button, Card, Group, Text } from "@mantine/core";
-import { IconArrowLeft, IconEdit } from "@tabler/icons-react";
+import { Button, Card, Text } from "@mantine/core";
+import { IconEdit } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { vehiculoApi } from "@api";
+
 import VehiculoPerfil from "../components/VehiculoPerfil";
 
 const DetalleVehiculo = () => {
@@ -39,44 +41,30 @@ const DetalleVehiculo = () => {
     }
   }, [id, navigate]);
 
-  const handleEdit = () => {
-    navigate(`~/vehiculos/${id}/editar`);
-  };
-
-  const handleBack = () => {
-    navigate("~/vehiculos");
-  };
-
-  if (loading) {
-    return (
-      <PageContainer>
-        <Card>
-          <Text>Cargando vehículo...</Text>
-        </Card>
-      </PageContainer>
-    );
-  }
-
   return (
     <PageContainer>
-      <Group justify="space-between" align="flex-end">
+      <PageBreadcrumbsHeader
+        entidad="Vehículos"
+        accion="Detalle de vehículo"
+        descripcion={vehiculo ? `Patente ${vehiculo.patente}` : undefined}
+      >
         <Button
-          variant="subtle"
-          leftSection={<IconArrowLeft size={18} />}
-          onClick={handleBack}
+          leftSection={<IconEdit size={18} />}
+          onClick={() => navigate(`~/vehiculos/${id}/editar`)}
         >
-          Volver
-        </Button>
-
-        <Button leftSection={<IconEdit size={18} />} onClick={handleEdit}>
           Editar
         </Button>
-      </Group>
+      </PageBreadcrumbsHeader>
 
-      <VehiculoPerfil vehiculo={vehiculo} showAllInfo={true} />
+      {loading ? (
+        <Card>
+          <Text c="dimmed">Cargando vehículo...</Text>
+        </Card>
+      ) : (
+        <VehiculoPerfil vehiculo={vehiculo} showAllInfo={true} />
+      )}
     </PageContainer>
   );
 };
 
 export default DetalleVehiculo;
-

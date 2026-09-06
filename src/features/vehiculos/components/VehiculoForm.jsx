@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Button,
   Card,
   Group,
   LoadingOverlay,
@@ -21,6 +20,7 @@ import {
   tipoRuedaApi,
   tipoVehiculoApi,
 } from "../api/vehiculos.api";
+import { useVehiculoFormContext } from "../context/VehiculoFormContext";
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -46,21 +46,16 @@ const filterIgnoreAccents = ({ options, search }) => {
 };
 
 /**
- * Componente de formulario reutilizable para crear/editar vehículos
- * @param {Object} props
- * @param {Object} props.form - Instancia de useForm de Mantine
- * @param {Function} props.onSubmit - Función a ejecutar al enviar el formulario
- * @param {boolean} props.loading - Estado de carga del submit
- * @param {Function} props.onCancel - Función para cancelar
- * @param {boolean} props.isEdit - Si es modo edición o creación
+ * Cuerpo del formulario de vehículos (crear / editar). Toma el form del
+ * `VehiculoFormProvider` (contexto compartido) — igual que `SeccionOrigen` /
+ * `SeccionCarga` de `CrearEnvios`. Se mantiene como un único componente
+ * (ver bitácora de `SHG-FE-034`): ya está organizado en tres `Card` por
+ * sección y `SHG-FE-018` va a reescribir estos campos, así que partirlo ahora
+ * en archivos `SeccionX` sería trabajo que se tira.
  */
-const VehiculoForm = ({
-  form,
-  onSubmit,
-  loading,
-  onCancel,
-  isEdit = false,
-}) => {
+const VehiculoForm = () => {
+  const form = useVehiculoFormContext();
+
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [tiposVehiculo, setTiposVehiculo] = useState([]);
   const [marcas, setMarcas] = useState([]);
@@ -156,168 +151,156 @@ const VehiculoForm = ({
   }, [form.values.marcaID]);
 
   return (
-    <form onSubmit={form.onSubmit(onSubmit)}>
-      <Stack>
-        {/* Información del Vehículo */}
-        <Card pos="relative">
-          <LoadingOverlay
-            visible={catalogsLoading}
-            overlayProps={{ radius: "md", blur: 2 }}
-          />
+    <Stack>
+      {/* Información del Vehículo */}
+      <Card pos="relative">
+        <LoadingOverlay
+          visible={catalogsLoading}
+          overlayProps={{ radius: "md", blur: 2 }}
+        />
 
-          <Stack gap="md">
-            <Group gap="0.75rem">
-              <IconCar size={20} />
-              <Title order={4}>Información del vehículo</Title>
-            </Group>
+        <Stack gap="md">
+          <Group gap="0.75rem">
+            <IconCar size={20} />
+            <Title order={4}>Información del vehículo</Title>
+          </Group>
 
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-              <TextInput
-                label="Patente"
-                placeholder="Ej: ABC123"
-                required
-                {...form.getInputProps("patente")}
-              />
-              <Select
-                label="Tipo de Vehículo"
-                placeholder="Seleccione"
-                required
-                data={tiposVehiculo}
-                searchable
-                filter={filterIgnoreAccents}
-                {...form.getInputProps("tipoVehiculoID")}
-              />
-              <Select
-                label="Marca"
-                placeholder="Seleccione"
-                required
-                data={marcas}
-                searchable
-                filter={filterIgnoreAccents}
-                {...form.getInputProps("marcaID")}
-                onChange={(value) => {
-                  form.setFieldValue("marcaID", value);
-                  form.setFieldValue("modeloID", null);
-                }}
-              />
-              <Select
-                label="Modelo"
-                placeholder="Seleccione primero una marca"
-                required
-                data={modelos}
-                searchable
-                filter={filterIgnoreAccents}
-                disabled={!form.values.marcaID}
-                {...form.getInputProps("modeloID")}
-              />
-              <NumberInput
-                label="Año de Compra"
-                placeholder="Ej: 2020"
-                required
-                min={1900}
-                max={new Date().getFullYear()}
-                {...form.getInputProps("anioCompra")}
-              />
-              <NumberInput
-                label="Kilometraje"
-                placeholder="Ej: 50000"
-                required
-                min={0}
-                suffix=" km"
-                thousandSeparator="."
-                decimalSeparator=","
-                {...form.getInputProps("kilometraje")}
-              />
-            </SimpleGrid>
-          </Stack>
-        </Card>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+            <TextInput
+              label="Patente"
+              placeholder="Ej: ABC123"
+              required
+              {...form.getInputProps("patente")}
+            />
+            <Select
+              label="Tipo de Vehículo"
+              placeholder="Seleccione"
+              required
+              data={tiposVehiculo}
+              searchable
+              filter={filterIgnoreAccents}
+              {...form.getInputProps("tipoVehiculoID")}
+            />
+            <Select
+              label="Marca"
+              placeholder="Seleccione"
+              required
+              data={marcas}
+              searchable
+              filter={filterIgnoreAccents}
+              {...form.getInputProps("marcaID")}
+              onChange={(value) => {
+                form.setFieldValue("marcaID", value);
+                form.setFieldValue("modeloID", null);
+              }}
+            />
+            <Select
+              label="Modelo"
+              placeholder="Seleccione primero una marca"
+              required
+              data={modelos}
+              searchable
+              filter={filterIgnoreAccents}
+              disabled={!form.values.marcaID}
+              {...form.getInputProps("modeloID")}
+            />
+            <NumberInput
+              label="Año de Compra"
+              placeholder="Ej: 2020"
+              required
+              min={1900}
+              max={new Date().getFullYear()}
+              {...form.getInputProps("anioCompra")}
+            />
+            <NumberInput
+              label="Kilometraje"
+              placeholder="Ej: 50000"
+              required
+              min={0}
+              suffix=" km"
+              thousandSeparator="."
+              decimalSeparator=","
+              {...form.getInputProps("kilometraje")}
+            />
+          </SimpleGrid>
+        </Stack>
+      </Card>
 
-        {/* Especificaciones Técnicas */}
-        <Card>
-          <Stack gap="md">
-            <Group gap="0.75rem">
-              <IconGauge size={20} />
-              <Title order={4}>Especificaciones técnicas</Title>
-            </Group>
+      {/* Especificaciones Técnicas */}
+      <Card>
+        <Stack gap="md">
+          <Group gap="0.75rem">
+            <IconGauge size={20} />
+            <Title order={4}>Especificaciones técnicas</Title>
+          </Group>
 
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-              <Select
-                label="Combustible"
-                placeholder="Seleccione"
-                required
-                data={combustibles}
-                searchable
-                filter={filterIgnoreAccents}
-                {...form.getInputProps("combustibleID")}
-              />
-              <NumberInput
-                label="Consumo Promedio"
-                placeholder="Ej: 8.5"
-                required
-                min={1}
-                step={0.1}
-                decimalScale={2}
-                suffix=" L/100km"
-                decimalSeparator=","
-                {...form.getInputProps("consumoPromedio")}
-              />
-            </SimpleGrid>
-          </Stack>
-        </Card>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+            <Select
+              label="Combustible"
+              placeholder="Seleccione"
+              required
+              data={combustibles}
+              searchable
+              filter={filterIgnoreAccents}
+              {...form.getInputProps("combustibleID")}
+            />
+            <NumberInput
+              label="Consumo Promedio"
+              placeholder="Ej: 8.5"
+              required
+              min={1}
+              step={0.1}
+              decimalScale={2}
+              suffix=" L/100km"
+              decimalSeparator=","
+              {...form.getInputProps("consumoPromedio")}
+            />
+          </SimpleGrid>
+        </Stack>
+      </Card>
 
-        {/* Información de Ruedas */}
-        <Card>
-          <Stack gap="md">
-            <Group gap="0.75rem">
-              <IconRuler size={20} />
-              <Title order={4}>Información de ruedas y capacidad</Title>
-            </Group>
+      {/* Información de Ruedas */}
+      <Card>
+        <Stack gap="md">
+          <Group gap="0.75rem">
+            <IconRuler size={20} />
+            <Title order={4}>Información de ruedas y capacidad</Title>
+          </Group>
 
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-              <Select
-                label="Tipo de Rueda"
-                placeholder="Seleccione"
-                required
-                data={tiposRueda}
-                searchable
-                filter={filterIgnoreAccents}
-                {...form.getInputProps("tipoRuedaID")}
-              />
-              <NumberInput
-                label="Cantidad de Ruedas"
-                placeholder="Ej: 4"
-                required
-                min={2}
-                max={20}
-                {...form.getInputProps("cantidadRuedas")}
-              />
-              <NumberInput
-                label="Peso Máximo"
-                placeholder="Ej: 1500"
-                required
-                min={0}
-                step={0.1}
-                decimalScale={2}
-                suffix=" kg"
-                thousandSeparator="."
-                decimalSeparator=","
-                {...form.getInputProps("pesoMaximo")}
-              />
-            </SimpleGrid>
-          </Stack>
-        </Card>
-
-        {/* Botones de acción */}
-        <Group justify="flex-end" gap="xs">
-          <Button variant="subtle" color="red" disabled={loading} onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={loading}>
-            {isEdit ? "Guardar cambios" : "Crear vehículo"}
-          </Button>
-        </Group>
-      </Stack>
-    </form>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+            <Select
+              label="Tipo de Rueda"
+              placeholder="Seleccione"
+              required
+              data={tiposRueda}
+              searchable
+              filter={filterIgnoreAccents}
+              {...form.getInputProps("tipoRuedaID")}
+            />
+            <NumberInput
+              label="Cantidad de Ruedas"
+              placeholder="Ej: 4"
+              required
+              min={2}
+              max={20}
+              {...form.getInputProps("cantidadRuedas")}
+            />
+            <NumberInput
+              label="Peso Máximo"
+              placeholder="Ej: 1500"
+              required
+              min={0}
+              step={0.1}
+              decimalScale={2}
+              suffix=" kg"
+              thousandSeparator="."
+              decimalSeparator=","
+              {...form.getInputProps("pesoMaximo")}
+            />
+          </SimpleGrid>
+        </Stack>
+      </Card>
+    </Stack>
   );
 };
 
