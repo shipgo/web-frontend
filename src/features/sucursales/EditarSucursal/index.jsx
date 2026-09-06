@@ -43,6 +43,7 @@ const EditarSucursal = () => {
           provinciaID: localidad.provincia?.id?.toString() || null,
           localidadID: localidad.id?.toString() || null,
         });
+        form.resetDirty();
       } catch (error) {
         console.error("Error cargando sucursal:", error);
         notifications.show({

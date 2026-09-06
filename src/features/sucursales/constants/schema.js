@@ -13,7 +13,11 @@ import { z } from "zod";
  */
 export const SUCURSAL_SCHEMA = z.object({
   nombre: z.string().trim().min(1, "Debes ingresar el nombre"),
-  email: z.email("El email no es válido"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Debes ingresar el email")
+    .refine((value) => /^\S+@\S+\.\S+$/.test(value), "El email no es válido"),
   prefijo: z.string().trim().min(1, "Debes ingresar el prefijo"),
   telefono: z.string().trim().min(1, "Debes ingresar el teléfono"),
   nombreCalle: z.string().trim().min(1, "Debes ingresar la calle"),
