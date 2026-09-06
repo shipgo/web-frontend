@@ -102,6 +102,20 @@ describe('parseApiError — body anidado (ViajeReqDTO.viaje / SucursalReqDTO.pun
       parseApiError(err, { stripPrefix: ['viaje', 'puntoEntrega'] }).fieldErrors,
     ).toEqual({ vehiculoID: 'Requerido.', numeroCalle: 'Requerido.' });
   });
+
+  it('NO detecta prefijo en un DTO plano cuyos campos comparten un comienzo pero no un segmento con punto', () => {
+    const err = axiosError(400, {
+      fields: [
+        { field: 'nombreCalle', error: 'Requerido.' },
+        { field: 'nombreMecanico', error: 'Requerido.' },
+      ],
+    });
+
+    expect(parseApiError(err).fieldErrors).toEqual({
+      nombreCalle: 'Requerido.',
+      nombreMecanico: 'Requerido.',
+    });
+  });
 });
 
 describe('parseApiError — errores sin fields (ErrorResponse simple)', () => {
