@@ -6,11 +6,14 @@ import PageContainer from "@components/PageContainer";
 import ScreenContainer from "@components/ScreenContainer";
 import SelectionBanner from "@components/SelectionBanner";
 
+import { useCsvExport } from "@hooks/useCsvExport";
+
 import ListaMantenimientosHeader from "./components/ListaMantenimientosHeader";
 import ListaMantenimientosFiltros from "./components/ListaMantenimientosFiltros";
 import ListaMantenimientosTabla from "./components/ListaMantenimientosTabla";
 
 import { useGetMantenimientos } from "./hooks/useGetMantenimientos";
+import { MANTENIMIENTOS_CSV_COLUMNS } from "./listaMantenimientos.csv";
 
 const PAGE_LIMIT = 10;
 
@@ -20,10 +23,18 @@ const ListaMantenimientos = () => {
     isError,
     isLoading,
     refetchMantenimientos,
+    fetchExportRows,
     setPage,
     setFilters,
     params: { filters, page },
   } = useGetMantenimientos(PAGE_LIMIT);
+
+  const { exportar, isExporting } = useCsvExport({
+    fetchRows: fetchExportRows,
+    columns: MANTENIMIENTOS_CSV_COLUMNS,
+    entidad: "mantenimientos",
+    entidadLabel: "mantenimientos",
+  });
 
   const selectedIds = useSet();
 
@@ -46,7 +57,11 @@ const ListaMantenimientos = () => {
 
   return (
     <PageContainer>
-      <ListaMantenimientosHeader />
+      <ListaMantenimientosHeader
+        onExportCsv={exportar}
+        isExporting={isExporting}
+        exportDisabled={isLoading || isError}
+      />
 
       <ListaMantenimientosFiltros onFiltersChange={setFilters} disabled={isLoading} />
 

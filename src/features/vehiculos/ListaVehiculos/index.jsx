@@ -6,11 +6,14 @@ import PageContainer from "@components/PageContainer";
 import ScreenContainer from "@components/ScreenContainer";
 import SelectionBanner from "@components/SelectionBanner";
 
+import { useCsvExport } from "@hooks/useCsvExport";
+
 import ListaVehiculosHeader from "./components/ListaVehiculosHeader";
 import ListaVehiculosFiltros from "./components/ListaVehiculosFiltros";
 import ListaVehiculosTabla from "./components/ListaVehiculosTabla";
 
 import { useGetVehiculos } from "./hooks/useGetVehiculos";
+import { VEHICULOS_CSV_COLUMNS } from "./listaVehiculos.csv";
 
 const PAGE_LIMIT = 10;
 
@@ -20,10 +23,18 @@ const ListaVehiculos = () => {
     isError,
     isLoading,
     refetchVehiculos,
+    fetchExportRows,
     setPage,
     setFilters,
     params: { filters, page },
   } = useGetVehiculos(PAGE_LIMIT);
+
+  const { exportar, isExporting } = useCsvExport({
+    fetchRows: fetchExportRows,
+    columns: VEHICULOS_CSV_COLUMNS,
+    entidad: "vehiculos",
+    entidadLabel: "vehículos",
+  });
 
   const selectedIds = useSet();
 
@@ -44,7 +55,11 @@ const ListaVehiculos = () => {
 
   return (
     <PageContainer>
-      <ListaVehiculosHeader />
+      <ListaVehiculosHeader
+        onExportCsv={exportar}
+        isExporting={isExporting}
+        exportDisabled={isLoading || isError}
+      />
 
       <ListaVehiculosFiltros onFiltersChange={setFilters} disabled={isLoading} />
 

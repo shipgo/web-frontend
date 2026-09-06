@@ -16,10 +16,25 @@ export const useGetViajes = (pageLimit = PAGE_LIMIT) => {
 
   // Normalizar parámetros para el backend
   // El backend espera: page (0-indexed), size, y otros filtros
+  const filterParams = mapValues(paramsOptions.params.filters, (filter) => filter.values);
+
   const normalizedParams = {
     page: (paramsOptions.params.page || 1) - 1, // Convertir de 1-indexed (UI) a 0-indexed (backend)
     size: pageLimit,
-    ...mapValues(paramsOptions.params.filters, (filter) => filter.values),
+    ...filterParams,
+  };
+
+  /**
+   * Trae hasta `limit` viajes con los filtros actuales (para exportar a CSV).
+   * @param {number} limit
+   * @returns {Promise<{ rows: any[], total: number }>}
+   */
+  const fetchExportRows = async (limit) => {
+    const response = await viajeApi.get({ ...filterParams, page: 0, size: limit });
+    return {
+      rows: response?.content ?? [],
+      total: response?.totalElements ?? 0,
+    };
   };
 
   const viajesQuery = useQuery({
@@ -38,5 +53,5 @@ export const useGetViajes = (pageLimit = PAGE_LIMIT) => {
     viajesQuery.refetch();
   };
 
-  return { viajesQuery, refetch, PAGE_LIMIT: pageLimit, ...paramsOptions };
+  return { viajesQuery, refetch, fetchExportRows, PAGE_LIMIT: pageLimit, ...paramsOptions };
 };
