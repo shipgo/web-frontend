@@ -72,6 +72,7 @@ const EditarUsuario = () => {
           localidadID: userData.localidad?.id?.toString() || null,
           provinciaID: userData.localidad?.provincia?.id?.toString() || null,
         });
+        form.resetDirty();
 
         setProfile(userData.profile || null);
         setFullName(
