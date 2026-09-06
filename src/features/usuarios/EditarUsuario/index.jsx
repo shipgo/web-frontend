@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Box, Button, Card, Group, Text, Title } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { Card, Text } from "@mantine/core";
+import { useForm, schemaResolver } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
+import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { usuarioApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
 import UsuarioForm from "../components/UsuarioForm";
 import FotoPerfilUpload from "../components/FotoPerfilUpload";
+import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA } from "../constants/schema";
 import { toBackendDate } from "../utils";
 
 const EditarUsuario = () => {
@@ -30,57 +32,8 @@ const EditarUsuario = () => {
   const isSelf = Boolean(currentUser?.id) && String(currentUser.id) === id;
 
   const form = useForm({
-    initialValues: {
-      username: "",
-      nombre: "",
-      apellido: "",
-      fechaNacimiento: null,
-      prefijo: "",
-      telefono: "",
-      nombreCalle: "",
-      numeroCalle: "",
-      email: "",
-      sucursalID: null,
-      authorities: [],
-      dni: "",
-      tipoDocumentoID: null,
-      sexoID: null,
-      localidadID: null,
-      provinciaID: null,
-    },
-    validate: {
-      username: (value) =>
-        !value ? "El campo username no puede estar vacío" : null,
-      nombre: (value) =>
-        !value ? "El campo nombre no puede estar vacío" : null,
-      apellido: (value) =>
-        !value ? "El campo apellido no puede estar vacío" : null,
-      fechaNacimiento: (value) =>
-        !value ? "El campo fecha de nacimiento no puede estar vacío" : null,
-      prefijo: (value) =>
-        !value ? "El campo prefijo no puede estar vacío" : null,
-      telefono: (value) =>
-        !value ? "El campo teléfono no puede estar vacío" : null,
-      nombreCalle: (value) =>
-        !value ? "El campo nombre de calle no puede estar vacío" : null,
-      numeroCalle: (value) =>
-        !value ? "El campo número de calle no puede estar vacío" : null,
-      email: (value) => {
-        if (!value) return "El campo email no puede estar vacío";
-        if (!/^\S+@\S+\.\S+$/.test(value)) return "El email no es válido";
-        return null;
-      },
-      authorities: (value) =>
-        !value || value.length === 0
-          ? "Debe seleccionar al menos un rol"
-          : null,
-      dni: (value) => (!value ? "El campo DNI no puede estar vacío" : null),
-      tipoDocumentoID: (value) =>
-        !value ? "Debe seleccionar un tipo de documento" : null,
-      sexoID: (value) => (!value ? "Debe seleccionar un sexo" : null),
-      localidadID: (value) =>
-        !value ? "Debe seleccionar una localidad" : null,
-    },
+    initialValues: USUARIO_INITIAL_VALUES,
+    validate: schemaResolver(USUARIO_SCHEMA, { sync: true }),
   });
 
   // Cargar datos del usuario
@@ -90,11 +43,11 @@ const EditarUsuario = () => {
         setLoadingUser(true);
         const userData = await usuarioApi.getById(id);
 
-        // Parsear fecha de nacimiento
-        let fechaNacimiento = null;
-        if (userData.fechaNacimiento) {
-          fechaNacimiento = new Date(userData.fechaNacimiento);
-        }
+        // `fechaNacimiento` llega del backend como `LocalDate` (`YYYY-MM-DD`), que
+        // es exactamente el formato de valor que espera el `DateInput` de Mantine
+        // v9 — se pasa tal cual, sin convertir a `Date` (que introducía un desfase
+        // de zona horaria al re-serializar). `toBackendDate` lo tolera igual.
+        const fechaNacimiento = userData.fechaNacimiento || null;
 
         // Extraer authorities como array de strings
         const authorities = (userData.authorities || []).map(
@@ -119,6 +72,7 @@ const EditarUsuario = () => {
           localidadID: userData.localidad?.id?.toString() || null,
           provinciaID: userData.localidad?.provincia?.id?.toString() || null,
         });
+        form.resetDirty();
 
         setProfile(userData.profile || null);
         setFullName(
@@ -243,19 +197,15 @@ const EditarUsuario = () => {
 
   return (
     <PageContainer>
-      <Group justify="space-between" align="flex-end">
-        <Box>
-          <Title order={2}>Editar usuario</Title>
-          <Text c="dimmed">Modificá los datos del usuario {form.values.username}</Text>
-        </Box>
-        <Button
-          variant="subtle"
-          leftSection={<IconArrowLeft size={18} />}
-          onClick={handleCancel}
-        >
-          Volver
-        </Button>
-      </Group>
+      <PageBreadcrumbsHeader
+        entidad="Usuarios"
+        accion="Editar usuario"
+        descripcion={
+          form.values.username
+            ? `Modificá los datos del usuario ${form.values.username}`
+            : "Modificá los datos del usuario"
+        }
+      />
 
       {isSelf && (
         <FotoPerfilUpload
