@@ -1,6 +1,8 @@
-import { AppShellFooter, Badge, Button, Flex, Text } from "@mantine/core";
+import { Badge, Button, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { useLocation } from "wouter";
+
+import PageFooter from "@components/PageFooter";
 
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
 
@@ -37,45 +39,35 @@ const Footer = ({ onSubmit, isSubmitting, submitLabel = "Registrar envío" }) =>
   );
 
   return (
-    <AppShellFooter component={Flex} justify="center">
-      <Flex
-        flex={1}
-        maw={1440}
-        px="xl"
-        py="xs"
-        justify="flex-end"
-        align="center"
-        gap="xs"
+    <PageFooter>
+      {nombreDestinatario && (
+        <Badge variant="dot" color="blue">
+          {nombreDestinatario}
+        </Badge>
+      )}
+      {totalBultos > 0 && (
+        <Badge variant="dot" color="violet">
+          {totalBultos} {totalBultos === 1 ? "bulto" : "bultos"}
+        </Badge>
+      )}
+      {totalPeso > 0 && (
+        <Badge variant="dot" color="orange">
+          {totalPeso} kg
+        </Badge>
+      )}
+      <Button
+        variant="light"
+        color="red"
+        disabled={isSubmitting}
+        ml="auto"
+        onClick={handleCancel}
       >
-        {nombreDestinatario && (
-          <Badge variant="dot" color="blue">
-            {nombreDestinatario}
-          </Badge>
-        )}
-        {totalBultos > 0 && (
-          <Badge variant="dot" color="violet">
-            {totalBultos} {totalBultos === 1 ? "bulto" : "bultos"}
-          </Badge>
-        )}
-        {totalPeso > 0 && (
-          <Badge variant="dot" color="orange">
-            {totalPeso} kg
-          </Badge>
-        )}
-        <Button
-          variant="light"
-          color="red"
-          disabled={isSubmitting}
-          ml="auto"
-          onClick={handleCancel}
-        >
-          Cancelar
-        </Button>
-        <Button loading={isSubmitting} onClick={onSubmit}>
-          {submitLabel}
-        </Button>
-      </Flex>
-    </AppShellFooter>
+        Cancelar
+      </Button>
+      <Button loading={isSubmitting} onClick={onSubmit}>
+        {submitLabel}
+      </Button>
+    </PageFooter>
   );
 };
 

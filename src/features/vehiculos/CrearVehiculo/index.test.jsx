@@ -1,8 +1,14 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { AppShell } from "@mantine/core";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-import { renderWithProviders } from "../../../test/renderWithProviders";
+import { renderWithProviders as renderRaw } from "../../../test/renderWithProviders";
+
+// El `Footer` canónico usa `AppShellFooter`, que requiere un `<AppShell>`
+// ancestro (lo provee `src/app/layout` en la app real).
+const renderWithProviders = (ui, options) =>
+  renderRaw(<AppShell footer={{ height: 60 }}>{ui}</AppShell>, options);
 
 vi.mock("@api/vehiculo.api", () => ({
   vehiculoApi: {
