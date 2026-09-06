@@ -8,6 +8,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Text,
   Title,
   TextInput,
 } from "@mantine/core";
@@ -19,6 +20,8 @@ import {
   IconBriefcase,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
+import dayjs from "dayjs";
 
 import { sucursalApi, authorityApi } from "@api";
 import { catalogsApi, locationApi } from "@api";
@@ -72,6 +75,28 @@ const filterIgnoreAccents = ({ options, search }) => {
  */
 const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
   const { user } = useAuthStore();
+
+  // Mismo patrón de cancelación que el `Footer` canónico de `CrearEnvios`:
+  // si hay cambios sin guardar se pide confirmación antes de salir.
+  const handleCancel = () => {
+    if (!form.isDirty()) {
+      onCancel();
+      return;
+    }
+    modals.openConfirmModal({
+      title: isEdit ? "Cancelar edición" : "Cancelar creación",
+      children: (
+        <Text size="sm">
+          Tenés cambios sin guardar. ¿Seguro que querés salir?
+        </Text>
+      ),
+      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      confirmProps: { color: "red" },
+      cancelProps: { variant: "subtle" },
+      groupProps: { gap: "xs" },
+      onConfirm: onCancel,
+    });
+  };
   const isSuper = user?.hasRole(ROLE_SUPERUSER);
   const isAdmin = user?.hasRole(ROLE_ADMIN);
 
@@ -252,7 +277,7 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
                 placeholder="Seleccione la fecha"
                 required
                 valueFormat="DD/MM/YYYY"
-                maxDate={new Date()}
+                maxDate={dayjs().format("YYYY-MM-DD")}
                 {...form.getInputProps("fechaNacimiento")}
               />
               <Select
@@ -405,9 +430,14 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
           </Stack>
         </Card>
 
-        {/* Botones de acción */}
+        {/* Botones de acción — consistentes con el Footer canónico de CrearEnvios */}
         <Group justify="flex-end" gap="xs">
-          <Button variant="subtle" color="red" disabled={loading} onClick={onCancel}>
+          <Button
+            variant="light"
+            color="red"
+            disabled={loading}
+            onClick={handleCancel}
+          >
             Cancelar
           </Button>
           <Button type="submit" loading={loading}>

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Button, Card, Group, Text } from "@mantine/core";
-import { IconArrowLeft, IconEdit, IconKey } from "@tabler/icons-react";
+import { Button, Card, Text } from "@mantine/core";
+import { IconEdit, IconKey } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { usuarioApi } from "@api";
 import UsuarioPerfil from "../components/UsuarioPerfil";
 import { usePasswordReset } from "../hooks/usePasswordReset";
@@ -45,10 +46,6 @@ const DetalleUsuario = () => {
     navigate(`~/usuarios/${id}/editar`);
   };
 
-  const handleBack = () => {
-    navigate("~/usuarios");
-  };
-
   if (loading) {
     return (
       <PageContainer>
@@ -59,31 +56,32 @@ const DetalleUsuario = () => {
     );
   }
 
+  const nombreCompleto =
+    usuario?.nombre && usuario?.apellido
+      ? `${usuario.nombre} ${usuario.apellido}`
+      : usuario?.username
+        ? `@${usuario.username}`
+        : undefined;
+
   return (
     <PageContainer>
-      <Group justify="space-between" align="flex-end">
+      <PageBreadcrumbsHeader
+        entidad="Usuarios"
+        accion="Detalle de usuario"
+        descripcion={nombreCompleto}
+      >
         <Button
-          variant="subtle"
-          leftSection={<IconArrowLeft size={18} />}
-          onClick={handleBack}
+          variant="light"
+          color="orange"
+          leftSection={<IconKey size={18} />}
+          onClick={() => confirmReset(usuario)}
         >
-          Volver
+          Resetear contraseña
         </Button>
-
-        <Group gap="xs">
-          <Button
-            variant="light"
-            color="orange"
-            leftSection={<IconKey size={18} />}
-            onClick={() => confirmReset(usuario)}
-          >
-            Resetear contraseña
-          </Button>
-          <Button leftSection={<IconEdit size={18} />} onClick={handleEdit}>
-            Editar
-          </Button>
-        </Group>
-      </Group>
+        <Button leftSection={<IconEdit size={18} />} onClick={handleEdit}>
+          Editar
+        </Button>
+      </PageBreadcrumbsHeader>
 
       <UsuarioPerfil usuario={usuario} showAllInfo={true} />
     </PageContainer>

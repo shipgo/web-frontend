@@ -1,13 +1,14 @@
 import { useCallback, useState } from "react";
 import { useLocation } from "wouter";
-import { Box, Group, Text, Title, Button } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { useForm, schemaResolver } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
+import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { usuarioApi } from "@api";
 import UsuarioForm from "../components/UsuarioForm";
+import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA } from "../constants/schema";
 import { toBackendDate } from "../utils";
 
 const CrearUsuario = () => {
@@ -16,57 +17,8 @@ const CrearUsuario = () => {
   const [loading, setLoading] = useState(false);
 
   const form = useForm({
-    initialValues: {
-      username: "",
-      nombre: "",
-      apellido: "",
-      fechaNacimiento: null,
-      prefijo: "",
-      telefono: "",
-      nombreCalle: "",
-      numeroCalle: "",
-      email: "",
-      sucursalID: null,
-      authorities: [],
-      dni: "",
-      tipoDocumentoID: null,
-      sexoID: null,
-      localidadID: null,
-      provinciaID: null,
-    },
-    validate: {
-      username: (value) =>
-        !value ? "El campo username no puede estar vacío" : null,
-      nombre: (value) =>
-        !value ? "El campo nombre no puede estar vacío" : null,
-      apellido: (value) =>
-        !value ? "El campo apellido no puede estar vacío" : null,
-      fechaNacimiento: (value) =>
-        !value ? "El campo fecha de nacimiento no puede estar vacío" : null,
-      prefijo: (value) =>
-        !value ? "El campo prefijo no puede estar vacío" : null,
-      telefono: (value) =>
-        !value ? "El campo teléfono no puede estar vacío" : null,
-      nombreCalle: (value) =>
-        !value ? "El campo nombre de calle no puede estar vacío" : null,
-      numeroCalle: (value) =>
-        !value ? "El campo número de calle no puede estar vacío" : null,
-      email: (value) => {
-        if (!value) return "El campo email no puede estar vacío";
-        if (!/^\S+@\S+\.\S+$/.test(value)) return "El email no es válido";
-        return null;
-      },
-      authorities: (value) =>
-        !value || value.length === 0
-          ? "Debe seleccionar al menos un rol"
-          : null,
-      dni: (value) => (!value ? "El campo DNI no puede estar vacío" : null),
-      tipoDocumentoID: (value) =>
-        !value ? "Debe seleccionar un tipo de documento" : null,
-      sexoID: (value) => (!value ? "Debe seleccionar un sexo" : null),
-      localidadID: (value) =>
-        !value ? "Debe seleccionar una localidad" : null,
-    },
+    initialValues: USUARIO_INITIAL_VALUES,
+    validate: schemaResolver(USUARIO_SCHEMA, { sync: true }),
   });
 
   const handleSubmit = useCallback(
@@ -146,19 +98,11 @@ const CrearUsuario = () => {
 
   return (
     <PageContainer>
-      <Group justify="space-between" align="flex-end">
-        <Box>
-          <Title order={2}>Crear usuario</Title>
-          <Text c="dimmed">Completá los datos del nuevo usuario</Text>
-        </Box>
-        <Button
-          variant="subtle"
-          leftSection={<IconArrowLeft size={18} />}
-          onClick={handleCancel}
-        >
-          Volver
-        </Button>
-      </Group>
+      <PageBreadcrumbsHeader
+        entidad="Usuarios"
+        accion="Crear usuario"
+        descripcion="Completá los datos del nuevo usuario"
+      />
 
       <UsuarioForm
         form={form}
