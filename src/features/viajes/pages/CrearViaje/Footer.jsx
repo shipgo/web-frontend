@@ -1,8 +1,10 @@
 import { useLocation } from "wouter";
-import { AppShellFooter, Badge, Button, Flex, Text } from "@mantine/core";
+import { Badge, Button, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
+
+import PageFooter from "@components/PageFooter";
 
 import { useFormContext } from "./contexts/EnviosFormContext";
 import useEnviosStats from "./hooks/useEnviosStats";
@@ -77,45 +79,35 @@ const Footer = () => {
   };
 
   return (
-    <AppShellFooter component={Flex} justify="center">
-      <Flex
-        flex={1}
-        maw={1440}
-        px="xl"
-        py="xs"
-        justify="flex-end"
-        align="center"
-        gap="xs"
+    <PageFooter>
+      {totalPackages > 0 && (
+        <Badge variant="dot" color="blue">
+          {totalPackages} Envíos
+        </Badge>
+      )}
+      {vehiculo && (
+        <Badge variant="dot" color="green">
+          {vehiculo.modelo?.nombre ?? "Vehículo"} ({vehiculo.patente})
+        </Badge>
+      )}
+      <Text size="sm" c="dimmed" fw={500} mr="auto">
+        {totalStops > 0 && `${totalStops} Paradas en total`}
+      </Text>
+      <Button
+        color="red"
+        variant="light"
+        disabled={isPending}
+        onClick={handleCancel}
       >
-        {totalPackages > 0 && (
-          <Badge variant="dot" color="blue">
-            {totalPackages} Envíos
-          </Badge>
-        )}
-        {vehiculo && (
-          <Badge variant="dot" color="green">
-            {vehiculo.modelo?.nombre ?? "Vehículo"} ({vehiculo.patente})
-          </Badge>
-        )}
-        <Text size="sm" c="dimmed" fw={500} mr="auto">
-          {totalStops > 0 && `${totalStops} Paradas en total`}
-        </Text>
-        <Button
-          color="red"
-          variant="light"
-          disabled={isPending}
-          onClick={handleCancel}
-        >
-          Cancelar
-        </Button>
-        <Button
-          loading={isPending}
-          onClick={() => form.onSubmit(handleSubmit, handleInvalid)()}
-        >
-          Crear viaje
-        </Button>
-      </Flex>
-    </AppShellFooter>
+        Cancelar
+      </Button>
+      <Button
+        loading={isPending}
+        onClick={() => form.onSubmit(handleSubmit, handleInvalid)()}
+      >
+        Crear viaje
+      </Button>
+    </PageFooter>
   );
 };
 

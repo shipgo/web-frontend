@@ -1,18 +1,18 @@
-import { Button, Group, Text } from "@mantine/core";
+import { Button, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { useLocation } from "wouter";
+
+import PageFooter from "@components/PageFooter";
 
 import { useVehiculoFormContext } from "../context/VehiculoFormContext";
 
 /**
- * Acciones del formulario de vehículos. Mismo criterio visual que el `Footer`
- * compartido de `CrearEnvios` / `CrearViaje` (cancelar `variant="light"
- * color="red"` con confirmación si hay cambios sin guardar + submit primario),
- * pero renderizado inline en vez de `AppShellFooter`: el `Layout` de la app
- * (`src/app/layout`, fuera del alcance de esta tarea) sólo desplaza el footer
- * fijo para las rutas `/envios/crear` y `/viajes/crear`, así que en
- * `/vehiculos/*` un `AppShellFooter` quedaría colapsado. Ver bitácora de
- * `SHG-FE-034`.
+ * Acciones del formulario de vehículos. Usa el `PageFooter` canónico
+ * (`src/app/components`), que renderiza en el slot fijo `AppShell.footer` y le
+ * avisa al layout que lo despliegue mientras esté montado (`SHG-FE-036`).
+ * Antes era un `<Group>` inline porque el layout sólo mostraba el footer fijo
+ * en `ROUTES_WITH_FOOTER = ['/viajes/crear', '/envios/crear']` — esa lista ya
+ * no existe. Se conserva el confirm-al-cancelar si hay cambios sin guardar.
  */
 const Footer = ({ onSubmit, isSubmitting, submitLabel = "Guardar cambios" }) => {
   const form = useVehiculoFormContext();
@@ -40,7 +40,7 @@ const Footer = ({ onSubmit, isSubmitting, submitLabel = "Guardar cambios" }) => 
   };
 
   return (
-    <Group justify="flex-end" gap="xs" mt="md">
+    <PageFooter>
       <Button
         variant="light"
         color="red"
@@ -52,7 +52,7 @@ const Footer = ({ onSubmit, isSubmitting, submitLabel = "Guardar cambios" }) => 
       <Button loading={isSubmitting} onClick={onSubmit}>
         {submitLabel}
       </Button>
-    </Group>
+    </PageFooter>
   );
 };
 
