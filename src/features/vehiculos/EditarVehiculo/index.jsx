@@ -76,6 +76,9 @@ const EditarVehiculo = () => {
     try {
       setLoading(true);
 
+      // Payload = `VehiculoReqDTO` exacto (SHG-BE-008), mismo builder que
+      // `CrearVehiculo`. El `estado` del vehículo NO se manda: lo maneja el
+      // backend (asignación a viaje / service), no hay setter en la API.
       const vehiculoData = {
         patente: values.patente,
         tipoVehiculoID: parseInt(values.tipoVehiculoID),

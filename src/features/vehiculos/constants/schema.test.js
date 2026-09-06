@@ -82,19 +82,33 @@ describe("VEHICULO_SCHEMA", () => {
     ).toBe(false);
   });
 
-  it("rechaza peso máximo y consumo promedio <= 0", () => {
+  it("rechaza peso máximo <= 0", () => {
     expect(
       VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, pesoMaximo: 0 }).success,
     ).toBe(false);
+  });
+
+  it("exige consumo promedio >= 0.1 (VehiculoReqDTO @DecimalMin)", () => {
     expect(
       VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, consumoPromedio: 0 })
         .success,
     ).toBe(false);
+    expect(
+      VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, consumoPromedio: 0.05 })
+        .success,
+    ).toBe(false);
+    expect(
+      VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, consumoPromedio: 0.1 })
+        .success,
+    ).toBe(true);
   });
 
-  it("rechaza menos de 2 ruedas", () => {
+  it("exige al menos 4 ruedas (VehiculoReqDTO @Min(4))", () => {
     expect(
-      VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, cantidadRuedas: 1 }).success,
+      VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, cantidadRuedas: 3 }).success,
     ).toBe(false);
+    expect(
+      VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, cantidadRuedas: 4 }).success,
+    ).toBe(true);
   });
 });
