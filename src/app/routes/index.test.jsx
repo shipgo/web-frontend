@@ -13,6 +13,14 @@ vi.mock("../layout", () => ({
   default: ({ children }) => <div data-testid="layout">{children}</div>,
 }));
 
+vi.mock("../layout/PublicLayout", () => ({
+  default: ({ children }) => <div data-testid="public-layout">{children}</div>,
+}));
+
+vi.mock("@features/tracking", () => ({
+  TrackingPublicoPage: () => <div>Tracking publico</div>,
+}));
+
 vi.mock("@components/MobileOnlyScreen", () => ({
   default: () => <div>Pantalla usá la app</div>,
 }));
@@ -112,6 +120,37 @@ describe("AppRoutes", () => {
 
     expect(await screen.findByText("Home")).toBeInTheDocument();
     expect(screen.queryByText("RecuperarCuenta")).not.toBeInTheDocument();
+  });
+
+  it("sin sesión, /tracking NO redirige a login (ruta pública, fuera de ProtectedRoutes)", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/tracking" });
+
+    expect(await screen.findByText("Tracking publico")).toBeInTheDocument();
+    expect(screen.queryByText("Login")).not.toBeInTheDocument();
+    // Sin el AppShell de gestión.
+    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
+    expect(screen.getByTestId("public-layout")).toBeInTheDocument();
+  });
+
+  it("sin sesión, /tracking/:codigo renderiza la vista pública de tracking", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/tracking/7K2M9QX4TP" });
+
+    expect(await screen.findByText("Tracking publico")).toBeInTheDocument();
+    expect(screen.queryByText("Login")).not.toBeInTheDocument();
+  });
+
+  it("con sesión, /tracking sigue siendo accesible (no redirige al Home)", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/tracking" });
+
+    expect(await screen.findByText("Tracking publico")).toBeInTheDocument();
+    expect(screen.queryByText("Home")).not.toBeInTheDocument();
   });
 
   it("SUPERUSER accede a /sucursales", async () => {

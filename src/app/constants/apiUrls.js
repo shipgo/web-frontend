@@ -41,6 +41,10 @@ export const API_URLS = {
   // --- Tracking en tiempo real (ENDPOINTS.md §9) ---
   TRACKING_URL: '/tracking',
 
+  // --- Tracking público / guest (CONTRACTS.md §7 · SHG-BE-001 / SHG-FE-025) ---
+  // GET /api/public/tracking/{codigo} — sin auth, rate-limited (429).
+  PUBLIC_TRACKING_URL: '/public/tracking',
+
   // --- Vehículos y catálogo de flota (ENDPOINTS.md §10-13) ---
   VEHICULO_URL: '/vehiculo',
   MARCA_URL: '/marca',
