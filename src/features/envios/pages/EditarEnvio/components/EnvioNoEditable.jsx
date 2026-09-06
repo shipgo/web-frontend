@@ -2,9 +2,8 @@ import { useLocation } from "wouter";
 import { Badge, Button, Card, Stack, Text } from "@mantine/core";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { estadoBadge } from "@domain/estados";
-
-import EnvioHeader from "../../../components/EnvioHeader";
 
 /**
  * Pantalla que reemplaza al form cuando el envío está en un estado terminal
@@ -22,7 +21,8 @@ const EnvioNoEditable = ({ estado }) => {
 
   return (
     <PageContainer>
-      <EnvioHeader
+      <PageBreadcrumbsHeader
+        entidad="Envíos"
         accion="Editar envío"
         descripcion="Este envío no se puede editar en su estado actual"
       />

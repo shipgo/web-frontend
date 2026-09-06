@@ -5,11 +5,11 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 
 import { schemaResolver } from "@mantine/form";
 
 import { envioApi, categoriaApi } from "@api";
-import EnvioHeader from "../../components/EnvioHeader";
 import { EnvioFormProvider, useEnvioForm } from "./contexts/CrearEnvioContext";
 import { CREAR_ENVIO_SCHEMA, INITIAL_VALUES } from "./constants/schema";
 import SeccionOrigen from "./components/SeccionOrigen";
@@ -91,7 +91,8 @@ const CrearEnvios = () => {
 
   return (
     <PageContainer>
-      <EnvioHeader
+      <PageBreadcrumbsHeader
+        entidad="Envíos"
         accion="Crear nuevo envío"
         descripcion="Completá las secciones para registrar un envío"
       />

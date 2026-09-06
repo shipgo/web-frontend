@@ -37,12 +37,12 @@ import {
 } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { envioApi } from "@api";
 import { esEstadoTerminal, estadoBadge, estadoLabel } from "@domain/estados";
 import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
 import { useAuthStore } from "@stores/auth.store";
 
-import EnvioHeader from "../../components/EnvioHeader";
 import { puedeAccionarEntrega } from "./acciones";
 import { useEnvioAcciones } from "./hooks/useEnvioAcciones";
 
@@ -150,7 +150,8 @@ const DetalleEnvio = () => {
 
   return (
     <PageContainer>
-      <EnvioHeader
+      <PageBreadcrumbsHeader
+        entidad="Envíos"
         accion="Detalle de envío"
         descripcion={
           <Group gap={4}>
@@ -206,7 +207,7 @@ const DetalleEnvio = () => {
             Marcar fallo
           </Button>
         )}
-      </EnvioHeader>
+      </PageBreadcrumbsHeader>
 
       <Card withBorder shadow="sm" p="xl">
         <Stack gap="md">

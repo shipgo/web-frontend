@@ -6,9 +6,9 @@ import { schemaResolver } from "@mantine/form";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { envioApi } from "@api";
 
-import EnvioHeader from "../../../components/EnvioHeader";
 import {
   EnvioFormProvider,
   useEnvioForm,
@@ -92,7 +92,8 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
 
   return (
     <PageContainer>
-      <EnvioHeader
+      <PageBreadcrumbsHeader
+        entidad="Envíos"
         accion="Editar envío"
         descripcion={`Modificá los datos del envío #${id}`}
       />
