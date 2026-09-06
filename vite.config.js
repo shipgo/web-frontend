@@ -8,6 +8,10 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.js"],
+    // `.claude/worktrees/` son checkouts anidados de subagentes con su propio
+    // `node_modules` (doble copia de React) — vitest los levanta y explota con
+    // cientos de falsos negativos si no se excluyen.
+    exclude: ["**/node_modules/**", "**/dist/**", "**/.claude/**"],
   },
   server: {
     proxy: {
