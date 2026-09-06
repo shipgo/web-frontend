@@ -206,4 +206,81 @@ describe('DetalleViaje', () => {
       expect(screen.getByText('El viaje no está en camino')).toBeInTheDocument();
     });
   });
+
+  describe('reconciliación de puedeEditar (SHG-FE-029)', () => {
+    it('no muestra el botón "Editar" para viajes en_camino', async () => {
+      const VIAJE_EN_CAMINO = { ...EXISTING_VIAJE, estado: 'en_camino' };
+      viajeApi.getById.mockResolvedValue(VIAJE_EN_CAMINO);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    });
+
+    it('no muestra el botón "Editar" para viajes en_proceso_de_carga', async () => {
+      const VIAJE_EN_CARGA = { ...EXISTING_VIAJE, estado: 'en_proceso_de_carga' };
+      viajeApi.getById.mockResolvedValue(VIAJE_EN_CARGA);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    });
+
+    it('no muestra el botón "Editar" para viajes con_problemas', async () => {
+      const VIAJE_CON_PROBLEMAS = { ...EXISTING_VIAJE, estado: 'con_problemas' };
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    });
+
+    it('muestra el botón "Editar" para viajes creado', async () => {
+      const VIAJE_CREADO = { ...EXISTING_VIAJE, estado: 'creado' };
+      viajeApi.getById.mockResolvedValue(VIAJE_CREADO);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument();
+    });
+
+    it('muestra el botón "Editar" para viajes planificado', async () => {
+      const VIAJE_PLANIFICADO = { ...EXISTING_VIAJE, estado: 'planificado' };
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument();
+    });
+  });
 });
