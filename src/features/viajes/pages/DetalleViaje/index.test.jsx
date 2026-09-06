@@ -87,6 +87,14 @@ describe('DetalleViaje', () => {
     });
 
     expect(await screen.findByText('Viaje #42')).toBeInTheDocument();
+
+    // Header canónico: breadcrumbs `Viajes / Detalle de viaje` + botón de ayuda.
+    expect(screen.getByText('Detalle de viaje')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /necesito ayuda/i })).toHaveAttribute(
+      'href',
+      'https://shipgo.gitbook.io/manual',
+    );
+
     expect(screen.getAllByText('En camino').length).toBeGreaterThan(0);
     expect(screen.getByText('AB123CD - Hilux')).toBeInTheDocument();
     expect(screen.getByText('Juan Perez')).toBeInTheDocument();

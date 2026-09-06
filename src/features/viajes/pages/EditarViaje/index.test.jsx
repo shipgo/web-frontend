@@ -1,9 +1,15 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { AppShell } from "@mantine/core";
 import { Route } from "wouter";
 
-import { renderWithProviders } from "../../../../test/renderWithProviders";
+import { renderWithProviders as renderRaw } from "../../../../test/renderWithProviders";
+
+// El `Footer` canónico usa `AppShellFooter`, que requiere un `<AppShell>`
+// ancestro (lo provee `src/app/layout` en la app real).
+const renderWithProviders = (ui, options) =>
+  renderRaw(<AppShell footer={{ height: 60 }}>{ui}</AppShell>, options);
 
 vi.mock("@api/viaje.api", () => ({
   viajeApi: {
@@ -16,6 +22,12 @@ vi.mock("@api/viaje.api", () => ({
 vi.mock("@api", () => ({
   vehiculoApi: { getDisponibles: vi.fn() },
   usuarioApi: { getChoferesDisponibles: vi.fn() },
+}));
+
+// `SeccionDetalles` (reusado de `CrearViaje`) muestra la sucursal del usuario
+// logueado en un campo de sólo lectura.
+vi.mock("@contexts/auth", () => ({
+  useAuth: () => ({ user: { sucursal: { nombre: "Sucursal Centro" } } }),
 }));
 
 import { viajeApi } from "@api/viaje.api";
@@ -65,6 +77,19 @@ describe("EditarViaje", () => {
     viajeApi.update.mockResolvedValue({ id: 42 });
     vehiculoApi.getDisponibles.mockResolvedValue(VEHICULOS);
     usuarioApi.getChoferesDisponibles.mockResolvedValue(CHOFERES);
+  });
+
+  it("muestra el header canónico (breadcrumbs Viajes / Editar viaje + ayuda)", async () => {
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    expect(screen.getByText("Viajes")).toBeInTheDocument();
+    expect(screen.getByText("Editar viaje")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /necesito ayuda/i })
+    ).toHaveAttribute("href", "https://shipgo.gitbook.io/manual");
   });
 
   it("prefills the vehículo, choferes and planned dates from the fetched viaje", async () => {

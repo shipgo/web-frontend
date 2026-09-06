@@ -1,15 +1,5 @@
-import { Link } from "wouter";
-import {
-  AppShellFooter,
-  Box,
-  Breadcrumbs,
-  Button,
-  Flex,
-  Text,
-  Title,
-} from "@mantine/core";
-
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 
 import SeccionEnvios from "./SeccionEnvios";
 import SeccionRecursos from "./SeccionRecursos";
@@ -22,36 +12,11 @@ import Footer from "./Footer";
 const CrearViaje = () => {
   return (
     <PageContainer>
-      <Flex align="flex-end" gap="xs">
-        <Box>
-          <Breadcrumbs
-            separatorMargin="sm"
-            separator={<Title order={3}>/</Title>}
-          >
-            <Link href="/" asChild>
-              <Title
-                order={2}
-                style={{ cursor: "pointer" }}
-                c="var(--mantine-color-colorPalette-light-color)"
-              >
-                Viajes
-              </Title>
-            </Link>
-            <Title order={2}>Crear nuevo viaje</Title>
-          </Breadcrumbs>
-          <Text c="dimmed">Completa las secciones para crear un viaje</Text>
-        </Box>
-
-        <Button
-          variant="subtle"
-          ml="auto"
-          component="a"
-          href="https://shipgo.gitbook.io/manual"
-          target="_blank"
-        >
-          Necesito ayuda
-        </Button>
-      </Flex>
+      <PageBreadcrumbsHeader
+        entidad="Viajes"
+        accion="Crear nuevo viaje"
+        descripcion="Completa las secciones para crear un viaje"
+      />
 
       <EnviosFormProvider>
         <SeccionDetalles />

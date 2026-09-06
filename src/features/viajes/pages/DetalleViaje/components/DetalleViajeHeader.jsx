@@ -1,11 +1,5 @@
 import { Badge, Box, Button, Divider, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import {
-  IconArrowLeft,
-  IconBan,
-  IconEdit,
-  IconFlagCheck,
-  IconPlayerPlay,
-} from '@tabler/icons-react';
+import { IconBan, IconEdit, IconFlagCheck, IconPlayerPlay } from '@tabler/icons-react';
 
 import { estadoBadge } from '@domain/estados';
 import { formatFechaHora } from '@domain/format';
@@ -27,7 +21,7 @@ const InfoItem = ({ label, value }) => (
 const choferLabel = (chofer) =>
   [chofer?.nombre, chofer?.apellido].filter(Boolean).join(' ') || chofer?.username || '—';
 
-const DetalleViajeHeader = ({ viaje, id, onVolver, onEditar, onIniciar, onFinalizar, onCancelar }) => {
+const DetalleViajeHeader = ({ viaje, id, onEditar, onIniciar, onFinalizar, onCancelar }) => {
   const user = useAuthStore((state) => state.user);
   const estadoInfo = estadoBadge('viaje', viaje.estado);
   const choferes = viaje.choferes?.length ? viaje.choferes : viaje.chofer ? [viaje.chofer] : [];
@@ -37,7 +31,7 @@ const DetalleViajeHeader = ({ viaje, id, onVolver, onEditar, onIniciar, onFinali
       <Group justify="space-between" align="flex-start">
         <Box>
           <Group gap="xs" mb={4}>
-            <Title order={2}>Viaje #{id}</Title>
+            <Title order={3}>Viaje #{id}</Title>
             <Badge color={estadoInfo.color} variant="light">
               {estadoInfo.label}
             </Badge>
@@ -71,10 +65,6 @@ const DetalleViajeHeader = ({ viaje, id, onVolver, onEditar, onIniciar, onFinali
               Cancelar
             </Button>
           )}
-
-          <Button variant="subtle" leftSection={<IconArrowLeft size={18} />} onClick={onVolver}>
-            Volver
-          </Button>
         </Group>
       </Group>
 

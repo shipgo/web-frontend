@@ -2,6 +2,7 @@ import { Card } from '@mantine/core';
 import { useLocation, useParams } from 'wouter';
 
 import PageContainer from '@components/PageContainer';
+import PageBreadcrumbsHeader from '@components/PageBreadcrumbsHeader';
 import ScreenContainer from '@components/ScreenContainer';
 
 import DetalleViajeHeader from './components/DetalleViajeHeader';
@@ -20,6 +21,8 @@ const DetalleViaje = () => {
 
   return (
     <PageContainer>
+      <PageBreadcrumbsHeader entidad="Viajes" accion="Detalle de viaje" />
+
       <Card>
         <ScreenContainer
           onLoading={{ show: isLoading, description: 'Cargando viaje...' }}
@@ -39,7 +42,6 @@ const DetalleViaje = () => {
             <DetalleViajeHeader
               viaje={viaje}
               id={id}
-              onVolver={() => navigate('~/viajes')}
               onEditar={() => navigate(`~/viajes/${id}/editar`)}
               onIniciar={confirmIniciar}
               onFinalizar={confirmFinalizar}
