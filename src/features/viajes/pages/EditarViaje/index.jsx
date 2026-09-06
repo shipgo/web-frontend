@@ -11,6 +11,7 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { estadoBadge, normalizarEstado } from "@domain/estados";
 import { applyApiError } from "@domain/apiError";
 
+import { VIAJE_ESTADOS_EDITABLES } from "../../constants";
 import { viajeApi } from "../../api/viajes.api";
 import SeccionDetalles from "../CrearViaje/SeccionDetalles";
 import {
@@ -21,23 +22,6 @@ import {
 import SeccionRecursos from "./SeccionRecursos";
 import Footer from "./Footer";
 import { buildViajeReqDTO } from "./utils";
-
-/**
- * Estados de viaje en los que esta pantalla permite editar. Más restrictivo
- * a propósito que `DetalleViaje/acciones.js` (`puedeEditar`, que sólo
- * bloquea los terminales `finalizado`/`cancelado` para decidir si se
- * muestra el botón "Editar"): acá el criterio de aceptación de `SHG-FE-010`
- * pide limitarlo a `creado`/`planificado`. Motivo: `CONTRACTS.md §8`/
- * `SHG-BE-021` establecen que el cliente en creación y edición manda sólo
- * las 2 fechas planificadas, nunca `fechaHoraInicio`/`fechaHoraFin` reales
- * (esas las completa el backend server-side al iniciar/finalizar). Editar
- * un viaje ya iniciado no tiene sentido para el MVP de todos modos, así que
- * se restringe la pantalla a los estados donde esas fechas reales siempre
- * son `null`. Si `DetalleViaje` termina mostrando "Editar" para un viaje que
- * esta pantalla bloquea, es una inconsistencia a reconciliar aparte
- * (`SHG-FE-029`, ver `planning/coordination/frontend.md`).
- */
-const ESTADOS_EDITABLES = ["creado", "planificado"];
 
 const INITIAL_VALUES = {
   vehiculoID: null,
@@ -78,7 +62,7 @@ const EditarViaje = () => {
     () =>
       Boolean(
         viajeOriginal &&
-          ESTADOS_EDITABLES.includes(normalizarEstado(viajeOriginal.estado)),
+          VIAJE_ESTADOS_EDITABLES.includes(normalizarEstado(viajeOriginal.estado)),
       ),
     [viajeOriginal],
   );

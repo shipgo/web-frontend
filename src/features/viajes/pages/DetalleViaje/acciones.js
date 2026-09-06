@@ -1,4 +1,5 @@
 import { hasAnyRole, isAdminOrSuper, ROLE_ADMIN, ROLE_CHOFER, ROLE_SUPERUSER } from '@domain/roles';
+import { VIAJE_ESTADOS_EDITABLES } from '../../constants';
 
 /**
  * Matriz estado -> acciones visibles, alineada al alcance documentado en
@@ -16,7 +17,7 @@ const ESTADOS_INICIABLES = ['creado', 'planificado', 'en_proceso_de_carga'];
 const ESTADOS_CANCELABLES = ['creado', 'planificado', 'en_proceso_de_carga'];
 
 export const puedeEditar = (user, estado) =>
-  isAdminOrSuper(user) && !['finalizado', 'cancelado'].includes(estado);
+  isAdminOrSuper(user) && VIAJE_ESTADOS_EDITABLES.includes(estado);
 
 export const puedeIniciar = (user, estado) =>
   hasAnyRole(user, [ROLE_SUPERUSER, ROLE_ADMIN, ROLE_CHOFER]) && ESTADOS_INICIABLES.includes(estado);
