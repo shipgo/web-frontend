@@ -1,5 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { AppShell } from "@mantine/core";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Route } from "wouter";
 
@@ -13,6 +14,29 @@ vi.mock("@api", () => ({
   categoriaApi: { getAll: vi.fn() },
   provinciaApi: { getAll: vi.fn() },
   localidadApi: { getByProvincia: vi.fn() },
+}));
+
+// El mapa (mapbox-gl / react-map-gl) no corre en jsdom; sólo importa que reciba
+// las coordenadas correctas.
+vi.mock("@features/mapa/components/MapCard", () => ({
+  default: ({ children }) => <div data-testid="map-card">{children}</div>,
+}));
+vi.mock("react-map-gl/mapbox", () => ({
+  Marker: () => null,
+}));
+
+// El geocoding real (Mapbox Search JS) se prueba en useAddressAutofill; acá se
+// stubea porque EditarEnvio precarga las coordenadas del envío y no necesita
+// re-geocodificar.
+vi.mock("../CrearEnvios/hooks/useAddressAutofill", () => ({
+  useAddressAutofill: () => ({
+    autocompleteData: [],
+    handleChange: vi.fn(),
+    handleSelect: vi.fn(),
+    loadingInput: false,
+    loadingMap: false,
+    selectedId: null,
+  }),
 }));
 
 import { envioApi, categoriaApi, provinciaApi, localidadApi } from "@api";
@@ -44,6 +68,14 @@ const EXISTING_ENVIO = {
   ],
 };
 
+const renderEditarEnvio = () =>
+  renderWithProviders(
+    <AppShell footer={{ height: 60 }}>
+      <Route path="/envios/editar/:id" component={EditarEnvio} />
+    </AppShell>,
+    { route: "/envios/editar/9" },
+  );
+
 describe("EditarEnvio", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,11 +90,18 @@ describe("EditarEnvio", () => {
     envioApi.update.mockResolvedValue({ id: 9 });
   });
 
+  it("usa el header canónico (breadcrumbs Envíos / Editar envío + Necesito ayuda)", async () => {
+    renderEditarEnvio();
+
+    expect(await screen.findByText("Editar envío")).toBeInTheDocument();
+    expect(screen.getAllByText("Envíos").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("link", { name: /necesito ayuda/i }),
+    ).toBeInTheDocument();
+  });
+
   it("loads and prefills the existing envío data into the form", async () => {
-    renderWithProviders(
-      <Route path="/envios/editar/:id" component={EditarEnvio} />,
-      { route: "/envios/editar/9" }
-    );
+    renderEditarEnvio();
 
     await waitFor(() => {
       expect(envioApi.getById).toHaveBeenCalledWith("9");
@@ -74,10 +113,10 @@ describe("EditarEnvio", () => {
 
     expect(screen.getByLabelText(/apellido/i)).toHaveValue("García");
     expect(screen.getByLabelText(/email del remitente/i)).toHaveValue(
-      "remitente@test.com"
+      "remitente@test.com",
     );
     expect(screen.getByLabelText(/email del receptor/i)).toHaveValue(
-      "receptor@test.com"
+      "receptor@test.com",
     );
     expect(screen.getByLabelText(/^calle/i)).toHaveValue("Av. Colón");
     expect(screen.getByText("Documentación")).toBeInTheDocument();
@@ -85,10 +124,7 @@ describe("EditarEnvio", () => {
 
   it("submits changes and calls envioApi.update with the EnvioReqDTO shape", async () => {
     const user = userEvent.setup();
-    renderWithProviders(
-      <Route path="/envios/editar/:id" component={EditarEnvio} />,
-      { route: "/envios/editar/9" }
-    );
+    renderEditarEnvio();
 
     await waitFor(() => {
       expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
@@ -127,7 +163,55 @@ describe("EditarEnvio", () => {
             peso: 0.5,
           }),
         ],
-      })
+      }),
     );
+  });
+
+  it("muestra el error de campo devuelto por PUT /api/envio/{id} (400 de validación, CONTRACTS.md §5)", async () => {
+    const user = userEvent.setup();
+    envioApi.update.mockRejectedValue({
+      response: {
+        data: {
+          statusCode: 400,
+          message: "Error en la validación de los campos.",
+          fields: [{ field: "telefono", error: "El teléfono no es válido." }],
+        },
+      },
+    });
+
+    renderEditarEnvio();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+    });
+
+    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+    await waitFor(() => {
+      expect(envioApi.update).toHaveBeenCalledTimes(1);
+    });
+
+    expect(
+      await screen.findByText("El teléfono no es válido."),
+    ).toBeInTheDocument();
+  });
+
+  it("no permite editar un envío en estado terminal (entregado/rechazado)", async () => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+
+    renderEditarEnvio();
+
+    await waitFor(() => {
+      expect(envioApi.getById).toHaveBeenCalledWith("9");
+    });
+
+    expect(
+      await screen.findByText(/no se puede editar en su estado actual/i),
+    ).toBeInTheDocument();
+
+    expect(screen.queryByLabelText(/^nombre/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /guardar cambios/i }),
+    ).not.toBeInTheDocument();
   });
 });

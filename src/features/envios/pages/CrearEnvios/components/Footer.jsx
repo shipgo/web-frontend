@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
 
-const Footer = ({ onSubmit, isSubmitting }) => {
+const Footer = ({ onSubmit, isSubmitting, submitLabel = "Registrar envío" }) => {
   const form = useEnvioFormContext();
   const [, navigate] = useLocation();
   const { nombre, apellido, detalleEnvios } = form.values;
@@ -72,7 +72,7 @@ const Footer = ({ onSubmit, isSubmitting }) => {
           Cancelar
         </Button>
         <Button loading={isSubmitting} onClick={onSubmit}>
-          Registrar envío
+          {submitLabel}
         </Button>
       </Flex>
     </AppShellFooter>

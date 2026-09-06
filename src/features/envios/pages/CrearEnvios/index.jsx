@@ -1,18 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "wouter";
-import {
-  Box,
-  Breadcrumbs,
-  Button,
-  Flex,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+import { useLocation } from "wouter";
+import { Stack } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 
 import { schemaResolver } from "@mantine/form";
 
@@ -22,6 +15,7 @@ import { CREAR_ENVIO_SCHEMA, INITIAL_VALUES } from "./constants/schema";
 import SeccionOrigen from "./components/SeccionOrigen";
 import SeccionCarga from "./components/SeccionCarga";
 import Footer from "./components/Footer";
+import { buildEnvioReqDTO } from "../../utils";
 
 const CrearEnvios = () => {
   const [, navigate] = useLocation();
@@ -55,26 +49,7 @@ const CrearEnvios = () => {
   const handleSubmit = form.onSubmit(async (values) => {
     setIsSubmitting(true);
     try {
-      const payload = {
-        nombre: values.nombre,
-        apellido: values.apellido,
-        emailRemitente: values.emailRemitente,
-        emailReceptor: values.emailReceptor,
-        prefijo: values.prefijo,
-        telefono: values.telefono,
-        destino: {
-          nombreCalle: values.nombreCalle,
-          numeroCalle: values.numeroCalle,
-          localidad: { id: Number(values.localidadID) },
-          latitud: values.coordenadas?.lat,
-          longitud: values.coordenadas?.lng,
-        },
-        detalleEnvios: values.detalleEnvios.map((paquete) => ({
-          categoria: { id: Number(paquete.categoriaID) },
-          descripcion: paquete.descripcion || null,
-          peso: Number(paquete.peso),
-        })),
-      };
+      const payload = buildEnvioReqDTO(values);
 
       const envio = await envioApi.save(payload);
 
@@ -116,36 +91,11 @@ const CrearEnvios = () => {
 
   return (
     <PageContainer>
-      <Flex align="flex-end" gap="xs">
-        <Box>
-          <Breadcrumbs
-            separatorMargin="sm"
-            separator={<Title order={3}>/</Title>}
-          >
-            <Link href="/" asChild>
-              <Title
-                order={2}
-                style={{ cursor: "pointer" }}
-                c="var(--mantine-color-colorPalette-light-color)"
-              >
-                Envíos
-              </Title>
-            </Link>
-            <Title order={2}>Crear nuevo envío</Title>
-          </Breadcrumbs>
-          <Text c="dimmed">Completá las secciones para registrar un envío</Text>
-        </Box>
-
-        <Button
-          variant="subtle"
-          ml="auto"
-          component="a"
-          href="https://shipgo.gitbook.io/manual"
-          target="_blank"
-        >
-          Necesito ayuda
-        </Button>
-      </Flex>
+      <PageBreadcrumbsHeader
+        entidad="Envíos"
+        accion="Crear nuevo envío"
+        descripcion="Completá las secciones para registrar un envío"
+      />
 
       <EnvioFormProvider form={form}>
         <Stack>
