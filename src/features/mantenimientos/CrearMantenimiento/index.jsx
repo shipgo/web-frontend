@@ -6,6 +6,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { applyApiError } from "@domain/apiError";
 import { mantenimientoApi } from "../api/mantenimientos.api";
 
 import MantenimientoForm from "../components/MantenimientoForm";
@@ -41,24 +42,13 @@ const CrearMantenimiento = () => {
       } catch (error) {
         console.error("Error creando mantenimiento:", error);
 
-        // 400 de validación de campos (`ApiFieldError`, `CONTRACTS.md §5`): mismo
-        // patrón puntual que `SHG-FE-016`/`SHG-FE-031` (`form.setErrors` desde
-        // `error.response.data.fields` + toast) hasta que exista `SHG-FE-021`.
-        const responseData = error?.response?.data;
-        if (Array.isArray(responseData?.fields) && responseData.fields.length > 0) {
-          form.setErrors(
-            Object.fromEntries(
-              responseData.fields.map(({ field, error: fieldError }) => [
-                field,
-                fieldError,
-              ]),
-            ),
-          );
-        }
+        const message = applyApiError(form, error, {
+          fallbackMessage: "No se pudo registrar el mantenimiento",
+        });
 
         notifications.show({
           title: "Error",
-          message: responseData?.message || "No se pudo registrar el mantenimiento",
+          message,
           color: "red",
           icon: <IconX />,
         });

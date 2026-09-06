@@ -6,6 +6,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { applyApiError } from "@domain/apiError";
 import { vehiculoApi } from "@api";
 
 import VehiculoForm from "../components/VehiculoForm";
@@ -57,7 +58,9 @@ const CrearVehiculo = () => {
       console.error("Error creando vehículo:", error);
       notifications.show({
         title: "Error",
-        message: error.response?.data?.message || "No se pudo crear el vehículo",
+        message: applyApiError(form, error, {
+          fallbackMessage: "No se pudo crear el vehículo",
+        }),
         color: "red",
         icon: <IconX />,
       });

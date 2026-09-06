@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { applyApiError } from "@domain/apiError";
 import { sucursalApi } from "@api";
 import SucursalForm from "../components/SucursalForm";
 import { SUCURSAL_SCHEMA, SUCURSAL_INITIAL_VALUES } from "../constants/schema";
@@ -93,11 +94,14 @@ const EditarSucursal = () => {
         navigate("~/sucursales");
       } catch (error) {
         console.error("Error actualizando sucursal:", error);
+        // Ver nota en `CrearSucursal`: los `field` vienen prefijados
+        // "puntoEntrega." — el helper los alinea a los nombres planos del form.
         notifications.show({
           title: "Error",
-          message:
-            error.response?.data?.message ||
-            "No se pudo actualizar la sucursal",
+          message: applyApiError(form, error, {
+            stripPrefix: "puntoEntrega",
+            fallbackMessage: "No se pudo actualizar la sucursal",
+          }),
           color: "red",
           icon: <IconX />,
         });
@@ -105,7 +109,7 @@ const EditarSucursal = () => {
         setLoading(false);
       }
     },
-    [id, navigate]
+    [id, navigate, form]
   );
 
   const handleCancel = useCallback(() => {

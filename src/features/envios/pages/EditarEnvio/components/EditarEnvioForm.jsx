@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { applyApiError } from "@domain/apiError";
 import { envioApi } from "@api";
 
 import {
@@ -62,26 +63,13 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
     } catch (error) {
       console.error("Error actualizando envío:", error);
 
-      // 400 de validación de campos (`ApiFieldError`, `CONTRACTS.md §5`): mismo
-      // patrón puntual que `SHG-FE-016`/`SHG-FE-010` (`form.setErrors` desde
-      // `error.response.data.fields` + toast con `message`) hasta que exista el
-      // helper global de `SHG-FE-021`. El `EnvioReqDTO` es plano, así que no hay
-      // que sacarle prefijo a los `field`.
-      const responseData = error?.response?.data;
-      if (Array.isArray(responseData?.fields) && responseData.fields.length > 0) {
-        form.setErrors(
-          Object.fromEntries(
-            responseData.fields.map(({ field, error: fieldError }) => [
-              field,
-              fieldError,
-            ]),
-          ),
-        );
-      }
+      const message = applyApiError(form, error, {
+        fallbackMessage: "No se pudo actualizar el envío",
+      });
 
       notifications.show({
         title: "Error",
-        message: responseData?.message || "No se pudo actualizar el envío",
+        message,
         color: "red",
         icon: <IconX />,
       });

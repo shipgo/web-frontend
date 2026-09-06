@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageFooter from "@components/PageFooter";
+import { applyApiError } from "@domain/apiError";
 
 import { useFormContext } from "./contexts/EnviosFormContext";
 import useEnviosStats from "./hooks/useEnviosStats";
@@ -66,12 +67,17 @@ const Footer = () => {
         navigate("~/viajes");
       },
       onError: (error) => {
+        console.error("Error creando viaje:", error);
+        // Body anidado (`ViajeReqDTO.viaje`): los `field` vienen prefijados
+        // "viaje." — el helper los alinea a los nombres planos del form.
+        const message = applyApiError(form, error, {
+          stripPrefix: "viaje",
+          fallbackMessage: "No se pudo crear el viaje. Intentá nuevamente.",
+        });
         notifications.show({
           color: "red",
           title: "Error al crear el viaje",
-          message:
-            error.response?.data?.message ||
-            "No se pudo crear el viaje. Intentá nuevamente.",
+          message,
           icon: <IconX />,
         });
       },
