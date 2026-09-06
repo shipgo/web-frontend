@@ -4,6 +4,7 @@ import { Switch, Route, Redirect } from 'wouter';
 import LoginPage from '@features/login';
 
 import Layout from '../layout';
+import PublicLayout from '../layout/PublicLayout';
 import ProtectedRoute from '@components/ProtectedRoute';
 import PublicRoute from '@components/PublicRoute';
 import MobileOnlyScreen from '@components/MobileOnlyScreen';
@@ -16,6 +17,9 @@ const RecuperarCuentaTokenPage = lazy(
   () => import('@features/login/RecuperarCuentaToken'),
 );
 const HomePage = lazy(() => import('@features/home'));
+const TrackingPublicoPage = lazy(() =>
+  import('@features/tracking').then((m) => ({ default: m.TrackingPublicoPage })),
+);
 const MapaPage = lazy(() => import('@features/mapa'));
 const MantenimientosRoutes = lazy(() => import('@features/mantenimientos'));
 const DashboardRoutes = lazy(() => import('./dashboard.routes'));
@@ -104,6 +108,19 @@ const AppRoutes = () => {
   return (
     <Switch>
       <Route path='/login' component={LoginPage} />
+      {/* Tracking público / guest (SHG-FE-025, CONTRACTS.md §7). FUERA de
+          `ProtectedRoutes`: sin login y sin el AppShell de admin — usa
+          `PublicLayout` (que reutilizará el portal CUSTOMER de SHG-FE-026).
+          `restclient.js` y `AuthProvider` tratan `/tracking` como ruta pública
+          (no redirige a `/login` si no hay sesión). `:codigo?` opcional:
+          `/tracking` muestra el input, `/tracking/:codigo` autoconsulta. */}
+      <Route path='/tracking/:codigo?'>
+        <PublicLayout>
+          <Suspense fallback={<RouteFallback />}>
+            <TrackingPublicoPage />
+          </Suspense>
+        </PublicLayout>
+      </Route>
       {/* Rutas públicas de recuperación de cuenta (SHG-FE-023). `restclient.js` y
           `AuthProvider` ya tratan cualquier path bajo `/recuperar-cuenta` como
           público; `PublicRoute` además saca al Home si ya hay sesión. */}
