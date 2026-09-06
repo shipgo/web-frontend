@@ -14,11 +14,26 @@ export const useGetUsuarios = (pageLimit = PAGE_LIMIT) => {
   const queryClient = useQueryClient();
   const paramsOptions = useParams();
 
+  const filterParams = mapValues(paramsOptions.params.filters, (filter) => filter.values);
+
   // Normalizar parámetros para el backend
   const normalizedParams = {
     page: (paramsOptions.params.page || 1) - 1, // Convertir de 1-indexed (UI) a 0-indexed (backend)
     size: pageLimit,
-    ...mapValues(paramsOptions.params.filters, (filter) => filter.values),
+    ...filterParams,
+  };
+
+  /**
+   * Trae hasta `limit` usuarios con los filtros actuales (para exportar a CSV).
+   * @param {number} limit
+   * @returns {Promise<{ rows: any[], total: number }>}
+   */
+  const fetchExportRows = async (limit) => {
+    const response = await usuarioApi.get({ ...filterParams, page: 0, size: limit });
+    return {
+      rows: response?.content ?? [],
+      total: response?.totalElements ?? 0,
+    };
   };
 
   const usuariosQuery = useQuery({
@@ -37,5 +52,5 @@ export const useGetUsuarios = (pageLimit = PAGE_LIMIT) => {
     usuariosQuery.refetch();
   };
 
-  return { usuariosQuery, refetch, PAGE_LIMIT: pageLimit, ...paramsOptions };
+  return { usuariosQuery, refetch, fetchExportRows, PAGE_LIMIT: pageLimit, ...paramsOptions };
 };

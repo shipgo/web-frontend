@@ -6,15 +6,26 @@ import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
 
+import { useCsvExport } from '@hooks/useCsvExport';
+
 import ListaEnviosHeader from './components/ListaEnviosHeader';
 import ListaEnviosFiltros from './components/ListaEnviosFiltros';
 import ListaEnviosTabla from './components/ListaEnviosTabla';
 
 import { useGetEnvios } from './hooks/useGetEnvios';
+import { ENVIOS_CSV_COLUMNS } from './listaEnvios.csv';
 
 const ListaEnvios = () => {
-  const { params, setPage, setFilters, refetch, enviosQuery, PAGE_LIMIT } = useGetEnvios();
+  const { params, setPage, setFilters, refetch, enviosQuery, fetchExportRows, PAGE_LIMIT } =
+    useGetEnvios();
   const { data = {}, isFetching: isLoading, isError } = enviosQuery;
+
+  const { exportar, isExporting } = useCsvExport({
+    fetchRows: fetchExportRows,
+    columns: ENVIOS_CSV_COLUMNS,
+    entidad: 'envios',
+    entidadLabel: 'envíos',
+  });
 
   const selectedIds = useSet();
 
@@ -35,7 +46,11 @@ const ListaEnvios = () => {
 
   return (
     <PageContainer>
-      <ListaEnviosHeader />
+      <ListaEnviosHeader
+        onExportCsv={exportar}
+        isExporting={isExporting}
+        exportDisabled={isLoading || isError}
+      />
 
       <ListaEnviosFiltros onFiltersChange={setFilters} disabled={isLoading} />
 

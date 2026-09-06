@@ -21,10 +21,26 @@ export const useGetEnvios = (pageLimit = PAGE_LIMIT) => {
 
   // Normalizar parámetros para el backend
   // El backend espera: page (0-indexed), size, y los filtros de EnvioFilter
+  const filterParams = mapValues(paramsOptions.params.filters, (filter) => filter.values);
+
   const normalizedParams = {
     page: (paramsOptions.params.page || 1) - 1, // Convertir de 1-indexed (UI) a 0-indexed (backend)
     size: pageLimit,
-    ...mapValues(paramsOptions.params.filters, (filter) => filter.values),
+    ...filterParams,
+  };
+
+  /**
+   * Trae hasta `limit` envíos con los filtros actuales aplicados (para exportar a
+   * CSV, no sólo la página visible). Ver `useCsvExport`.
+   * @param {number} limit
+   * @returns {Promise<{ rows: any[], total: number }>}
+   */
+  const fetchExportRows = async (limit) => {
+    const response = await envioApi.get({ ...filterParams, page: 0, size: limit });
+    return {
+      rows: response?.content ?? EMPTY_RESULTS,
+      total: response?.totalElements ?? 0,
+    };
   };
 
   const enviosQuery = useQuery({
@@ -44,5 +60,5 @@ export const useGetEnvios = (pageLimit = PAGE_LIMIT) => {
     enviosQuery.refetch();
   };
 
-  return { enviosQuery, refetch, PAGE_LIMIT: pageLimit, ...paramsOptions };
+  return { enviosQuery, refetch, fetchExportRows, PAGE_LIMIT: pageLimit, ...paramsOptions };
 };

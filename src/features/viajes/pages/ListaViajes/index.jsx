@@ -6,15 +6,26 @@ import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
 
+import { useCsvExport } from '@hooks/useCsvExport';
+
 import ListaViajesHeader from './components/ListaViajesHeader';
 import ListaViajesTabla from './components/ListaViajesTabla';
 import ListaViajesFiltros from './components/ListaViajesFiltros';
 
 import { useGetViajes } from './hooks/useGetViajes';
+import { VIAJES_CSV_COLUMNS } from './listaViajes.csv';
 
 const ListaViajes = () => {
-  const { params, setPage, setFilters, refetch, viajesQuery, PAGE_LIMIT } = useGetViajes();
+  const { params, setPage, setFilters, refetch, viajesQuery, fetchExportRows, PAGE_LIMIT } =
+    useGetViajes();
   const { data = {}, isFetching: isLoading, isError } = viajesQuery;
+
+  const { exportar, isExporting } = useCsvExport({
+    fetchRows: fetchExportRows,
+    columns: VIAJES_CSV_COLUMNS,
+    entidad: 'viajes',
+    entidadLabel: 'viajes',
+  });
 
   const selectedIds = useSet();
 
@@ -35,7 +46,11 @@ const ListaViajes = () => {
 
   return (
     <PageContainer>
-      <ListaViajesHeader />
+      <ListaViajesHeader
+        onExportCsv={exportar}
+        isExporting={isExporting}
+        exportDisabled={isLoading || isError}
+      />
 
       <ListaViajesFiltros onFiltersChange={setFilters} disabled={isLoading} />
 

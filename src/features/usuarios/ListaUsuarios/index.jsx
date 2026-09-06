@@ -6,15 +6,26 @@ import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
 
+import { useCsvExport } from '@hooks/useCsvExport';
+
 import ListaUsuariosHeader from './components/ListaUsuariosHeader';
 import ListaUsuariosFiltros from './components/ListaUsuariosFiltros';
 import ListaUsuariosTabla from './components/ListaUsuariosTabla';
 
 import { useGetUsuarios } from './hooks/useGetUsuarios';
+import { USUARIOS_CSV_COLUMNS } from './listaUsuarios.csv';
 
 const ListaUsuarios = () => {
-  const { params, setPage, setFilters, refetch, usuariosQuery, PAGE_LIMIT } = useGetUsuarios();
+  const { params, setPage, setFilters, refetch, usuariosQuery, fetchExportRows, PAGE_LIMIT } =
+    useGetUsuarios();
   const { data = {}, isFetching: isLoading, isError } = usuariosQuery;
+
+  const { exportar, isExporting } = useCsvExport({
+    fetchRows: fetchExportRows,
+    columns: USUARIOS_CSV_COLUMNS,
+    entidad: 'usuarios',
+    entidadLabel: 'usuarios',
+  });
 
   const selectedIds = useSet();
 
@@ -35,7 +46,11 @@ const ListaUsuarios = () => {
 
   return (
     <PageContainer>
-      <ListaUsuariosHeader />
+      <ListaUsuariosHeader
+        onExportCsv={exportar}
+        isExporting={isExporting}
+        exportDisabled={isLoading || isError}
+      />
 
       <ListaUsuariosFiltros onFiltersChange={setFilters} disabled={isLoading} />
 

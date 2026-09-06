@@ -18,10 +18,25 @@ const EMPTY_RESULTS = [];
 export const useGetMantenimientos = (pageLimit = 10) => {
   const paramsOptions = useParams();
 
+  const filterParams = mapValues(paramsOptions.params.filters, (filter) => filter.values);
+
   const normalizedParams = {
     page: (paramsOptions.params.page || 1) - 1, // 1-indexed (UI) -> 0-indexed (backend)
     size: pageLimit,
-    ...mapValues(paramsOptions.params.filters, (filter) => filter.values),
+    ...filterParams,
+  };
+
+  /**
+   * Trae hasta `limit` mantenimientos con los filtros actuales (para exportar a CSV).
+   * @param {number} limit
+   * @returns {Promise<{ rows: any[], total: number }>}
+   */
+  const fetchExportRows = async (limit) => {
+    const response = await mantenimientoApi.get({ ...filterParams, page: 0, size: limit });
+    return {
+      rows: response?.content ?? EMPTY_RESULTS,
+      total: response?.totalElements ?? 0,
+    };
   };
 
   const {
@@ -45,6 +60,7 @@ export const useGetMantenimientos = (pageLimit = 10) => {
     isError,
     isLoading,
     refetchMantenimientos,
+    fetchExportRows,
     ...paramsOptions,
   };
 };
