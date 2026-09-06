@@ -1,43 +1,23 @@
 import { useCallback, useState } from "react";
 import { useLocation } from "wouter";
-import { Box, Button, Group, Text, Title } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { useForm, schemaResolver } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
+import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { sucursalApi } from "@api";
 import SucursalForm from "../components/SucursalForm";
+import { SUCURSAL_SCHEMA, SUCURSAL_INITIAL_VALUES } from "../constants/schema";
 
 const CrearSucursal = () => {
   const [, navigate] = useLocation();
   const [loading, setLoading] = useState(false);
 
   const form = useForm({
-    initialValues: {
-      nombre: "",
-      email: "",
-      prefijo: "",
-      telefono: "",
-      nombreCalle: "",
-      numeroCalle: "",
-      provinciaID: null,
-      localidadID: null,
-    },
-    validate: {
-      nombre: (value) => (!value ? "Debes ingresar el nombre" : null),
-      email: (value) => {
-        if (!value) return "Debes ingresar el email";
-        if (!/^\S+@\S+\.\S+$/.test(value)) return "El email no es válido";
-        return null;
-      },
-      prefijo: (value) => (!value ? "Debes ingresar el prefijo" : null),
-      telefono: (value) => (!value ? "Debes ingresar el teléfono" : null),
-      nombreCalle: (value) => (!value ? "Debes ingresar la calle" : null),
-      numeroCalle: (value) => (!value ? "Debes ingresar el número" : null),
-      localidadID: (value) =>
-        !value ? "Debes seleccionar una localidad" : null,
-    },
+    mode: "controlled",
+    initialValues: SUCURSAL_INITIAL_VALUES,
+    validate: schemaResolver(SUCURSAL_SCHEMA, { sync: true }),
   });
 
   const handleSubmit = useCallback(
@@ -89,19 +69,11 @@ const CrearSucursal = () => {
 
   return (
     <PageContainer>
-      <Group justify="space-between" align="flex-end">
-        <Box>
-          <Title order={2}>Crear sucursal</Title>
-          <Text c="dimmed">Completá los datos para registrar una nueva sucursal</Text>
-        </Box>
-        <Button
-          variant="subtle"
-          leftSection={<IconArrowLeft size={18} />}
-          onClick={handleCancel}
-        >
-          Volver
-        </Button>
-      </Group>
+      <PageBreadcrumbsHeader
+        entidad="Sucursales"
+        accion="Crear sucursal"
+        descripcion="Completá los datos para registrar una nueva sucursal"
+      />
 
       <SucursalForm
         form={form}

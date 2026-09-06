@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Box, Card, Group, Text, Title, Button } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { Card, Text } from "@mantine/core";
+import { useForm, schemaResolver } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconCheck, IconX, IconArrowLeft } from "@tabler/icons-react";
+import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { sucursalApi } from "@api";
 import SucursalForm from "../components/SucursalForm";
+import { SUCURSAL_SCHEMA, SUCURSAL_INITIAL_VALUES } from "../constants/schema";
 
 const EditarSucursal = () => {
   const { id } = useParams();
@@ -17,30 +19,9 @@ const EditarSucursal = () => {
   const [loadingSucursal, setLoadingSucursal] = useState(true);
 
   const form = useForm({
-    initialValues: {
-      nombre: "",
-      email: "",
-      prefijo: "",
-      telefono: "",
-      nombreCalle: "",
-      numeroCalle: "",
-      provinciaID: null,
-      localidadID: null,
-    },
-    validate: {
-      nombre: (value) => (!value ? "Debes ingresar el nombre" : null),
-      email: (value) => {
-        if (!value) return "Debes ingresar el email";
-        if (!/^\S+@\S+\.\S+$/.test(value)) return "El email no es válido";
-        return null;
-      },
-      prefijo: (value) => (!value ? "Debes ingresar el prefijo" : null),
-      telefono: (value) => (!value ? "Debes ingresar el teléfono" : null),
-      nombreCalle: (value) => (!value ? "Debes ingresar la calle" : null),
-      numeroCalle: (value) => (!value ? "Debes ingresar el número" : null),
-      localidadID: (value) =>
-        !value ? "Debes seleccionar una localidad" : null,
-    },
+    mode: "controlled",
+    initialValues: SUCURSAL_INITIAL_VALUES,
+    validate: schemaResolver(SUCURSAL_SCHEMA, { sync: true }),
   });
 
   // Cargar datos de la sucursal
@@ -142,19 +123,11 @@ const EditarSucursal = () => {
 
   return (
     <PageContainer>
-      <Group justify="space-between" align="flex-end">
-        <Box>
-          <Title order={2}>Editar sucursal</Title>
-          <Text c="dimmed">Modificá los datos de la sucursal</Text>
-        </Box>
-        <Button
-          variant="subtle"
-          leftSection={<IconArrowLeft size={18} />}
-          onClick={handleCancel}
-        >
-          Volver
-        </Button>
-      </Group>
+      <PageBreadcrumbsHeader
+        entidad="Sucursales"
+        accion="Editar sucursal"
+        descripcion="Modificá los datos de la sucursal"
+      />
 
       <SucursalForm
         form={form}

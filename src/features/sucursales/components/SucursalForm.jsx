@@ -235,9 +235,15 @@ const SucursalForm = ({
             </Stack>
           </Card>
 
-          {/* Botones de acción */}
+          {/* Botones de acción — mismo patrón visual que el `Footer` compartido
+              de `CrearEnvios`/`CrearViaje` (Cancelar `light` rojo + submit) */}
           <Group justify="flex-end" gap="xs">
-            <Button variant="subtle" color="red" onClick={onCancel} disabled={loading}>
+            <Button
+              variant="light"
+              color="red"
+              onClick={onCancel}
+              disabled={loading}
+            >
               Cancelar
             </Button>
             <Button type="submit" loading={loading}>
