@@ -6,6 +6,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { applyApiError } from "@domain/apiError";
 import { usuarioApi } from "@api";
 import UsuarioForm from "../components/UsuarioForm";
 import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA } from "../constants/schema";
@@ -65,23 +66,13 @@ const CrearUsuario = () => {
       } catch (error) {
         console.error("Error creando usuario:", error);
 
-        // 400 de validación de campos (`ApiFieldError`, CONTRACTS.md §5): manejo
-        // básico por campo hasta que exista el helper global de SHG-FE-021.
-        const responseData = error?.response?.data;
-        if (Array.isArray(responseData?.fields) && responseData.fields.length > 0) {
-          form.setErrors(
-            Object.fromEntries(
-              responseData.fields.map(({ field, error: fieldError }) => [
-                field,
-                fieldError,
-              ])
-            )
-          );
-        }
+        const message = applyApiError(form, error, {
+          fallbackMessage: "No se pudo crear el usuario",
+        });
 
         notifications.show({
           title: "Error",
-          message: responseData?.message || "No se pudo crear el usuario",
+          message,
           color: "red",
           icon: <IconX />,
         });

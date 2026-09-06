@@ -9,6 +9,7 @@ import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 
 import { estadoBadge, normalizarEstado } from "@domain/estados";
+import { applyApiError } from "@domain/apiError";
 
 import { viajeApi } from "../../api/viajes.api";
 import SeccionDetalles from "../CrearViaje/SeccionDetalles";
@@ -143,29 +144,16 @@ const EditarViaje = () => {
       } catch (error) {
         console.error("Error actualizando viaje:", error);
 
-        // 400 de validación de campos (`ApiFieldError`, CONTRACTS.md §5): manejo
-        // básico por campo hasta que exista el helper global de SHG-FE-021.
-        // El backend valida sobre `ViajeReqDTO.viaje` anidado, así que los
-        // `field` vienen prefijados "viaje." (ej. "viaje.vehiculoID"); se
-        // saca ese prefijo para que matcheen los nombres planos del form.
-        const responseData = error?.response?.data;
-        if (
-          Array.isArray(responseData?.fields) &&
-          responseData.fields.length > 0
-        ) {
-          form.setErrors(
-            Object.fromEntries(
-              responseData.fields.map(({ field, error: fieldError }) => [
-                field.replace(/^viaje\./, ""),
-                fieldError,
-              ]),
-            ),
-          );
-        }
+        // Body anidado (`ViajeReqDTO.viaje`): los `field` vienen prefijados
+        // "viaje." — el helper los alinea a los nombres planos del form.
+        const message = applyApiError(form, error, {
+          stripPrefix: "viaje",
+          fallbackMessage: "No se pudo actualizar el viaje",
+        });
 
         notifications.show({
           title: "Error",
-          message: responseData?.message || "No se pudo actualizar el viaje",
+          message,
           color: "red",
           icon: <IconX />,
         });

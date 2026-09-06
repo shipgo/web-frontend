@@ -9,6 +9,8 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 
 import { schemaResolver } from "@mantine/form";
 
+import { applyApiError } from "@domain/apiError";
+
 import { envioApi, categoriaApi } from "@api";
 import { EnvioFormProvider, useEnvioForm } from "./contexts/CrearEnvioContext";
 import { CREAR_ENVIO_SCHEMA, INITIAL_VALUES } from "./constants/schema";
@@ -66,21 +68,13 @@ const CrearEnvios = () => {
     } catch (error) {
       console.error("Error creando envío:", error);
 
-      const data = error?.response?.data;
-      const fieldErrors = data?.fieldErrors ?? data?.errors;
-      if (Array.isArray(fieldErrors)) {
-        fieldErrors.forEach((fieldError) => {
-          const field = fieldError?.field ?? fieldError?.campo;
-          const message =
-            fieldError?.message ?? fieldError?.mensaje ?? fieldError?.error;
-          if (field && message) form.setFieldError(field, message);
-        });
-      }
+      const message = applyApiError(form, error, {
+        fallbackMessage: "No se pudo crear el envío",
+      });
 
       notifications.show({
         title: "Error",
-        message:
-          data?.mensaje || data?.message || "No se pudo crear el envío",
+        message,
         color: "red",
         icon: <IconX />,
       });

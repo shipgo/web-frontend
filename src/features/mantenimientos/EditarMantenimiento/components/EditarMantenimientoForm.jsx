@@ -6,6 +6,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { applyApiError } from "@domain/apiError";
 import { mantenimientoApi } from "../../api/mantenimientos.api";
 
 import MantenimientoForm from "../../components/MantenimientoForm";
@@ -56,21 +57,13 @@ const EditarMantenimientoForm = ({ id, mantenimiento }) => {
       } catch (error) {
         console.error("Error actualizando mantenimiento:", error);
 
-        const responseData = error?.response?.data;
-        if (Array.isArray(responseData?.fields) && responseData.fields.length > 0) {
-          form.setErrors(
-            Object.fromEntries(
-              responseData.fields.map(({ field, error: fieldError }) => [
-                field,
-                fieldError,
-              ]),
-            ),
-          );
-        }
+        const message = applyApiError(form, error, {
+          fallbackMessage: "No se pudo actualizar el mantenimiento",
+        });
 
         notifications.show({
           title: "Error",
-          message: responseData?.message || "No se pudo actualizar el mantenimiento",
+          message,
           color: "red",
           icon: <IconX />,
         });

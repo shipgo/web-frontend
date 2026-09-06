@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { applyApiError } from "@domain/apiError";
 import { vehiculoApi } from "@api";
 
 import VehiculoForm from "../components/VehiculoForm";
@@ -102,8 +103,9 @@ const EditarVehiculo = () => {
       console.error("Error actualizando vehículo:", error);
       notifications.show({
         title: "Error",
-        message:
-          error.response?.data?.message || "No se pudo actualizar el vehículo",
+        message: applyApiError(form, error, {
+          fallbackMessage: "No se pudo actualizar el vehículo",
+        }),
         color: "red",
         icon: <IconX />,
       });

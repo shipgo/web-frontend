@@ -6,6 +6,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { applyApiError } from "@domain/apiError";
 import { sucursalApi } from "@api";
 import SucursalForm from "../components/SucursalForm";
 import { SUCURSAL_SCHEMA, SUCURSAL_INITIAL_VALUES } from "../constants/schema";
@@ -49,10 +50,15 @@ const CrearSucursal = () => {
         navigate("~/sucursales");
       } catch (error) {
         console.error("Error creando sucursal:", error);
+        // El payload anida los datos de dirección en `puntoEntrega`, así que los
+        // `field` de Bean Validation vienen como "puntoEntrega.xxx" — el helper
+        // los alinea a los nombres planos del form.
         notifications.show({
           title: "Error",
-          message:
-            error.response?.data?.message || "No se pudo crear la sucursal",
+          message: applyApiError(form, error, {
+            stripPrefix: "puntoEntrega",
+            fallbackMessage: "No se pudo crear la sucursal",
+          }),
           color: "red",
           icon: <IconX />,
         });
@@ -60,7 +66,7 @@ const CrearSucursal = () => {
         setLoading(false);
       }
     },
-    [navigate]
+    [navigate, form]
   );
 
   const handleCancel = useCallback(() => {
