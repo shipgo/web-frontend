@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Box, Button, Card, Group, Text, Title } from "@mantine/core";
+import { Button, Card, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconArrowLeft, IconEdit, IconX } from "@tabler/icons-react";
+import { IconEdit, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { sucursalApi } from "@api";
 import SucursalPerfil from "../components/SucursalPerfil";
 
@@ -52,27 +53,18 @@ const DetalleSucursal = () => {
 
   return (
     <PageContainer>
-      <Group justify="space-between" align="flex-end">
-        <Box>
-          <Title order={2}>{sucursal?.nombre || "Detalle de la sucursal"}</Title>
-          <Text c="dimmed">Información completa de la sucursal</Text>
-        </Box>
-        <Group gap="xs">
-          <Button
-            leftSection={<IconEdit size={18} />}
-            onClick={() => navigate(`~/sucursales/${id}/editar`)}
-          >
-            Editar
-          </Button>
-          <Button
-            variant="subtle"
-            leftSection={<IconArrowLeft size={18} />}
-            onClick={() => navigate("~/sucursales")}
-          >
-            Volver
-          </Button>
-        </Group>
-      </Group>
+      <PageBreadcrumbsHeader
+        entidad="Sucursales"
+        accion="Detalle de sucursal"
+        descripcion={sucursal?.nombre || "Información completa de la sucursal"}
+      >
+        <Button
+          leftSection={<IconEdit size={18} />}
+          onClick={() => navigate(`~/sucursales/${id}/editar`)}
+        >
+          Editar
+        </Button>
+      </PageBreadcrumbsHeader>
 
       <SucursalPerfil sucursal={sucursal} />
     </PageContainer>

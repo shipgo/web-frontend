@@ -8,6 +8,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Text,
   Title,
   TextInput,
 } from "@mantine/core";
@@ -17,6 +18,7 @@ import {
   IconMapPin,
   IconMail,
 } from "@tabler/icons-react";
+import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
 import { provinciaApi, localidadApi } from "@api";
@@ -63,6 +65,29 @@ const SucursalForm = ({
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [provincias, setProvincias] = useState([]);
   const [localidades, setLocalidades] = useState([]);
+
+  // Cancelar con confirmación si hay cambios sin guardar — mismo criterio que el
+  // `Footer` de Vehículos/Usuarios (SHG-FE-034/033).
+  const handleCancel = () => {
+    if (!form.isDirty()) {
+      onCancel();
+      return;
+    }
+
+    modals.openConfirmModal({
+      title: "Cancelar",
+      children: (
+        <Text size="sm">
+          Tenés cambios sin guardar. ¿Seguro que querés salir?
+        </Text>
+      ),
+      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      confirmProps: { color: "red" },
+      cancelProps: { variant: "subtle" },
+      groupProps: { gap: "xs" },
+      onConfirm: onCancel,
+    });
+  };
 
   // Cargar provincias al montar el componente
   useEffect(() => {
@@ -235,9 +260,15 @@ const SucursalForm = ({
             </Stack>
           </Card>
 
-          {/* Botones de acción */}
+          {/* Botones de acción — mismo patrón visual que el `Footer` compartido
+              de `CrearEnvios`/`CrearViaje` (Cancelar `light` rojo + submit) */}
           <Group justify="flex-end" gap="xs">
-            <Button variant="subtle" color="red" onClick={onCancel} disabled={loading}>
+            <Button
+              variant="light"
+              color="red"
+              onClick={handleCancel}
+              disabled={loading}
+            >
               Cancelar
             </Button>
             <Button type="submit" loading={loading}>
