@@ -20,7 +20,6 @@ import {
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
-  IconArrowLeft,
   IconBan,
   IconBuilding,
   IconCheck,
@@ -43,6 +42,7 @@ import { esEstadoTerminal, estadoBadge, estadoLabel } from "@domain/estados";
 import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
 import { useAuthStore } from "@stores/auth.store";
 
+import EnvioHeader from "../../components/EnvioHeader";
 import { puedeAccionarEntrega } from "./acciones";
 import { useEnvioAcciones } from "./hooks/useEnvioAcciones";
 
@@ -150,75 +150,63 @@ const DetalleEnvio = () => {
 
   return (
     <PageContainer>
-      <Card>
-        <Group justify="space-between">
-          <Box>
-            <Group gap="xs" mb={4}>
-              <Title order={2}>Detalle del envío</Title>
-              {envio.estado && (
-                <Badge color={estadoInfo.color} variant="light">
-                  {estadoInfo.label}
-                </Badge>
-              )}
-            </Group>
-            <Group gap={4}>
-              <Text size="sm" c="dimmed">
-                {envio.codigoSeguimiento
-                  ? `Código de seguimiento: ${envio.codigoSeguimiento}`
-                  : `Envío #${id}`}
-              </Text>
-              {envio.codigoSeguimiento && (
-                <CopyButton value={envio.codigoSeguimiento} timeout={1500}>
-                  {({ copied, copy }) => (
-                    <Tooltip label={copied ? "Copiado" : "Copiar código"} withArrow>
-                      <ActionIcon color={copied ? "teal" : "gray"} variant="subtle" size="sm" onClick={copy}>
-                        {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                </CopyButton>
-              )}
-            </Group>
-          </Box>
-          <Group>
-            {canEdit && (
-              <Button
-                leftSection={<IconEdit size={18} />}
-                onClick={() => navigate(`~/envios/editar/${id}`)}
-              >
-                Editar
-              </Button>
+      <EnvioHeader
+        accion="Detalle de envío"
+        descripcion={
+          <Group gap={4}>
+            {envio.estado && (
+              <Badge color={estadoInfo.color} variant="light" mr="xs">
+                {estadoInfo.label}
+              </Badge>
             )}
-            {canAccionarEstado && (
-              <Button
-                variant="light"
-                color="green"
-                leftSection={<IconTruckDelivery size={18} />}
-                onClick={confirmEntregar}
-              >
-                Entregar
-              </Button>
+            <Text size="sm" c="dimmed">
+              {envio.codigoSeguimiento
+                ? `Código de seguimiento: ${envio.codigoSeguimiento}`
+                : `Envío #${id}`}
+            </Text>
+            {envio.codigoSeguimiento && (
+              <CopyButton value={envio.codigoSeguimiento} timeout={1500}>
+                {({ copied, copy }) => (
+                  <Tooltip label={copied ? "Copiado" : "Copiar código"} withArrow>
+                    <ActionIcon color={copied ? "teal" : "gray"} variant="subtle" size="sm" onClick={copy}>
+                      {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+              </CopyButton>
             )}
-            {canAccionarEstado && (
-              <Button
-                variant="light"
-                color="red"
-                leftSection={<IconBan size={18} />}
-                onClick={confirmFalloEntrega}
-              >
-                Marcar fallo
-              </Button>
-            )}
-            <Button
-              variant="subtle"
-              leftSection={<IconArrowLeft size={18} />}
-              onClick={() => navigate("~/envios")}
-            >
-              Volver
-            </Button>
           </Group>
-        </Group>
-      </Card>
+        }
+      >
+        {canEdit && (
+          <Button
+            leftSection={<IconEdit size={18} />}
+            onClick={() => navigate(`~/envios/editar/${id}`)}
+          >
+            Editar
+          </Button>
+        )}
+        {canAccionarEstado && (
+          <Button
+            variant="light"
+            color="green"
+            leftSection={<IconTruckDelivery size={18} />}
+            onClick={confirmEntregar}
+          >
+            Entregar
+          </Button>
+        )}
+        {canAccionarEstado && (
+          <Button
+            variant="light"
+            color="red"
+            leftSection={<IconBan size={18} />}
+            onClick={confirmFalloEntrega}
+          >
+            Marcar fallo
+          </Button>
+        )}
+      </EnvioHeader>
 
       <Card withBorder shadow="sm" p="xl">
         <Stack gap="md">

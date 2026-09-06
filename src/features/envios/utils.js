@@ -17,6 +17,49 @@
  * @param {Object} values
  * @param {{ id?: number, latitud?: number, longitud?: number }} [destinoExtra]
  */
+/**
+ * Inversa de `buildEnvioReqDTO`: arma los `values` iniciales del form de envío
+ * (mismo shape que `INITIAL_VALUES` de `CrearEnvios/constants/schema.js`) a
+ * partir de un `EnvioDTO` ya persistido, para precargar `EditarEnvio` con el
+ * mismo `EnvioFormProvider` + schema Zod que usa `CrearEnvios` (`SHG-FE-031`).
+ *
+ * `provinciaID`/`localidadID` se derivan de `destino.localidad.provincia` y se
+ * pasan como string (los `Select` de Mantine trabajan con strings).
+ * `coordenadas` se reconstruye de `destino.latitud`/`longitud` para que el
+ * mapa de `SeccionOrigen` muestre la posición actual y el schema (que exige
+ * coordenadas no nulas) valide sin re-geocodificar.
+ *
+ * @param {Object} envio - `EnvioDTO` del backend.
+ */
+export const buildEnvioFormValues = (envio) => {
+  const destino = envio?.destino ?? {};
+  const localidad = destino.localidad ?? {};
+  const provincia = localidad.provincia ?? {};
+
+  return {
+    nombre: envio?.nombre ?? "",
+    apellido: envio?.apellido ?? "",
+    emailRemitente: envio?.emailRemitente ?? "",
+    emailReceptor: envio?.emailReceptor ?? "",
+    prefijo: envio?.prefijo ?? "",
+    telefono: envio?.telefono ?? "",
+    nombreCalle: destino.nombreCalle ?? "",
+    numeroCalle: destino.numeroCalle ?? "",
+    provinciaID: provincia.id != null ? String(provincia.id) : "",
+    localidadID: localidad.id != null ? String(localidad.id) : "",
+    coordenadas:
+      destino.latitud != null && destino.longitud != null
+        ? { lat: destino.latitud, lng: destino.longitud }
+        : null,
+    detalleEnvios: (envio?.detalleEnvios ?? []).map((detalle) => ({
+      id: detalle.id,
+      categoriaID: detalle.categoria?.id != null ? String(detalle.categoria.id) : "",
+      descripcion: detalle.descripcion ?? "",
+      peso: detalle.peso,
+    })),
+  };
+};
+
 export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
   const coordenadas = values.coordenadas ?? {};
 
