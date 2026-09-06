@@ -19,14 +19,13 @@ describe("SUCURSAL_SCHEMA", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rechaza los initial values vacíos (todos los campos son requeridos)", () => {
+  it("rechaza los initial values vacíos (salvo email, que es opcional)", () => {
     const result = SUCURSAL_SCHEMA.safeParse(SUCURSAL_INITIAL_VALUES);
     expect(result.success).toBe(false);
     const paths = result.error.issues.map((issue) => issue.path[0]);
     expect(paths).toEqual(
       expect.arrayContaining([
         "nombre",
-        "email",
         "prefijo",
         "telefono",
         "nombreCalle",
@@ -35,6 +34,12 @@ describe("SUCURSAL_SCHEMA", () => {
         "localidadID",
       ])
     );
+    expect(paths).not.toContain("email");
+  });
+
+  it("acepta email vacío (opcional, SHG-BE-008)", () => {
+    const result = SUCURSAL_SCHEMA.safeParse({ ...VALID_SUCURSAL, email: "" });
+    expect(result.success).toBe(true);
   });
 
   it("rechaza un email inválido", () => {

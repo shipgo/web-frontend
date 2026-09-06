@@ -10,14 +10,20 @@ import { z } from "zod";
  *
  * `provinciaID`/`localidadID` viajan como string (id del `Select`) o `null` cuando
  * no hay selección — por eso el `.nullable().refine(...)` en vez de sólo `.min(1)`.
+ *
+ * `email` es OPCIONAL: `SHG-BE-008` sacó el `@NotEmpty` de `SucursalReqDTO` y dejó
+ * sólo `@Email` (formato, tolera vacío). Se valida el formato únicamente cuando se
+ * informa un valor.
  */
 export const SUCURSAL_SCHEMA = z.object({
   nombre: z.string().trim().min(1, "Debes ingresar el nombre"),
   email: z
     .string()
     .trim()
-    .min(1, "Debes ingresar el email")
-    .refine((value) => /^\S+@\S+\.\S+$/.test(value), "El email no es válido"),
+    .refine(
+      (value) => value === "" || /^\S+@\S+\.\S+$/.test(value),
+      "El email no es válido"
+    ),
   prefijo: z.string().trim().min(1, "Debes ingresar el prefijo"),
   telefono: z.string().trim().min(1, "Debes ingresar el teléfono"),
   nombreCalle: z.string().trim().min(1, "Debes ingresar la calle"),
