@@ -72,11 +72,9 @@ restclient.interceptors.response.use(
         isRefreshing = false;
 
         // Redirigir a login solo si no estamos ya en una ruta pública
-        const publicRoutes = [
-          "/login",
-          "/recuperar-cuenta",
-          "/verificar-cuenta",
-        ];
+        // Rutas públicas (SHG-FE-023): login + flujo de recuperación de cuenta.
+        // `/recuperar-cuenta/:token` cae acá por el `startsWith`.
+        const publicRoutes = ["/login", "/recuperar-cuenta"];
         const isPublicRoute = publicRoutes.some((route) =>
           window.location.pathname.startsWith(route)
         );

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 import logo from "/src/assets/logoipsum-custom-logo.svg";
+import background from "/src/assets/background.jpg";
 
 import { omit } from "es-toolkit";
 import { IconExclamationMark } from "@tabler/icons-react";
@@ -168,7 +169,7 @@ const LoginPage = () => {
         </Card>
         <Image
           h="100svh"
-          src="src/assets/background.jpg"
+          src={background}
           miw={`calc(100svw - ${FORM_WIDHT})`}
         />
       </Group>

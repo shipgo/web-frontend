@@ -174,10 +174,16 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Cambiar contraseña
-  changePassword: async (passwordData) => {
+  // Cambiar contraseña del usuario logueado.
+  // `POST /api/changePassword` espera `ChangePasswordForm` → `{ oldPassword, newPassword }`
+  // (re-autentica con `oldPassword`). En éxito se cierra la sesión: el backend
+  // invalida el token viejo y hay que volver a loguearse con la nueva.
+  changePassword: async ({ oldPassword, newPassword }) => {
     try {
-      await restclient.post(API_URLS.CHANGE_PASSWORD_URL, passwordData);
+      await restclient.post(API_URLS.CHANGE_PASSWORD_URL, {
+        oldPassword,
+        newPassword,
+      });
       await get().logout();
     } catch (error) {
       console.error("Change password error:", error);
@@ -196,13 +202,13 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Verificar email para recuperación
+  // Verificar email para recuperación.
+  // `POST /api/user/resetPassword` espera `MailFormReq` → `{ userEmail }` (público).
   verifyEmail: async (email) => {
     try {
-      const response = await restclient.post(
-        API_URLS.RECUPERAR_CUENTA_URL,
-        email
-      );
+      const response = await restclient.post(API_URLS.RECUPERAR_CUENTA_URL, {
+        userEmail: email,
+      });
       return response.data;
     } catch (error) {
       console.error("Verify email error:", error);
@@ -210,12 +216,14 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Cambiar contraseña con token
-  resetPasswordWithToken: async (data) => {
+  // Cambiar contraseña con token de recuperación.
+  // `POST /api/user/changePassword` espera `ChangePasswordTokenForm` →
+  // `{ token, newPassword }` (público).
+  resetPasswordWithToken: async ({ token, newPassword }) => {
     try {
       const response = await restclient.post(
         API_URLS.RECUPERAR_CUENTA_CONTRASEÑA_URL,
-        data
+        { token, newPassword }
       );
       return response.data;
     } catch (error) {

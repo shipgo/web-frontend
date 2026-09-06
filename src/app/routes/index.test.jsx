@@ -18,6 +18,12 @@ vi.mock("@components/MobileOnlyScreen", () => ({
 }));
 
 vi.mock("@features/login", () => ({ default: () => <div>Login</div> }));
+vi.mock("@features/login/RecuperarCuenta", () => ({
+  default: () => <div>RecuperarCuenta</div>,
+}));
+vi.mock("@features/login/RecuperarCuentaToken", () => ({
+  default: () => <div>RecuperarCuentaToken</div>,
+}));
 vi.mock("@features/home", () => ({ default: () => <div>Home</div> }));
 vi.mock("@features/mapa", () => ({ default: () => <div>Mapa</div> }));
 vi.mock("@features/mantenimientos", () => ({
@@ -80,6 +86,32 @@ describe("AppRoutes", () => {
 
     expect(await screen.findByText("Home")).toBeInTheDocument();
     expect(screen.queryByText("Sucursales")).not.toBeInTheDocument();
+  });
+
+  it("sin sesión, /recuperar-cuenta renderiza la pantalla pública", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/recuperar-cuenta" });
+
+    expect(await screen.findByText("RecuperarCuenta")).toBeInTheDocument();
+  });
+
+  it("sin sesión, /recuperar-cuenta/:token renderiza la pantalla de token", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/recuperar-cuenta/abc123" });
+
+    expect(await screen.findByText("RecuperarCuentaToken")).toBeInTheDocument();
+  });
+
+  it("con sesión, /recuperar-cuenta redirige al Home", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/recuperar-cuenta" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("RecuperarCuenta")).not.toBeInTheDocument();
   });
 
   it("SUPERUSER accede a /sucursales", async () => {
