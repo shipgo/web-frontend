@@ -45,6 +45,20 @@ describe('escapeCsvValue', () => {
     expect(escapeCsvValue(true)).toBe('Sí');
     expect(escapeCsvValue(false)).toBe('No');
   });
+
+  it('neutraliza CSV injection prefijando con comilla simple', () => {
+    expect(escapeCsvValue('=1+1')).toBe("'=1+1");
+    expect(escapeCsvValue('+HYPERLINK("http://x")')).toBe(
+      '"\'+HYPERLINK(""http://x"")"',
+    );
+    expect(escapeCsvValue('-Perez')).toBe("'-Perez");
+    expect(escapeCsvValue('@tag')).toBe("'@tag");
+    expect(escapeCsvValue('\tSangria')).toBe("'\tSangria");
+  });
+
+  it('no prefija números negativos (van como number, no como texto peligroso)', () => {
+    expect(escapeCsvValue(-5)).toBe('-5');
+  });
 });
 
 describe('buildCsv', () => {

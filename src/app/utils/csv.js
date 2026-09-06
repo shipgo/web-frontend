@@ -31,6 +31,16 @@ const needsQuoting = (value) =>
   value.endsWith(' ');
 
 /**
+ * Neutraliza CSV injection: Excel/Sheets ejecutan como fórmula cualquier celda
+ * que empiece con `= + - @` (o tab/CR). Un nombre de remitente o mecánico que
+ * arranque con `-` o `+` es plausible. Se prefija con `'` para que el motor de
+ * fórmulas lo trate como texto literal.
+ */
+const FORMULA_TRIGGERS = ['=', '+', '-', '@', '\t', '\r'];
+const neutralizeFormula = (value) =>
+  value && FORMULA_TRIGGERS.includes(value[0]) ? `'${value}` : value;
+
+/**
  * Normaliza una celda a string y la escapa para CSV.
  * `null` / `undefined` / `NaN` → celda vacía.
  */
@@ -43,8 +53,10 @@ export const escapeCsvValue = (raw) => {
     value = dayjs(raw).isValid() ? dayjs(raw).format('DD/MM/YYYY HH:mm') : '';
   } else if (typeof raw === 'boolean') {
     value = raw ? 'Sí' : 'No';
-  } else {
+  } else if (typeof raw === 'number') {
     value = String(raw);
+  } else {
+    value = neutralizeFormula(String(raw));
   }
 
   if (!needsQuoting(value)) return value;
