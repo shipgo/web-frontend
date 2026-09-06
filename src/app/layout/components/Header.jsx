@@ -1,23 +1,21 @@
 import {
-  ActionIcon,
   AppShellHeader,
   Avatar,
   Button,
   Flex,
   Group,
-  Indicator,
   Menu,
   rem,
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from "@mantine/core";
 
-import { IconBell, IconLogout, IconSearch } from "@tabler/icons-react";
+import { IconLogout, IconSearch } from "@tabler/icons-react";
 
 import { useAuth } from "@contexts/auth";
 import { useAuthStore } from "@stores/auth.store";
+import { NotificacionesBell } from "@features/notificaciones";
 
 const AppHeader = () => {
   const { user } = useAuth();
@@ -59,17 +57,7 @@ const AppHeader = () => {
         </Group>
 
         <Group ml="auto">
-          <Tooltip label="Notificaciones">
-            <Indicator inline size={12} offset={5} processing>
-              <ActionIcon
-                size="input-sm"
-                variant="subtle"
-                aria-label="Notificaciones"
-              >
-                <IconBell size={24} />
-              </ActionIcon>
-            </Indicator>
-          </Tooltip>
+          <NotificacionesBell />
 
           <Menu position="bottom-end" withArrow width={175}>
             <Menu.Target>

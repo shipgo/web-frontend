@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { restclient } from "@config/restclient";
 import { API_URLS } from "@constants/apiUrls";
+import { usuarioApi } from "@api/usuario.api";
 import {
   hasAnyRole,
   hasRole,
@@ -148,15 +149,31 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  /**
+   * Registra (o limpia, con `null`) el token de notificaciones push del usuario
+   * logueado — `PUT /api/user/updateToken`. Lo llama `usePushNotifications` tras
+   * suscribir el navegador a OneSignal, y `logout` para limpiarlo.
+   */
+  updateToken: async (token) => {
+    try {
+      await usuarioApi.updateToken(token ?? null);
+    } catch (error) {
+      console.error("Error updating notification token:", error);
+      throw error;
+    }
+  },
+
   // Logout
   logout: async () => {
     try {
       const user = get().user;
       if (user) {
-        // Limpiar token de notificaciones
-        await restclient.put(`${API_URLS.USER_URL}/updateToken`, {
-          token: null,
-        });
+        // Limpiar token de notificaciones (best-effort: no bloquea el logout)
+        try {
+          await get().updateToken(null);
+        } catch {
+          /* el token se limpia igual en el próximo login; seguimos con el logout */
+        }
       }
 
       await restclient.post(API_URLS.LOGOUT_URL, {});
