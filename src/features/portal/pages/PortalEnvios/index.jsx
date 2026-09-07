@@ -17,6 +17,7 @@ import { IconAlertTriangle, IconPackageOff } from '@tabler/icons-react';
 
 import { estadoBadge } from '@domain/estados';
 import { formatFecha, EMPTY } from '@domain/format';
+import { PORTAL_HOME_PATH } from '@domain/roles';
 
 import { useMisEnvios } from './hooks/useMisEnvios';
 
@@ -93,17 +94,23 @@ const PortalEnviosPage = () => {
                 {envios.map((envio) => {
                   const info = estadoBadge('envio', envio.estado);
                   const fecha = getFechaAlta(envio);
+                  // El backend genera `codigoSeguimiento` en el alta; si por lo
+                  // que sea falta, la fila no es navegable (el detalle se
+                  // consulta por código).
+                  const codigo = envio.codigoSeguimiento || null;
                   return (
                     <Table.Tr
-                      key={envio.id ?? envio.codigoSeguimiento}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() =>
-                        navigate(`~/portal/envios/${envio.codigoSeguimiento}`)
+                      key={envio.id ?? codigo}
+                      style={codigo ? { cursor: 'pointer' } : undefined}
+                      onClick={
+                        codigo
+                          ? () => navigate(`~${PORTAL_HOME_PATH}/${codigo}`)
+                          : undefined
                       }
                     >
                       <Table.Td>
                         <Text size="sm" ff="monospace">
-                          {envio.codigoSeguimiento}
+                          {codigo ?? EMPTY}
                         </Text>
                       </Table.Td>
                       <Table.Td>

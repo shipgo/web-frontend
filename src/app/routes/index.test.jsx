@@ -196,11 +196,23 @@ describe("AppRoutes", () => {
     expect(screen.queryByText("Registro")).not.toBeInTheDocument();
   });
 
-  it("/registro/verificar renderiza la pantalla de verificación", async () => {
+  it("/registro/verificar renderiza la pantalla de verificación sin sesión", async () => {
     setAuth({ user: null, isLoading: false, isAuthenticated: false });
     renderWithProviders(<AppRoutes />, { route: "/registro/verificar" });
 
     expect(await screen.findByText("Verificar cuenta")).toBeInTheDocument();
+  });
+
+  it("con sesión, /registro/verificar redirige (no muestra la verificación)", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/registro/verificar" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("Verificar cuenta")).not.toBeInTheDocument();
   });
 
   it("un CUSTOMER accede a /portal/envios con su layout propio", async () => {

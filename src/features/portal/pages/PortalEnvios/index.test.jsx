@@ -66,4 +66,17 @@ describe("PortalEnviosPage", () => {
     expect(screen.getByText("En camino")).toBeInTheDocument();
     expect(screen.getByText("Córdoba, Córdoba")).toBeInTheDocument();
   });
+
+  it("una fila sin codigoSeguimiento no rompe ni queda clickeable", () => {
+    mockUseMisEnvios.mockReturnValue({
+      ...base,
+      totalElements: 1,
+      envios: [{ id: 7, estado: "creado", codigoSeguimiento: null, historialEstado: [] }],
+    });
+    renderWithProviders(<PortalEnviosPage />);
+
+    const row = screen.getByText("Creado").closest("tr");
+    expect(row).toBeInTheDocument();
+    expect(row).not.toHaveAttribute("style", expect.stringContaining("cursor"));
+  });
 });

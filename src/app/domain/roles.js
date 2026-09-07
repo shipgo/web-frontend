@@ -22,8 +22,10 @@ export const ROLES_WEB = [ROLE_SUPERUSER, ROLE_ADMIN];
 
 /** Home del panel de admin (SUPERUSER / ADMIN). */
 export const ADMIN_HOME_PATH = '/';
-/** Home del portal CUSTOMER (SHG-FE-026). */
-export const PORTAL_HOME_PATH = '/portal/envios';
+/** Base de las rutas del portal CUSTOMER (SHG-FE-026). */
+export const PORTAL_BASE_PATH = '/portal';
+/** Home del portal CUSTOMER — a donde va un CUSTOMER recién autenticado. */
+export const PORTAL_HOME_PATH = `${PORTAL_BASE_PATH}/envios`;
 
 /** `valor canónico -> { label, color (paleta Mantine) }`. */
 export const ROL = {

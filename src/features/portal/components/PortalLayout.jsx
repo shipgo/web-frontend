@@ -5,6 +5,11 @@ import { IconChevronDown, IconLogout, IconPackage } from '@tabler/icons-react';
 import PublicLayout from '../../../app/layout/PublicLayout';
 import { useAuth } from '@contexts/auth';
 import { useAuthStore } from '@stores/auth.store';
+import { PORTAL_HOME_PATH } from '@domain/roles';
+
+// `~` = ruta absoluta desde la raíz: estos links se renderizan dentro del nest
+// `/portal`, donde un `href` sin `~` se resolvería relativo al base.
+const PORTAL_HOME_HREF = `~${PORTAL_HOME_PATH}`;
 
 /**
  * Layout del portal CUSTOMER (`SHG-FE-026`). Envuelve `PublicLayout` (branding
@@ -40,7 +45,7 @@ const PortalLayout = ({ children }) => {
         <Menu.Label>{user?.email}</Menu.Label>
         <Menu.Item
           component={Link}
-          href="~/portal/envios"
+          href={PORTAL_HOME_HREF}
           leftSection={<IconPackage size={16} />}
         >
           Mis envíos
@@ -58,7 +63,7 @@ const PortalLayout = ({ children }) => {
   );
 
   return (
-    <PublicLayout homeHref="~/portal/envios" headerRight={headerRight}>
+    <PublicLayout homeHref={PORTAL_HOME_HREF} headerRight={headerRight}>
       {children}
     </PublicLayout>
   );

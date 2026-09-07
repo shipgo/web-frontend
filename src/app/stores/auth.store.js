@@ -142,7 +142,12 @@ export const useAuthStore = create((set, get) => ({
           set({ user, isAuthenticated: true });
           return user;
         } catch (customerError) {
-          console.error("Error getting customer info:", customerError);
+          // Un 401/403 acá es esperable (sesión vencida / no es un CUSTOMER):
+          // no es un error a nivel `error`. Sólo se loguea lo inesperado.
+          const st = customerError?.response?.status;
+          if (st !== 401 && st !== 403) {
+            console.warn("Error getting customer info:", customerError);
+          }
           throw customerError;
         }
       }

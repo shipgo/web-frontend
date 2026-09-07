@@ -8,6 +8,10 @@ import {
   TrackingErrorAlert,
   normalizarCodigo,
 } from '@features/tracking';
+import { PORTAL_HOME_PATH } from '@domain/roles';
+
+// `~` = ruta absoluta desde la raíz (esta pantalla vive dentro del nest `/portal`).
+const VOLVER_HREF = `~${PORTAL_HOME_PATH}`;
 
 /**
  * `/portal/envios/:codigo` — detalle de un envío del CUSTOMER: timeline +
@@ -29,7 +33,7 @@ const PortalEnvioDetallePage = () => {
   return (
     <Stack gap="lg">
       <Group justify="space-between" wrap="wrap">
-        <Anchor component={Link} href="~/portal/envios" size="sm">
+        <Anchor component={Link} href={VOLVER_HREF} size="sm">
           <Group gap={4} wrap="nowrap">
             <IconArrowLeft size={16} />
             Volver a mis envíos
@@ -48,7 +52,7 @@ const PortalEnvioDetallePage = () => {
           <TrackingErrorAlert kind={errorKind} onRetry={() => refetch()} />
           <Button
             component={Link}
-            href="~/portal/envios"
+            href={VOLVER_HREF}
             variant="light"
             w="fit-content"
           >

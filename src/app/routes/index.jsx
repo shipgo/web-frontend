@@ -13,6 +13,8 @@ import { useAuth, useIsAuthenticated } from '@contexts/auth';
 import {
   hasAnyRole,
   isCustomer,
+  PORTAL_BASE_PATH,
+  PORTAL_HOME_PATH,
   ROLE_SUPERUSER,
   ROLES_WEB,
 } from '@domain/roles';
@@ -64,7 +66,7 @@ const ProtectedRoutes = () => {
 
   // CUSTOMER: sólo el portal (CONTRACTS.md §7). Si cae en cualquier ruta de
   // gestión, se lo manda al portal.
-  if (isCustomer(user)) return <Redirect to='/portal/envios' replace />;
+  if (isCustomer(user)) return <Redirect to={PORTAL_HOME_PATH} replace />;
 
   // CHOFER/CARGA sólo operan por app mobile (CONTRACTS.md §3): sin navbar de
   // gestión, sólo la pantalla "usá la app".
@@ -173,13 +175,15 @@ const AppRoutes = () => {
         </PublicRoute>
       </Route>
       <Route path='/registro/verificar'>
-        <PublicLayout>
-          <Suspense fallback={<RouteFallback />}>
-            <VerificarCuentaPage />
-          </Suspense>
-        </PublicLayout>
+        <PublicRoute>
+          <PublicLayout>
+            <Suspense fallback={<RouteFallback />}>
+              <VerificarCuentaPage />
+            </Suspense>
+          </PublicLayout>
+        </PublicRoute>
       </Route>
-      <Route path='/portal' nest>
+      <Route path={PORTAL_BASE_PATH} nest>
         <PortalRoute>
           <Suspense fallback={<RouteFallback />}>
             <PortalLayout>
