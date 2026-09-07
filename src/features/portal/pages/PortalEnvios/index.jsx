@@ -1,20 +1,17 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import {
-  Alert,
   Badge,
   Card,
-  Center,
   Group,
-  Loader,
   Pagination,
   Stack,
   Table,
   Text,
   Title,
 } from '@mantine/core';
-import { IconAlertTriangle, IconPackageOff } from '@tabler/icons-react';
 
+import ScreenContainer from '@components/ScreenContainer';
 import { estadoBadge } from '@domain/estados';
 import { formatFecha, EMPTY } from '@domain/format';
 import { PORTAL_HOME_PATH } from '@domain/roles';
@@ -54,86 +51,77 @@ const PortalEnviosPage = () => {
         </Text>
       </Stack>
 
-      {isLoading ? (
-        <Center py="xl">
-          <Loader />
-        </Center>
-      ) : isError ? (
-        <Alert
-          color="red"
-          variant="light"
-          icon={<IconAlertTriangle size={20} />}
-          title="No pudimos cargar tus envíos"
+      <Card withBorder padding={envios.length > 0 ? 0 : 'lg'}>
+        <ScreenContainer
+          onLoading={{ show: isLoading, description: 'Cargando tus envíos...' }}
+          onError={{
+            show: isError && !isLoading,
+            title: 'No pudimos cargar tus envíos',
+            description: 'Ocurrió un error al traer tus envíos. Intentá nuevamente en unos minutos.',
+            onClick: () => window.location.reload(),
+          }}
+          onEmptyData={{
+            show: !isLoading && !isError && envios.length === 0,
+            title: 'Todavía no tenés envíos',
+            description: 'Cuando alguien te envíe un paquete o vos generes uno con este email, va a aparecer acá.',
+          }}
         >
-          Ocurrió un error al traer tus envíos. Intentá nuevamente en unos
-          minutos.
-        </Alert>
-      ) : envios.length === 0 ? (
-        <Alert
-          color="gray"
-          variant="light"
-          icon={<IconPackageOff size={20} />}
-          title="Todavía no tenés envíos"
-        >
-          Cuando alguien te envíe un paquete o vos generes uno con este email, va
-          a aparecer acá.
-        </Alert>
-      ) : (
-        <Card withBorder padding={0}>
-          <Table.ScrollContainer minWidth={480}>
-            <Table highlightOnHover verticalSpacing="sm">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Código</Table.Th>
-                  <Table.Th>Estado</Table.Th>
-                  <Table.Th>Fecha</Table.Th>
-                  <Table.Th>Destino</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {envios.map((envio) => {
-                  const info = estadoBadge('envio', envio.estado);
-                  const fecha = getFechaAlta(envio);
-                  // El backend genera `codigoSeguimiento` en el alta; si por lo
-                  // que sea falta, la fila no es navegable (el detalle se
-                  // consulta por código).
-                  const codigo = envio.codigoSeguimiento || null;
-                  return (
-                    <Table.Tr
-                      key={envio.id ?? codigo}
-                      style={codigo ? { cursor: 'pointer' } : undefined}
-                      onClick={
-                        codigo
-                          ? () => navigate(`~${PORTAL_HOME_PATH}/${codigo}`)
-                          : undefined
-                      }
-                    >
-                      <Table.Td>
-                        <Text size="sm" ff="monospace">
-                          {codigo ?? EMPTY}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge color={info.color} variant="light" radius="md">
-                          {info.label}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">
-                          {fecha ? formatFecha(fecha) : EMPTY}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">{getDestino(envio)}</Text>
-                      </Table.Td>
-                    </Table.Tr>
-                  );
-                })}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        </Card>
-      )}
+          {envios.length > 0 && (
+            <Table.ScrollContainer minWidth={480}>
+              <Table highlightOnHover verticalSpacing="sm">
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Código</Table.Th>
+                    <Table.Th>Estado</Table.Th>
+                    <Table.Th>Fecha</Table.Th>
+                    <Table.Th>Destino</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {envios.map((envio) => {
+                    const info = estadoBadge('envio', envio.estado);
+                    const fecha = getFechaAlta(envio);
+                    // El backend genera `codigoSeguimiento` en el alta; si por lo
+                    // que sea falta, la fila no es navegable (el detalle se
+                    // consulta por código).
+                    const codigo = envio.codigoSeguimiento || null;
+                    return (
+                      <Table.Tr
+                        key={envio.id ?? codigo}
+                        style={codigo ? { cursor: 'pointer' } : undefined}
+                        onClick={
+                          codigo
+                            ? () => navigate(`~${PORTAL_HOME_PATH}/${codigo}`)
+                            : undefined
+                        }
+                      >
+                        <Table.Td>
+                          <Text size="sm" ff="monospace">
+                            {codigo ?? EMPTY}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge color={info.color} variant="light" radius="md">
+                            {info.label}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm">
+                            {fecha ? formatFecha(fecha) : EMPTY}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm">{getDestino(envio)}</Text>
+                        </Table.Td>
+                      </Table.Tr>
+                    );
+                  })}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
+        </ScreenContainer>
+      </Card>
 
       {totalPages > 1 ? (
         <Group justify="space-between" align="center">

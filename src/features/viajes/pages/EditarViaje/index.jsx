@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import ScreenContainer from "@components/ScreenContainer";
 
 import { estadoBadge, normalizarEstado } from "@domain/estados";
 import { applyApiError } from "@domain/apiError";
@@ -54,6 +55,7 @@ const EditarViaje = () => {
 
   const [loading, setLoading] = useState(false);
   const [loadingViaje, setLoadingViaje] = useState(true);
+  const [errorViaje, setErrorViaje] = useState(false);
   const [viajeOriginal, setViajeOriginal] = useState(null);
 
   const form = useForm({ initialValues: INITIAL_VALUES, validate });
@@ -67,42 +69,38 @@ const EditarViaje = () => {
     [viajeOriginal],
   );
 
-  useEffect(() => {
-    const loadViaje = async () => {
-      try {
-        setLoadingViaje(true);
-        const viaje = await viajeApi.getById(id);
+  const loadViaje = useCallback(async () => {
+    if (!id) return;
 
-        setViajeOriginal(viaje);
-        form.setValues({
-          vehiculoID: viaje.vehiculo?.id?.toString() || null,
-          choferesID: (viaje.choferes || []).map((chofer) =>
-            chofer.id?.toString(),
-          ),
-          fechaHoraInicioPlanificada: viaje.fechaHoraInicioPlanificada
-            ? new Date(viaje.fechaHoraInicioPlanificada)
-            : null,
-          fechaHoraFinPlanificada: viaje.fechaHoraFinPlanificada
-            ? new Date(viaje.fechaHoraFinPlanificada)
-            : null,
-        });
-      } catch (error) {
-        console.error("Error cargando viaje:", error);
-        notifications.show({
-          title: "Error",
-          message: "No se pudo cargar el viaje",
-          color: "red",
-          icon: <IconX />,
-        });
-        navigate("~/viajes");
-      } finally {
-        setLoadingViaje(false);
-      }
-    };
+    try {
+      setLoadingViaje(true);
+      setErrorViaje(false);
+      const viaje = await viajeApi.getById(id);
 
-    if (id) {
-      loadViaje();
+      setViajeOriginal(viaje);
+      form.setValues({
+        vehiculoID: viaje.vehiculo?.id?.toString() || null,
+        choferesID: (viaje.choferes || []).map((chofer) =>
+          chofer.id?.toString(),
+        ),
+        fechaHoraInicioPlanificada: viaje.fechaHoraInicioPlanificada
+          ? new Date(viaje.fechaHoraInicioPlanificada)
+          : null,
+        fechaHoraFinPlanificada: viaje.fechaHoraFinPlanificada
+          ? new Date(viaje.fechaHoraFinPlanificada)
+          : null,
+      });
+    } catch (err) {
+      console.error("Error cargando viaje:", err);
+      setErrorViaje(true);
+    } finally {
+      setLoadingViaje(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  useEffect(() => {
+    loadViaje();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -156,53 +154,64 @@ const EditarViaje = () => {
         descripcion="Modificá el vehículo, los choferes y las fechas planificadas del viaje"
       />
 
-      {loadingViaje && (
-        <Card>
-          <Text c="dimmed">Cargando viaje...</Text>
-        </Card>
-      )}
-
-      {!loadingViaje && viajeOriginal && !esEditable && (
-        <Card>
-          <Stack align="center" py="xl" gap="sm">
-            <Badge
-              color={estadoBadge("viaje", viajeOriginal.estado).color}
-              variant="light"
-              size="lg"
-            >
-              {estadoBadge("viaje", viajeOriginal.estado).label}
-            </Badge>
-            <Box ta="center">
-              <Text fw={600}>
-                Este viaje no se puede editar en su estado actual
-              </Text>
-              <Text c="dimmed" size="sm">
-                Sólo se pueden editar viajes en estado &quot;Creado&quot; o
-                &quot;Planificado&quot;.
-              </Text>
-            </Box>
-            <Button variant="light" onClick={() => navigate(`~/viajes/${id}`)}>
-              Volver al detalle
-            </Button>
-          </Stack>
-        </Card>
-      )}
-
-      {!loadingViaje && esEditable && (
-        <FormProvider form={form}>
-          <SeccionDetalles />
-          <SeccionRecursos
-            viajeIdExcluido={id ? Number(id) : undefined}
-            vehiculoActual={viajeOriginal?.vehiculo}
-            choferesActuales={viajeOriginal?.choferes}
-          />
-          <Footer
-            loading={loading}
-            onSubmit={handleSubmit}
-            onCancel={() => navigate(`~/viajes/${id}`)}
-          />
-        </FormProvider>
-      )}
+      <ScreenContainer
+        onLoading={{ show: loadingViaje, description: 'Cargando viaje...' }}
+        onError={{
+          show: errorViaje && !loadingViaje,
+          title: 'No se pudo cargar el viaje',
+          description: 'Ocurrió un error al obtener la información del viaje.',
+          onClick: loadViaje,
+        }}
+        onEmptyData={{
+          show: !loadingViaje && !errorViaje && !viajeOriginal,
+          title: 'Viaje no encontrado',
+          description: 'No encontramos información para este viaje.',
+        }}
+      >
+        {viajeOriginal && (
+          <>
+            {!esEditable ? (
+              <Card>
+                <Stack align="center" py="xl" gap="sm">
+                  <Badge
+                    color={estadoBadge("viaje", viajeOriginal.estado).color}
+                    variant="light"
+                    size="lg"
+                  >
+                    {estadoBadge("viaje", viajeOriginal.estado).label}
+                  </Badge>
+                  <Box ta="center">
+                    <Text fw={600}>
+                      Este viaje no se puede editar en su estado actual
+                    </Text>
+                    <Text c="dimmed" size="sm">
+                      Sólo se pueden editar viajes en estado &quot;Creado&quot; o
+                      &quot;Planificado&quot;.
+                    </Text>
+                  </Box>
+                  <Button variant="light" onClick={() => navigate(`~/viajes/${id}`)}>
+                    Volver al detalle
+                  </Button>
+                </Stack>
+              </Card>
+            ) : (
+              <FormProvider form={form}>
+                <SeccionDetalles />
+                <SeccionRecursos
+                  viajeIdExcluido={id ? Number(id) : undefined}
+                  vehiculoActual={viajeOriginal?.vehiculo}
+                  choferesActuales={viajeOriginal?.choferes}
+                />
+                <Footer
+                  loading={loading}
+                  onSubmit={handleSubmit}
+                  onCancel={() => navigate(`~/viajes/${id}`)}
+                />
+              </FormProvider>
+            )}
+          </>
+        )}
+      </ScreenContainer>
     </PageContainer>
   );
 };
