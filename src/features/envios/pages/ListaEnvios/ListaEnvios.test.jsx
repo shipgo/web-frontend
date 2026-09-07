@@ -129,6 +129,81 @@ describe('ListaEnvios', () => {
     ).toBeInTheDocument();
   });
 
+  it('cambiar de página manda el índice 0-based que espera el backend', async () => {
+    // UI: `Pagination` es 1-indexed (arranca en 1). Backend: `page` es 0-indexed
+    // (CONTRACTS.md §4). `useGetEnvios` hace la conversión — esto verifica que
+    // clickear "2" en la paginación termina en `page: 1`, no `page: 2`.
+    envioApi.get.mockResolvedValue({ content: [ENVIO_EN_SUCURSAL], totalElements: 25, totalPages: 3 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaEnvios />);
+
+    await waitFor(() => expect(envioApi.get).toHaveBeenCalledTimes(1));
+    expect(envioApi.get.mock.calls[0][0].page).toBe(0);
+
+    // El botón de página existe desde el primer render (con `total` default),
+    // pero queda `disabled` hasta que la data real (25 > PAGE_LIMIT) llega.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '2' })).not.toBeDisabled(),
+    );
+    await user.click(screen.getByRole('button', { name: '2' }));
+
+    await waitFor(() => expect(envioApi.get).toHaveBeenCalledTimes(2));
+    expect(envioApi.get.mock.calls.at(-1)[0].page).toBe(1);
+  });
+
+  it('combina varios filtros de texto a la vez en un solo request (search + destino)', async () => {
+    // `search` y `destino` son campos independientes de `EnvioFilter`
+    // (CONTRACTS.md §4) — deben viajar juntos en el mismo request sin que
+    // uno pise al otro.
+    envioApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaEnvios />);
+
+    await waitFor(() => expect(envioApi.get).toHaveBeenCalledTimes(1));
+    // Esperar a que termine el fetch inicial: mientras `isFetching` es `true`
+    // los inputs del filtro están `disabled` (`enhanceGetInputProps`), así que
+    // tipear antes de esto no queda registrado.
+    await waitFor(() => expect(screen.getByLabelText('Buscar envío')).not.toBeDisabled());
+
+    await user.type(screen.getByLabelText('Buscar envío'), 'García');
+    await user.type(screen.getByLabelText('Destino'), 'Av. Colón');
+
+    await waitFor(
+      () => {
+        const lastCall = envioApi.get.mock.calls.at(-1)[0];
+        expect(lastCall.search).toBe('García');
+        expect(lastCall.destino).toBe('Av. Colón');
+        // Cambiar de filtro reinicia a la primera página.
+        expect(lastCall.page).toBe(0);
+      },
+      { timeout: 2000 },
+    );
+  });
+
+  it('el quick-filter "En camino" no deja residuos de un texto tipeado antes', async () => {
+    // `handleQuickFilterChange` reemplaza TODO el form con `DEFAULT_VALUES` +
+    // el propio quick-filter — si tenía texto tipeado en `search`/`destino`,
+    // ese texto no debe viajar junto al quick-filter.
+    envioApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaEnvios />);
+
+    await waitFor(() => expect(envioApi.get).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByLabelText('Buscar envío')).not.toBeDisabled());
+
+    await user.type(screen.getByLabelText('Buscar envío'), 'García');
+    await user.click(screen.getByRole('checkbox', { name: 'En camino' }));
+
+    await waitFor(() => {
+      const lastCall = envioApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.estado).toEqual(['en_camino']);
+      expect(lastCall.search).toBeUndefined();
+    });
+  });
+
   it('refetches the list when deleting an envío succeeds', async () => {
     envioApi.get.mockResolvedValue({
       content: [ENVIO_EN_SUCURSAL],
