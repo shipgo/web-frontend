@@ -39,7 +39,7 @@ const getDestino = (envio) => {
 const PortalEnviosPage = () => {
   const [, navigate] = useLocation();
   const [page, setPage] = useState(1);
-  const { envios, totalPages, totalElements, isLoading, isError, isFetching } =
+  const { envios, totalPages, totalElements, isLoading, isError, isFetching, refetch } =
     useMisEnvios(page);
 
   return (
@@ -58,7 +58,7 @@ const PortalEnviosPage = () => {
             show: isError && !isLoading,
             title: 'No pudimos cargar tus envíos',
             description: 'Ocurrió un error al traer tus envíos. Intentá nuevamente en unos minutos.',
-            onClick: () => window.location.reload(),
+            onClick: () => refetch(),
           }}
           onEmptyData={{
             show: !isLoading && !isError && envios.length === 0,

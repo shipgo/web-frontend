@@ -70,9 +70,12 @@ const VerificarCuentaPage = () => {
 
   if (isLoading) {
     return (
-      <Center py="xl">
+      <Stack gap="lg" maw={520} mx="auto" align="center">
         <Loader />
-      </Center>
+        <Text c="dimmed" size="sm">
+          Verificando tu cuenta...
+        </Text>
+      </Stack>
     );
   }
 

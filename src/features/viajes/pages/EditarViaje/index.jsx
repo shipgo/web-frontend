@@ -78,18 +78,20 @@ const EditarViaje = () => {
       const viaje = await viajeApi.getById(id);
 
       setViajeOriginal(viaje);
-      form.setValues({
-        vehiculoID: viaje.vehiculo?.id?.toString() || null,
-        choferesID: (viaje.choferes || []).map((chofer) =>
-          chofer.id?.toString(),
-        ),
-        fechaHoraInicioPlanificada: viaje.fechaHoraInicioPlanificada
-          ? new Date(viaje.fechaHoraInicioPlanificada)
-          : null,
-        fechaHoraFinPlanificada: viaje.fechaHoraFinPlanificada
-          ? new Date(viaje.fechaHoraFinPlanificada)
-          : null,
-      });
+      if (viaje) {
+        form.setValues({
+          vehiculoID: viaje.vehiculo?.id?.toString() || null,
+          choferesID: (viaje.choferes || []).map((chofer) =>
+            chofer.id?.toString(),
+          ),
+          fechaHoraInicioPlanificada: viaje.fechaHoraInicioPlanificada
+            ? new Date(viaje.fechaHoraInicioPlanificada)
+            : null,
+          fechaHoraFinPlanificada: viaje.fechaHoraFinPlanificada
+            ? new Date(viaje.fechaHoraFinPlanificada)
+            : null,
+        });
+      }
     } catch (err) {
       console.error("Error cargando viaje:", err);
       setErrorViaje(true);

@@ -146,6 +146,54 @@ describe("DetalleEnvio", () => {
     expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument();
   });
 
+  describe("estados de carga/error/vacío (SHG-QA-003)", () => {
+    it("muestra el estado de error cuando envioApi.getById rechaza, y reintentar hace una nueva llamada", async () => {
+      const user = userEvent.setup();
+      const error = new Error("Network error");
+      error.response = { status: 500 };
+      envioApi.getById.mockRejectedValueOnce(error);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledWith("9");
+      });
+
+      expect(await screen.findByText("No se pudo cargar el envío")).toBeInTheDocument();
+      expect(screen.getByText("Ocurrió un error al obtener la información del envío.")).toBeInTheDocument();
+
+      const reintentar = screen.getByRole("button", { name: /reintentar/i });
+      expect(reintentar).toBeInTheDocument();
+
+      envioApi.getById.mockResolvedValueOnce(EXISTING_ENVIO);
+      await user.click(reintentar);
+
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledTimes(2);
+      });
+
+      expect(await screen.findByText("Juan García")).toBeInTheDocument();
+    });
+
+    it("muestra el estado vacío cuando envioApi.getById retorna null", async () => {
+      vi.clearAllMocks();
+      envioApi.getById.mockResolvedValue(null);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledWith("9");
+      });
+
+      expect(await screen.findByText("Envío no encontrado")).toBeInTheDocument();
+      expect(screen.getByText("No encontramos información para este envío.")).toBeInTheDocument();
+    });
+  });
+
   describe("acciones de estado (SHG-FE-007)", () => {
     beforeEach(() => {
       useAuthStore.setState({

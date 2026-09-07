@@ -210,4 +210,41 @@ describe("EditarViaje", () => {
     expect(vehiculoApi.getDisponibles).not.toHaveBeenCalled();
     expect(usuarioApi.getChoferesDisponibles).not.toHaveBeenCalled();
   });
+
+  describe("estados de carga/error (SHG-QA-003)", () => {
+    it("muestra el estado de error cuando viajeApi.getById rechaza, y reintentar hace una nueva llamada", async () => {
+      const user = userEvent.setup();
+      const error = new Error("Network error");
+      error.response = { status: 500 };
+      viajeApi.getById.mockRejectedValueOnce(error);
+
+      renderWithProviders(
+        <Route path="/viajes/:id/editar" component={EditarViaje} />,
+        { route: "/viajes/42/editar" }
+      );
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith("42");
+      });
+
+      expect(await screen.findByText("No se pudo cargar el viaje")).toBeInTheDocument();
+      expect(screen.getByText("Ocurrió un error al obtener la información del viaje.")).toBeInTheDocument();
+
+      const reintentar = screen.getByRole("button", { name: /reintentar/i });
+      expect(reintentar).toBeInTheDocument();
+
+      viajeApi.getById.mockResolvedValueOnce(EXISTING_VIAJE);
+      await user.click(reintentar);
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledTimes(2);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+          "AB123CD - Hilux"
+        );
+      });
+    });
+  });
 });
