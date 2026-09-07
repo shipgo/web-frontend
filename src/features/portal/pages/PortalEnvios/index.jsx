@@ -86,6 +86,12 @@ const PortalEnviosPage = () => {
                     // consulta por código).
                     const codigo = envio.codigoSeguimiento || null;
                     return (
+                      // `role="button"` + `tabIndex`/`onKeyDown` en la fila para
+                      // navegación por teclado (SHG-QA-002). A diferencia de
+                      // ListaViajesTabla, acá las celdas sólo tienen `Text`/`Badge`
+                      // (sin checkbox ni menú de acciones), así que no hay
+                      // elementos focoables anidados dentro del botón — no aplica
+                      // el trade-off documentado en ese otro componente.
                       <Table.Tr
                         key={envio.id ?? codigo}
                         style={codigo ? { cursor: 'pointer' } : undefined}
