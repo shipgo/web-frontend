@@ -81,6 +81,19 @@ describe("AppRoutes", () => {
     expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
   });
 
+  it("CARGA (igual que CHOFER: sólo mobile, CONTRACTS.md §3) también ve la pantalla 'usá la app'", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_CARGA" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/envios" });
+
+    expect(await screen.findByText("Pantalla usá la app")).toBeInTheDocument();
+    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
+    expect(screen.queryByText("Envios")).not.toBeInTheDocument();
+  });
+
   it("ADMIN accede a /envios dentro del layout", async () => {
     setAuth({
       user: { authorities: [{ name: "ROLE_ADMIN" }] },

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor, fireEvent } from "@testing-library/react";
+import { screen, waitFor, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppShell } from "@mantine/core";
 
@@ -136,6 +136,52 @@ const ENVIOS_PARA_VIAJE = [
             nombre: "Villa María",
             provincia: { nombre: "Córdoba" },
           },
+        },
+      },
+    ],
+  },
+];
+
+const ENVIOS_MISMO_DESTINO_Y_OTRO = [
+  {
+    localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
+    envios: [
+      {
+        id: 200,
+        codigoSeguimiento: "SHG-DEV-0001",
+        estado: "en_sucursal",
+        peso: 12,
+        destino: {
+          id: 5,
+          nombreCalle: "Calle Falsa",
+          numeroCalle: "123",
+          localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
+        },
+      },
+      {
+        id: 201,
+        codigoSeguimiento: "SHG-DEV-0002",
+        estado: "en_sucursal",
+        peso: 8,
+        // Mismo `destino.id` que el 200: deben terminar en el MISMO recorrido.
+        destino: {
+          id: 5,
+          nombreCalle: "Calle Falsa",
+          numeroCalle: "123",
+          localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
+        },
+      },
+      {
+        id: 202,
+        codigoSeguimiento: "SHG-DEV-0003",
+        estado: "en_sucursal",
+        peso: 5,
+        // Destino distinto: debe generar un recorrido SEPARADO.
+        destino: {
+          id: 6,
+          nombreCalle: "Otra Calle",
+          numeroCalle: "456",
+          localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
         },
       },
     ],
@@ -327,5 +373,143 @@ describe("CrearViaje", () => {
       await screen.findByText(/el vehículo ya no está disponible/i),
     ).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalledWith("~/viajes");
+  });
+
+  it("agrupa envíos con el mismo destino en UN recorrido y crea recorridos separados por destino distinto, incluso en acciones separadas", async () => {
+    // Caso "propenso a bugs silenciosos" (SHG-QA-001): el agrupamiento real
+    // pasa por `handleOnSelectedAction` (`ListadoEnviosPendientes.jsx`), no por
+    // `buildEnviosPuntoEntrega` (que sólo aplana un Map ya armado). Acá se
+    // ejercita ese código agregando envíos al mismo destino en DOS acciones
+    // separadas (200 primero, 201 después) para probar el merge con una
+    // entrada ya existente (`prev = updated.get(key)`), y un tercer envío a
+    // un destino distinto para confirmar que arma un recorrido aparte.
+    mockGetParaViaje.mockResolvedValue(ENVIOS_MISMO_DESTINO_Y_OTRO);
+    mockGetDisponibles.mockResolvedValue([
+      {
+        id: 9,
+        patente: "AB123CD",
+        pesoMaximo: 3000,
+        modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+      },
+    ]);
+    mockGetChoferesDisponibles.mockResolvedValue([
+      { id: 15, nombre: "Juan", apellido: "Perez", email: "juan@shipgo.dev" },
+    ]);
+    mockSaveViaje.mockResolvedValue({ id: 100, estado: "planificado" });
+
+    const user = userEvent.setup();
+    renderWithProviders(<CrearViaje />);
+
+    const marcarEntregaLocal = async () => {
+      await user.click(
+        await screen.findByRole("button", { name: /marcar envíos para/i }),
+      );
+      await user.click(await screen.findByText(/entrega a destino final/i));
+    };
+
+    // 1º acción: sólo el envío 200 (destino 5) → crea el recorrido "local_5".
+    await user.click(await screen.findByText("SHG-DEV-0001"));
+    await marcarEntregaLocal();
+
+    // 2º acción, por separado: el envío 201, MISMO destino 5 → debe fusionarse
+    // con el recorrido ya creado, no generar uno nuevo.
+    await user.click(await screen.findByText("SHG-DEV-0002"));
+    await marcarEntregaLocal();
+
+    // 3º acción: el envío 202, destino 6 (distinto) → recorrido aparte.
+    await user.click(await screen.findByText("SHG-DEV-0003"));
+    await marcarEntregaLocal();
+
+    fireEvent.change(screen.getByLabelText(/salida planificada/i), {
+      target: { value: "2026-09-10T08:00" },
+    });
+    fireEvent.change(screen.getByLabelText(/llegada planificada/i), {
+      target: { value: "2026-09-10T18:00" },
+    });
+
+    await user.click(await screen.findByText("AB123CD"));
+    await user.click(await screen.findByText("Juan Perez"));
+
+    await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+    await waitFor(() => expect(mockSaveViaje).toHaveBeenCalledTimes(1));
+
+    const { enviosPuntoEntrega } = mockSaveViaje.mock.calls[0][0];
+    expect(enviosPuntoEntrega).toHaveLength(2);
+
+    const recorridoDestino5 = enviosPuntoEntrega.find((r) => r.puntoEntregaID === 5);
+    expect(recorridoDestino5).toEqual({
+      enviosID: [200, 201],
+      puntoEntregaID: 5,
+      sucursalDestinoID: null,
+    });
+
+    const recorridoDestino6 = enviosPuntoEntrega.find((r) => r.puntoEntregaID === 6);
+    expect(recorridoDestino6).toEqual({
+      enviosID: [202],
+      puntoEntregaID: 6,
+      sucursalDestinoID: null,
+    });
+  });
+
+  it("arma un recorrido con sucursalDestinoID al transferir envíos a una sucursal", async () => {
+    mockGetSucursalesRestantes.mockResolvedValue([
+      { id: 3, nombre: "Sucursal Norte" },
+    ]);
+    mockGetDisponibles.mockResolvedValue([
+      {
+        id: 9,
+        patente: "AB123CD",
+        pesoMaximo: 3000,
+        modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+      },
+    ]);
+    mockGetChoferesDisponibles.mockResolvedValue([
+      { id: 15, nombre: "Juan", apellido: "Perez", email: "juan@shipgo.dev" },
+    ]);
+    mockSaveViaje.mockResolvedValue({ id: 101, estado: "planificado" });
+
+    const user = userEvent.setup();
+    renderWithProviders(<CrearViaje />);
+
+    const item = await screen.findByText("SHG-DEV-0001");
+    await user.click(item);
+    await user.click(
+      await screen.findByRole("button", { name: /marcar envíos para/i }),
+    );
+    await user.click(await screen.findByText(/transferencia a sucursal/i));
+
+    const modal = await screen.findByRole("dialog");
+    const sucursalSelect = await within(modal).findByRole("combobox", {
+      name: /sucursal a transferir/i,
+    });
+    await waitFor(() => expect(sucursalSelect).not.toBeDisabled());
+    await user.click(sucursalSelect);
+    const listboxId = sucursalSelect.getAttribute("aria-controls");
+    const listbox = await waitFor(() => {
+      const el = document.getElementById(listboxId);
+      if (!el) throw new Error("listbox not mounted yet");
+      return el;
+    });
+    await user.click(await within(listbox).findByText("Sucursal Norte"));
+    await user.click(within(modal).getByRole("button", { name: /confirmar/i }));
+
+    fireEvent.change(screen.getByLabelText(/salida planificada/i), {
+      target: { value: "2026-09-10T08:00" },
+    });
+    fireEvent.change(screen.getByLabelText(/llegada planificada/i), {
+      target: { value: "2026-09-10T18:00" },
+    });
+
+    await user.click(await screen.findByText("AB123CD"));
+    await user.click(await screen.findByText("Juan Perez"));
+
+    await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+    await waitFor(() => expect(mockSaveViaje).toHaveBeenCalledTimes(1));
+
+    expect(mockSaveViaje.mock.calls[0][0].enviosPuntoEntrega).toEqual([
+      { enviosID: [200], puntoEntregaID: null, sucursalDestinoID: 3 },
+    ]);
   });
 });

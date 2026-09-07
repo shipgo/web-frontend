@@ -186,4 +186,78 @@ describe("CrearEnvios", () => {
       "Elegí una sugerencia del buscador de direcciones para ubicar el envío en el mapa",
     );
   });
+
+  it("muestra el mensaje del backend en un toast cuando el POST falla sin field-errors (409)", async () => {
+    const user = userEvent.setup();
+    envioApi.save.mockRejectedValue({
+      response: {
+        status: 409,
+        data: {
+          statusCode: 409,
+          message: "Ya existe un envío en curso para este remitente.",
+        },
+      },
+    });
+
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+    await fillRemitenteYReceptor(user);
+    await geocodeDireccion();
+    await agregarPaquete(user);
+
+    await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+    await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+    expect(
+      await screen.findByText("Ya existe un envío en curso para este remitente."),
+    ).toBeInTheDocument();
+    // Seguimos en el form de creación (no en la pantalla de éxito post-navegación).
+    expect(
+      screen.getByRole("button", { name: /registrar envío/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("marca el error de campo devuelto por la API bajo el input correspondiente (prefijo destino.* stripeado)", async () => {
+    // `envioApi.save` envía `destino` anidado (CONTRACTS.md §2), pero el form
+    // usa el campo plano `nombreCalle` (ver `constants/schema.js`). El backend
+    // devuelve el field-error con el path real del DTO (`destino.nombreCalle`);
+    // `applyApiError` lo mapea al campo plano detectando el prefijo común
+    // (`@domain/apiError`, `detectCommonPrefix`) cuando TODOS los field-errors
+    // comparten el mismo prefijo.
+    const user = userEvent.setup();
+    envioApi.save.mockRejectedValue({
+      response: {
+        status: 400,
+        data: {
+          statusCode: 400,
+          message: "Error en la validación de los campos.",
+          fields: [
+            {
+              field: "destino.nombreCalle",
+              error: "Ya existe un punto de entrega con esa dirección.",
+            },
+          ],
+        },
+      },
+    });
+
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+    await fillRemitenteYReceptor(user);
+    await geocodeDireccion();
+    await agregarPaquete(user);
+
+    await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+    await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+    expect(
+      await screen.findByText("Ya existe un punto de entrega con esa dirección."),
+    ).toBeInTheDocument();
+  });
 });

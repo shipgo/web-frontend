@@ -91,4 +91,57 @@ describe("ListaViajes", () => {
 
     expect(await screen.findByText("Sin viajes que mostrar")).toBeInTheDocument();
   });
+
+  it("cambiar de página manda el índice 0-based que espera el backend", async () => {
+    // UI: `Pagination` es 1-indexed (arranca en 1). Backend: `page` es
+    // 0-indexed (CONTRACTS.md §4). `useGetViajes` hace la conversión — esto
+    // verifica que clickear "2" en la paginación termina en `page: 1`.
+    viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 25, totalPages: 3 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaViajes />);
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+    expect(viajeApi.get.mock.calls[0][0].page).toBe(0);
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "2" })).not.toBeDisabled(),
+    );
+    await user.click(screen.getByRole("button", { name: "2" }));
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(2));
+    expect(viajeApi.get.mock.calls.at(-1)[0].page).toBe(1);
+  });
+
+  it("combina la quick-filter con el buscador de texto en un solo request", async () => {
+    // `estado` (quick-filter "En curso") y `search` (texto libre) son filtros
+    // independientes de `ViajeFilter` (CONTRACTS.md §4) — deben poder viajar
+    // juntos sin que uno pise al otro.
+    viajeApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaViajes />);
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByText("En curso"));
+    await waitFor(() => {
+      const lastCall = viajeApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.estado).toEqual(["en_camino"]);
+    });
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("Buscar viaje")).not.toBeDisabled(),
+    );
+    await user.type(screen.getByLabelText("Buscar viaje"), "AB123CD");
+
+    await waitFor(
+      () => {
+        const lastCall = viajeApi.get.mock.calls.at(-1)[0];
+        expect(lastCall.estado).toEqual(["en_camino"]);
+        expect(lastCall.search).toBe("AB123CD");
+      },
+      { timeout: 2000 },
+    );
+  });
 });
