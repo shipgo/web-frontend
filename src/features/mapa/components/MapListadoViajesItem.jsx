@@ -52,6 +52,7 @@ const MapListadoViajesItem = ({ viaje, isLast }) => {
                   color="green"
                   size="sm"
                   onClick={handleWhatsApp}
+                  aria-label={`Contactar a ${viaje.choferNombre || 'chofer'} por WhatsApp`}
                 >
                   <IconBrandWhatsapp size={14} />
                 </ActionIcon>

@@ -22,6 +22,7 @@ const SelectionBanner = ({ count, singular, plural, onClear }) => {
       bottom={24}
       left="50%"
       miw={360}
+      maw="calc(100vw - 2rem)"
       style={{ transform: "translateX(-50%)", zIndex: 200 }}
     >
       <Group justify="space-between" gap="xl">

@@ -116,7 +116,13 @@ const LoginPage = () => {
   return (
     <MantineProvider forceColorScheme="light">
       <Group align="flex-start" gap="0" wrap="nowrap">
-        <Card miw={FORM_WIDHT} mih="100svh" p="xl" withBorder>
+        <Card
+          w={{ base: '100%', sm: FORM_WIDHT }}
+          miw={{ base: 0, sm: FORM_WIDHT }}
+          mih="100svh"
+          p="xl"
+          withBorder
+        >
           <Stack
             p="xl"
             gap="lg"
@@ -184,6 +190,7 @@ const LoginPage = () => {
           h="100svh"
           src={background}
           miw={`calc(100svw - ${FORM_WIDHT})`}
+          visibleFrom="sm"
         />
       </Group>
     </MantineProvider>

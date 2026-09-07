@@ -94,6 +94,19 @@ const PortalEnviosPage = () => {
                             ? () => navigate(`~${PORTAL_HOME_PATH}/${codigo}`)
                             : undefined
                         }
+                        onKeyDown={
+                          codigo
+                            ? (event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  navigate(`~${PORTAL_HOME_PATH}/${codigo}`);
+                                }
+                              }
+                            : undefined
+                        }
+                        tabIndex={codigo ? 0 : undefined}
+                        role={codigo ? 'button' : undefined}
+                        aria-label={codigo ? `Ver detalle del envío ${codigo}` : undefined}
                       >
                         <Table.Td>
                           <Text size="sm" ff="monospace">

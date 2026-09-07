@@ -162,7 +162,13 @@ const DetalleEnvio = () => {
               <CopyButton value={envio.codigoSeguimiento} timeout={1500}>
                 {({ copied, copy }) => (
                   <Tooltip label={copied ? "Copiado" : "Copiar código"} withArrow>
-                    <ActionIcon color={copied ? "teal" : "gray"} variant="subtle" size="sm" onClick={copy}>
+                    <ActionIcon
+                      color={copied ? "teal" : "gray"}
+                      variant="subtle"
+                      size="sm"
+                      onClick={copy}
+                      aria-label="Copiar código de seguimiento"
+                    >
                       {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
                     </ActionIcon>
                   </Tooltip>

@@ -8,7 +8,7 @@ import { IconDotsVertical } from "@tabler/icons-react";
  * Flat item:   { label, icon, color?, disabled?, dividerBefore? }
  * Group:       { name, items: [{ label, icon, color?, disabled? }] }
  */
-const RowActionsMenu = ({ actions = [], width = "max-content" }) => (
+const RowActionsMenu = ({ actions = [], width = "max-content", ariaLabel = "Más acciones" }) => (
   <Menu
     shadow="md"
     width={width}
@@ -16,7 +16,7 @@ const RowActionsMenu = ({ actions = [], width = "max-content" }) => (
     position="bottom-end"
   >
     <Menu.Target>
-      <ActionIcon variant="subtle" c="dimmed" size="input-sm">
+      <ActionIcon variant="subtle" c="dimmed" size="input-sm" aria-label={ariaLabel}>
         <IconDotsVertical size={18} />
       </ActionIcon>
     </Menu.Target>

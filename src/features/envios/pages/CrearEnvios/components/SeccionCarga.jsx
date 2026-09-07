@@ -89,6 +89,7 @@ const SeccionCarga = ({ categorias = [] }) => {
                       color="red"
                       variant="subtle"
                       onClick={() => handleRemovePaquete(index)}
+                      aria-label={`Quitar paquete ${index + 1}`}
                     >
                       <IconTrash size={20} />
                     </ActionIcon>
