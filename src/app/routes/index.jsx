@@ -7,9 +7,15 @@ import Layout from '../layout';
 import PublicLayout from '../layout/PublicLayout';
 import ProtectedRoute from '@components/ProtectedRoute';
 import PublicRoute from '@components/PublicRoute';
+import PortalRoute from '@components/PortalRoute';
 import MobileOnlyScreen from '@components/MobileOnlyScreen';
 import { useAuth, useIsAuthenticated } from '@contexts/auth';
-import { hasAnyRole, ROLE_SUPERUSER, ROLES_WEB } from '@domain/roles';
+import {
+  hasAnyRole,
+  isCustomer,
+  ROLE_SUPERUSER,
+  ROLES_WEB,
+} from '@domain/roles';
 import { Center, Loader, useMantineColorScheme } from '@mantine/core';
 
 const RecuperarCuentaPage = lazy(() => import('@features/login/RecuperarCuenta'));
@@ -20,6 +26,16 @@ const HomePage = lazy(() => import('@features/home'));
 const TrackingPublicoPage = lazy(() =>
   import('@features/tracking').then((m) => ({ default: m.TrackingPublicoPage })),
 );
+const RegistroPage = lazy(() =>
+  import('@features/portal').then((m) => ({ default: m.RegistroPage })),
+);
+const VerificarCuentaPage = lazy(() =>
+  import('@features/portal').then((m) => ({ default: m.VerificarCuentaPage })),
+);
+const PortalLayout = lazy(() =>
+  import('@features/portal').then((m) => ({ default: m.PortalLayout })),
+);
+const PortalRoutes = lazy(() => import('./portal.routes'));
 const MapaPage = lazy(() => import('@features/mapa'));
 const MantenimientosRoutes = lazy(() => import('@features/mantenimientos'));
 const DashboardRoutes = lazy(() => import('./dashboard.routes'));
@@ -45,6 +61,10 @@ const ProtectedRoutes = () => {
   }, [isAuthenticated]);
 
   if (!isAuthenticated) return <Redirect to='/login' />;
+
+  // CUSTOMER: sólo el portal (CONTRACTS.md §7). Si cae en cualquier ruta de
+  // gestión, se lo manda al portal.
+  if (isCustomer(user)) return <Redirect to='/portal/envios' replace />;
 
   // CHOFER/CARGA sólo operan por app mobile (CONTRACTS.md §3): sin navbar de
   // gestión, sólo la pantalla "usá la app".
@@ -137,6 +157,36 @@ const AppRoutes = () => {
             <RecuperarCuentaPage />
           </Suspense>
         </PublicRoute>
+      </Route>
+      {/* Portal CUSTOMER (SHG-FE-026, CONTRACTS.md §7). `/registro` +
+          `/registro/verificar` son públicos (whitelist en `AuthProvider` y
+          `restclient` por `startsWith`); `/portal/**` requiere sesión de
+          CUSTOMER (`PortalRoute`). Layout: `PublicLayout` (envuelto en
+          `PortalLayout` para el portal), NUNCA el AppShell de admin. */}
+      <Route path='/registro'>
+        <PublicRoute>
+          <PublicLayout>
+            <Suspense fallback={<RouteFallback />}>
+              <RegistroPage />
+            </Suspense>
+          </PublicLayout>
+        </PublicRoute>
+      </Route>
+      <Route path='/registro/verificar'>
+        <PublicLayout>
+          <Suspense fallback={<RouteFallback />}>
+            <VerificarCuentaPage />
+          </Suspense>
+        </PublicLayout>
+      </Route>
+      <Route path='/portal' nest>
+        <PortalRoute>
+          <Suspense fallback={<RouteFallback />}>
+            <PortalLayout>
+              <PortalRoutes />
+            </PortalLayout>
+          </Suspense>
+        </PortalRoute>
       </Route>
       <Route component={ProtectedRoutes} />
     </Switch>

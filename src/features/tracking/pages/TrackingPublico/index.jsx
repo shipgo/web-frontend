@@ -82,8 +82,7 @@ const TrackingPublicoPage = () => {
 
       <Text size="sm" c="dimmed" ta="center">
         ¿Sos cliente y querés ver todos tus envíos?{' '}
-        {/* La ruta `/registro` la crea SHG-FE-026 (portal CUSTOMER). Hasta
-            entonces el link queda apuntado pero sin destino real. */}
+        {/* `/registro` = portal CUSTOMER (SHG-FE-026). */}
         <Anchor component={Link} href="/registro">
           Creá tu cuenta
         </Anchor>

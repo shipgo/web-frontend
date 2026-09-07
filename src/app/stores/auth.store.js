@@ -8,6 +8,7 @@ import {
   isAdminOrSuper,
   rolesDe,
   ROLE_ADMIN,
+  ROLE_CUSTOMER,
   ROLE_SUPERUSER,
 } from "@domain/roles";
 
@@ -28,6 +29,9 @@ export class Usuario {
     this.notificationToken = data.notificationToken;
     this.notificaciones = data.notificaciones || [];
     this.email = data.email;
+    // Sólo lo trae `CustomerMeDTO` (portal CUSTOMER, SHG-BE-024); `undefined`
+    // para SU/AD/CH/CA. No romper `getFullName()` etc. si falta.
+    this.emailVerificado = data.emailVerificado;
     this.dni = data.dni;
     this.localidad = data.localidad;
     this.sucursal = data.sucursal;
@@ -114,7 +118,13 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Obtener información del usuario actual
+  // Obtener información del usuario actual.
+  //
+  // `GET /api/whoami` es SU/AD/CH/CA (CONTRACT-007): un `ROLE_CUSTOMER` recibe
+  // `403`. En ese caso hacemos fallback a `GET /api/customer/me` (SHG-BE-024,
+  // `CustomerMeDTO`) y construimos un `Usuario` mínimo con rol `ROLE_CUSTOMER`.
+  // Así el login y el refresh al cargar la app (`initUser`) funcionan igual para
+  // un customer con sesión activa.
   getUserInfo: async () => {
     try {
       const response = await restclient.get(API_URLS.WHOAMI_URL);
@@ -122,6 +132,20 @@ export const useAuthStore = create((set, get) => ({
       set({ user, isAuthenticated: true });
       return user;
     } catch (error) {
+      if (error?.response?.status === 403) {
+        try {
+          const { data } = await restclient.get(API_URLS.CUSTOMER_ME_URL);
+          const user = new Usuario({
+            ...data,
+            authorities: [{ name: ROLE_CUSTOMER }],
+          });
+          set({ user, isAuthenticated: true });
+          return user;
+        } catch (customerError) {
+          console.error("Error getting customer info:", customerError);
+          throw customerError;
+        }
+      }
       console.error("Error getting user info:", error);
       throw error;
     }

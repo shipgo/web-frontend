@@ -21,6 +21,15 @@ vi.mock("@features/tracking", () => ({
   TrackingPublicoPage: () => <div>Tracking publico</div>,
 }));
 
+vi.mock("@features/portal", () => ({
+  RegistroPage: () => <div>Registro</div>,
+  VerificarCuentaPage: () => <div>Verificar cuenta</div>,
+  PortalLayout: ({ children }) => (
+    <div data-testid="portal-layout">{children}</div>
+  ),
+}));
+vi.mock("./portal.routes", () => ({ default: () => <div>Portal envios</div> }));
+
 vi.mock("@components/MobileOnlyScreen", () => ({
   default: () => <div>Pantalla usá la app</div>,
 }));
@@ -162,5 +171,72 @@ describe("AppRoutes", () => {
     renderWithProviders(<AppRoutes />, { route: "/sucursales" });
 
     expect(await screen.findByText("Sucursales")).toBeInTheDocument();
+  });
+
+  // --- Portal CUSTOMER (SHG-FE-026) ---
+
+  it("sin sesión, /registro renderiza el registro público (sin AppShell de admin)", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/registro" });
+
+    expect(await screen.findByText("Registro")).toBeInTheDocument();
+    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
+    expect(screen.getByTestId("public-layout")).toBeInTheDocument();
+  });
+
+  it("con sesión, /registro redirige (no muestra el registro)", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/registro" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("Registro")).not.toBeInTheDocument();
+  });
+
+  it("/registro/verificar renderiza la pantalla de verificación", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/registro/verificar" });
+
+    expect(await screen.findByText("Verificar cuenta")).toBeInTheDocument();
+  });
+
+  it("un CUSTOMER accede a /portal/envios con su layout propio", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_CUSTOMER" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/portal/envios" });
+
+    expect(await screen.findByText("Portal envios")).toBeInTheDocument();
+    expect(screen.getByTestId("portal-layout")).toBeInTheDocument();
+    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
+  });
+
+  it("un CUSTOMER que cae en una ruta de gestión es redirigido al portal", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_CUSTOMER" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/envios" });
+
+    expect(await screen.findByText("Portal envios")).toBeInTheDocument();
+    expect(screen.queryByText("Envios")).not.toBeInTheDocument();
+  });
+
+  it("un ADMIN que cae en /portal es redirigido a su panel", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/portal/envios" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("Portal envios")).not.toBeInTheDocument();
   });
 });
