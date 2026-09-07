@@ -374,6 +374,7 @@ const SeccionOrigen = () => {
                 variant="white"
                 onClick={handleResetMarker}
                 style={{ zIndex: 1 }}
+                aria-label="Reiniciar posición del marcador"
               >
                 <IconCurrentLocation size={18} />
               </ActionIcon>

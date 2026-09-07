@@ -113,6 +113,7 @@ const ListaVehiculosTabla = ({
   const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
   return (
+    <Table.ScrollContainer minWidth={860}>
     <Table stickyHeader highlightOnHover verticalSpacing="xs">
       <Table.Thead>
         <Table.Tr>
@@ -239,6 +240,7 @@ const ListaVehiculosTabla = ({
         })}
       </Table.Tbody>
     </Table>
+    </Table.ScrollContainer>
   );
 };
 

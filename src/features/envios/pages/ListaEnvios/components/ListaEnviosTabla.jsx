@@ -46,6 +46,7 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRe
   const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
   return (
+    <Table.ScrollContainer minWidth={720}>
     <Table stickyHeader highlightOnHover verticalSpacing="xs" horizontalSpacing="xs">
       <Table.Thead>
         <Table.Tr>
@@ -126,6 +127,7 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRe
                     onEliminar: () => confirmDelete(envio),
                   })}
                   width={160}
+                  ariaLabel={`Acciones de ${codigoSeguimiento}`}
                 />
               </Table.Td>
             </Table.Tr>
@@ -133,6 +135,7 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRe
         })}
       </Table.Tbody>
     </Table>
+    </Table.ScrollContainer>
   );
 };
 

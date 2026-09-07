@@ -162,7 +162,13 @@ const MapRoute = () => {
                   {estadoBadge('recorrido', selectedParada.estado).label}
                 </Text>
               </Stack>
-              <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setSelectedParada(null)}>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                onClick={() => setSelectedParada(null)}
+                aria-label="Cerrar detalle de parada"
+              >
                 <IconX size={14} />
               </ActionIcon>
             </Group>
@@ -183,6 +189,7 @@ const MapRoute = () => {
                       size="sm"
                       component="a"
                       href={`tel:${formatTelefono(envio)}`}
+                      aria-label={`Llamar a ${nombre}`}
                     >
                       <IconPhone size={14} />
                     </ActionIcon>

@@ -116,7 +116,13 @@ const LoginPage = () => {
   return (
     <MantineProvider forceColorScheme="light">
       <Group align="flex-start" gap="0" wrap="nowrap">
-        <Card miw={FORM_WIDHT} mih="100svh" p="xl" withBorder>
+        <Card
+          w={{ base: '100%', sm: FORM_WIDHT }}
+          miw={{ base: 0, sm: FORM_WIDHT }}
+          mih="100svh"
+          p="xl"
+          withBorder
+        >
           <Stack
             p="xl"
             gap="lg"
@@ -128,7 +134,7 @@ const LoginPage = () => {
             <LoadingOverlay visible={loading} />
 
             <Stack gap={0}>
-              <Image src={logo} w="300" fit="contain" />
+              <Image src={logo} alt="ShipGo" w="300" fit="contain" />
               <Title order={1}>Iniciar sesión</Title>
               <Text>Completá con tus datos</Text>
             </Stack>
@@ -183,7 +189,9 @@ const LoginPage = () => {
         <Image
           h="100svh"
           src={background}
+          alt=""
           miw={`calc(100svw - ${FORM_WIDHT})`}
+          visibleFrom="sm"
         />
       </Group>
     </MantineProvider>

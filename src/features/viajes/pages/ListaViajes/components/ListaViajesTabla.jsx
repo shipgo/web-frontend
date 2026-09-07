@@ -86,6 +86,7 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
   const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
   return (
+    <Table.ScrollContainer minWidth={860}>
     <Table stickyHeader highlightOnHover verticalSpacing="xs" horizontalSpacing="xs">
       <Table.Thead>
         <Table.Tr>
@@ -110,9 +111,29 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
           const cantidadEnvios = enviosCount(item);
 
           return (
+            // `role="button"` en la fila para que "ver detalle" sea alcanzable con
+            // teclado (Enter/Espacio, ver onKeyDown abajo) sin agregar una columna
+            // extra. La fila contiene un `Checkbox` y un `RowActionsMenu`, ambos
+            // focoables por su cuenta (con su propio `stopPropagation`/`tabIndex`),
+            // así que esto es "interactivo anidado dentro de interactivo": un
+            // lector de pantalla puede aplanar el contenido no interactivo de las
+            // celdas al anunciar la fila como botón. Se acepta como fix rápido de
+            // SHG-QA-002 (navegación por teclado funciona, verificado en vivo por
+            // el revisor) — un rediseño con un link/botón "Ver detalles" explícito
+            // por fila, sin el `role="button"` en el `<tr>`, queda para una tarea
+            // SHG-FE de UX si se quiere el patrón ARIA "correcto". Ver PR #75.
             <Table.Tr
               key={item.id}
               onClick={() => navigate(`/${item.id}`)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  navigate(`/${item.id}`);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label={`Ver detalle del viaje ${item.id}`}
               style={{ cursor: 'pointer' }}
               bg={selectedIds.has(item.id) ? 'var(--mantine-color-blue-light)' : undefined}
             >
@@ -161,6 +182,7 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
                   actions={getActionsForRow(item.estado, {
                     onEditar: () => navigate(`/${item.id}/editar`),
                   })}
+                  ariaLabel={`Acciones del viaje ${item.id}`}
                 />
               </Table.Td>
             </Table.Tr>
@@ -168,6 +190,7 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
         })}
       </Table.Tbody>
     </Table>
+    </Table.ScrollContainer>
   );
 };
 

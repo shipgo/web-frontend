@@ -52,6 +52,7 @@ const ListaMantenimientosTabla = ({
   const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
   return (
+    <Table.ScrollContainer minWidth={720}>
     <Table stickyHeader highlightOnHover verticalSpacing="xs" horizontalSpacing="xs">
       <Table.Thead>
         <Table.Tr>
@@ -141,6 +142,7 @@ const ListaMantenimientosTabla = ({
                     onEliminar: () => confirmDelete(item),
                   })}
                   width={160}
+                  ariaLabel={`Acciones de ${patente}`}
                 />
               </Table.Td>
             </Table.Tr>
@@ -148,6 +150,7 @@ const ListaMantenimientosTabla = ({
         })}
       </Table.Tbody>
     </Table>
+    </Table.ScrollContainer>
   );
 };
 

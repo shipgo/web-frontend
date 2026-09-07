@@ -49,6 +49,7 @@ const ListaUsuariosTabla = ({
   const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
   return (
+    <Table.ScrollContainer minWidth={760}>
     <Table stickyHeader highlightOnHover verticalSpacing="xs" horizontalSpacing="xs">
       <Table.Thead>
         <Table.Tr>
@@ -138,13 +139,14 @@ const ListaUsuariosTabla = ({
               </Table.Td>
 
               <Table.Td>
-                <RowActionsMenu actions={getActions(item)} />
+                <RowActionsMenu actions={getActions(item)} ariaLabel={`Acciones de ${fullName}`} />
               </Table.Td>
             </Table.Tr>
           );
         })}
       </Table.Tbody>
     </Table>
+    </Table.ScrollContainer>
   );
 };
 
