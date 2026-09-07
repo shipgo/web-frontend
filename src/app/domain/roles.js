@@ -20,6 +20,13 @@ export const ROLE_CUSTOMER = 'ROLE_CUSTOMER';
 /** Roles que pueden operar el panel web. */
 export const ROLES_WEB = [ROLE_SUPERUSER, ROLE_ADMIN];
 
+/** Home del panel de admin (SUPERUSER / ADMIN). */
+export const ADMIN_HOME_PATH = '/';
+/** Base de las rutas del portal CUSTOMER (SHG-FE-026). */
+export const PORTAL_BASE_PATH = '/portal';
+/** Home del portal CUSTOMER — a donde va un CUSTOMER recién autenticado. */
+export const PORTAL_HOME_PATH = `${PORTAL_BASE_PATH}/envios`;
+
 /** `valor canónico -> { label, color (paleta Mantine) }`. */
 export const ROL = {
   [ROLE_SUPERUSER]: { label: 'Superusuario', color: 'grape' },
@@ -67,6 +74,17 @@ export const hasAnyRole = (user, roles = []) => {
 /** Atajo para la guarda web más común. */
 export const isAdminOrSuper = (user) =>
   hasAnyRole(user, [ROLE_ADMIN, ROLE_SUPERUSER]);
+
+/** `true` si el usuario es un cliente autorregistrado (portal). */
+export const isCustomer = (user) => hasRole(user, ROLE_CUSTOMER);
+
+/**
+ * Ruta a la que va un usuario recién autenticado según su rol
+ * (post-login y redirect "ya autenticado" de las rutas públicas):
+ * CUSTOMER → portal; SUPERUSER / ADMIN → panel de admin.
+ */
+export const landingPathFor = (user) =>
+  isCustomer(user) ? PORTAL_HOME_PATH : ADMIN_HOME_PATH;
 
 /** `{ label, color }` para pintar un `<Badge>` de rol. */
 export const rolBadge = (rol) => ROL[normalizarRol(rol)] ?? FALLBACK;

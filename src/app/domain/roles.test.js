@@ -4,11 +4,15 @@ import {
   hasAnyRole,
   hasRole,
   isAdminOrSuper,
+  isCustomer,
+  landingPathFor,
   normalizarRol,
   rolBadge,
   rolLabel,
   rolOptions,
   rolesDe,
+  ADMIN_HOME_PATH,
+  PORTAL_HOME_PATH,
   ROLE_ADMIN,
   ROLE_CHOFER,
   ROLE_CUSTOMER,
@@ -102,5 +106,28 @@ describe("rolBadge / rolLabel / rolOptions", () => {
       { value: "ROLE_ADMIN", label: "Administrador" },
       { value: "ROLE_CHOFER", label: "Chofer" },
     ]);
+  });
+});
+
+describe("isCustomer / landingPathFor (SHG-FE-026)", () => {
+  const userCustomer = { authorities: [{ name: "ROLE_CUSTOMER" }] };
+
+  it("isCustomer sólo es true para ROLE_CUSTOMER", () => {
+    expect(isCustomer(userCustomer)).toBe(true);
+    expect(isCustomer(userAdmin)).toBe(false);
+    expect(isCustomer(userSuper)).toBe(false);
+    expect(isCustomer(null)).toBe(false);
+  });
+
+  it("landingPathFor manda al portal a un CUSTOMER", () => {
+    expect(landingPathFor(userCustomer)).toBe(PORTAL_HOME_PATH);
+    expect(PORTAL_HOME_PATH).toBe("/portal/envios");
+  });
+
+  it("landingPathFor manda al panel de admin a SU/AD (y a desconocidos)", () => {
+    expect(landingPathFor(userAdmin)).toBe(ADMIN_HOME_PATH);
+    expect(landingPathFor(userSuper)).toBe(ADMIN_HOME_PATH);
+    expect(landingPathFor({ id: 1 })).toBe(ADMIN_HOME_PATH);
+    expect(ADMIN_HOME_PATH).toBe("/");
   });
 });

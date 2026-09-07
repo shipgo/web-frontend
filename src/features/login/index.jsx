@@ -30,6 +30,7 @@ import {
 } from "@mantine/core";
 
 import { useAuthStore } from "@stores/auth.store";
+import { landingPathFor } from "@domain/roles";
 
 const FORM_WIDHT = "35rem";
 const LOCAL_STORAGE_KEY = "shipgo_stored_user";
@@ -82,15 +83,27 @@ const LoginPage = () => {
 
       notifications.clean();
 
-      // Redirigir al home después del login exitoso
-      setLocation("/");
+      // Redirigir al home que corresponde al rol: CUSTOMER → portal, SU/AD → `/`.
+      setLocation(landingPathFor(useAuthStore.getState().user));
     } catch (error) {
       console.error("Login error:", error);
 
+      // El backend bloquea el login de un CUSTOMER hasta verificar el email y
+      // devuelve un 401 con un mensaje explícito (SHG-BE-002) — mostrarlo tal cual.
+      const apiMessage = error?.response?.data?.message;
+      const isUnverified =
+        error?.response?.status === 401 &&
+        typeof apiMessage === "string" &&
+        apiMessage.toLowerCase().includes("verific");
+
       notifications.show({
         color: "red",
-        title: "Usuario y/o contraseña incorrectos",
-        message: "Por favor, verificá los datos ingresados",
+        title: isUnverified
+          ? "Cuenta sin verificar"
+          : "Usuario y/o contraseña incorrectos",
+        message: isUnverified
+          ? apiMessage
+          : "Por favor, verificá los datos ingresados",
         icon: (
           <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
         ),
@@ -163,7 +176,7 @@ const LoginPage = () => {
                 Necesito ayuda
               </Anchor>
               <Divider orientation="vertical" />
-              <Anchor>No tengo una cuenta</Anchor>
+              <Anchor href="/registro">Crear una cuenta</Anchor>
             </Group>
           </Stack>
         </Card>

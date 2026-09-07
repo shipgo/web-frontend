@@ -45,6 +45,16 @@ export const API_URLS = {
   // GET /api/public/tracking/{codigo} — sin auth, rate-limited (429).
   PUBLIC_TRACKING_URL: '/public/tracking',
 
+  // --- Portal CUSTOMER (CONTRACT-007 · SHG-BE-002 / SHG-BE-024 · SHG-FE-026) ---
+  // POST /api/register — público, crea siempre ROLE_CUSTOMER.
+  REGISTER_URL: '/register',
+  // GET /api/register/verify?token=... — público, activa la cuenta.
+  REGISTER_VERIFY_URL: '/register/verify',
+  // GET /api/customer/me — sólo ROLE_CUSTOMER (SHG-BE-024). CustomerMeDTO.
+  CUSTOMER_ME_URL: '/customer/me',
+  // GET /api/envio/mios — sólo ROLE_CUSTOMER, paginado (Page<EnvioDTO>).
+  ENVIO_MIOS_URL: '/envio/mios',
+
   // --- Vehículos y catálogo de flota (ENDPOINTS.md §10-13) ---
   VEHICULO_URL: '/vehiculo',
   MARCA_URL: '/marca',
