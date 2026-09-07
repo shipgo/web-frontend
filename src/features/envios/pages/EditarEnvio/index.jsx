@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { useLocation, useParams } from "wouter";
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "wouter";
 import { Card, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import ScreenContainer from "@components/ScreenContainer";
 import { envioApi, categoriaApi } from "@api";
 import { esEstadoTerminal } from "@domain/estados";
 
@@ -20,11 +21,36 @@ import EnvioNoEditable from "./components/EnvioNoEditable";
  */
 const EditarEnvio = () => {
   const { id } = useParams();
-  const [, navigate] = useLocation();
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [envio, setEnvio] = useState(null);
   const [categorias, setCategorias] = useState([]);
+
+  const loadEnvio = useCallback(() => {
+    if (!id) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
+
+    envioApi
+      .getById(id)
+      .then((data) => {
+        if (!cancelled) setEnvio(data);
+      })
+      .catch((err) => {
+        console.error("Error cargando envío:", err);
+        if (!cancelled) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   useEffect(() => {
     categoriaApi
@@ -45,50 +71,38 @@ const EditarEnvio = () => {
   }, []);
 
   useEffect(() => {
-    if (!id) return;
+    const cleanup = loadEnvio();
+    return cleanup;
+  }, [loadEnvio]);
 
-    let cancelled = false;
-    setLoading(true);
-
-    envioApi
-      .getById(id)
-      .then((data) => {
-        if (!cancelled) setEnvio(data);
-      })
-      .catch((error) => {
-        console.error("Error cargando envío:", error);
-        notifications.show({
-          title: "Error",
-          message: "No se pudo cargar la información del envío",
-          color: "red",
-          icon: <IconX />,
-        });
-        navigate("~/envios");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id, navigate]);
-
-  if (loading || !envio) {
-    return (
-      <PageContainer>
-        <Card>
-          <Text>Cargando envío...</Text>
-        </Card>
-      </PageContainer>
-    );
-  }
-
-  if (esEstadoTerminal("envio", envio.estado)) {
-    return <EnvioNoEditable estado={envio.estado} />;
-  }
-
-  return <EditarEnvioForm id={id} envio={envio} categorias={categorias} />;
+  return (
+    <PageContainer>
+      <ScreenContainer
+        onLoading={{ show: loading, description: 'Cargando envío...' }}
+        onError={{
+          show: error && !loading,
+          title: 'No se pudo cargar el envío',
+          description: 'Ocurrió un error al obtener la información del envío.',
+          onClick: loadEnvio,
+        }}
+        onEmptyData={{
+          show: !loading && !error && !envio,
+          title: 'Envío no encontrado',
+          description: 'No encontramos información para este envío.',
+        }}
+      >
+        {envio && (
+          <>
+            {esEstadoTerminal("envio", envio.estado) ? (
+              <EnvioNoEditable estado={envio.estado} />
+            ) : (
+              <EditarEnvioForm id={id} envio={envio} categorias={categorias} />
+            )}
+          </>
+        )}
+      </ScreenContainer>
+    </PageContainer>
+  );
 };
 
 export default EditarEnvio;

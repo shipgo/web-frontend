@@ -18,7 +18,6 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
 import {
   IconBan,
   IconBuilding,
@@ -38,6 +37,7 @@ import {
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import ScreenContainer from "@components/ScreenContainer";
 import { envioApi } from "@api";
 import { esEstadoTerminal, estadoBadge, estadoLabel } from "@domain/estados";
 import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
@@ -82,27 +82,23 @@ const DetalleEnvio = () => {
 
   const [envio, setEnvio] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const loadEnvio = useCallback(async () => {
     if (!id) return;
 
     try {
       setLoading(true);
+      setError(false);
       const data = await envioApi.getById(id);
       setEnvio(data);
-    } catch (error) {
-      console.error("Error cargando envío:", error);
-      notifications.show({
-        title: "Error",
-        message: "No se pudo cargar la información del envío",
-        color: "red",
-        icon: <IconX />,
-      });
-      navigate("~/envios");
+    } catch (err) {
+      console.error("Error cargando envío:", err);
+      setError(true);
     } finally {
       setLoading(false);
     }
-  }, [id, navigate]);
+  }, [id]);
 
   useEffect(() => {
     loadEnvio();
@@ -110,47 +106,44 @@ const DetalleEnvio = () => {
 
   const { confirmEntregar, confirmFalloEntrega } = useEnvioAcciones(id, { onSuccess: loadEnvio });
 
-  if (loading) {
-    return (
-      <PageContainer>
-        <Card>
-          <Text>Cargando envío...</Text>
-        </Card>
-      </PageContainer>
-    );
-  }
-
-  if (!envio) {
-    return (
-      <PageContainer>
-        <Card withBorder>
-          <Text c="dimmed">No se encontró información del envío</Text>
-        </Card>
-      </PageContainer>
-    );
-  }
-
-  const estadoInfo = estadoBadge("envio", envio.estado);
-  const canEdit = !esEstadoTerminal("envio", envio.estado);
-  const canAccionarEstado = puedeAccionarEntrega(user, envio.estado);
-  const destino = envio.destino ?? {};
+  // Precompute derived values only if envio exists to avoid errors
+  const estadoInfo = envio ? estadoBadge("envio", envio.estado) : null;
+  const canEdit = envio ? !esEstadoTerminal("envio", envio.estado) : false;
+  const canAccionarEstado = envio ? puedeAccionarEntrega(user, envio.estado) : false;
+  const destino = envio?.destino ?? {};
   const localidad = destino.localidad ?? {};
   const provincia = localidad.provincia ?? {};
   const direccion = [destino.nombreCalle, destino.numeroCalle].filter(Boolean).join(" ");
-  const detalleEnvios = envio.detalleEnvios ?? [];
+  const detalleEnvios = envio?.detalleEnvios ?? [];
   const pesoTotal = detalleEnvios.reduce((sum, d) => sum + (d.peso ?? 0), 0);
 
-  const historial = [...(envio.historialEstado ?? [])].sort(
+  const historial = [...(envio?.historialEstado ?? [])].sort(
     (a, b) => new Date(fechaHistorial(a)) - new Date(fechaHistorial(b)),
   );
 
-  const detalleRecorridos = envio.detalleRecorridos ?? [];
+  const detalleRecorridos = envio?.detalleRecorridos ?? [];
   const recorridoActual = detalleRecorridos[detalleRecorridos.length - 1]?.recorrido ?? null;
   const viajeAsociado = recorridoActual?.viaje ?? null;
 
   return (
     <PageContainer>
-      <PageBreadcrumbsHeader
+      <ScreenContainer
+        onLoading={{ show: loading, description: 'Cargando envío...' }}
+        onError={{
+          show: error && !loading,
+          title: 'No se pudo cargar el envío',
+          description: 'Ocurrió un error al obtener la información del envío.',
+          onClick: loadEnvio,
+        }}
+        onEmptyData={{
+          show: !loading && !error && !envio,
+          title: 'Envío no encontrado',
+          description: 'No encontramos información para este envío.',
+        }}
+      >
+        {envio && (
+          <>
+            <PageBreadcrumbsHeader
         entidad="Envíos"
         accion="Detalle de envío"
         descripcion={
@@ -426,6 +419,9 @@ const DetalleEnvio = () => {
           )}
         </Stack>
       </Card>
+            </>
+          )}
+      </ScreenContainer>
     </PageContainer>
   );
 };
