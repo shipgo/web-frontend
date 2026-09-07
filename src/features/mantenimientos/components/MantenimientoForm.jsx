@@ -8,6 +8,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Text,
   Title,
   TextInput,
   Textarea,
@@ -20,8 +21,10 @@ import {
   IconUser,
 } from "@tabler/icons-react";
 import { DateTimePicker } from "@mantine/dates";
+import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
+import PageFooter from "@components/PageFooter";
 import { vehiculoApi } from "@api";
 import { tipoMantenimientoApi } from "../api/mantenimientos.api";
 
@@ -67,6 +70,29 @@ const MantenimientoForm = ({
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [tiposMantenimiento, setTiposMantenimiento] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
+
+  // Cancelar con confirmación si hay cambios sin guardar — mismo criterio que el
+  // resto de los formularios de alta/edición de la ola de rework.
+  const handleCancel = () => {
+    if (!form.isDirty()) {
+      onCancel();
+      return;
+    }
+
+    modals.openConfirmModal({
+      title: isEdit ? "Cancelar edición" : "Cancelar creación",
+      children: (
+        <Text size="sm">
+          Tenés cambios sin guardar. ¿Seguro que querés salir?
+        </Text>
+      ),
+      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      confirmProps: { color: "red" },
+      cancelProps: { variant: "subtle" },
+      groupProps: { gap: "xs" },
+      onConfirm: onCancel,
+    });
+  };
 
   // Cargar catálogos al montar el componente
   useEffect(() => {
@@ -200,17 +226,24 @@ const MantenimientoForm = ({
               />
             </Stack>
           </Card>
-
-          {/* Botones de acción */}
-          <Group justify="flex-end" gap="xs">
-            <Button variant="subtle" color="red" onClick={onCancel} disabled={loading}>
-              Cancelar
-            </Button>
-            <Button type="submit" loading={loading}>
-              {isEdit ? "Guardar cambios" : "Registrar mantenimiento"}
-            </Button>
-          </Group>
         </Stack>
+
+        {/* Footer canónico (SHG-FE-036): el slot vive en `AppShell.footer`; el
+            botón sigue dentro del `<form>` para conservar el submit nativo. */}
+        <PageFooter>
+          <Button
+            type="button"
+            variant="light"
+            color="red"
+            onClick={handleCancel}
+            disabled={loading}
+          >
+            Cancelar
+          </Button>
+          <Button type="submit" loading={loading}>
+            {isEdit ? "Guardar cambios" : "Registrar mantenimiento"}
+          </Button>
+        </PageFooter>
       </form>
     </Box>
   );

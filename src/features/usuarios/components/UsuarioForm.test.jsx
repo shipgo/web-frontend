@@ -2,8 +2,14 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useForm } from "@mantine/form";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { AppShell } from "@mantine/core";
 
-import { renderWithProviders } from "../../../test/renderWithProviders";
+import { renderWithProviders as renderRaw } from "../../../test/renderWithProviders";
+
+// `UsuarioForm` monta `<PageFooter>` (`AppShellFooter`), que necesita un
+// `<AppShell>` ancestro — lo provee `src/app/layout` en la app real.
+const renderWithProviders = (ui, options) =>
+  renderRaw(<AppShell footer={{ height: 60 }}>{ui}</AppShell>, options);
 
 vi.mock("@api", () => ({
   sucursalApi: { getAll: vi.fn() },
