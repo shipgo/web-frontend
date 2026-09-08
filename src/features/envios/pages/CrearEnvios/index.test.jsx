@@ -267,14 +267,10 @@ describe("CrearEnvios", () => {
     // campos anidados bajo `destino` (`destino.numeroCalle`) en la misma
     // respuesta. Sin `stripPrefix: "destino"`, la auto-detección de
     // `detectCommonPrefix` devuelve null (porque no todos los campos comparten
-    // prefijo) y los campos anidados no se pelan. Con el fix, el campo anidado
-    // se resalta en el input correcto.
+    // prefijo) y los campos anidados no se pelan.
+    // Con `stripPrefix: "destino"`, se pelan solo los prefijados y ambos
+    // field-errors se resaltan en los inputs correctos.
     const user = userEvent.setup();
-    renderCrearEnvios();
-
-    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
-
-    // Setupeamos el mock para lanzar un 400 mixto.
     envioApi.save.mockRejectedValue({
       response: {
         status: 400,
@@ -291,21 +287,25 @@ describe("CrearEnvios", () => {
       },
     });
 
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
     await fillRemitenteYReceptor(user);
     await geocodeDireccion();
     await agregarPaquete(user);
 
-    // Intentamos registrar el envío.
     await user.click(screen.getByRole("button", { name: /registrar envío/i }));
 
-    // Esperamos que el formulario tenga errores en ambos campos.
     await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
 
-    // El toast debe mostrar el mensaje del backend.
-    await screen.findByText("Validación fallida");
-
-    // Verificamos que applyApiError procesó los campos correctamente
-    // (después de pelar "destino." del campo anidado).
-    expect(envioApi.save).toHaveBeenCalled();
+    // Verificamos que ambos field-errors se resaltaron en el DOM.
+    // Sin `stripPrefix: "destino"`, el campo anidado no se pelaría y no aparecería aquí.
+    expect(
+      await screen.findByText("El nombre es requerido"),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText("El número de calle es requerido"),
+    ).toBeInTheDocument();
   });
 });
