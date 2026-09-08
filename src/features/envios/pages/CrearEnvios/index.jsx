@@ -69,6 +69,7 @@ const CrearEnvios = () => {
       console.error("Error creando envío:", error);
 
       const message = applyApiError(form, error, {
+        stripPrefix: "destino",
         fallbackMessage: "No se pudo crear el envío",
       });
 

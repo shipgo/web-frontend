@@ -260,4 +260,52 @@ describe("CrearEnvios", () => {
       await screen.findByText("Ya existe un punto de entrega con esa dirección."),
     ).toBeInTheDocument();
   });
+
+  it("maneja 400 mixto: campo de raíz + destino.campo (stripPrefix resalta ambos)", async () => {
+    // Este test reproduce el caso descrito en CONTRACTS.md §2 donde un 400
+    // de Bean Validation contiene campos de la raíz del DTO (`nombre`) y
+    // campos anidados bajo `destino` (`destino.numeroCalle`) en la misma
+    // respuesta. Sin `stripPrefix: "destino"`, la auto-detección de
+    // `detectCommonPrefix` devuelve null (porque no todos los campos comparten
+    // prefijo) y los campos anidados no se pelan.
+    // Con `stripPrefix: "destino"`, se pelan solo los prefijados y ambos
+    // field-errors se resaltan en los inputs correctos.
+    const user = userEvent.setup();
+    envioApi.save.mockRejectedValue({
+      response: {
+        status: 400,
+        data: {
+          message: "Validación fallida",
+          fields: [
+            { field: "nombre", error: "El nombre es requerido" },
+            {
+              field: "destino.numeroCalle",
+              error: "El número de calle es requerido",
+            },
+          ],
+        },
+      },
+    });
+
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+    await fillRemitenteYReceptor(user);
+    await geocodeDireccion();
+    await agregarPaquete(user);
+
+    await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+    await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+    // Verificamos que ambos field-errors se resaltaron en el DOM.
+    // Sin `stripPrefix: "destino"`, el campo anidado no se pelaría y no aparecería aquí.
+    expect(
+      await screen.findByText("El nombre es requerido"),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText("El número de calle es requerido"),
+    ).toBeInTheDocument();
+  });
 });
