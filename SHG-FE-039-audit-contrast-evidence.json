@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-09-08T03:22:17.720Z",
+  "toolUsed": "axe-core 4.13.0 + Playwright",
+  "pages": [
+    {
+      "name": "Login",
+      "violations": 2,
+      "images": [
+        {
+          "src": "/src/assets/logoipsum-custom-logo.svg",
+          "alt": "ShipGo logo",
+          "ariaLabel": null
+        },
+        {
+          "src": "/src/assets/background.jpg",
+          "alt": "",
+          "ariaLabel": null
+        }
+      ],
+      "rawResults": {
+        "violations": [
+          {
+            "id": "landmark-one-main",
+            "impact": "moderate",
+            "description": "Ensure the document has a main landmark"
+          },
+          {
+            "id": "region",
+            "impact": "moderate",
+            "description": "Ensure all page content is contained by landmarks"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "totalViolations": 2,
+    "pages": 1
+  },
+  "contrastMeasurements": {
+    "yellow": {
+      "background": "rgb(255, 236, 153)",
+      "text": "rgb(0, 0, 0)",
+      "ratio": "17.71",
+      "passes_wcag_aa": true
+    },
+    "teal": {
+      "background": "rgb(158, 236, 220)",
+      "text": "rgb(0, 0, 0)",
+      "ratio": "15.49",
+      "passes_wcag_aa": true
+    },
+    "orange": {
+      "background": "rgb(255, 216, 168)",
+      "text": "rgb(0, 0, 0)",
+      "ratio": "15.64",
+      "passes_wcag_aa": true
+    },
+    "yellow-dark": {
+      "background": "rgb(240, 140, 0)",
+      "text": "rgb(255, 255, 255)",
+      "ratio": "2.48",
+      "passes_wcag_aa": false
+    },
+    "teal-dark": {
+      "background": "rgb(8, 146, 126)",
+      "text": "rgb(255, 255, 255)",
+      "ratio": "3.87",
+      "passes_wcag_aa": true
+    },
+    "orange-dark": {
+      "background": "rgb(232, 89, 12)",
+      "text": "rgb(255, 255, 255)",
+      "ratio": "3.58",
+      "passes_wcag_aa": true
+    }
+  }
+}
