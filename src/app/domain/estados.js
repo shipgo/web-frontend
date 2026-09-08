@@ -38,7 +38,7 @@ export const ESTADO_VEHICULO = {
   disponible: { label: 'Disponible', color: 'green' },
   asignado_a_viaje: { label: 'Asignado a viaje', color: 'blue' },
   en_viaje: { label: 'En viaje', color: 'orange' },
-  en_service: { label: 'En service', color: 'yellow' },
+  en_service: { label: 'En service', color: 'teal' },
   fuera_de_servicio: { label: 'Fuera de servicio', color: 'red' },
 };
 

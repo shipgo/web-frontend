@@ -134,7 +134,7 @@ const LoginPage = () => {
             <LoadingOverlay visible={loading} />
 
             <Stack gap={0}>
-              <Image src={logo} alt="ShipGo" w="300" fit="contain" />
+              <Image src={logo} alt="ShipGo logo" w="300" fit="contain" />
               <Title order={1}>Iniciar sesión</Title>
               <Text>Completá con tus datos</Text>
             </Stack>
