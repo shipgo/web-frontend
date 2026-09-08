@@ -260,4 +260,52 @@ describe("CrearEnvios", () => {
       await screen.findByText("Ya existe un punto de entrega con esa dirección."),
     ).toBeInTheDocument();
   });
+
+  it("maneja 400 mixto: campo de raíz + destino.campo (stripPrefix resalta ambos)", async () => {
+    // Este test reproduce el caso descrito en CONTRACTS.md §2 donde un 400
+    // de Bean Validation contiene campos de la raíz del DTO (`nombre`) y
+    // campos anidados bajo `destino` (`destino.numeroCalle`) en la misma
+    // respuesta. Sin `stripPrefix: "destino"`, la auto-detección de
+    // `detectCommonPrefix` devuelve null (porque no todos los campos comparten
+    // prefijo) y los campos anidados no se pelan. Con el fix, el campo anidado
+    // se resalta en el input correcto.
+    const user = userEvent.setup();
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+    // Setupeamos el mock para lanzar un 400 mixto.
+    envioApi.save.mockRejectedValue({
+      response: {
+        status: 400,
+        data: {
+          message: "Validación fallida",
+          fields: [
+            { field: "nombre", error: "El nombre es requerido" },
+            {
+              field: "destino.numeroCalle",
+              error: "El número de calle es requerido",
+            },
+          ],
+        },
+      },
+    });
+
+    await fillRemitenteYReceptor(user);
+    await geocodeDireccion();
+    await agregarPaquete(user);
+
+    // Intentamos registrar el envío.
+    await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+    // Esperamos que el formulario tenga errores en ambos campos.
+    await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+    // El toast debe mostrar el mensaje del backend.
+    await screen.findByText("Validación fallida");
+
+    // Verificamos que applyApiError procesó los campos correctamente
+    // (después de pelar "destino." del campo anidado).
+    expect(envioApi.save).toHaveBeenCalled();
+  });
 });

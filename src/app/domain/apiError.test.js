@@ -103,6 +103,32 @@ describe('parseApiError — body anidado (ViajeReqDTO.viaje / SucursalReqDTO.pun
     ).toEqual({ vehiculoID: 'Requerido.', numeroCalle: 'Requerido.' });
   });
 
+  it('400 mixto: campo de raíz + destino.campo (SHG-FE-040 — CrearEnvios)', () => {
+    // Caso concreto: EnvioReqDTO tiene campos planos (`nombre`, `apellido`, etc.)
+    // y un objeto anidado `destino` con `numeroCalle`, `nombreCalle`, etc.
+    // Un 400 de validación puede mezclar errores de ambos niveles.
+    // Sin `stripPrefix`, detectCommonPrefix devuelve null (porque no todos los
+    // campos comparten prefijo) y los anidados no se pelan.
+    // Con `stripPrefix: "destino"`, se pelan solo los prefijados y los planos quedan igual.
+    const err = axiosError(400, {
+      message: 'Validación fallida',
+      fields: [
+        { field: 'nombre', error: 'El nombre es requerido.' },
+        {
+          field: 'destino.numeroCalle',
+          error: 'El número de calle es requerido.',
+        },
+      ],
+    });
+
+    expect(
+      parseApiError(err, { stripPrefix: 'destino' }).fieldErrors,
+    ).toEqual({
+      nombre: 'El nombre es requerido.',
+      numeroCalle: 'El número de calle es requerido.',
+    });
+  });
+
   it('NO detecta prefijo en un DTO plano cuyos campos comparten un comienzo pero no un segmento con punto', () => {
     const err = axiosError(400, {
       fields: [
