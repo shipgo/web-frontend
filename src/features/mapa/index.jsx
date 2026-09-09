@@ -11,6 +11,7 @@ import MapCard from './components/MapCard';
 import MapTruckMarkers from './components/MapTruckMarkers';
 import MapRoute from './components/MapRoute';
 import MapDetalles from './components/MapDetalles';
+import MapTrackingStatus from './components/MapTrackingStatus';
 
 const Mapa = () => (
   <SelectedViajeProvider>
@@ -34,6 +35,7 @@ const Mapa = () => (
               <MapTruckMarkers />
               <MapRoute />
             </MapCard>
+            <MapTrackingStatus />
             <MapDetalles />
           </Box>
         </Flex>
