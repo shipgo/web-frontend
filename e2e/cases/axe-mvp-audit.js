@@ -47,13 +47,61 @@ const AUTHENTICATED_ROUTES = [
   { path: "/mapa", heading: "Mapa en vivo" },
 ];
 
-/** Trae un id real del seed vía la misma API que usa la app (`Page<DTO>.content`). */
-const fetchFirstId = async (page, apiPath) => {
-  const json = await page.evaluate(async (url) => {
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
-    if (!res.ok) throw new Error(`${url} respondió ${res.status}`);
+const fetchJson = async (page, url) =>
+  page.evaluate(async (u) => {
+    const res = await fetch(u, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error(`${u} respondió ${res.status}`);
     return res.json();
-  }, apiPath);
+  }, url);
+
+/**
+ * Trae un id real del seed vía la misma API que usa la app (`Page<DTO>.content`).
+ *
+ * Con `estadosPreferidos` (en orden de prioridad, uno por uno — NO como un OR
+ * `estado=a&estado=b`, ver nota abajo) busca un elemento en el primero de esos
+ * estados que exista en el seed, para que `/envios/:id` y `/viajes/:id` se
+ * auditen sobre un elemento que efectivamente ejercite
+ * `BADGE_TEXT_CONTRAST_OVERRIDE` (`@domain/estados`): si esta auditoría toma
+ * "el primer elemento a secas" del seed, puede caer en un estado no afectado
+ * (azul/cyan/gris) y dejar sin auditar el mismo bug de contraste que ya se
+ * encontró y corrigió en las tablas de listado (SHG-FE-041, revisión de PR
+ * #100 — el gap era justamente que ningún caso e2e ejercitaba las rutas de
+ * detalle en un estado afectado).
+ *
+ * El orden importa y es deliberado: para envío se prueba primero `entregado`
+ * y para viaje `finalizado` (antes que `en_camino`) porque son terminales —
+ * `DetalleEnvio`/`DetalleViajeHeader` no muestran ahí ninguno de los botones
+ * de acción (`Entregar`/`Marcar fallo`/`Finalizar`, ver `acciones.js` de cada
+ * pantalla). Se comprobó en una corrida real de este caso que un envío/viaje
+ * `en_camino` SÍ los muestra, y esos botones (`<Button variant="light"
+ * color="green|red">`) tienen su propio problema de contraste — real, pero
+ * DISTINTO del que corrige `BADGE_TEXT_CONTRAST_OVERRIDE` (que es sólo para
+ * `<Badge variant="light">`) y fuera del alcance de SHG-FE-041 (ver reporte
+ * al orquestador). Preferir el estado terminal evita que este caso quede
+ * bloqueado por ese hallazgo aparte sin dejar de auditar el badge afectado
+ * (`entregado`/`finalizado` también son naranja/verde).
+ *
+ * Se hace una consulta por estado (no un OR) para poder respetar ese orden de
+ * prioridad — con `estado=a&estado=b` el backend puede devolver cualquiera de
+ * los dos primero según su orden de sort por defecto. Si el seed no tiene
+ * ningún elemento en ninguno de los estados preferidos, cae al primer
+ * elemento sin filtrar (dejando constancia en el log) — la auditoría no se
+ * cae por esto, sólo pierde cobertura de ese caso puntual en esta corrida.
+ */
+const fetchFirstId = async (page, apiPath, { estadosPreferidos, logger, caseName, label } = {}) => {
+  for (const estado of estadosPreferidos ?? []) {
+    const filtrado = await fetchJson(page, `${apiPath}&estado=${encodeURIComponent(estado)}`);
+    const idFiltrado = filtrado?.content?.[0]?.id;
+    if (idFiltrado != null) return idFiltrado;
+  }
+  if (estadosPreferidos?.length) {
+    logger?.log(
+      `[${caseName}] ${label}: el seed no tiene ningún elemento en estado ${estadosPreferidos.join("/")} — ` +
+        `se audita el primer elemento sin filtrar (pierde cobertura del bug de contraste de SHG-FE-041 en esta ruta).`,
+    );
+  }
+
+  const json = await fetchJson(page, apiPath);
   const id = json?.content?.[0]?.id;
   if (id == null) {
     throw new Error(`${apiPath} no devolvió ningún elemento (¿seed vacío?) — no hay id real para auditar el detalle.`);
@@ -125,14 +173,28 @@ export async function run({ browser, logger }) {
       allBlocking.push(...(await auditCurrentPage({ page, logger, caseName: name, routeLabel })));
     }
 
-    // --- /envios/:id y /viajes/:id reales (primer elemento del seed, vía la API real) ---
-    const envioId = await fetchFirstId(page, "/api/envio?page=0&size=1");
+    // --- /envios/:id y /viajes/:id reales, vía la API real ---
+    // Preferimos un elemento en un estado afectado por
+    // `BADGE_TEXT_CONTRAST_OVERRIDE` (`en_camino`/`entregado` para envío,
+    // `en_camino`/`finalizado` para viaje) en vez de ciegamente "el primero
+    // del seed" — ver comentario de `fetchFirstId`.
+    const envioId = await fetchFirstId(page, "/api/envio?page=0&size=1", {
+      estadosPreferidos: ["entregado", "en_camino"],
+      logger,
+      caseName: name,
+      label: "envios-detalle",
+    });
     await page.goto(`${config.webBaseUrl}/envios/${envioId}`);
     await page.getByRole("heading", { name: "Detalle de envío" }).first().waitFor({ timeout: 15_000 });
     await waitForRouteSettled(page);
     allBlocking.push(...(await auditCurrentPage({ page, logger, caseName: name, routeLabel: "envios-detalle" })));
 
-    const viajeId = await fetchFirstId(page, "/api/viaje?page=0&size=1");
+    const viajeId = await fetchFirstId(page, "/api/viaje?page=0&size=1", {
+      estadosPreferidos: ["finalizado", "en_camino"],
+      logger,
+      caseName: name,
+      label: "viajes-detalle",
+    });
     await page.goto(`${config.webBaseUrl}/viajes/${viajeId}`);
     await page.getByRole("heading", { name: "Detalle de viaje" }).first().waitFor({ timeout: 15_000 });
     await waitForRouteSettled(page);
