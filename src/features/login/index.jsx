@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link as WouterLink } from "wouter";
 
 import logo from "/src/assets/logoipsum-custom-logo.svg";
 import background from "/src/assets/background.jpg";
@@ -31,12 +31,22 @@ import {
 
 import { useAuthStore } from "@stores/auth.store";
 import { landingPathFor } from "@domain/roles";
+import { LOGIN_VARIANTS } from "./constants/copy";
 
 const FORM_WIDHT = "35rem";
 const LOCAL_STORAGE_KEY = "shipgo_stored_user";
 const DEFAULT_FORM_VALUES = { username: "", password: "", remember: false };
 
-const LoginPage = () => {
+/**
+ * @param {Object} props
+ * @param {'operator'|'customer'} [props.variant='operator']  Cambia el copy
+ *   (título/subtítulo) del formulario — el destino post-login sigue siendo el
+ *   mismo `landingPathFor(user)` en ambos casos, según el rol real del usuario
+ *   que loguea (SHG-FE-044: entrada dedicada del customer en `/portal/ingresar`,
+ *   sin duplicar el form).
+ */
+const LoginPage = ({ variant = "operator" }) => {
+  const copy = LOGIN_VARIANTS[variant] ?? LOGIN_VARIANTS.operator;
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);
   const [storedUser, setStoredUser] = useLocalStorage({
@@ -134,9 +144,11 @@ const LoginPage = () => {
             <LoadingOverlay visible={loading} />
 
             <Stack gap={0}>
-              <Image src={logo} alt="ShipGo logo" w="300" fit="contain" />
-              <Title order={1}>Iniciar sesión</Title>
-              <Text>Completá con tus datos</Text>
+              <Anchor component={WouterLink} href="/" aria-label="ShipGo — inicio" w="300">
+                <Image src={logo} alt="ShipGo logo" w="300" fit="contain" />
+              </Anchor>
+              <Title order={1}>{copy.title}</Title>
+              <Text>{copy.subtitle}</Text>
             </Stack>
 
             <FocusTrap active>
