@@ -26,7 +26,7 @@ import {
 } from '@tabler/icons-react';
 
 import { esEstadoTerminal, estadoBadge } from '@domain/estados';
-import { formatFechaHora, formatTelefono } from '@domain/format';
+import { digitosWhatsapp as calcularDigitosWhatsapp, formatFechaHora, formatTelefono } from '@domain/format';
 
 import { useSelectedViaje } from '../contexts/selectedViaje';
 import { useGetRoute } from '../hooks/useGetRoute';
@@ -90,7 +90,12 @@ const MapDetalles = () => {
 
   const proximaParada = paradas.find((p) => !esEstadoTerminal('recorrido', p.estado));
 
-  const restanteSegundos = route?.legDurations
+  // ETA: si no hay próxima parada (todas entregadas), no hay ETA.
+  // Nota: `legDurations` aproxima parada[n-1]→parada[n] en lugar de posición_actual→parada[n].
+  // Esta aproximación puede desalinearse si una parada sin coords se filtra en useGetRoute.
+  // Por simplicidad, se mantiene esta lógica; una mejora futura sería calcular desde posición
+  // actual solo las duraciones de los waypoints pendientes + posición actual.
+  const restanteSegundos = proximaParada && route?.legDurations
     ? route.legDurations.slice(paradasEntregadas).reduce((sum, d) => sum + d, 0)
     : null;
   const eta = restanteSegundos != null ? new Date(Date.now() + restanteSegundos * 1000) : null;
@@ -99,7 +104,8 @@ const MapDetalles = () => {
   const choferNombre =
     [chofer?.nombre, chofer?.apellido].filter(Boolean).join(' ') || 'Sin chofer asignado';
   const telefono = chofer?.telefono ? formatTelefono(chofer) : null;
-  const digitosWhatsapp = `${chofer?.prefijo ?? ''}${chofer?.telefono ?? ''}`.replace(/\D/g, '');
+
+  const digitosWhatsapp = calcularDigitosWhatsapp(chofer?.prefijo, chofer?.telefono);
 
   const estadoInfo = estadoBadge('viaje', viaje.estado);
 

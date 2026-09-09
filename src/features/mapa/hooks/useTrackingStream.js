@@ -36,6 +36,9 @@ export const useTrackingStream = () => {
   const emitterRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttemptRef = useRef(0);
+  // Track si alguna vez tuvimos una conexión exitosa, para distinguir
+  // "primera conexión fallida que se recupera" de "reconexión genuina tras un corte".
+  const everOpenedRef = useRef(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -49,7 +52,11 @@ export const useTrackingStream = () => {
 
       emitter.onopen = () => {
         if (cancelled) return;
-        const eraUnaReconexion = reconnectAttemptRef.current > 0;
+        // Solo refetch si es una RECONEXIÓN genuina: ya tuvimos conexión exitosa,
+        // luego falló, y ahora se recuperó. NO si es la primera conexión exitosa
+        // después de un fallo inicial (no había eventos previos que recuperar).
+        const eraUnaReconexion = everOpenedRef.current && reconnectAttemptRef.current > 0;
+        everOpenedRef.current = true;
         reconnectAttemptRef.current = 0;
         setStatus('open');
 

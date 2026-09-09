@@ -88,6 +88,55 @@ describe('MapDetalles', () => {
     expect(screen.queryByText('Sin datos de ruta')).not.toBeInTheDocument();
   });
 
+  it('cuando todas las paradas están entregadas no calcula una ETA con la hora actual', () => {
+    mockUseGetRoute.mockReturnValue({
+      viaje: VIAJE,
+      paradas: [
+        { ...PARADAS[0], estado: 'finalizado' },
+        { ...PARADAS[1], estado: 'finalizado' },
+      ],
+      progreso: { paradasEntregadas: 2, paradasTotales: 2, enviosPendientes: 0 },
+      route: { legDurations: [600, 900] },
+    });
+
+    renderWithProviders(<MapDetalles />);
+
+    // Sin próxima parada (todas entregadas) no hay ETA que calcular: si el
+    // fix se revirtiera, `restanteSegundos` caería a 0 (slice vacío) y esto
+    // renderizaría una ETA basada en `Date.now()` en lugar de este mensaje.
+    expect(screen.getByText('Sin datos de ruta')).toBeInTheDocument();
+    expect(screen.getByText('Sin paradas pendientes')).toBeInTheDocument();
+    expect(screen.queryByText('Belgrano 200')).not.toBeInTheDocument();
+  });
+
+  describe('link de WhatsApp del chofer', () => {
+    const renderConPrefijo = (prefijo) => {
+      mockUseGetRoute.mockReturnValue({
+        viaje: { ...VIAJE, chofer: { ...VIAJE.chofer, prefijo, telefono: '3510000003' } },
+        paradas: PARADAS,
+        progreso: { paradasEntregadas: 1, paradasTotales: 2, enviosPendientes: 3 },
+        route: { legDurations: [600, 900] },
+      });
+      renderWithProviders(<MapDetalles />);
+      return screen.getByRole('link', { name: 'Contactar por WhatsApp' });
+    };
+
+    it('con prefijo "11" (area code, formato usado en los mocks de mapa) arma wa.me/54<prefijo><telefono>', () => {
+      const link = renderConPrefijo('11');
+      expect(link).toHaveAttribute('href', 'https://wa.me/54113510000003');
+    });
+
+    it('con prefijo "351" (formato real confirmado contra el seed dev, SHG-DEV viaje id 2) arma wa.me/54<prefijo><telefono>', () => {
+      const link = renderConPrefijo('351');
+      expect(link).toHaveAttribute('href', 'https://wa.me/543513510000003');
+    });
+
+    it('con prefijo "+54" (código de país con "+") lo despoja y no duplica el "54"', () => {
+      const link = renderConPrefijo('+54');
+      expect(link).toHaveAttribute('href', 'https://wa.me/543510000003');
+    });
+  });
+
   it('linkea al detalle real del viaje (~/viajes/:id)', () => {
     renderWithProviders(<MapDetalles />);
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  digitosWhatsapp,
   EMPTY,
   formatDesdeAhora,
   formatDireccion,
@@ -8,6 +9,7 @@ import {
   formatFechaHora,
   formatPeso,
   formatTelefono,
+  normalizarPrefijoWhatsapp,
 } from "./format";
 
 describe("formatFecha / formatFechaHora", () => {
@@ -43,6 +45,30 @@ describe("formatTelefono", () => {
   it("tolera partes faltantes", () => {
     expect(formatTelefono(null, "11")).toBe("11");
     expect(formatTelefono(null, null)).toBe(EMPTY);
+  });
+});
+
+describe("normalizarPrefijoWhatsapp / digitosWhatsapp", () => {
+  it("deja el código de área tal cual (formato real: chofer.prefijo del seed dev)", () => {
+    expect(normalizarPrefijoWhatsapp("351")).toBe("351");
+    expect(normalizarPrefijoWhatsapp("11")).toBe("11");
+  });
+
+  it("despoja un código de país ('+54' o '54') para no duplicarlo", () => {
+    expect(normalizarPrefijoWhatsapp("+54")).toBe("");
+    expect(normalizarPrefijoWhatsapp("54")).toBe("");
+  });
+
+  it("EMPTY string para prefijo nulo/vacío", () => {
+    expect(normalizarPrefijoWhatsapp(null)).toBe("");
+    expect(normalizarPrefijoWhatsapp(undefined)).toBe("");
+  });
+
+  it("digitosWhatsapp junta prefijo normalizado + teléfono, sin no-dígitos", () => {
+    expect(digitosWhatsapp("351", "3510000003")).toBe("3513510000003");
+    expect(digitosWhatsapp("11", "5555-4444")).toBe("1155554444");
+    expect(digitosWhatsapp(null, "3510000003")).toBe("3510000003");
+    expect(digitosWhatsapp("351", null)).toBe("351");
   });
 });
 
