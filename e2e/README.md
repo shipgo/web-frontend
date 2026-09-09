@@ -174,14 +174,17 @@ Todo vive en `e2e/lib/config.js`. Las más relevantes:
   para headless) pero engancharlo a un pipeline es `SHG-INFRA-002`.
 - Mobile E2E: `SHG-MOB-016`, en `app-mobile`, otro repo.
 
-## Auditoría de accesibilidad (`axe-mvp-audit`, SHG-FE-041)
+## Auditoría de accesibilidad (`axe-mvp-audit`, SHG-FE-041 + SHG-FE-045)
 
 `e2e/cases/axe-mvp-audit.js` corre `axe-core` (inyectado vía
-`page.addScriptTag`, ver `e2e/lib/axe.js`) contra las 9 rutas de las 6
+`page.addScriptTag`, ver `e2e/lib/axe.js`) contra las 12 rutas de las 6
 pantallas MVP — login (sin sesión), `/dashboard`, `/envios`, `/envios/crear`,
 un `/envios/:id` real (primer elemento del seed vía `GET /api/envio`), lo
-mismo para `/viajes`, y `/mapa` — logueado como `super`. A diferencia de
-`smoke-happy-path`, este caso **sí falla** ante cualquier violación de axe
+mismo para `/viajes`, `/mapa`, y (SHG-FE-045) un `/envios/:id`/`/viajes/:id`
+adicional en estado `en_camino` (botones "Entregar"/"Marcar fallo"/
+"Finalizar") más un `/viajes/:id` en un estado cancelable (botón
+"Cancelar") — logueado como `super`. A diferencia de `smoke-happy-path`,
+este caso **sí falla** ante cualquier violación de axe
 con impacto `critical`/`serious` que no esté en `KNOWN_ACCEPTED_VIOLATIONS`
 (un allowlist explícito y documentado en el propio archivo para deuda ya
 revisada y aceptada en otra tarea — hoy sólo el `nested-interactive` de la
