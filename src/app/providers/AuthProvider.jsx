@@ -6,10 +6,25 @@ import { landingPathFor } from "@domain/roles";
 import { Center, Loader } from "@mantine/core";
 
 // Rutas públicas que no requieren autenticación (SHG-FE-023 / SHG-FE-025 /
-// SHG-FE-026). El match es por `startsWith`, así que `/recuperar-cuenta/:token`,
-// `/tracking/:codigo` y `/registro/verificar` también quedan cubiertos.
-// `/portal` NO es público: requiere sesión de CUSTOMER.
-const PUBLIC_ROUTES = ["/login", "/recuperar-cuenta", "/tracking", "/registro"];
+// SHG-FE-026 / SHG-FE-044). El match es por `startsWith`, así que
+// `/recuperar-cuenta/:token`, `/tracking/:codigo` y `/registro/verificar`
+// también quedan cubiertos. `/portal/ingresar` es la ÚNICA excepción pública
+// dentro de `/portal` (entrada dedicada del customer, SHG-FE-044): el resto de
+// `/portal/**` NO es público, requiere sesión de CUSTOMER (`PortalRoute`).
+const PUBLIC_ROUTES = [
+  "/login",
+  "/recuperar-cuenta",
+  "/tracking",
+  "/registro",
+  "/portal/ingresar",
+];
+
+// La raíz (`/`, SHG-FE-044) es pública EXACTA (no prefijo): es la landing sin
+// sesión; con sesión, `RootRoute` (`app/routes/index.jsx`) delega en el home
+// por rol. No puede ir en `PUBLIC_ROUTES` como prefijo porque `startsWith("/")`
+// matchearía absolutamente todas las rutas.
+const isPublicRoute = (path) =>
+  path === "/" || PUBLIC_ROUTES.some((route) => path.startsWith(route));
 
 const AuthProvider = ({ children }) => {
   const [, setLocation] = useLocation();
@@ -34,11 +49,8 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (isInitialized && !isLoading) {
       const currentPath = window.location.pathname;
-      const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-        currentPath.startsWith(route)
-      );
 
-      if (!isAuthenticated && !isPublicRoute) {
+      if (!isAuthenticated && !isPublicRoute(currentPath)) {
         setLocation("/login");
       } else if (isAuthenticated && currentPath === "/login") {
         // Si ya está autenticado y está en login, redirigir al home que

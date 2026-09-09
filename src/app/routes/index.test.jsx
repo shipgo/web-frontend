@@ -21,6 +21,10 @@ vi.mock("@features/tracking", () => ({
   TrackingPublicoPage: () => <div>Tracking publico</div>,
 }));
 
+vi.mock("@features/landing", () => ({
+  LandingPage: () => <div>Landing</div>,
+}));
+
 vi.mock("@features/portal", () => ({
   RegistroPage: () => <div>Registro</div>,
   VerificarCuentaPage: () => <div>Verificar cuenta</div>,
@@ -34,7 +38,9 @@ vi.mock("@components/MobileOnlyScreen", () => ({
   default: () => <div>Pantalla usá la app</div>,
 }));
 
-vi.mock("@features/login", () => ({ default: () => <div>Login</div> }));
+vi.mock("@features/login", () => ({
+  default: ({ variant = "operator" }) => <div>Login:{variant}</div>,
+}));
 vi.mock("@features/login/RecuperarCuenta", () => ({
   default: () => <div>RecuperarCuenta</div>,
 }));
@@ -66,7 +72,7 @@ describe("AppRoutes", () => {
     setAuth({ user: null, isLoading: false, isAuthenticated: false });
     renderWithProviders(<AppRoutes />, { route: "/envios" });
 
-    expect(await screen.findByText("Login")).toBeInTheDocument();
+    expect(await screen.findByText("Login:operator")).toBeInTheDocument();
   });
 
   it("CHOFER ve la pantalla 'usá la app' sin el layout de gestión", async () => {
@@ -263,5 +269,61 @@ describe("AppRoutes", () => {
 
     expect(await screen.findByText("Home")).toBeInTheDocument();
     expect(screen.queryByText("Portal envios")).not.toBeInTheDocument();
+  });
+
+  // --- Landing pública (SHG-FE-044) ---
+
+  it("sin sesión, / sirve la landing pública (no redirige a /login)", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(await screen.findByText("Landing")).toBeInTheDocument();
+    expect(screen.queryByText(/^Login/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
+  });
+
+  it("con sesión, un ADMIN en / ve su Home (no la landing)", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("Landing")).not.toBeInTheDocument();
+  });
+
+  it("con sesión, un CUSTOMER en / es redirigido al portal (no la landing)", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_CUSTOMER" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(await screen.findByText("Portal envios")).toBeInTheDocument();
+    expect(screen.queryByText("Landing")).not.toBeInTheDocument();
+  });
+
+  // --- Entrada dedicada del customer (SHG-FE-044) ---
+
+  it("sin sesión, /portal/ingresar renderiza el login en variante customer", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/portal/ingresar" });
+
+    expect(await screen.findByText("Login:customer")).toBeInTheDocument();
+  });
+
+  it("con sesión, /portal/ingresar redirige al home por rol (no muestra el login)", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/portal/ingresar" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("Login:customer")).not.toBeInTheDocument();
   });
 });

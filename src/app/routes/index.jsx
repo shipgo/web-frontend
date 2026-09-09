@@ -25,6 +25,9 @@ const RecuperarCuentaTokenPage = lazy(
   () => import('@features/login/RecuperarCuentaToken'),
 );
 const HomePage = lazy(() => import('@features/home'));
+const LandingPage = lazy(() =>
+  import('@features/landing').then((m) => ({ default: m.LandingPage })),
+);
 const TrackingPublicoPage = lazy(() =>
   import('@features/tracking').then((m) => ({ default: m.TrackingPublicoPage })),
 );
@@ -126,10 +129,48 @@ const ProtectedRoutes = () => {
   );
 };
 
+/**
+ * Ruta raíz (`/`, SHG-FE-044). Sin sesión → landing pública de marketing. Con
+ * sesión → delega en `ProtectedRoutes`, que ya resuelve el home por rol
+ * (HomePage para SUPERUSER/ADMIN en `/`; CUSTOMER se redirige al portal; sólo
+ * mobile ve `MobileOnlyScreen`) — evita repetir esa lógica acá.
+ */
+const RootRoute = () => {
+  const { isLoading, isAuthenticated } = useAuth();
+
+  if (isLoading) return <RouteFallback />;
+
+  if (!isAuthenticated) {
+    return (
+      <Suspense fallback={<RouteFallback />}>
+        <LandingPage />
+      </Suspense>
+    );
+  }
+
+  return <ProtectedRoutes />;
+};
+
 const AppRoutes = () => {
   return (
     <Switch>
+      {/* Landing pública (SHG-FE-044). Debe matchear ANTES del fallback
+          `<Route component={ProtectedRoutes} />` para poder mostrar la landing
+          sin sesión; `RootRoute` delega en `ProtectedRoutes` cuando sí hay
+          sesión, así que el comportamiento autenticado no cambia. */}
+      <Route path='/' component={RootRoute} />
       <Route path='/login' component={LoginPage} />
+      {/* Entrada dedicada del customer (SHG-FE-044): mismo `LoginPage` que
+          `/login`, sólo cambia el copy (`variant="customer"`) — el destino
+          post-login sigue siendo `landingPathFor(user)` según el rol real. Va
+          ANTES del nest guardado de `PORTAL_BASE_PATH` para no quedar atrapada
+          por `PortalRoute` (que exige sesión CUSTOMER: no se puede loguear
+          "adentro" de una guarda que pide estar ya logueado). */}
+      <Route path='/portal/ingresar'>
+        <PublicRoute>
+          <LoginPage variant='customer' />
+        </PublicRoute>
+      </Route>
       {/* Tracking público / guest (SHG-FE-025, CONTRACTS.md §7). FUERA de
           `ProtectedRoutes`: sin login y sin el AppShell de admin — usa
           `PublicLayout` (que reutilizará el portal CUSTOMER de SHG-FE-026).

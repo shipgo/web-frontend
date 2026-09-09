@@ -72,19 +72,24 @@ restclient.interceptors.response.use(
         isRefreshing = false;
 
         // Redirigir a login solo si no estamos ya en una ruta pública
-        // Rutas públicas (SHG-FE-023 / SHG-FE-025 / SHG-FE-026): login, flujo de
-        // recuperación de cuenta, tracking guest y registro CUSTOMER.
-        // `/recuperar-cuenta/:token`, `/tracking/:codigo` y `/registro/verificar`
-        // caen acá por el `startsWith`. `/portal` NO es público.
+        // Rutas públicas (SHG-FE-023 / SHG-FE-025 / SHG-FE-026 / SHG-FE-044):
+        // login, flujo de recuperación de cuenta, tracking guest, registro
+        // CUSTOMER y la landing (`/`, exacta). `/recuperar-cuenta/:token`,
+        // `/tracking/:codigo` y `/registro/verificar` caen acá por el
+        // `startsWith`. `/portal/ingresar` es la única excepción pública dentro
+        // de `/portal` (entrada dedicada del customer) — el resto de `/portal`
+        // NO es público.
         const publicRoutes = [
           "/login",
           "/recuperar-cuenta",
           "/tracking",
           "/registro",
+          "/portal/ingresar",
         ];
-        const isPublicRoute = publicRoutes.some((route) =>
-          window.location.pathname.startsWith(route)
-        );
+        const currentPath = window.location.pathname;
+        const isPublicRoute =
+          currentPath === "/" ||
+          publicRoutes.some((route) => currentPath.startsWith(route));
 
         if (!isPublicRoute) {
           window.location.href = "/login";

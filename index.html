@@ -4,7 +4,32 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ShipGo! 📦</title>
+    <!--
+      Fallback estático de SEO/Open Graph para la landing pública (SHG-FE-044).
+
+      Los crawlers que generan previews de links (Facebook, WhatsApp, Slack,
+      X/Twitter, LinkedIn) no ejecutan JavaScript: sólo ven este HTML crudo tal
+      cual lo sirve el hosting, nunca lo que `useDocumentMeta` inyecta en
+      cliente vía `useEffect` (ver `src/features/landing/hooks/useDocumentMeta.js`).
+      Por eso el copy de abajo está hardcodeado acá en vez de sólo vivir en
+      `src/features/landing/constants/seo.js` — este archivo no pasa por el
+      bundler de forma dinámica, así que hay que mantener ambos lugares en
+      sync a mano si cambia el copy de SEO de la landing.
+      `useDocumentMeta` sigue actualizando estos tags en runtime (no hace
+      daño y ayuda si alguien navega dentro de la SPA), pero ya no es la
+      única fuente: este bloque es lo que ven los crawlers sin JS.
+    -->
+    <title>ShipGo — Envíos, viajes y seguimiento en vivo</title>
+    <meta
+      name="description"
+      content="ShipGo centraliza la gestión de envíos y viajes de tu operación, con seguimiento en vivo para tus clientes. Ingresá, creá tu cuenta o rastreá un envío por código."
+    />
+    <meta property="og:title" content="ShipGo — Envíos, viajes y seguimiento en vivo" />
+    <meta
+      property="og:description"
+      content="ShipGo centraliza la gestión de envíos y viajes de tu operación, con seguimiento en vivo para tus clientes. Ingresá, creá tu cuenta o rastreá un envío por código."
+    />
+    <meta property="og:type" content="website" />
   </head>
   <body>
     <div id="root"></div>
