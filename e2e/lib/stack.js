@@ -84,6 +84,15 @@ export async function ensureWebUp(log) {
     ["exec", "vite", "--port", String(config.webPort), "--strictPort"],
     {
       cwd: config.repoRoot,
+      // `VITE_TURNSTILE_ENABLED=false`: el captcha de Cloudflare Turnstile
+      // (SHG-FE-043) deja el botón "Iniciar sesión" deshabilitado hasta tener
+      // un token real — sin `VITE_TURNSTILE_SITE_KEY` configurada (no hay una
+      // de test en `.env.local` de esta máquina) el widget queda en estado
+      // "error" para siempre y el login por UI (`loginAs`) nunca puede pasar.
+      // `captcha.js` ya documenta este flag como pensado para dev/CI/e2e — lo
+      // seteamos sólo en el proceso de `vite` que el harness levanta él mismo,
+      // nunca en el entorno del desarrollador (SHG-FE-041).
+      env: { VITE_TURNSTILE_ENABLED: "false" },
       onLine: (line) => log(`[vite] ${line}`),
     },
   );

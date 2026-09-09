@@ -5,6 +5,7 @@ import { Center, Text } from "@mantine/core";
 
 import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
+import { VirtuosoItem } from "@components/VirtuosoListA11y";
 
 import ItemVehiculo from "./ItemVehiculo";
 import { useFormContext } from "../contexts/EnviosFormContext";
@@ -44,6 +45,7 @@ const ListaVehiculosDisponibles = ({
       data={vehiculos}
       style={{ flex: 1 }}
       components={{
+        Item: VirtuosoItem,
         EmptyPlaceholder: () => (
           <ScreenContainer
             styleProps={{

@@ -11,6 +11,7 @@ import {
   Textarea,
   NumberFormatter,
   Loader,
+  Pagination,
 } from "@mantine/core";
 import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 
@@ -45,6 +46,13 @@ export const THEME = createTheme({
         label: {
           marginBlockEnd: "0.5rem",
         },
+      },
+      // Sin `aria-label` propio, el botón de limpiar de un `Select` clearable
+      // queda sin nombre accesible (axe-core `button-name`, crítico —
+      // SHG-FE-041). Default global: cualquier `Select` puede pisarlo con su
+      // propio `clearButtonProps` si el label no aplica.
+      defaultProps: {
+        clearButtonProps: { "aria-label": "Limpiar selección" },
       },
     }),
     MultiSelect: MultiSelect.extend({
@@ -104,6 +112,25 @@ export const THEME = createTheme({
         type: "bars",
       },
     }),
+    // Mantine no le pone `aria-label` propio a los controles prev/next/first/
+    // last de `Pagination` — quedan como botones sin nombre accesible
+    // (axe-core `button-name`, crítico, en cada listado con paginación:
+    // envíos, viajes, y el resto de las listas que usan `<Pagination>` sin
+    // pasarle nada — ver SHG-FE-041). Default global en vez de repetirlo en
+    // cada página.
+    Pagination: Pagination.extend({
+      defaultProps: {
+        getControlProps: (control) => {
+          const labels = {
+            first: "Primera página",
+            previous: "Página anterior",
+            next: "Página siguiente",
+            last: "Última página",
+          };
+          return labels[control] ? { "aria-label": labels[control] } : {};
+        },
+      },
+    }),
     NumberFormatter: NumberFormatter.extend({
       defaultProps: {
         thousandSeparator: ".",
@@ -142,6 +169,9 @@ export const THEME = createTheme({
       defaultProps: {
         valueFormat: "DD/MM/YYYY",
         // size: "md",
+        // Mismo motivo que en `Select` — botón de limpiar sin nombre
+        // accesible (axe-core `button-name`, crítico — SHG-FE-041).
+        clearButtonProps: { "aria-label": "Limpiar rango de fechas" },
       },
     }),
   },

@@ -5,6 +5,7 @@ import { Virtuoso } from "react-virtuoso";
 
 import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
+import { VirtuosoItem } from "@components/VirtuosoListA11y";
 import { formatDireccion } from "@domain/format";
 
 import ItemPaquete from "./ItemPaquete";
@@ -137,6 +138,7 @@ const ListadoEnviosPendientes = ({
         data={envios}
         style={{ flex: 1 }}
         components={{
+          Item: VirtuosoItem,
           Footer: () =>
             envios.length > 0 ? (
               <Center h="72px">

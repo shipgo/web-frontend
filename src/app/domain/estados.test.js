@@ -49,6 +49,9 @@ describe("estadoBadge", () => {
     expect(estadoBadge("envio", "en_camino")).toEqual({
       label: "En camino",
       color: "orange",
+      // Ajuste de contraste del variant `light` de Badge (SHG-FE-041) — ver
+      // `BADGE_TEXT_CONTRAST_OVERRIDE` en estados.js.
+      textColor: "#99350a",
     });
     expect(estadoBadge("viaje", "con_problemas")).toEqual({
       label: "Con problemas",

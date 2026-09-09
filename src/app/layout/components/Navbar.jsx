@@ -34,8 +34,11 @@ const AppNavbar = () => {
 
   return (
     <AppShellNavbar>
+      {/* `alt` no vacío: sin él, el link "a" (sin texto propio, sólo el logo)
+          queda sin nombre accesible — axe-core `image-alt` + `link-name`,
+          crítico/serio en las 9 rutas auditadas (SHG-FE-041). */}
       <UnstyledButton to="/" component={Link} p="md" display="flex">
-        <Image src={logo} h={37} w="auto" fit="contain" mx="auto" />
+        <Image src={logo} alt="ShipGo — inicio" h={37} w="auto" fit="contain" mx="auto" />
       </UnstyledButton>
 
       <NavLink

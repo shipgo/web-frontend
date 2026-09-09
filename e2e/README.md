@@ -173,3 +173,36 @@ Todo vive en `e2e/lib/config.js`. Las más relevantes:
 - CI: el target es parametrizable (`E2E_*` env vars, `CI` auto-detectado
   para headless) pero engancharlo a un pipeline es `SHG-INFRA-002`.
 - Mobile E2E: `SHG-MOB-016`, en `app-mobile`, otro repo.
+
+## Auditoría de accesibilidad (`axe-mvp-audit`, SHG-FE-041)
+
+`e2e/cases/axe-mvp-audit.js` corre `axe-core` (inyectado vía
+`page.addScriptTag`, ver `e2e/lib/axe.js`) contra las 9 rutas de las 6
+pantallas MVP — login (sin sesión), `/dashboard`, `/envios`, `/envios/crear`,
+un `/envios/:id` real (primer elemento del seed vía `GET /api/envio`), lo
+mismo para `/viajes`, y `/mapa` — logueado como `super`. A diferencia de
+`smoke-happy-path`, este caso **sí falla** ante cualquier violación de axe
+con impacto `critical`/`serious` que no esté en `KNOWN_ACCEPTED_VIOLATIONS`
+(un allowlist explícito y documentado en el propio archivo para deuda ya
+revisada y aceptada en otra tarea — hoy sólo el `nested-interactive` de la
+fila de `/viajes`, PR #75). Deja un `<ruta>.axe.json` con el resultado
+completo de axe por ruta en el directorio de artefactos del caso (además del
+screenshot que ya deja `logger.step`).
+
+```bash
+npm run e2e -- --case=axe-mvp-audit
+```
+
+**Captcha (Cloudflare Turnstile, SHG-FE-043) y el login del harness:** desde
+que ese contrato se mergeó, el botón "Iniciar sesión" queda deshabilitado
+hasta tener un `captcha.token` real — sin `VITE_TURNSTILE_SITE_KEY`
+configurada (no hay una site key de test en el `.env.local` de esta máquina)
+el widget nunca resuelve, así que **ningún** caso que loguee por UI
+(`loginAs`, usado también por `smoke-happy-path`) puede pasar sin
+desactivarlo. `ensureWebUp` (`e2e/lib/stack.js`) le pasa
+`VITE_TURNSTILE_ENABLED=false` al proceso de `vite` que el harness levanta él
+mismo — sólo a ese proceso, nunca al `vite` que corre un desarrollador a
+mano. Si reusás un `vite` que ya estaba corriendo (arrancado por vos, sin esa
+variable), el login por UI va a quedar trabado — arrancalo con
+`VITE_TURNSTILE_ENABLED=false pnpm dev` o dejá que el harness lo levante él
+mismo.

@@ -104,15 +104,17 @@ const NotificacionesMenu = () => {
       shadow="md"
       withArrow
     >
-      <Menu.Target>
-        <Indicator
-          inline
-          disabled={unreadCount === 0}
-          label={badge}
-          size={16}
-          offset={5}
-          color="red"
-        >
+      {/* `Menu.Target` clona su hijo DIRECTO para inyectarle `aria-haspopup`/
+          `aria-expanded` — por eso el target tiene que ser el `ActionIcon`
+          (un <button> real) y no el `Indicator` (un <div> decorativo). Con el
+          `Indicator` como hijo directo, esos atributos ARIA caían en el div
+          y axe-core los marcaba inválidos ahí (`aria-allowed-attr`, crítico
+          en las 9 rutas auditadas — SHG-FE-041). El `Indicator` se queda
+          envolviendo exactamente lo mismo que antes (el botón entero, no sólo
+          el ícono) para no cambiar el layout — sólo se invirtió cuál de los
+          dos queda "afuera". */}
+      <Indicator inline disabled={unreadCount === 0} label={badge} size={16} offset={5} color="red">
+        <Menu.Target>
           <ActionIcon
             size="input-sm"
             variant="subtle"
@@ -124,8 +126,8 @@ const NotificacionesMenu = () => {
           >
             <IconBell size={24} />
           </ActionIcon>
-        </Indicator>
-      </Menu.Target>
+        </Menu.Target>
+      </Indicator>
 
       <Menu.Dropdown>
         <Menu.Label>Notificaciones</Menu.Label>
