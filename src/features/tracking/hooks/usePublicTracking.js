@@ -36,7 +36,9 @@ export const clasificarErrorTracking = (error) => {
  * usado por `PortalEnvioDetalle` (SHG-FE-026), que muestra el mismo detalle a
  * un CUSTOMER ya autenticado y queda fuera del alcance de esta tarea (no es
  * una superficie pública; ver nota en `SHG-FE-043` sobre "no captcha detrás
- * de login"). Ver `coordination/frontend.md` para el detalle de este gap.
+ * de login"). Ver la entrada "SHG-FE-043 → BE, gap sin resolver" en
+ * `coordination/backend.md` para el detalle de este gap y qué falta resolver
+ * antes de activar `turnstile.enabled=true` en un ambiente real.
  *
  * @param {string|null|undefined} codigo Código ya normalizado. Si es falsy la query queda inactiva.
  * @param {{ enabled?: boolean, captchaToken?: string|null }} [options]
