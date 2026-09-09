@@ -15,6 +15,9 @@ import { IconArrowLeft, IconCheck } from "@tabler/icons-react";
 
 import { applyApiError } from "@domain/apiError";
 import { useAuthStore } from "@stores/auth.store";
+import { useCaptcha } from "@hooks/useCaptcha";
+import CaptchaField from "@components/CaptchaField";
+import { isCaptchaApiError } from "@config/captcha";
 
 import AuthCardShell from "../components/AuthCardShell";
 import {
@@ -31,6 +34,7 @@ import {
  */
 const RecuperarCuenta = () => {
   const verifyEmail = useAuthStore((state) => state.verifyEmail);
+  const captcha = useCaptcha();
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -45,9 +49,14 @@ const RecuperarCuenta = () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      await verifyEmail(userEmail.trim());
+      await verifyEmail(userEmail.trim(), captcha.token);
       setEnviado(true);
     } catch (error) {
+      // Captcha faltante/inválido/vencido (SHG-BE-032): re-emitimos el
+      // challenge, el token es de un solo uso.
+      if (isCaptchaApiError(error)) {
+        captcha.reset();
+      }
       setErrorMsg(
         applyApiError(form, error, {
           fallbackMessage: "No pudimos procesar tu pedido. Intentá de nuevo.",
@@ -100,7 +109,14 @@ const RecuperarCuenta = () => {
             placeholder="tu@email.com"
           />
 
-          <Button type="submit" size="md" loading={loading}>
+          <CaptchaField captcha={captcha} />
+
+          <Button
+            type="submit"
+            size="md"
+            loading={loading}
+            disabled={!captcha.token}
+          >
             Enviar enlace
           </Button>
 

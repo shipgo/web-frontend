@@ -1,5 +1,6 @@
 import { restclient } from '@config/restclient';
 import { API_URLS } from '@constants/apiUrls';
+import { captchaHeader } from '@config/captcha';
 
 /**
  * Capa API del portal CUSTOMER.
@@ -29,13 +30,18 @@ export const registroApi = {
    * rol). La cuenta queda deshabilitada hasta verificar el email.
    *
    * `201 { codigo: 201, mensaje }`. Errores `400 { statusCode, message }`
-   * (email inválido / password corta / campos vacíos / email ya registrado).
+   * (email inválido / password corta / campos vacíos / email ya registrado) o
+   * `400 { statusCode, message, code: "captcha_invalid" }` (SHG-FE-043 /
+   * SHG-BE-032) si falta/es inválido el token de captcha.
    *
    * @param {RegisterReqDTO} body
+   * @param {string} captchaToken Token vigente de Cloudflare Turnstile (`useCaptcha`).
    * @returns {Promise<{ codigo?: number, mensaje?: string }>}
    */
-  register: async (body) => {
-    const { data } = await restclient.post(API_URLS.REGISTER_URL, body);
+  register: async (body, captchaToken) => {
+    const { data } = await restclient.post(API_URLS.REGISTER_URL, body, {
+      headers: captchaHeader(captchaToken),
+    });
     return data;
   },
 

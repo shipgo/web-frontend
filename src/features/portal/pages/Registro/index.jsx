@@ -16,6 +16,9 @@ import { useForm, schemaResolver } from '@mantine/form';
 import { IconCircleCheck, IconMailCheck } from '@tabler/icons-react';
 
 import { parseApiError } from '@domain/apiError';
+import { useCaptcha } from '@hooks/useCaptcha';
+import CaptchaField from '@components/CaptchaField';
+import { isCaptchaApiError } from '@config/captcha';
 
 import { registroApi } from '../../api/portal.api';
 import { REGISTRO_SCHEMA, REGISTRO_INITIAL_VALUES } from './constants/schema';
@@ -30,6 +33,7 @@ import { REGISTRO_SCHEMA, REGISTRO_INITIAL_VALUES } from './constants/schema';
 const RegistroPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState(null);
+  const captcha = useCaptcha();
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -40,15 +44,30 @@ const RegistroPage = () => {
   const handleSubmit = form.onSubmit(async (values) => {
     setSubmitting(true);
     try {
-      await registroApi.register({
-        email: values.email.trim(),
-        password: values.password,
-        nombre: values.nombre.trim(),
-        apellido: values.apellido.trim(),
-        telefono: values.telefono.trim(),
-      });
+      await registroApi.register(
+        {
+          email: values.email.trim(),
+          password: values.password,
+          nombre: values.nombre.trim(),
+          apellido: values.apellido.trim(),
+          telefono: values.telefono.trim(),
+        },
+        captcha.token,
+      );
       setRegisteredEmail(values.email.trim());
     } catch (error) {
+      // Captcha faltante/inválido/vencido (SHG-BE-032): re-emitimos el
+      // challenge — el token es de un solo uso — y avisamos con un mensaje
+      // propio en vez de mostrarlo como si fuera un error del campo email.
+      if (isCaptchaApiError(error)) {
+        captcha.reset();
+        form.setErrors({
+          email:
+            'No pudimos verificar la seguridad del formulario. Resolvé el captcha de nuevo e intentá otra vez.',
+        });
+        return;
+      }
+
       // El `400` de "email ya registrado" llega como `{ statusCode, message }`
       // sin `fields` (CONTRACT-005): lo mostramos como error del campo `email`.
       // Si el backend mandara `fields`, se respetan tal cual.
@@ -143,9 +162,12 @@ const RegistroPage = () => {
             {...form.getInputProps('password')}
           />
 
+          <CaptchaField captcha={captcha} />
+
           <Button
             type="submit"
             loading={submitting}
+            disabled={!captcha.token}
             leftSection={<IconCircleCheck size={18} />}
           >
             Crear cuenta

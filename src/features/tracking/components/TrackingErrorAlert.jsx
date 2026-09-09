@@ -3,6 +3,7 @@ import {
   IconAlertTriangle,
   IconClockExclamation,
   IconPackageOff,
+  IconShieldExclamation,
 } from '@tabler/icons-react';
 
 const CONFIG = {
@@ -18,6 +19,13 @@ const CONFIG = {
     icon: IconClockExclamation,
     title: 'Demasiadas consultas',
     message: 'Hiciste muchas consultas seguidas. Probá de nuevo en un minuto.',
+  },
+  captcha_invalid: {
+    color: 'red',
+    icon: IconShieldExclamation,
+    title: 'No pudimos verificar que sos una persona',
+    message:
+      'La verificación de seguridad venció o no es válida. Resolvela de nuevo y volvé a consultar.',
   },
   network: {
     color: 'red',

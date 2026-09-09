@@ -13,12 +13,14 @@ import { codigoEsValido, CODIGO_INVALIDO_MSG, normalizarCodigo } from '../utils'
  * @param {(codigo: string) => void} props.onSubmit  Recibe el código YA normalizado.
  * @param {boolean} [props.loading=false]
  * @param {boolean} [props.autoFocus=true]
+ * @param {boolean} [props.disabled=false]  Bloquea el submit (p. ej. sin token de captcha aún, SHG-FE-043).
  */
 const TrackingSearchForm = ({
   initialValue = '',
   onSubmit,
   loading = false,
   autoFocus = true,
+  disabled = false,
 }) => {
   const form = useForm({
     mode: 'uncontrolled',
@@ -43,6 +45,7 @@ const TrackingSearchForm = ({
           autoCapitalize="characters"
           autoComplete="off"
           spellCheck={false}
+          disabled={disabled}
           key={form.key('codigo')}
           {...form.getInputProps('codigo')}
         />
@@ -54,6 +57,7 @@ const TrackingSearchForm = ({
             type="submit"
             size="md"
             loading={loading}
+            disabled={disabled}
             leftSection={<IconSearch size={18} />}
           >
             Consultar
