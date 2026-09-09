@@ -177,7 +177,7 @@ const LoginPage = ({ variant = "operator" }) => {
             </Stack>
 
             <FocusTrap active>
-              <Stack active gap="xs">
+              <Stack gap="xs">
                 <TextInput
                   {...form.getInputProps("username")}
                   autoFocus
