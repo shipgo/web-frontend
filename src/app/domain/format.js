@@ -65,6 +65,33 @@ export const formatDireccion = (destino, { completa = false } = {}) => {
   return [calle, resto].filter(Boolean).join(' · ') || EMPTY;
 };
 
+/**
+ * Normaliza el `prefijo` de un contacto (chofer) para armar un link de
+ * WhatsApp (`wa.me/54<prefijo><telefono>`) sin duplicar el código de país.
+ *
+ * En el DTO real que llega del backend (confirmado contra el seed dev —
+ * `GET /api/viaje/{id}` → `chofer.prefijo`, ej. `"351"` para Córdoba) el
+ * campo es el código de área, no el de país — coincide con la convención ya
+ * usada en los mocks de `mapa` (`prefijo: '11'`). Por las dudas también se
+ * despoja un código de país (`"+54"` / `"54"`) si alguien lo llegase a
+ * cargar ahí, para no terminar con un `54` duplicado en el link.
+ */
+export const normalizarPrefijoWhatsapp = (prefijo) => {
+  if (!prefijo) return "";
+  let normalizado = String(prefijo).replace(/^\+/, "").trim();
+  if (normalizado.startsWith("54")) {
+    normalizado = normalizado.slice(2);
+  }
+  return normalizado;
+};
+
+/**
+ * Dígitos (sin separadores) para armar `https://wa.me/54<digitos>` a partir
+ * de `{ prefijo, telefono }` de un chofer/contacto.
+ */
+export const digitosWhatsapp = (prefijo, telefono) =>
+  `${normalizarPrefijoWhatsapp(prefijo)}${telefono ?? ""}`.replace(/\D/g, "");
+
 const pesoFmt = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 });
 
 /** Peso `1.234,5 kg`. `null`/`undefined` -> `—`. */

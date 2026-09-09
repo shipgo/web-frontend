@@ -2,7 +2,7 @@ import { ActionIcon, Badge, Box, Divider, Group, Text, Tooltip } from '@mantine/
 import { useHover } from '@mantine/hooks';
 import { IconBrandWhatsapp } from '@tabler/icons-react';
 
-import { formatFechaHora } from '@domain/format';
+import { digitosWhatsapp, formatFechaHora } from '@domain/format';
 import { useSelectedViaje } from '../contexts/selectedViaje';
 import { getEstadoVisualViaje } from '../utils/estadoVisual';
 
@@ -16,7 +16,7 @@ const MapListadoViajesItem = ({ viaje, isLast }) => {
 
   const handleWhatsApp = (e) => {
     e.stopPropagation();
-    const digitos = `${chofer?.prefijo ?? ''}${chofer?.telefono ?? ''}`.replace(/\D/g, '');
+    const digitos = digitosWhatsapp(chofer?.prefijo, chofer?.telefono);
     if (!digitos) return;
     window.open(`https://wa.me/54${digitos}`, '_blank');
   };

@@ -26,7 +26,7 @@ import {
 } from '@tabler/icons-react';
 
 import { esEstadoTerminal, estadoBadge } from '@domain/estados';
-import { formatFechaHora, formatTelefono } from '@domain/format';
+import { digitosWhatsapp as calcularDigitosWhatsapp, formatFechaHora, formatTelefono } from '@domain/format';
 
 import { useSelectedViaje } from '../contexts/selectedViaje';
 import { useGetRoute } from '../hooks/useGetRoute';
@@ -105,18 +105,7 @@ const MapDetalles = () => {
     [chofer?.nombre, chofer?.apellido].filter(Boolean).join(' ') || 'Sin chofer asignado';
   const telefono = chofer?.telefono ? formatTelefono(chofer) : null;
 
-  // WhatsApp: normalizar prefijo que puede ser '+54', '54', o '11' (area code)
-  // para evitar duplicar el código de país. Remover '+' y '54' líderes del prefijo,
-  // concatenar con teléfono, remover no-dígitos, prepender '54' una sola vez.
-  const normalizarPrefijo = (prefijo) => {
-    if (!prefijo) return '';
-    let normalizado = String(prefijo).replace(/^\+/, '').trim();
-    if (normalizado.startsWith('54')) {
-      normalizado = normalizado.slice(2);
-    }
-    return normalizado;
-  };
-  const digitosWhatsapp = `${normalizarPrefijo(chofer?.prefijo)}${chofer?.telefono ?? ''}`.replace(/\D/g, '');
+  const digitosWhatsapp = calcularDigitosWhatsapp(chofer?.prefijo, chofer?.telefono);
 
   const estadoInfo = estadoBadge('viaje', viaje.estado);
 

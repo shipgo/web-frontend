@@ -137,6 +137,33 @@ describe('useTrackingStream', () => {
     expect(invalidateSpy).not.toHaveBeenCalled();
   });
 
+  it('no dispara el refetch de reconexión cuando la PRIMERA conexión falla (sin onopen previo) y luego abre', () => {
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const { result } = renderHook(() => useTrackingStream(), { wrapper });
+
+    // La primera conexión nunca llega a abrir (onerror sin onopen previo):
+    // no es una "reconexión genuina" tras un corte real, es sólo la primera
+    // conexión que tarda en levantar.
+    act(() => {
+      MockEventSource.instances[0].onerror();
+    });
+    expect(result.current.status).toBe('error');
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(MockEventSource.instances).toHaveLength(2);
+    expect(result.current.status).toBe('connecting');
+
+    act(() => {
+      MockEventSource.instances[1].onopen();
+    });
+
+    expect(result.current.status).toBe('open');
+    expect(result.current.viajesNuevosTick).toBe(0);
+    expect(invalidateSpy).not.toHaveBeenCalled();
+  });
+
   it('dobla el delay de backoff en errores consecutivos, con un tope', () => {
     renderHook(() => useTrackingStream(), { wrapper });
 
