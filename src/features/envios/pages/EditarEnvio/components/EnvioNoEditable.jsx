@@ -17,7 +17,7 @@ import { estadoBadge } from "@domain/estados";
  */
 const EnvioNoEditable = ({ estado }) => {
   const [, navigate] = useLocation();
-  const { label, color } = estadoBadge("envio", estado);
+  const { label, color, textColor } = estadoBadge("envio", estado);
 
   return (
     <PageContainer>
@@ -29,7 +29,11 @@ const EnvioNoEditable = ({ estado }) => {
 
       <Card withBorder>
         <Stack align="center" py="xl" gap="sm">
-          <Badge color={color} size="lg">
+          {/* `c={textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE` en
+              `@domain/estados` — sin esto, "Entregado" no llega a 4.5:1
+              (axe-core `color-contrast`, SHG-FE-041). `undefined` para el
+              resto de los estados, sin efecto. */}
+          <Badge color={color} size="lg" c={textColor}>
             {label}
           </Badge>
           <Text c="dimmed" ta="center">

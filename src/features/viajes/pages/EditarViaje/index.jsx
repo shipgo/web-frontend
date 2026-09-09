@@ -69,6 +69,8 @@ const EditarViaje = () => {
     [viajeOriginal],
   );
 
+  const viajeEstadoInfo = viajeOriginal ? estadoBadge("viaje", viajeOriginal.estado) : null;
+
   const loadViaje = useCallback(async () => {
     if (!id) return;
 
@@ -175,12 +177,18 @@ const EditarViaje = () => {
             {!esEditable ? (
               <Card>
                 <Stack align="center" py="xl" gap="sm">
+                  {/* `c={viajeEstadoInfo.textColor}`: ver
+                      `BADGE_TEXT_CONTRAST_OVERRIDE` en `@domain/estados` —
+                      sin esto, "En camino"/"Finalizado" no llegan a 4.5:1
+                      (axe-core `color-contrast`, SHG-FE-041). `undefined`
+                      para el resto de los estados, sin efecto. */}
                   <Badge
-                    color={estadoBadge("viaje", viajeOriginal.estado).color}
+                    color={viajeEstadoInfo.color}
                     variant="light"
                     size="lg"
+                    c={viajeEstadoInfo.textColor}
                   >
-                    {estadoBadge("viaje", viajeOriginal.estado).label}
+                    {viajeEstadoInfo.label}
                   </Badge>
                   <Box ta="center">
                     <Text fw={600}>

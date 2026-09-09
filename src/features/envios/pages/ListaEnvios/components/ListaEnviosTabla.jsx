@@ -52,6 +52,7 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRe
         <Table.Tr>
           <Table.Th w={40}>
             <Checkbox
+              aria-label="Seleccionar todos los envíos"
               checked={allSelected}
               indeterminate={indeterminate}
               onChange={onToggleAll}
@@ -79,7 +80,11 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRe
           return (
             <Table.Tr key={id} bg={selectedIds.has(id) ? 'var(--mantine-color-blue-light)' : undefined}>
               <Table.Td>
-                <Checkbox checked={selectedIds.has(id)} onChange={() => onToggle(id)} />
+                <Checkbox
+                  aria-label={`Seleccionar envío ${codigoSeguimiento}`}
+                  checked={selectedIds.has(id)}
+                  onChange={() => onToggle(id)}
+                />
               </Table.Td>
 
               <Table.Td>
@@ -114,7 +119,11 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRe
               </Table.Td>
 
               <Table.Td>
-                <Badge color={estadoInfo.color} variant="light" radius="md">
+                {/* `c={estadoInfo.textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
+                    en `@domain/estados` — sin esto, "En camino"/"Entregado" no
+                    llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
+                    `undefined` para el resto de los estados, sin efecto. */}
+                <Badge color={estadoInfo.color} variant="light" radius="md" c={estadoInfo.textColor}>
                   {estadoInfo.label}
                 </Badge>
               </Table.Td>

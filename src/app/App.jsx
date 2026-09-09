@@ -2,7 +2,7 @@ import "dayjs/locale/es";
 
 import { ModalsProvider } from "@mantine/modals";
 import { DatesProvider } from "@mantine/dates";
-import { MantineProvider, v8CssVariablesResolver } from "@mantine/core";
+import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 
 import AppRoutes from "./routes";
 import { THEME } from "./constants/theme";
+import { cssVariablesResolver } from "./constants/cssVariablesResolver";
 import AuthProvider from "./providers/AuthProvider";
 
 dayjs.locale("es");
@@ -29,7 +30,7 @@ const queryClient = new QueryClient({
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineProvider theme={THEME} defaultColorScheme="auto" cssVariablesResolver={v8CssVariablesResolver}>
+      <MantineProvider theme={THEME} defaultColorScheme="auto" cssVariablesResolver={cssVariablesResolver}>
         <DatesProvider settings={DATE_PROVIDER_CONFIG}>
           <ModalsProvider>
             <AuthProvider>

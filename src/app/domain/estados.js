@@ -53,6 +53,25 @@ export const ENTIDADES_CON_ESTADO = {
 const FALLBACK = { label: '—', color: 'gray' };
 
 /**
+ * Ajuste de contraste para `<Badge variant="light">`: el shade más oscuro de
+ * "orange"/"green" en la paleta default de Mantine (el que ya usa ese
+ * variant) da ~3.8:1 contra su propio fondo tintado — por debajo del 4.5:1
+ * de WCAG 2 AA. Confirmado por axe-core (`color-contrast`, serio) en
+ * `/envios` y `/viajes` (SHG-FE-041: estados "En camino"/"Entregado"/
+ * "Finalizado"). El resto de los colores usados en `ESTADO_*`
+ * (`gray`/`blue`/`cyan`/`indigo`/`red`/`yellow`) ya pasa con su shade
+ * default, así que no necesitan entrada acá.
+ *
+ * `estadoBadge` expone esto como `textColor` — quien pinte el `<Badge>`
+ * decide si lo pasa a `c` (ver `ListaEnviosTabla`/`ListaViajesTabla`); no
+ * cambia nada para quien no lo use.
+ */
+const BADGE_TEXT_CONTRAST_OVERRIDE = {
+  orange: '#99350a',
+  green: '#1f6e33',
+};
+
+/**
  * Normaliza un valor de estado al canónico snake_case en minúsculas.
  * Acepta la basura histórica del front (`"EN_CAMINO"`, `"En curso"`, `null`).
  */
@@ -66,10 +85,8 @@ export const normalizarEstado = (valor) =>
  */
 export const estadoBadge = (entidad, valor) => {
   const mapa = ENTIDADES_CON_ESTADO[entidad];
-  if (!mapa) return { ...FALLBACK, label: valor ?? FALLBACK.label };
-  const meta = mapa[normalizarEstado(valor)];
-  if (meta) return meta;
-  return { ...FALLBACK, label: valor ?? FALLBACK.label };
+  const meta = mapa?.[normalizarEstado(valor)] ?? { ...FALLBACK, label: valor ?? FALLBACK.label };
+  return { ...meta, textColor: BADGE_TEXT_CONTRAST_OVERRIDE[meta.color] };
 };
 
 /** Sólo el label (o el valor crudo si no se conoce). */

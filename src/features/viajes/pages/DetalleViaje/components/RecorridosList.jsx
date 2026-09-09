@@ -43,7 +43,11 @@ const RecorridoCard = ({ recorrido }) => {
         <Group justify="space-between">
           <Group gap="xs">
             <Text fw={600}>Recorrido #{recorrido.orden ?? '—'}</Text>
-            <Badge color={estadoInfo.color} variant="light">
+            {/* `c={estadoInfo.textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
+                en `@domain/estados` — sin esto, "En camino"/"Finalizado" no
+                llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
+                `undefined` para el resto de los estados, sin efecto. */}
+            <Badge color={estadoInfo.color} variant="light" c={estadoInfo.textColor}>
               {estadoInfo.label}
             </Badge>
           </Group>

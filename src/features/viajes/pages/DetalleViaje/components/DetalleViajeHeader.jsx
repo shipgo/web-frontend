@@ -32,7 +32,11 @@ const DetalleViajeHeader = ({ viaje, id, onEditar, onIniciar, onFinalizar, onCan
         <Box>
           <Group gap="xs" mb={4}>
             <Title order={3}>Viaje #{id}</Title>
-            <Badge color={estadoInfo.color} variant="light">
+            {/* `c={estadoInfo.textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
+                en `@domain/estados` — sin esto, "En camino"/"Finalizado" no
+                llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
+                `undefined` para el resto de los estados, sin efecto. */}
+            <Badge color={estadoInfo.color} variant="light" c={estadoInfo.textColor}>
               {estadoInfo.label}
             </Badge>
           </Group>

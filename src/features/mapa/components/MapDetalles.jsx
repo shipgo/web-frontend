@@ -126,7 +126,11 @@ const MapDetalles = () => {
             <Text size="sm" fw={700}>
               {viaje.vehiculo?.patente ?? `Viaje #${selectedViajeId}`}
             </Text>
-            <Badge variant="light" color={estadoInfo.color} size="sm" mt={4}>
+            {/* `c={estadoInfo.textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
+                en `@domain/estados` — sin esto, "En camino"/"Finalizado" no
+                llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
+                `undefined` para el resto de los estados, sin efecto. */}
+            <Badge variant="light" color={estadoInfo.color} size="sm" mt={4} c={estadoInfo.textColor}>
               {estadoInfo.label}
             </Badge>
           </Box>

@@ -91,7 +91,12 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={40}>
-            <Checkbox checked={allSelected} indeterminate={indeterminate} onChange={onToggleAll} />
+            <Checkbox
+              aria-label="Seleccionar todos los viajes"
+              checked={allSelected}
+              indeterminate={indeterminate}
+              onChange={onToggleAll}
+            />
           </Table.Th>
           <Table.Th>ID Viaje</Table.Th>
           <Table.Th>Fecha planificada</Table.Th>
@@ -105,7 +110,7 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
 
       <Table.Tbody>
         {items.map((item) => {
-          const { label: estadoLabel, color: estadoColor } = estadoBadge('viaje', item.estado);
+          const { label: estadoLabel, color: estadoColor, textColor: estadoTextColor } = estadoBadge('viaje', item.estado);
           const fecha = item.fechaHoraInicioPlanificada;
           const cantidadRecorridos = recorridosCount(item);
           const cantidadEnvios = enviosCount(item);
@@ -138,7 +143,11 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
               bg={selectedIds.has(item.id) ? 'var(--mantine-color-blue-light)' : undefined}
             >
               <Table.Td onClick={(event) => event.stopPropagation()}>
-                <Checkbox checked={selectedIds.has(item.id)} onChange={() => onToggle(item.id)} />
+                <Checkbox
+                  aria-label={`Seleccionar viaje ${item.id}`}
+                  checked={selectedIds.has(item.id)}
+                  onChange={() => onToggle(item.id)}
+                />
               </Table.Td>
 
               <Table.Td>{item.id}</Table.Td>
@@ -158,7 +167,11 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
               </Table.Td>
 
               <Table.Td>
-                <Badge color={estadoColor} variant="light" radius="md">
+                {/* `c={estadoTextColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
+                    en `@domain/estados` — sin esto, "En camino"/"Finalizado"
+                    no llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
+                    `undefined` para el resto de los estados, sin efecto. */}
+                <Badge color={estadoColor} variant="light" radius="md" c={estadoTextColor}>
                   {estadoLabel}
                 </Badge>
               </Table.Td>

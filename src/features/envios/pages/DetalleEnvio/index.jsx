@@ -124,6 +124,7 @@ const DetalleEnvio = () => {
   const detalleRecorridos = envio?.detalleRecorridos ?? [];
   const recorridoActual = detalleRecorridos[detalleRecorridos.length - 1]?.recorrido ?? null;
   const viajeAsociado = recorridoActual?.viaje ?? null;
+  const recorridoEstadoInfo = recorridoActual ? estadoBadge("recorrido", recorridoActual.estado) : null;
 
   return (
     <PageContainer>
@@ -149,7 +150,11 @@ const DetalleEnvio = () => {
         descripcion={
           <Group gap={4}>
             {envio.estado && (
-              <Badge color={estadoInfo.color} variant="light" mr="xs">
+              // `c={estadoInfo.textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
+              // en `@domain/estados` — sin esto, "En camino"/"Entregado" no
+              // llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
+              // `undefined` para el resto de los estados, sin efecto.
+              <Badge color={estadoInfo.color} variant="light" mr="xs" c={estadoInfo.textColor}>
                 {estadoInfo.label}
               </Badge>
             )}
@@ -372,8 +377,13 @@ const DetalleEnvio = () => {
                   <Anchor fw={600} onClick={() => navigate(`~/viajes/${viajeAsociado.id}`)}>
                     Viaje #{viajeAsociado.id}
                   </Anchor>
-                  <Badge color={estadoBadge("recorrido", recorridoActual.estado).color} variant="light">
-                    {estadoLabel("recorrido", recorridoActual.estado)}
+                  {/* `c={recorridoEstadoInfo.textColor}`: ver
+                      `BADGE_TEXT_CONTRAST_OVERRIDE` en `@domain/estados` —
+                      sin esto, "En camino"/"Finalizado" no llegan a 4.5:1
+                      (axe-core `color-contrast`, SHG-FE-041). `undefined`
+                      para el resto de los estados, sin efecto. */}
+                  <Badge color={recorridoEstadoInfo.color} variant="light" c={recorridoEstadoInfo.textColor}>
+                    {recorridoEstadoInfo.label}
                   </Badge>
                 </Group>
                 <Text size="sm" c="dimmed">
