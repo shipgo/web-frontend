@@ -6,9 +6,11 @@ import { loginAs } from "../lib/auth.js";
 import { runAxe, blockingViolations, summarizeViolation } from "../lib/axe.js";
 
 /**
- * SHG-FE-041: audita con axe-core (WCAG 2.0 A/AA + 2.1 AA) las 9 rutas de las 6
- * pantallas MVP, con el backend real + seed real (no reinicia nada, reusa el
- * stack que ya esté corriendo — ver `ensureBackendUp`/`ensureWebUp` en `run.js`).
+ * SHG-FE-041: audita con axe-core (WCAG 2.0 A/AA + 2.1 AA) las 12 rutas de las 6
+ * pantallas MVP (9 originales de SHG-FE-041 + 3 agregadas en SHG-FE-045 para
+ * ejercitar los botones de acción Entregar/Marcar fallo/Finalizar/Cancelar),
+ * con el backend real + seed real (no reinicia nada, reusa el stack que ya
+ * esté corriendo — ver `ensureBackendUp`/`ensureWebUp` en `run.js`).
  *
  * A diferencia de `smoke-happy-path` (que sólo mira consola/4xx/5xx), este caso
  * FALLA si `axe.run()` encuentra alguna violación de impacto `critical`/`serious`
@@ -72,14 +74,16 @@ const fetchJson = async (page, url) =>
  * y para viaje `finalizado` (antes que `en_camino`) porque son terminales —
  * `DetalleEnvio`/`DetalleViajeHeader` no muestran ahí ninguno de los botones
  * de acción (`Entregar`/`Marcar fallo`/`Finalizar`, ver `acciones.js` de cada
- * pantalla). Se comprobó en una corrida real de este caso que un envío/viaje
- * `en_camino` SÍ los muestra, y esos botones (`<Button variant="light"
- * color="green|red">`) tienen su propio problema de contraste — real, pero
- * DISTINTO del que corrige `BADGE_TEXT_CONTRAST_OVERRIDE` (que es sólo para
- * `<Badge variant="light">`) y fuera del alcance de SHG-FE-041 (ver reporte
- * al orquestador). Preferir el estado terminal evita que este caso quede
- * bloqueado por ese hallazgo aparte sin dejar de auditar el badge afectado
- * (`entregado`/`finalizado` también son naranja/verde).
+ * pantalla). Un envío/viaje `en_camino` SÍ los muestra, y esos botones
+ * (`<Button variant="light" color="green|red">`) tenían su propio problema de
+ * contraste — real, pero DISTINTO del que corrige
+ * `BADGE_TEXT_CONTRAST_OVERRIDE` (que es sólo para `<Badge variant="light">`)
+ * — corregido aparte en SHG-FE-045 (ver `BUTTON_ACTION_TEXT_COLOR` en
+ * `@domain/estados`), auditado más abajo con un elemento `en_camino` a
+ * propósito (`envios-detalle-en-camino`/`viajes-detalle-en-camino`) para
+ * ejercitar esos botones. Este bloque preferir el estado terminal sólo
+ * asegura que el badge afectado (`entregado`/`finalizado`, también naranja/
+ * verde) quede cubierto en una ruta separada de la de los botones.
  *
  * Se hace una consulta por estado (no un OR) para poder respetar ese orden de
  * prioridad — con `estado=a&estado=b` el backend puede devolver cualquiera de
@@ -199,6 +203,57 @@ export async function run({ browser, logger }) {
     await page.getByRole("heading", { name: "Detalle de viaje" }).first().waitFor({ timeout: 15_000 });
     await waitForRouteSettled(page);
     allBlocking.push(...(await auditCurrentPage({ page, logger, caseName: name, routeLabel: "viajes-detalle" })));
+
+    // --- /envios/:id y /viajes/:id en `en_camino`: ejercita los botones de
+    // acción (Entregar/Marcar fallo/Finalizar/Cancelar, `<Button
+    // variant="light" color="green|red">`) que los bloques de arriba evitan
+    // a propósito preferiendo un estado terminal (ver comentario de
+    // `fetchFirstId`). Este es el gap real que dejó SHG-FE-041 (corregido en
+    // SHG-FE-045) — sin esta ruta, ningún caso e2e llega a renderizar esos
+    // botones.
+    const envioEnCaminoId = await fetchFirstId(page, "/api/envio?page=0&size=1", {
+      estadosPreferidos: ["en_camino"],
+      logger,
+      caseName: name,
+      label: "envios-detalle-en-camino",
+    });
+    await page.goto(`${config.webBaseUrl}/envios/${envioEnCaminoId}`);
+    await page.getByRole("heading", { name: "Detalle de envío" }).first().waitFor({ timeout: 15_000 });
+    await waitForRouteSettled(page);
+    allBlocking.push(
+      ...(await auditCurrentPage({ page, logger, caseName: name, routeLabel: "envios-detalle-en-camino" })),
+    );
+
+    const viajeEnCaminoId = await fetchFirstId(page, "/api/viaje?page=0&size=1", {
+      estadosPreferidos: ["en_camino"],
+      logger,
+      caseName: name,
+      label: "viajes-detalle-en-camino",
+    });
+    await page.goto(`${config.webBaseUrl}/viajes/${viajeEnCaminoId}`);
+    await page.getByRole("heading", { name: "Detalle de viaje" }).first().waitFor({ timeout: 15_000 });
+    await waitForRouteSettled(page);
+    allBlocking.push(
+      ...(await auditCurrentPage({ page, logger, caseName: name, routeLabel: "viajes-detalle-en-camino" })),
+    );
+
+    // --- /viajes/:id "cancelable" (creado/planificado/en_proceso_de_carga):
+    // `puedeCancelar` (`acciones.js` de `DetalleViaje`) NUNCA se solapa con
+    // `puedeFinalizar` (sólo `en_camino`) — el botón "Cancelar" (`<Button
+    // variant="light" color="red">`) no queda ejercitado por el bloque
+    // `en_camino` de arriba, necesita su propia ruta.
+    const viajeCancelableId = await fetchFirstId(page, "/api/viaje?page=0&size=1", {
+      estadosPreferidos: ["planificado", "en_proceso_de_carga", "creado"],
+      logger,
+      caseName: name,
+      label: "viajes-detalle-cancelable",
+    });
+    await page.goto(`${config.webBaseUrl}/viajes/${viajeCancelableId}`);
+    await page.getByRole("heading", { name: "Detalle de viaje" }).first().waitFor({ timeout: 15_000 });
+    await waitForRouteSettled(page);
+    allBlocking.push(
+      ...(await auditCurrentPage({ page, logger, caseName: name, routeLabel: "viajes-detalle-cancelable" })),
+    );
   } finally {
     await context.close();
   }
@@ -213,7 +268,7 @@ export async function run({ browser, logger }) {
   }
 
   logger.log(
-    `[${name}] Sin violaciones críticas/serias NUEVAS de axe-core en las 9 rutas auditadas ` +
+    `[${name}] Sin violaciones críticas/serias NUEVAS de axe-core en las 12 rutas auditadas ` +
       `(${KNOWN_ACCEPTED_VIOLATIONS.length} excepción(es) ya conocida(s)/aceptada(s) — ver KNOWN_ACCEPTED_VIOLATIONS).`,
   );
 }

@@ -39,7 +39,7 @@ import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import ScreenContainer from "@components/ScreenContainer";
 import { envioApi } from "@api";
-import { esEstadoTerminal, estadoBadge, estadoLabel } from "@domain/estados";
+import { BUTTON_ACTION_TEXT_COLOR, esEstadoTerminal, estadoBadge, estadoLabel } from "@domain/estados";
 import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
 import { useAuthStore } from "@stores/auth.store";
 
@@ -191,10 +191,14 @@ const DetalleEnvio = () => {
             Editar
           </Button>
         )}
+        {/* `c={BUTTON_ACTION_TEXT_COLOR.*}`: ver ese comentario en
+            `@domain/estados` — sin esto, "Entregar"/"Marcar fallo" no
+            llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-045). */}
         {canAccionarEstado && (
           <Button
             variant="light"
             color="green"
+            c={BUTTON_ACTION_TEXT_COLOR.green}
             leftSection={<IconTruckDelivery size={18} />}
             onClick={confirmEntregar}
           >
@@ -205,6 +209,7 @@ const DetalleEnvio = () => {
           <Button
             variant="light"
             color="red"
+            c={BUTTON_ACTION_TEXT_COLOR.red}
             leftSection={<IconBan size={18} />}
             onClick={confirmFalloEntrega}
           >

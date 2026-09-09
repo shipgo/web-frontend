@@ -1,7 +1,7 @@
 import { Badge, Box, Button, Divider, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { IconBan, IconEdit, IconFlagCheck, IconPlayerPlay } from '@tabler/icons-react';
 
-import { estadoBadge } from '@domain/estados';
+import { BUTTON_ACTION_TEXT_COLOR, estadoBadge } from '@domain/estados';
 import { formatFechaHora } from '@domain/format';
 import { useAuthStore } from '@stores/auth.store';
 
@@ -59,13 +59,28 @@ const DetalleViajeHeader = ({ viaje, id, onEditar, onIniciar, onFinalizar, onCan
               Iniciar
             </Button>
           )}
+          {/* `c={BUTTON_ACTION_TEXT_COLOR.*}`: ver ese comentario en
+              `@domain/estados` — sin esto, "Finalizar"/"Cancelar" no llegan
+              a 4.5:1 (axe-core `color-contrast`, SHG-FE-045). */}
           {puedeFinalizar(user, viaje.estado) && (
-            <Button variant="light" color="green" leftSection={<IconFlagCheck size={18} />} onClick={onFinalizar}>
+            <Button
+              variant="light"
+              color="green"
+              c={BUTTON_ACTION_TEXT_COLOR.green}
+              leftSection={<IconFlagCheck size={18} />}
+              onClick={onFinalizar}
+            >
               Finalizar
             </Button>
           )}
           {puedeCancelar(user, viaje.estado) && (
-            <Button variant="light" color="red" leftSection={<IconBan size={18} />} onClick={onCancelar}>
+            <Button
+              variant="light"
+              color="red"
+              c={BUTTON_ACTION_TEXT_COLOR.red}
+              leftSection={<IconBan size={18} />}
+              onClick={onCancelar}
+            >
               Cancelar
             </Button>
           )}

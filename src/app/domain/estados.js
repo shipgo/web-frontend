@@ -72,6 +72,28 @@ const BADGE_TEXT_CONTRAST_OVERRIDE = {
 };
 
 /**
+ * Ajuste de contraste análogo a `BADGE_TEXT_CONTRAST_OVERRIDE` pero para
+ * `<Button variant="light" color="green"|"red">` — los botones de acción
+ * sobre el estado de envíos/viajes (Entregar/Marcar fallo/Finalizar/
+ * Cancelar). Es un componente distinto (`Button`, no `Badge`) con su propia
+ * resolución de color de variant "light" en Mantine, así que el problema (y
+ * el fix) son independientes de `BADGE_TEXT_CONTRAST_OVERRIDE` aunque el
+ * síntoma sea el mismo: confirmado por axe-core (`color-contrast`, serious)
+ * en `/envios/:id` y `/viajes/:id` reales en estado `en_camino` (el único
+ * estado no terminal en el que estos botones se muestran — SHG-FE-045).
+ *
+ * No es un mapa entidad→estado como `ESTADO_*` (estos colores son semántica
+ * de acción positiva/negativa, no de un estado de dominio), así que vive
+ * acá como constante standalone en vez de una entrada de `ENTIDADES_CON_ESTADO`.
+ * Quien pinte el `<Button>` decide si lo pasa a `c` — no cambia nada para
+ * quien no lo use.
+ */
+export const BUTTON_ACTION_TEXT_COLOR = {
+  green: '#1f6e33',
+  red: '#a51818',
+};
+
+/**
  * Normaliza un valor de estado al canónico snake_case en minúsculas.
  * Acepta la basura histórica del front (`"EN_CAMINO"`, `"En curso"`, `null`).
  */
