@@ -41,4 +41,11 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // Harness de smoke E2E (SHG-QA-005): scripts Node, no código de browser.
+    files: ['e2e/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])
