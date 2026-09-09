@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { restclient } from "@config/restclient";
 import { API_URLS } from "@constants/apiUrls";
+import { captchaHeader } from "@config/captcha";
 import { usuarioApi } from "@api/usuario.api";
 import {
   hasAnyRole,
@@ -156,7 +157,10 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Login
+  // Login.
+  // `credentials.captchaToken` (SHG-FE-043 / SHG-BE-032) viaja en el header
+  // `X-Captcha-Token` — el backend lo exige vía `TurnstileLoginFilter` antes de
+  // intentar autenticar (400 `captcha_invalid` si falta/es inválido/venció).
   login: async (credentials) => {
     try {
       set({ isLoading: true });
@@ -165,6 +169,7 @@ export const useAuthStore = create((set, get) => ({
       await restclient.post(API_URLS.LOGIN_URL, body, {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
+          ...captchaHeader(credentials.captchaToken),
         },
       });
 
@@ -250,11 +255,14 @@ export const useAuthStore = create((set, get) => ({
 
   // Verificar email para recuperación.
   // `POST /api/user/resetPassword` espera `MailFormReq` → `{ userEmail }` (público).
-  verifyEmail: async (email) => {
+  // Exige captcha (SHG-FE-043 / SHG-BE-032) vía header `X-Captcha-Token`.
+  verifyEmail: async (email, captchaToken) => {
     try {
-      const response = await restclient.post(API_URLS.RECUPERAR_CUENTA_URL, {
-        userEmail: email,
-      });
+      const response = await restclient.post(
+        API_URLS.RECUPERAR_CUENTA_URL,
+        { userEmail: email },
+        { headers: captchaHeader(captchaToken) },
+      );
       return response.data;
     } catch (error) {
       console.error("Verify email error:", error);

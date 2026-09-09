@@ -58,7 +58,9 @@ describe('TrackingPublicoPage', () => {
     renderAt('/tracking/7K2M9QX4TP');
 
     expect(await screen.findByText('7K2M9QX4TP')).toBeInTheDocument();
-    expect(mockTrack).toHaveBeenCalledWith('7K2M9QX4TP');
+    // El captcha está desactivado bajo Vitest (SHG-FE-043, `@config/captcha`),
+    // así que `track` recibe igual un token "listo" (sin widget real).
+    expect(mockTrack).toHaveBeenCalledWith('7K2M9QX4TP', expect.any(String));
     // estado + destino + ETA + timeline
     expect(screen.getAllByText('En camino').length).toBeGreaterThan(0);
     expect(screen.getByText('Rosario, Santa Fe')).toBeInTheDocument();
@@ -101,6 +103,8 @@ describe('TrackingPublicoPage', () => {
     await waitFor(() =>
       expect(window.location.pathname).toBe('/tracking/7K2M9QX4TP'),
     );
-    await waitFor(() => expect(mockTrack).toHaveBeenCalledWith('7K2M9QX4TP'));
+    await waitFor(() =>
+      expect(mockTrack).toHaveBeenCalledWith('7K2M9QX4TP', expect.any(String)),
+    );
   });
 });

@@ -11,6 +11,8 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 
+import { useCaptcha } from '@hooks/useCaptcha';
+import CaptchaField from '@components/CaptchaField';
 import { usePublicTracking } from '../../hooks/usePublicTracking';
 import { codigoEsValido, CODIGO_INVALIDO_MSG, normalizarCodigo } from '../../utils';
 import TrackingSearchForm from '../../components/TrackingSearchForm';
@@ -29,16 +31,25 @@ const TrackingPublicoPage = () => {
   const codigoNormalizado = codigoParam ? normalizarCodigo(codigoParam) : '';
   const codigoValido = codigoParam ? codigoEsValido(codigoParam) : false;
 
+  const captcha = useCaptcha();
   const { data, isLoading, isFetching, errorKind, refetch } = usePublicTracking(
     codigoNormalizado,
-    { enabled: codigoValido },
+    { enabled: codigoValido, captchaToken: captcha.token },
   );
 
   const handleSubmit = (codigo) => {
     setLocation(`/tracking/${codigo}`);
   };
 
-  const consultando = codigoValido && (isLoading || isFetching) && !data;
+  const handleRetry = () => {
+    if (errorKind === 'captcha_invalid') {
+      captcha.reset();
+    }
+    refetch();
+  };
+
+  const consultando =
+    codigoValido && Boolean(captcha.token) && (isLoading || isFetching) && !data;
 
   return (
     <Stack gap="xl">
@@ -50,11 +61,15 @@ const TrackingPublicoPage = () => {
       </Stack>
 
       <Card withBorder padding="lg">
-        <TrackingSearchForm
-          initialValue={codigoNormalizado}
-          onSubmit={handleSubmit}
-          loading={consultando}
-        />
+        <Stack gap="md">
+          <TrackingSearchForm
+            initialValue={codigoNormalizado}
+            onSubmit={handleSubmit}
+            loading={consultando}
+            disabled={!captcha.token}
+          />
+          <CaptchaField captcha={captcha} />
+        </Stack>
       </Card>
 
       {codigoParam && !codigoValido ? (
@@ -75,7 +90,7 @@ const TrackingPublicoPage = () => {
       ) : null}
 
       {codigoValido && !consultando && errorKind ? (
-        <TrackingErrorAlert kind={errorKind} onRetry={() => refetch()} />
+        <TrackingErrorAlert kind={errorKind} onRetry={handleRetry} />
       ) : null}
 
       {data ? <TrackingResultado data={data} /> : null}

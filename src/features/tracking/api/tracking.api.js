@@ -1,5 +1,6 @@
 import { restclient } from '@config/restclient';
 import { API_URLS } from '@constants/apiUrls';
+import { captchaHeader } from '@config/captcha';
 
 /**
  * Capa API del tracking público (guest) — `GET /api/public/tracking/{codigo}`.
@@ -10,6 +11,10 @@ import { API_URLS } from '@constants/apiUrls';
  * Endpoint SIN auth (whitelist `/api/public/**` en `WebSecurityConfig`) y
  * rate-limited por IP: al superar el umbral el backend responde `429` con
  * `{ statusCode: 429, message }` y cabecera `Retry-After`.
+ *
+ * También exige captcha (SHG-BE-032 / SHG-FE-043): sin un token vigente de
+ * Cloudflare Turnstile en el header `X-Captcha-Token` responde `400`
+ * `{ statusCode, message, code: "captcha_invalid" }` (ver `@config/captcha`).
  *
  * @typedef {Object} PublicTrackingHistorialItem
  * @property {string} estado  Valor canónico snake_case (`@domain/estados`).
@@ -42,11 +47,13 @@ export const publicTrackingApi = {
   /**
    * `GET /api/public/tracking/{codigo}`.
    * @param {string} codigo Código de seguimiento (se envía tal cual, ya normalizado por el caller).
+   * @param {string} captchaToken Token vigente de Cloudflare Turnstile (`useCaptcha`).
    * @returns {Promise<PublicTrackingDTO>}
    */
-  track: async (codigo) => {
+  track: async (codigo, captchaToken) => {
     const { data } = await restclient.get(
       `${API_URLS.PUBLIC_TRACKING_URL}/${encodeURIComponent(codigo)}`,
+      { headers: captchaHeader(captchaToken) },
     );
     return data;
   },

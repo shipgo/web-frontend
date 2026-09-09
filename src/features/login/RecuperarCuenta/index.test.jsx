@@ -36,7 +36,10 @@ describe("RecuperarCuenta", () => {
     await user.click(screen.getByRole("button", { name: "Enviar enlace" }));
 
     await waitFor(() =>
-      expect(mockVerifyEmail).toHaveBeenCalledWith("juan@example.com")
+      expect(mockVerifyEmail).toHaveBeenCalledWith(
+        "juan@example.com",
+        expect.any(String),
+      )
     );
     expect(await screen.findByText("Revisá tu correo")).toBeInTheDocument();
   });

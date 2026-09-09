@@ -31,6 +31,9 @@ import {
 
 import { useAuthStore } from "@stores/auth.store";
 import { landingPathFor } from "@domain/roles";
+import { useCaptcha } from "@hooks/useCaptcha";
+import CaptchaField from "@components/CaptchaField";
+import { isCaptchaApiError } from "@config/captcha";
 import { LOGIN_VARIANTS } from "./constants/copy";
 
 const FORM_WIDHT = "35rem";
@@ -54,6 +57,7 @@ const LoginPage = ({ variant = "operator" }) => {
     defaultValue: null,
   });
   const { login } = useAuthStore();
+  const captcha = useCaptcha();
 
   const form = useForm({
     mode: "uncontrolled",
@@ -79,7 +83,10 @@ const LoginPage = ({ variant = "operator" }) => {
     setLoading(true);
 
     try {
-      const credentials = omit(formValues, ["remember"]);
+      const credentials = {
+        ...omit(formValues, ["remember"]),
+        captchaToken: captcha.token,
+      };
 
       // Llamar al login del auth store
       await login(credentials);
@@ -97,6 +104,24 @@ const LoginPage = ({ variant = "operator" }) => {
       setLocation(landingPathFor(useAuthStore.getState().user));
     } catch (error) {
       console.error("Login error:", error);
+
+      // Captcha faltante/inválido/vencido (SHG-BE-032): el backend nunca llega
+      // a intentar autenticar (TurnstileLoginFilter corta antes). Re-emitimos
+      // el challenge — el token es de un solo uso, no sirve reintentar con el
+      // mismo aunque el usuario no haya hecho nada mal.
+      if (isCaptchaApiError(error)) {
+        captcha.reset();
+        notifications.show({
+          color: "red",
+          title: "No pudimos verificar que sos una persona",
+          message:
+            "La verificación de seguridad venció o no es válida. Resolvela de nuevo e intentá otra vez.",
+          icon: (
+            <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
+          ),
+        });
+        return;
+      }
 
       // El backend bloquea el login de un CUSTOMER hasta verificar el email y
       // devuelve un 401 con un mensaje explícito (SHG-BE-002) — mostrarlo tal cual.
@@ -185,7 +210,13 @@ const LoginPage = ({ variant = "operator" }) => {
               <Anchor href="/recuperar-cuenta">Olvidé mi contraseña</Anchor>
             </Group>
 
-            <Button size="lg" type="submit" disabled={loading}>
+            <CaptchaField captcha={captcha} />
+
+            <Button
+              size="lg"
+              type="submit"
+              disabled={loading || !captcha.token}
+            >
               Iniciar sesión
             </Button>
 
