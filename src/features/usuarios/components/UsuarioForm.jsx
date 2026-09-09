@@ -23,6 +23,7 @@ import { notifications } from "@mantine/notifications";
 import { modals } from "@mantine/modals";
 import dayjs from "dayjs";
 
+import PageFooter from "@components/PageFooter";
 import { sucursalApi, authorityApi } from "@api";
 import { catalogsApi, locationApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
@@ -429,22 +430,24 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
             </SimpleGrid>
           </Stack>
         </Card>
-
-        {/* Botones de acción — consistentes con el Footer canónico de CrearEnvios */}
-        <Group justify="flex-end" gap="xs">
-          <Button
-            variant="light"
-            color="red"
-            disabled={loading}
-            onClick={handleCancel}
-          >
-            Cancelar
-          </Button>
-          <Button type="submit" loading={loading}>
-            {isEdit ? "Guardar cambios" : "Crear usuario"}
-          </Button>
-        </Group>
       </Stack>
+
+      {/* Footer canónico (SHG-FE-036): el slot vive en `AppShell.footer`; el
+          botón sigue dentro del `<form>` para conservar el submit nativo. */}
+      <PageFooter>
+        <Button
+          type="button"
+          variant="light"
+          color="red"
+          disabled={loading}
+          onClick={handleCancel}
+        >
+          Cancelar
+        </Button>
+        <Button type="submit" loading={loading}>
+          {isEdit ? "Guardar cambios" : "Crear usuario"}
+        </Button>
+      </PageFooter>
     </form>
   );
 };
