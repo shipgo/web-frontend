@@ -158,12 +158,28 @@ export async function run({ browser, logger }) {
         throw new Error(`se esperaba 401 al loguear con el email, vino ${response.status()}`);
       }
 
-      // Mensaje claro visible (no un crash / pantalla en blanco) — el copy
-      // exacto no importa, sólo que se muestre feedback manejado.
-      await page
+      // Mensaje claro visible (no un crash / pantalla en blanco). Para un 401
+      // no-"unverified" el login (`src/features/login/index.jsx`) siempre
+      // muestra el mismo título "Usuario y/o contraseña incorrectos" — mismo
+      // criterio que el caso 4.
+      //
+      // Esperar sólo el texto (o sólo la presencia del nodo) no alcanza: el
+      // `Notification` de Mantine entra con una transición de `opacity` +
+      // `transform` (250ms, `transitionDuration` default — ver
+      // `@mantine/notifications/get-notification-state-styles`) y el nodo
+      // queda en el DOM (con su texto) desde el primer frame de esa
+      // transición, mucho antes de estar pintado — un `waitFor()` resuelve
+      // ahí y el screenshot puede salir sin nada visible. Se espera
+      // explícitamente a que termine la transición de entrada (vía la Web
+      // Animations API) antes de capturar la evidencia.
+      const notification = page
         .locator(".mantine-Notification-root, [role='alert']")
-        .first()
-        .waitFor({ timeout: 10_000 });
+        .filter({ hasText: /usuario y\/o contraseña incorrectos/i })
+        .first();
+      await notification.waitFor({ timeout: 10_000 });
+      await notification.evaluate((el) =>
+        Promise.all(el.getAnimations({ subtree: true }).map((anim) => anim.finished)).catch(() => {}),
+      );
       await logger.step(page, name, "caso5-login-con-email");
 
       const path = pathnameOf(page);
