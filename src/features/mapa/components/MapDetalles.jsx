@@ -90,7 +90,12 @@ const MapDetalles = () => {
 
   const proximaParada = paradas.find((p) => !esEstadoTerminal('recorrido', p.estado));
 
-  const restanteSegundos = route?.legDurations
+  // ETA: si no hay próxima parada (todas entregadas), no hay ETA.
+  // Nota: `legDurations` aproxima parada[n-1]→parada[n] en lugar de posición_actual→parada[n].
+  // Esta aproximación puede desalinearse si una parada sin coords se filtra en useGetRoute.
+  // Por simplicidad, se mantiene esta lógica; una mejora futura sería calcular desde posición
+  // actual solo las duraciones de los waypoints pendientes + posición actual.
+  const restanteSegundos = proximaParada && route?.legDurations
     ? route.legDurations.slice(paradasEntregadas).reduce((sum, d) => sum + d, 0)
     : null;
   const eta = restanteSegundos != null ? new Date(Date.now() + restanteSegundos * 1000) : null;
@@ -99,7 +104,19 @@ const MapDetalles = () => {
   const choferNombre =
     [chofer?.nombre, chofer?.apellido].filter(Boolean).join(' ') || 'Sin chofer asignado';
   const telefono = chofer?.telefono ? formatTelefono(chofer) : null;
-  const digitosWhatsapp = `${chofer?.prefijo ?? ''}${chofer?.telefono ?? ''}`.replace(/\D/g, '');
+
+  // WhatsApp: normalizar prefijo que puede ser '+54', '54', o '11' (area code)
+  // para evitar duplicar el código de país. Remover '+' y '54' líderes del prefijo,
+  // concatenar con teléfono, remover no-dígitos, prepender '54' una sola vez.
+  const normalizarPrefijo = (prefijo) => {
+    if (!prefijo) return '';
+    let normalizado = String(prefijo).replace(/^\+/, '').trim();
+    if (normalizado.startsWith('54')) {
+      normalizado = normalizado.slice(2);
+    }
+    return normalizado;
+  };
+  const digitosWhatsapp = `${normalizarPrefijo(chofer?.prefijo)}${chofer?.telefono ?? ''}`.replace(/\D/g, '');
 
   const estadoInfo = estadoBadge('viaje', viaje.estado);
 
