@@ -15,7 +15,7 @@ import { useViajeDetalle } from './hooks/useViajeDetalle';
 const DetalleViaje = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
-  const { viajeQuery, ubicacionQuery } = useViajeDetalle(id);
+  const { viajeQuery, ubicacionQuery, historialQuery } = useViajeDetalle(id);
   const { data: viaje, isLoading, isError, refetch } = viajeQuery;
   const { confirmIniciar, confirmFinalizar, confirmCancelar } = useViajeAcciones(id, { onSuccess: refetch });
 
@@ -55,7 +55,12 @@ const DetalleViaje = () => {
         <>
           <RecorridosList recorridos={viaje.recorridos} />
           <HistorialTimeline historial={viaje.historialEstado} />
-          <ViajeMapa recorridos={viaje.recorridos} estado={viaje.estado} ubicacion={ubicacionQuery.data} />
+          <ViajeMapa
+            recorridos={viaje.recorridos}
+            estado={viaje.estado}
+            ubicacion={ubicacionQuery.data}
+            historial={historialQuery.data}
+          />
         </>
       )}
     </PageContainer>
