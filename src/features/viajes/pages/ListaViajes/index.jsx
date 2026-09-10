@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Flex, Pagination, Text } from '@mantine/core';
 import { useSet } from '@mantine/hooks';
 
@@ -16,9 +16,17 @@ import { useGetViajes } from './hooks/useGetViajes';
 import { VIAJES_CSV_COLUMNS } from './listaViajes.csv';
 
 const ListaViajes = () => {
-  const { params, setPage, setFilters, refetch, viajesQuery, fetchExportRows, PAGE_LIMIT } =
+  const { params, setPage, setFilters, clearFilters, refetch, viajesQuery, fetchExportRows, PAGE_LIMIT } =
     useGetViajes();
   const { data = {}, isFetching: isLoading, isError } = viajesQuery;
+
+  // Idem `ListaEnvios`: remontar `ListaViajesFiltros` al limpiar filtros para
+  // que el form interno (sin API de reset propia) vuelva a `DEFAULT_VALUES`.
+  const [filtrosKey, setFiltrosKey] = useState(0);
+  const handleClearFilters = () => {
+    clearFilters();
+    setFiltrosKey((k) => k + 1);
+  };
 
   const { exportar, isExporting } = useCsvExport({
     fetchRows: fetchExportRows,
@@ -52,7 +60,7 @@ const ListaViajes = () => {
         exportDisabled={isLoading || isError}
       />
 
-      <ListaViajesFiltros onFiltersChange={setFilters} disabled={isLoading} />
+      <ListaViajesFiltros key={filtrosKey} onFiltersChange={setFilters} disabled={isLoading} />
 
       <SelectionBanner
         count={selectedIds.size}
@@ -74,6 +82,7 @@ const ListaViajes = () => {
             show: data.total === 0 && Object.keys(params.filters).length > 0,
             title: 'Sin viajes que mostrar',
             description: 'No se encontraron viajes con los filtros aplicados',
+            onClick: handleClearFilters,
           }}
         >
           <ListaViajesTabla

@@ -94,6 +94,13 @@ const ScreenContainer = ({
             {onEmptyFiltersData.description ??
               'Parece ser que no hay información que mostrar con estos filtros'}
           </EmptyState.Description>
+          {onEmptyFiltersData.onClick && (
+            <EmptyState.Actions>
+              <Button variant='subtle' onClick={onEmptyFiltersData.onClick}>
+                {onEmptyFiltersData.actionLabel ?? 'Limpiar filtros'}
+              </Button>
+            </EmptyState.Actions>
+          )}
         </Wrapper>
       )
     );
