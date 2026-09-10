@@ -92,6 +92,29 @@ describe("ListaViajes", () => {
     expect(await screen.findByText("Sin viajes que mostrar")).toBeInTheDocument();
   });
 
+  it('estado "vacío con filtros" muestra un CTA que limpia los filtros y vuelve a pedir sin ellos', async () => {
+    viajeApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaViajes />);
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByText("En curso"));
+
+    await waitFor(() => {
+      const lastCall = viajeApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.estado).toEqual(["en_camino"]);
+    });
+
+    const limpiarBtn = await screen.findByRole("button", { name: "Limpiar filtros" });
+    await user.click(limpiarBtn);
+
+    await waitFor(() => {
+      const lastCall = viajeApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.estado).toBeUndefined();
+    });
+  });
+
   it("cambiar de página manda el índice 0-based que espera el backend", async () => {
     // UI: `Pagination` es 1-indexed (arranca en 1). Backend: `page` es
     // 0-indexed (CONTRACTS.md §4). `useGetViajes` hace la conversión — esto

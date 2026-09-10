@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Flex, Pagination, Text } from '@mantine/core';
 import { useSet } from '@mantine/hooks';
 
@@ -16,9 +16,20 @@ import { useGetEnvios } from './hooks/useGetEnvios';
 import { ENVIOS_CSV_COLUMNS } from './listaEnvios.csv';
 
 const ListaEnvios = () => {
-  const { params, setPage, setFilters, refetch, enviosQuery, fetchExportRows, PAGE_LIMIT } =
+  const { params, setPage, setFilters, clearFilters, refetch, enviosQuery, fetchExportRows, PAGE_LIMIT } =
     useGetEnvios();
   const { data = {}, isFetching: isLoading, isError } = enviosQuery;
+
+  // Al limpiar filtros desde el estado "vacío con filtros" hace falta también
+  // remontar `ListaEnviosFiltros` (form interno propio, sin API de reset
+  // expuesta) para que los inputs visibles (search/destino/fecha/estado)
+  // vuelvan a `DEFAULT_VALUES` — si no, el próximo debounce del form
+  // reaplicaría los valores viejos y pisaría el `clearFilters` de los params.
+  const [filtrosKey, setFiltrosKey] = useState(0);
+  const handleClearFilters = () => {
+    clearFilters();
+    setFiltrosKey((k) => k + 1);
+  };
 
   const { exportar, isExporting } = useCsvExport({
     fetchRows: fetchExportRows,
@@ -52,7 +63,7 @@ const ListaEnvios = () => {
         exportDisabled={isLoading || isError}
       />
 
-      <ListaEnviosFiltros onFiltersChange={setFilters} disabled={isLoading} />
+      <ListaEnviosFiltros key={filtrosKey} onFiltersChange={setFilters} disabled={isLoading} />
 
       <SelectionBanner
         count={selectedIds.size}
@@ -74,6 +85,7 @@ const ListaEnvios = () => {
             show: data.total === 0 && Object.keys(params.filters).length > 0,
             title: 'Sin resultados',
             description: 'No se encontraron envíos con los filtros aplicados',
+            onClick: handleClearFilters,
           }}
         >
           <ListaEnviosTabla

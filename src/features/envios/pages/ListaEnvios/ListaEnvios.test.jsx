@@ -79,6 +79,33 @@ describe('ListaEnvios', () => {
     expect(await screen.findByText('Sin envíos que mostrar')).toBeInTheDocument();
   });
 
+  it('estado "vacío con filtros" muestra un CTA que limpia los filtros y vuelve a pedir sin ellos', async () => {
+    envioApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaEnvios />);
+
+    await waitFor(() => expect(screen.getByLabelText('Buscar envío')).not.toBeDisabled());
+    await user.type(screen.getByLabelText('Buscar envío'), 'NoMatch');
+
+    await waitFor(() => {
+      const lastCall = envioApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.search).toBe('NoMatch');
+    });
+
+    expect(await screen.findByText('Sin resultados')).toBeInTheDocument();
+    const limpiarBtn = screen.getByRole('button', { name: 'Limpiar filtros' });
+
+    await user.click(limpiarBtn);
+
+    await waitFor(() => {
+      const lastCall = envioApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.search).toBeUndefined();
+    });
+    // El input del form (remontado) vuelve a estar vacío.
+    expect(screen.getByLabelText('Buscar envío')).toHaveValue('');
+  });
+
   it('sends the EnvioFilter param names exactly as EnvioFilter expects (search/estado/fechaDesde/fechaHasta/destino)', async () => {
     envioApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
 
