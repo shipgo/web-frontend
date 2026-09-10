@@ -209,3 +209,51 @@ mano. Si reusás un `vite` que ya estaba corriendo (arrancado por vos, sin esa
 variable), el login por UI va a quedar trabado — arrancalo con
 `VITE_TURNSTILE_ENABLED=false pnpm dev` o dejá que el harness lo levante él
 mismo.
+
+## Puerto de `vite` y CORS del backend (importante si corrés varios workers en paralelo)
+
+El proxy `/api` de `vite.config.js` hace que, desde el browser, las requests
+sean same-origin (van a `E2E_WEB_PORT`, nunca directo a `:8080`) — pero eso
+**no** las exime del filtro CORS del backend: el browser igual manda el
+header `Origin` (ej. `http://localhost:4444`) en requests no-GET, `vite`
+proxy (`changeOrigin: true`) sólo reescribe `Host`, no `Origin`, y
+`WebSecurityConfig.corsConfigurationSource()` devuelve **403** (no sólo
+omite headers CORS) para cualquier `Origin` que no esté en su
+`allowedOrigins`. Si corrés `npm run e2e` con un `E2E_WEB_PORT` que no está
+en esa lista (hoy: `4200`, `5173`, `8100`, y un par de IPs LAN — ver el
+archivo), **todo login falla con 403** aunque el usuario/contraseña sean
+correctos. Antes de elegir un puerto para no chocar con otro worker,
+confirmá que esté en esa lista (o agregalo ahí si hace falta) — no alcanza
+con que esté libre.
+
+## Elegir un rango de fechas custom en un `DatePickerInput` real (`type="range"`, SHG-QA-012)
+
+El seed (`DEV_ENV.md`/`generate_data_dev.py`) tiene fechas fijas (ej. enero
+2026) que un quick-filter relativo a "hoy" (7/15/30/90/180 días) puede dejar
+de alcanzar con el correr de los meses. Mantine v9 `@mantine/dates` no
+expone un input de texto parseable (sin `dateParser` no se puede `.fill()`
+la fecha), así que hace falta navegar el calendario real:
+
+1. Abrir el popover: click en el botón del input (ojo con `getByLabel` — si
+   el campo es `clearable`, matchea también el botón "Limpiar" por
+   substring; usar `getByRole('button', { name: '<label>', exact: true })`).
+2. El header del nivel "día" (`MonthLevel`) es clickeable y sube al nivel
+   "año" (que en realidad muestra los 12 MESES del año visible, no días) —
+   class estable `.mantine-<StaticSelector>-calendarHeaderLevel` (el
+   `__staticSelector` real es el nombre del composite, ej.
+   `DatePickerInput`, **no** `CalendarHeader` — confirmalo inspeccionando el
+   DOM antes de asumir el nombre). Si el año del rango que buscás ya
+   coincide con el año actual (mismo año que "hoy"), no hace falta tocar
+   año/década — alcanza con este único click para bajar de "día" a "mes".
+3. Click en el mes por su abreviatura `dayjs(locale).format('MMM')` (`"ene"`,
+   `"feb"`, ... sin punto en locale `es`) — vuelve a nivel "día" ya en ese
+   mes.
+4. Click en cada día por su `aria-label` real (`"D MMMM YYYY"`, ej.
+   `"5 enero 2026"`) — **con `exact: true`**, si no `getByRole` matchea
+   también por substring cualquier día cuyo número termine igual (`"15
+   enero 2026"` contiene `"5 enero 2026"`).
+5. `Escape` para cerrar el popover (el valor ya se emitió con el segundo
+   click, no hace falta un botón de confirmar).
+
+Ver `e2e/cases/dashboard.js` (`seleccionarRangoDeSeed`) para la
+implementación completa.
