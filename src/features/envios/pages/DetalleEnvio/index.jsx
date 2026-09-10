@@ -424,6 +424,7 @@ const DetalleEnvio = () => {
                     bullet={<IconCircleDot size={14} />}
                     color={color}
                     title={estadoLabel("envio", item.estado)}
+                    data-testid="historial-estado-item"
                   >
                     <Text size="xs" c="dimmed">
                       {formatFechaHora(fechaHistorial(item))}

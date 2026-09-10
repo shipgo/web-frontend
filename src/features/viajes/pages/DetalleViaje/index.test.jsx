@@ -12,7 +12,7 @@ vi.mock('@api', () => ({
     finalizar: vi.fn(),
     cancelar: vi.fn(),
   },
-  trackingApi: { getUltimaUbicacion: vi.fn() },
+  trackingApi: { getUltimaUbicacion: vi.fn(), getHistorial: vi.fn() },
 }));
 
 // El mini-mapa (Mapbox GL) no funciona sobre jsdom (requiere WebGL real);
@@ -22,6 +22,8 @@ vi.mock('@components/Map', () => ({
 }));
 vi.mock('react-map-gl/mapbox', () => ({
   Marker: ({ children }) => <div>{children}</div>,
+  Source: ({ children }) => <div>{children}</div>,
+  Layer: () => null,
 }));
 
 import { trackingApi, viajeApi } from '@api';
@@ -71,6 +73,10 @@ describe('DetalleViaje', () => {
     vi.clearAllMocks();
     viajeApi.getById.mockResolvedValue(EXISTING_VIAJE);
     trackingApi.getUltimaUbicacion.mockResolvedValue({ latitud: -31.41, longitud: -64.19 });
+    trackingApi.getHistorial.mockResolvedValue([
+      { orden: 1, latitud: -31.42, longitud: -64.2 },
+      { orden: 2, latitud: -31.41, longitud: -64.19 },
+    ]);
     useAuthStore.setState({
       user: new Usuario({ id: 1, username: 'admin1', authorities: ['ROLE_ADMIN'] }),
       isAuthenticated: true,
