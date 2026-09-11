@@ -6,7 +6,12 @@ import PageFooter from "@components/PageFooter";
 
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
 
-const Footer = ({ onSubmit, isSubmitting, submitLabel = "Registrar envío" }) => {
+const Footer = ({
+  onSubmit,
+  isSubmitting,
+  submitLabel = "Registrar envío",
+  disableSubmit = false,
+}) => {
   const form = useEnvioFormContext();
   const [, navigate] = useLocation();
   const { nombre, apellido, detalleEnvios } = form.values;
@@ -64,7 +69,11 @@ const Footer = ({ onSubmit, isSubmitting, submitLabel = "Registrar envío" }) =>
       >
         Cancelar
       </Button>
-      <Button loading={isSubmitting} onClick={onSubmit}>
+      <Button
+        loading={isSubmitting}
+        disabled={disableSubmit}
+        onClick={onSubmit}
+      >
         {submitLabel}
       </Button>
     </PageFooter>

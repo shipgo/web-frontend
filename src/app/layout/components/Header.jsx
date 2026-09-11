@@ -16,6 +16,7 @@ import { IconLogout, IconSearch } from "@tabler/icons-react";
 import { useAuth } from "@contexts/auth";
 import { useAuthStore } from "@stores/auth.store";
 import { NotificacionesBell } from "@features/notificaciones";
+import { OperatingSucursalSelector } from "@components";
 
 const AppHeader = () => {
   const { user } = useAuth();
@@ -54,6 +55,7 @@ const AppHeader = () => {
             placeholder="Buscá envíos, viajes..."
             rightSection={<IconSearch size={20} />}
           />
+          <OperatingSucursalSelector />
         </Group>
 
         <Group ml="auto">

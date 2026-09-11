@@ -4,12 +4,21 @@ import { AppShell } from "@mantine/core";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { renderWithProviders } from "../../../../test/renderWithProviders";
+import { OperatingContext } from "@contexts/operatingContext";
 
 vi.mock("@api", () => ({
   envioApi: { save: vi.fn() },
   categoriaApi: { getAll: vi.fn() },
   provinciaApi: { getAll: vi.fn() },
   localidadApi: { getByProvincia: vi.fn() },
+}));
+
+// Por default un ADMIN con sucursal propia (comportamiento de siempre, previo
+// a SHG-FE-052). Los tests del guard de SUPERUSER-sin-sucursal la pisan
+// envolviendo con `OperatingContext.Provider` (ver más abajo).
+let mockUser = { sucursal: { id: 1, nombre: "Centro" } };
+vi.mock("@contexts/auth", () => ({
+  useAuth: () => ({ user: mockUser }),
 }));
 
 // El mapa (mapbox-gl / react-map-gl) no corre en jsdom; solo nos interesa
@@ -65,17 +74,32 @@ const selectOption = async (user, container, comboboxName, optionName) => {
 };
 
 // `Footer` usa `AppShellFooter`, que requiere un `AppShell` ancestro.
-const renderCrearEnvios = () =>
-  renderWithProviders(
+// `operatingContextValue` permite simular al SUPERUSER (`isSuperUser: true`)
+// para los tests del guard de SHG-FE-052 — sin pasarlo, el contexto usa su
+// default (`isSuperUser: false`), que es el comportamiento de siempre.
+const renderCrearEnvios = (operatingContextValue) => {
+  const content = (
     <AppShell footer={{ height: 60 }}>
       <CrearEnvios />
-    </AppShell>,
+    </AppShell>
   );
+
+  return renderWithProviders(
+    operatingContextValue ? (
+      <OperatingContext.Provider value={operatingContextValue}>
+        {content}
+      </OperatingContext.Provider>
+    ) : (
+      content
+    ),
+  );
+};
 
 describe("CrearEnvios", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     capturedOnSelect = undefined;
+    mockUser = { sucursal: { id: 1, nombre: "Centro" } };
 
     categoriaApi.getAll.mockResolvedValue([
       { id: 1, nombre: "Documentación" },
@@ -307,5 +331,53 @@ describe("CrearEnvios", () => {
     expect(
       await screen.findByText("El número de calle es requerido"),
     ).toBeInTheDocument();
+  });
+
+  describe("SHG-FE-052 — guard SUPERUSER sin sucursal propia", () => {
+    it("no bloquea a un SUPERUSER que sí tiene sucursal propia", async () => {
+      mockUser = { sucursal: { id: 1, nombre: "Centro" } };
+      renderCrearEnvios({ isSuperUser: true });
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        screen.queryByText(/no podés crear envíos todavía/i),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /registrar envío/i }),
+      ).toBeEnabled();
+    });
+
+    it("bloquea el submit y avisa cuando un SUPERUSER no tiene sucursal propia (evita el 500 de backend)", async () => {
+      mockUser = { sucursal: null };
+      renderCrearEnvios({ isSuperUser: true });
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        await screen.findByText(/no podés crear envíos todavía/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /registrar envío/i }),
+      ).toBeDisabled();
+      expect(envioApi.save).not.toHaveBeenCalled();
+    });
+
+    it("un ADMIN sin sucursal propia (dato inconsistente) no dispara el guard — sólo aplica a SUPERUSER", async () => {
+      mockUser = { sucursal: null };
+      // `isSuperUser: false` (default del contexto, sin wrap): el guard es
+      // específico del caso SUPERUSER — un ADMIN sin sucursal es un estado de
+      // datos inconsistente que está fuera del alcance de esta tarea.
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        screen.queryByText(/no podés crear envíos todavía/i),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /registrar envío/i }),
+      ).toBeEnabled();
+    });
   });
 });
