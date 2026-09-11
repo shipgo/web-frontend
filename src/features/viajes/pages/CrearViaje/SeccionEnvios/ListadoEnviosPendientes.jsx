@@ -13,6 +13,7 @@ import EnviosAcciones from "./EnviosAcciones";
 
 import { ACTIONS } from "../constants";
 import { useFormContext } from "../contexts/EnviosFormContext";
+import { coordsDePunto } from "./utils";
 
 const matchesSearch = (envio, search) => {
   if (!search) return true;
@@ -64,6 +65,11 @@ const ListadoEnviosPendientes = ({
    * propio de cada envío (puede haber varios envíos con el mismo punto de
    * entrega); para transferencia todo lo seleccionado va al mismo
    * `sucursalDestinoID` elegido en el modal.
+   *
+   * `coords` (`SHG-FE-048`) se calcula una sola vez acá — al crear la
+   * entrada — a partir del `destino` del primer envío (entrega local) o del
+   * `puntoEntrega` de la sucursal elegida (transferencia); lo consume el
+   * mapa de `SeccionResumen` y `hooks/useRouteCalculation`.
    */
   const handleOnSelectedAction = ({ action, sucursal }) => {
     const seleccionados = Array.from(selectedPackages.values());
@@ -85,6 +91,7 @@ const ListadoEnviosPendientes = ({
           label: formatDireccion(enviosDelDestino[0].destino, {
             completa: true,
           }),
+          coords: coordsDePunto(enviosDelDestino[0].destino),
           packages: new Map(),
         };
 
@@ -99,6 +106,7 @@ const ListadoEnviosPendientes = ({
         puntoEntregaID: null,
         sucursalDestinoID: sucursal.id,
         label: sucursal.nombre,
+        coords: coordsDePunto(sucursal.puntoEntrega),
         packages: new Map(),
       };
 

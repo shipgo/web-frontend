@@ -1,5 +1,18 @@
-import { IconFlag3, IconPin } from "@tabler/icons-react";
-import { Card, ScrollArea, Text, ThemeIcon, Timeline } from "@mantine/core";
+import {
+  IconChevronDown,
+  IconChevronUp,
+  IconFlag3,
+  IconPin,
+} from "@tabler/icons-react";
+import {
+  ActionIcon,
+  Card,
+  Group,
+  ScrollArea,
+  Text,
+  ThemeIcon,
+  Timeline,
+} from "@mantine/core";
 
 import { formatFechaHora } from "@domain/format";
 
@@ -7,12 +20,19 @@ import { formatFechaHora } from "@domain/format";
  * Paradas reales del viaje: una por cada entrada de `enviosIncluidos`
  * (`groupLabels`/`groupCounts`, ver `SeccionEnvios/utils.getGroupProperties`),
  * en el mismo orden en que se van a mandar como `enviosPuntoEntrega`.
+ *
+ * `onMoveParada(fromIndex, toIndex)` (`SHG-FE-048`) reordena manualmente vía
+ * botones subir/bajar en vez de drag & drop: no había ninguna librería de DnD
+ * en el proyecto, y sumar una sólo para esto no valía el riesgo/tamaño de
+ * bundle para un caso de uso simple (listas cortas, reordenar de a un lugar
+ * por vez alcanza).
  */
 const PaquetesTimeline = ({
   groupLabels = [],
   groupCounts = [],
   fechaSalida,
   sucursalOrigen,
+  onMoveParada,
 }) => {
   return (
     <Card withBorder shadow="0" p="0" h={400} maw="35%">
@@ -49,7 +69,35 @@ const PaquetesTimeline = ({
             <Timeline.Item
               key={`${label}-${index}`}
               bullet={<IconPin size={12} />}
-              title={label}
+              title={
+                <Group gap="xs" wrap="nowrap" justify="space-between">
+                  <Text size="sm" fw={500} truncate>
+                    {label}
+                  </Text>
+                  <Group gap={2} wrap="nowrap">
+                    <ActionIcon
+                      size="sm"
+                      variant="subtle"
+                      color="gray"
+                      disabled={index === 0}
+                      aria-label={`Subir parada ${index + 1}`}
+                      onClick={() => onMoveParada(index, index - 1)}
+                    >
+                      <IconChevronUp size={14} />
+                    </ActionIcon>
+                    <ActionIcon
+                      size="sm"
+                      variant="subtle"
+                      color="gray"
+                      disabled={index === groupLabels.length - 1}
+                      aria-label={`Bajar parada ${index + 1}`}
+                      onClick={() => onMoveParada(index, index + 1)}
+                    >
+                      <IconChevronDown size={14} />
+                    </ActionIcon>
+                  </Group>
+                </Group>
+              }
             >
               <Text c="dimmed" size="sm">
                 ({groupCounts[index]}{" "}

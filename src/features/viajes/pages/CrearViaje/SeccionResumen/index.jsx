@@ -1,25 +1,34 @@
 import { Card, Stack, Group } from "@mantine/core";
 
-import { Map as MapComponent } from "@components";
 import ScreenContainer from "@components/ScreenContainer";
 import { useAuth } from "@contexts/auth";
 
 import useRouteCalculation from "../hooks/useRouteCalculation";
-import { getGroupProperties } from "../SeccionEnvios/utils";
+import { coordsDePunto, getGroupProperties, moverParada } from "../SeccionEnvios/utils";
 import { useFormContext } from "../contexts/EnviosFormContext";
 
 import SeccionHeader from "./SeccionHeader";
 import PaquetesTimeline from "./PaquetesTimeline";
+import RutaMapa from "./RutaMapa";
 
 const SeccionResumen = () => {
   const { user } = useAuth();
   const {
     values: { enviosIncluidos, fechaHoraInicioPlanificada },
+    setFieldValue,
   } = useFormContext();
 
-  const { groupLabels, groupCounts } = getGroupProperties(enviosIncluidos);
+  const { groupLabels, groupCounts, groupCoords } =
+    getGroupProperties(enviosIncluidos);
+
+  // `POST /api/viaje` siempre resuelve el origen del viaje server-side desde
+  // la sucursal del usuario logueado (ver `SeccionDetalles.jsx`) — el mapa y
+  // el cálculo de ruta usan la misma fuente, nunca la sucursal "operativa"
+  // del selector de SUPERUSER (`SHG-FE-052`).
+  const origenCoords = coordsDePunto(user?.sucursal?.puntoEntrega);
 
   const {
+    data,
     isPending,
     returnOrigin,
     setReturnOrigin,
@@ -27,7 +36,13 @@ const SeccionResumen = () => {
     showAlert,
     isError,
     handleRouteCalculation,
-  } = useRouteCalculation();
+  } = useRouteCalculation(origenCoords, groupCoords);
+
+  const handleMoveParada = (fromIndex, toIndex) =>
+    setFieldValue(
+      "enviosIncluidos",
+      moverParada(enviosIncluidos, fromIndex, toIndex),
+    );
 
   return (
     <Card padding="lg" component={Stack}>
@@ -58,7 +73,14 @@ const SeccionResumen = () => {
       >
         <Group pos="relative">
           <Card withBorder shadow="0" p="0" h={400} flex={1}>
-            <MapComponent />
+            <RutaMapa
+              origenCoords={origenCoords}
+              paradas={groupLabels.map((label, index) => ({
+                label,
+                coords: groupCoords[index],
+              }))}
+              routeGeometry={data?.geometry}
+            />
           </Card>
 
           <PaquetesTimeline
@@ -66,6 +88,7 @@ const SeccionResumen = () => {
             groupCounts={groupCounts}
             fechaSalida={fechaHoraInicioPlanificada}
             sucursalOrigen={user?.sucursal?.nombre}
+            onMoveParada={handleMoveParada}
           />
         </Group>
       </ScreenContainer>
