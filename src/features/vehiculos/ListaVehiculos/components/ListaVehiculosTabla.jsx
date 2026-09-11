@@ -20,6 +20,7 @@ import {
 } from "@tabler/icons-react";
 
 import { timeFromNow, toLocalDate } from "@utils/dates";
+import { estadoBadge } from "@domain/estados";
 import { useDeleteVehiculo } from "../hooks/useDeleteVehiculo";
 
 const ACTIONS = [
@@ -50,21 +51,6 @@ const COLUMNS = [
   "Fecha de registro",
   "Acciones",
 ];
-
-const colores = {
-  DISPONIBLE: "green",
-  EN_USO: "blue",
-  "EN USO": "blue",
-  MANTENIMIENTO: "orange",
-  FUERA_DE_SERVICIO: "red",
-  "FUERA DE SERVICIO": "red",
-  INACTIVO: "gray",
-};
-const getEstadoColor = (estado) => {
-  const normalizedEstado = estado?.toUpperCase();
-
-  return colores[normalizedEstado] || "gray";
-};
 
 const ListaVehiculosTabla = ({
   items = [],
@@ -133,7 +119,13 @@ const ListaVehiculosTabla = ({
           const tipoVehiculo =
             item.tipoVehiculo?.nombre || item.tipo || "Sin tipo";
           const sucursal = item.sucursal?.nombre || "Sin sucursal";
-          const estado = item.estado || "Sin estado";
+          // Mapa de color unificado contra `ESTADO_VEHICULO` (domain/estados.js) —
+          // antes vivía un mapa propio y desactualizado acá (deuda anotada en
+          // coordination/frontend.md 2026-09-08), con claves que ya no
+          // coincidían con los valores reales que devuelve el backend.
+          const { label: estadoLabel, color: estadoColor } = item.estado
+            ? estadoBadge("vehiculo", item.estado)
+            : { label: "Sin estado", color: "gray" };
           const fechaRegistro = item.anioCompra;
 
           return (
@@ -171,12 +163,8 @@ const ListaVehiculosTabla = ({
               </Table.Td>
 
               <Table.Td>
-                <Badge
-                  color={getEstadoColor(estado)}
-                  variant="light"
-                  radius="md"
-                >
-                  {estado.replaceAll("_", " ")}
+                <Badge color={estadoColor} variant="light" radius="md">
+                  {estadoLabel}
                 </Badge>
               </Table.Td>
 

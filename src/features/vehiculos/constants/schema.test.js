@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
-import { VEHICULO_SCHEMA } from "./schema";
+import {
+  VEHICULO_SCHEMA,
+  resetCategoriaPorTipoVehiculoId,
+  setCategoriaPorTipoVehiculoId,
+} from "./schema";
 
 const currentYear = new Date().getFullYear();
 
@@ -103,12 +107,73 @@ describe("VEHICULO_SCHEMA", () => {
     ).toBe(true);
   });
 
-  it("exige al menos 4 ruedas (VehiculoReqDTO @Min(4))", () => {
+  it("exige al menos 4 ruedas para un tipoVehiculo sin categoría reconocida (automotor / legacy)", () => {
     expect(
       VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, cantidadRuedas: 3 }).success,
     ).toBe(false);
     expect(
       VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, cantidadRuedas: 4 }).success,
     ).toBe(true);
+  });
+
+  describe("cantidadRuedas por categoría (SHG-BE-040 / SHG-FE-056)", () => {
+    afterEach(() => {
+      resetCategoriaPorTipoVehiculoId();
+    });
+
+    it("rechaza el piso genérico de Bean Validation (>=2) cuando la categoría no es moto", () => {
+      setCategoriaPorTipoVehiculoId({ 1: "automotor" });
+
+      expect(
+        VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, cantidadRuedas: 2 })
+          .success,
+      ).toBe(false);
+      expect(
+        VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, cantidadRuedas: 4 })
+          .success,
+      ).toBe(true);
+    });
+
+    it("exige exactamente 2 ruedas cuando el tipoVehiculo es categoría moto", () => {
+      setCategoriaPorTipoVehiculoId({ 1: "moto" });
+
+      const conDosRuedas = VEHICULO_SCHEMA.safeParse({
+        ...VALID_VEHICULO,
+        cantidadRuedas: 2,
+      });
+      expect(conDosRuedas.success).toBe(true);
+
+      const conCuatroRuedas = VEHICULO_SCHEMA.safeParse({
+        ...VALID_VEHICULO,
+        cantidadRuedas: 4,
+      });
+      expect(conCuatroRuedas.success).toBe(false);
+      expect(conCuatroRuedas.error.issues[0].path).toEqual(["cantidadRuedas"]);
+      expect(conCuatroRuedas.error.issues[0].message).toMatch(
+        /exactamente 2 ruedas/i,
+      );
+
+      const conUnaRueda = VEHICULO_SCHEMA.safeParse({
+        ...VALID_VEHICULO,
+        cantidadRuedas: 1,
+      });
+      // Bajo el piso físico de Bean Validation (`@Min(2)`) — lo rechaza el
+      // campo base, antes incluso de llegar al `superRefine` por categoría.
+      expect(conUnaRueda.success).toBe(false);
+    });
+
+    it("vuelve a exigir mínimo 4 si se cambia a un tipoVehiculo no-moto (mismo id, catálogo actualizado)", () => {
+      setCategoriaPorTipoVehiculoId({ 1: "moto" });
+      expect(
+        VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, cantidadRuedas: 2 })
+          .success,
+      ).toBe(true);
+
+      setCategoriaPorTipoVehiculoId({ 1: "automotor" });
+      expect(
+        VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, cantidadRuedas: 2 })
+          .success,
+      ).toBe(false);
+    });
   });
 });

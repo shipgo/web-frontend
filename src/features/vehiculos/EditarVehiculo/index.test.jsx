@@ -107,4 +107,49 @@ describe("EditarVehiculo", () => {
       expect.objectContaining({ patente: "ZZ999ZZ" })
     );
   });
+
+  // SHG-FE-056: editar una moto ya cargada (2 ruedas) no debe disparar el
+  // error de "cantidadRuedas" de `VEHICULO_SCHEMA` con sus propios datos.
+  it("edits an existing moto without triggering the wheel-count validation error", async () => {
+    const user = userEvent.setup();
+    tipoVehiculoApi.getAll.mockResolvedValue([
+      { id: 10, nombre: "Moto", categoria: "moto" },
+    ]);
+    vehiculoApi.getById.mockResolvedValue({
+      ...EXISTING_VEHICULO,
+      patente: "AA888MT",
+      tipoVehiculo: { id: 10, nombre: "Moto" },
+      cantidadRuedas: 2,
+    });
+    vehiculoApi.update.mockResolvedValue({ id: 7 });
+
+    renderWithProviders(
+      <Route path="/vehiculos/:id/editar" component={EditarVehiculo} />,
+      { route: "/vehiculos/7/editar" }
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/patente/i)).toHaveValue("AA888MT");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/cantidad de ruedas/i)).toHaveValue("2");
+    });
+
+    await user.click(
+      screen.getByRole("button", { name: /guardar cambios/i })
+    );
+
+    await waitFor(() => {
+      expect(vehiculoApi.update).toHaveBeenCalledTimes(1);
+    });
+
+    expect(vehiculoApi.update).toHaveBeenCalledWith(
+      "7",
+      expect.objectContaining({ tipoVehiculoID: 10, cantidadRuedas: 2 })
+    );
+    expect(
+      screen.queryByText(/una moto debe tener exactamente 2 ruedas/i)
+    ).not.toBeInTheDocument();
+  });
 });
