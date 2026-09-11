@@ -21,6 +21,10 @@ import {
   tipoVehiculoApi,
 } from "../api/vehiculos.api";
 import { useVehiculoFormContext } from "../context/VehiculoFormContext";
+import {
+  CATEGORIA_VEHICULO,
+  setCategoriaPorTipoVehiculoId,
+} from "../constants/schema";
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -58,10 +62,17 @@ const VehiculoForm = () => {
 
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [tiposVehiculo, setTiposVehiculo] = useState([]);
+  const [categoriaPorTipoId, setCategoriaPorTipoId] = useState({});
   const [marcas, setMarcas] = useState([]);
   const [modelos, setModelos] = useState([]);
   const [combustibles, setCombustibles] = useState([]);
   const [tiposRueda, setTiposRueda] = useState([]);
+
+  // Categoría (`"moto"` | `"automotor"`) del `tipoVehiculo` actualmente
+  // seleccionado — impulsa la validación/UI condicional de `cantidadRuedas`
+  // (SHG-FE-056). `undefined` mientras no haya selección o catálogo cargado.
+  const categoriaSeleccionada = categoriaPorTipoId[form.values.tipoVehiculoID];
+  const esMoto = categoriaSeleccionada === CATEGORIA_VEHICULO.MOTO;
 
   // Cargar catálogos al montar el componente
   useEffect(() => {
@@ -77,12 +88,23 @@ const VehiculoForm = () => {
             tipoRuedaApi.getAll(),
           ]);
 
+        // No hay filtro server-side por `categoria` (SHG-BE-040) — el
+        // catálogo completo (motos + automotores) se lista tal cual.
         setTiposVehiculo(
           tiposVehiculoRes.map((t) => ({
             value: t.id.toString(),
             label: t.nombre,
           }))
         );
+
+        // Sincroniza el mapa id -> categoria que usa `VEHICULO_SCHEMA` para
+        // validar `cantidadRuedas` según el tipo elegido (ver constants/schema.js),
+        // y guarda una copia local para impulsar la UI condicional de este form.
+        const categoriaPorId = Object.fromEntries(
+          tiposVehiculoRes.map((t) => [t.id.toString(), t.categoria])
+        );
+        setCategoriaPorTipoVehiculoId(categoriaPorId);
+        setCategoriaPorTipoId(categoriaPorId);
 
         setMarcas(
           marcasRes.map((m) => ({
@@ -182,6 +204,28 @@ const VehiculoForm = () => {
               searchable
               filter={filterIgnoreAccents}
               {...form.getInputProps("tipoVehiculoID")}
+              onChange={(value) => {
+                form.setFieldValue("tipoVehiculoID", value);
+
+                // Ajusta `cantidadRuedas` al default de la nueva categoría
+                // (moto = 2, automotor = 4) si el valor actual ya no aplica
+                // — evita que quede un valor obviamente inválido (p. ej. 4
+                // ruedas heredadas del default) esperando a que el usuario
+                // lo note recién al enviar el formulario.
+                const nuevaCategoria = categoriaPorTipoId[value];
+                const actual = form.values.cantidadRuedas;
+                if (
+                  nuevaCategoria === CATEGORIA_VEHICULO.MOTO &&
+                  actual !== 2
+                ) {
+                  form.setFieldValue("cantidadRuedas", 2);
+                } else if (
+                  nuevaCategoria !== CATEGORIA_VEHICULO.MOTO &&
+                  (typeof actual !== "number" || actual < 4)
+                ) {
+                  form.setFieldValue("cantidadRuedas", 4);
+                }
+              }}
             />
             <Select
               label="Marca"
@@ -281,15 +325,37 @@ const VehiculoForm = () => {
             />
             <NumberInput
               label="Cantidad de Ruedas"
-              placeholder="Ej: 4"
+              placeholder={esMoto ? "2" : "Ej: 4"}
+              // Sin `description` fija acá (a diferencia de "Peso Máximo"
+              // abajo): el mensaje "debe tener exactamente 2 ruedas" ya lo
+              // muestra el `error` de `VEHICULO_SCHEMA` cuando corresponde —
+              // duplicarlo como `description` mostraría el mismo texto dos
+              // veces a la vez (Mantine no oculta la descripción cuando hay
+              // error).
               required
-              min={4}
+              // `min`/`max` quedan en el piso físico real (2 a 20) en vez del
+              // rango específico de la categoría: con `clampBehavior="blur"`
+              // (default de Mantine) un `max` más estricto autocorregiría en
+              // silencio un valor inválido al perder foco, sin dar chance de
+              // mostrar el mensaje de `VEHICULO_SCHEMA` (ver `superRefine` en
+              // `constants/schema.js`) — la regla exacta por categoría vive
+              // sólo ahí.
+              min={2}
               max={20}
               {...form.getInputProps("cantidadRuedas")}
             />
             <NumberInput
               label="Peso Máximo"
               placeholder="Ej: 1500"
+              // Backend exige el campo igual para motos (no hay límite de
+              // carga modelado para esa categoría, SHG-BE-040) — se aclara
+              // acá en vez de ocultarlo/relajar la validación, para no dar a
+              // entender que hay un tope real cuando no lo hay.
+              description={
+                esMoto
+                  ? "No hay un límite de carga real para motos: usá un valor de referencia"
+                  : undefined
+              }
               required
               min={0}
               step={0.1}
