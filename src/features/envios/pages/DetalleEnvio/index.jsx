@@ -306,6 +306,13 @@ const DetalleEnvio = () => {
           <Divider />
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             <InfoItem icon={<IconMapPin size={16} />} label="Dirección" value={direccion} />
+            {/* `piso`/`departamento` (SHG-BE-041): opcionales, sólo se muestran si vienen cargados. */}
+            {destino.piso && (
+              <InfoItem icon={<IconMapPin size={16} />} label="Piso" value={destino.piso} />
+            )}
+            {destino.departamento && (
+              <InfoItem icon={<IconMapPin size={16} />} label="Departamento" value={destino.departamento} />
+            )}
             <InfoItem icon={<IconMapPin size={16} />} label="Localidad" value={localidad.nombre} />
             <InfoItem icon={<IconMapPin size={16} />} label="Provincia" value={provincia.nombre} />
           </SimpleGrid>

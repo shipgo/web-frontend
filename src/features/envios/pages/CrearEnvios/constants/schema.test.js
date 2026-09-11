@@ -70,6 +70,20 @@ describe("CREAR_ENVIO_SCHEMA", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("permite crear/editar sin piso ni departamento (SHG-BE-041, opcionales)", () => {
+    const result = CREAR_ENVIO_SCHEMA.safeParse(VALID_ENVIO);
+    expect(result.success).toBe(true);
+  });
+
+  it("acepta piso y departamento cuando se cargan", () => {
+    const result = CREAR_ENVIO_SCHEMA.safeParse({
+      ...VALID_ENVIO,
+      piso: "4",
+      departamento: "B",
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("PAQUETE_SCHEMA", () => {

@@ -14,6 +14,11 @@
  * `values.detalleEnvios[i].id` si está presente (edición); en creación los
  * paquetes nuevos no lo tienen, así que la key se omite del payload.
  *
+ * `piso`/`departamento` (`SHG-BE-041`, opcionales): se mandan sólo si tienen
+ * contenido (trim), igual que `descripcion` de paquete — se omiten del
+ * payload en vez de mandar `""`, así el backend los persiste como
+ * `null`/ausentes en vez de string vacío.
+ *
  * @param {Object} values
  * @param {{ id?: number, latitud?: number, longitud?: number }} [destinoExtra]
  */
@@ -45,6 +50,8 @@ export const buildEnvioFormValues = (envio) => {
     telefono: envio?.telefono ?? "",
     nombreCalle: destino.nombreCalle ?? "",
     numeroCalle: destino.numeroCalle ?? "",
+    piso: destino.piso ?? "",
+    departamento: destino.departamento ?? "",
     provinciaID: provincia.id != null ? String(provincia.id) : "",
     localidadID: localidad.id != null ? String(localidad.id) : "",
     coordenadas:
@@ -62,6 +69,8 @@ export const buildEnvioFormValues = (envio) => {
 
 export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
   const coordenadas = values.coordenadas ?? {};
+  const piso = values.piso?.trim() || null;
+  const departamento = values.departamento?.trim() || null;
 
   return {
     nombre: values.nombre,
@@ -74,6 +83,8 @@ export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
       ...(destinoExtra.id != null ? { id: destinoExtra.id } : {}),
       nombreCalle: values.nombreCalle,
       numeroCalle: values.numeroCalle,
+      ...(piso != null ? { piso } : {}),
+      ...(departamento != null ? { departamento } : {}),
       localidad: { id: Number(values.localidadID) },
       latitud: destinoExtra.latitud ?? coordenadas.lat,
       longitud: destinoExtra.longitud ?? coordenadas.lng,

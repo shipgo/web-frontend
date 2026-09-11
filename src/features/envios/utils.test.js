@@ -76,6 +76,40 @@ describe("buildEnvioReqDTO", () => {
 
     expect(buildEnvioReqDTO(values).detalleEnvios[0].descripcion).toBeNull();
   });
+
+  it("omite piso/departamento del payload cuando no se cargan (SHG-BE-041)", () => {
+    const values = { ...baseValues, coordenadas: { lat: -31.4, lng: -64.18 } };
+
+    const { destino } = buildEnvioReqDTO(values);
+    expect(destino).not.toHaveProperty("piso");
+    expect(destino).not.toHaveProperty("departamento");
+  });
+
+  it("incluye piso/departamento en el payload cuando se cargan, trimeados", () => {
+    const values = {
+      ...baseValues,
+      coordenadas: { lat: -31.4, lng: -64.18 },
+      piso: "  4  ",
+      departamento: " B ",
+    };
+
+    const { destino } = buildEnvioReqDTO(values);
+    expect(destino.piso).toBe("4");
+    expect(destino.departamento).toBe("B");
+  });
+
+  it("piso/departamento en blanco se tratan como vacíos (se omiten)", () => {
+    const values = {
+      ...baseValues,
+      coordenadas: { lat: -31.4, lng: -64.18 },
+      piso: "   ",
+      departamento: "",
+    };
+
+    const { destino } = buildEnvioReqDTO(values);
+    expect(destino).not.toHaveProperty("piso");
+    expect(destino).not.toHaveProperty("departamento");
+  });
 });
 
 describe("buildEnvioFormValues", () => {
@@ -115,6 +149,8 @@ describe("buildEnvioFormValues", () => {
       telefono: "1234567",
       nombreCalle: "Av. Colón",
       numeroCalle: "1234",
+      piso: "",
+      departamento: "",
       provinciaID: "2",
       localidadID: "5",
       coordenadas: { lat: -31.4, lng: -64.18 },
@@ -122,6 +158,17 @@ describe("buildEnvioFormValues", () => {
         { id: 11, categoriaID: "1", descripcion: "Sobre", peso: 0.5 },
       ],
     });
+  });
+
+  it("precarga piso/departamento del destino cuando vienen cargados (SHG-BE-041)", () => {
+    const envioConPisoDepto = {
+      ...ENVIO,
+      destino: { ...ENVIO.destino, piso: "4", departamento: "B" },
+    };
+
+    const values = buildEnvioFormValues(envioConPisoDepto);
+    expect(values.piso).toBe("4");
+    expect(values.departamento).toBe("B");
   });
 
   it("el resultado round-trips a buildEnvioReqDTO conservando ids de destino y paquetes", () => {
@@ -151,6 +198,8 @@ describe("buildEnvioFormValues", () => {
       telefono: "",
       nombreCalle: "",
       numeroCalle: "",
+      piso: "",
+      departamento: "",
       provinciaID: "",
       localidadID: "",
       coordenadas: null,
