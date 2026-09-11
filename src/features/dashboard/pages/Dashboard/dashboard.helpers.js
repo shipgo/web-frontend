@@ -24,10 +24,19 @@ export const DEFAULT_QUICK_FILTER = QUICK_FILTERS[0].label;
 /** Rango `[desde, hasta]` (strings `YYYY-MM-DD`) del quick-filter default. */
 export const getDefaultDateRange = () => QUICK_FILTERS[0].getRange().map(iso);
 
-/** Estado inicial de los filtros del dashboard. */
-export const getDefaultFiltros = () => ({
+/**
+ * Estado inicial de los filtros del dashboard.
+ *
+ * `sucursalId` (SHG-FE-052): admite un valor inicial para "sembrar" el filtro
+ * con la sucursal operativa activa del SUPERUSER (contexto global del
+ * selector del header) sin pisar el propio selector de `DashboardFiltros`
+ * (que sigue siendo la fuente de verdad mientras el usuario esté en la
+ * pantalla — ver `index.jsx`). Default `null` = "todas las sucursales",
+ * igual que antes de esta tarea.
+ */
+export const getDefaultFiltros = (sucursalId = null) => ({
   date: getDefaultDateRange(),
-  sucursalId: null,
+  sucursalId,
   quickFilterLabel: DEFAULT_QUICK_FILTER,
 });
 

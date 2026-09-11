@@ -2,6 +2,7 @@ import { mapValues } from 'es-toolkit';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 import { useParams } from '@hooks/useParams';
+import { useOperatingContext } from '@contexts/operatingContext';
 import { envioApi } from '@api';
 
 const PAGE_LIMIT = 10;
@@ -13,19 +14,30 @@ const EMPTY_RESULTS = [];
  * Los filtros llegan de `ListaEnviosFiltros` como `{ [param]: { label, values } }`
  * y acá se aplanan a los nombres exactos de `EnvioFilter` (`destino`, `search`,
  * `estado`, `fechaDesde`, `fechaHasta` — CONTRACTS.md §4 / SHG-BE-004).
+ *
+ * `sucursal` (SHG-FE-052): cuando el SUPERUSER eligió una sucursal operativa
+ * en el selector del header, se manda como `sucursal=<id>` — `EnvioFilter` ya
+ * lo soporta server-side (SUPERUSER-only, SHG-BE-004). Sin selección (o para
+ * ADMIN, donde el selector ni se muestra) no se manda nada y el backend aplica
+ * su alcance normal (ADMIN → su sucursal, SUPERUSER → toda la empresa).
  * @param {number} pageLimit - Cantidad de elementos por página (default: 10)
  */
 export const useGetEnvios = (pageLimit = PAGE_LIMIT) => {
   const queryClient = useQueryClient();
   const paramsOptions = useParams();
+  const { isSuperUser, activeSucursalId } = useOperatingContext();
 
   // Normalizar parámetros para el backend
   // El backend espera: page (0-indexed), size, y los filtros de EnvioFilter
   const filterParams = mapValues(paramsOptions.params.filters, (filter) => filter.values);
 
+  const operatingContextParams =
+    isSuperUser && activeSucursalId != null ? { sucursal: activeSucursalId } : {};
+
   const normalizedParams = {
     page: (paramsOptions.params.page || 1) - 1, // Convertir de 1-indexed (UI) a 0-indexed (backend)
     size: pageLimit,
+    ...operatingContextParams,
     ...filterParams,
   };
 
@@ -36,7 +48,12 @@ export const useGetEnvios = (pageLimit = PAGE_LIMIT) => {
    * @returns {Promise<{ rows: any[], total: number }>}
    */
   const fetchExportRows = async (limit) => {
-    const response = await envioApi.get({ ...filterParams, page: 0, size: limit });
+    const response = await envioApi.get({
+      ...operatingContextParams,
+      ...filterParams,
+      page: 0,
+      size: limit,
+    });
     return {
       rows: response?.content ?? EMPTY_RESULTS,
       total: response?.totalElements ?? 0,

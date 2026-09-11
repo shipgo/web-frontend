@@ -13,6 +13,7 @@ import AppRoutes from "./routes";
 import { THEME } from "./constants/theme";
 import { cssVariablesResolver } from "./constants/cssVariablesResolver";
 import AuthProvider from "./providers/AuthProvider";
+import OperatingContextProvider from "./providers/OperatingContextProvider";
 
 dayjs.locale("es");
 const NOTIFICATION_DELAY_IN_MS = 20_000; // 20s
@@ -34,8 +35,10 @@ const App = () => {
         <DatesProvider settings={DATE_PROVIDER_CONFIG}>
           <ModalsProvider>
             <AuthProvider>
-              <AppRoutes />
-              <Notifications autoClose={NOTIFICATION_DELAY_IN_MS} />
+              <OperatingContextProvider>
+                <AppRoutes />
+                <Notifications autoClose={NOTIFICATION_DELAY_IN_MS} />
+              </OperatingContextProvider>
             </AuthProvider>
           </ModalsProvider>
         </DatesProvider>

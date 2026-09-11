@@ -269,23 +269,35 @@ export const notificacionesApi = {
 
 /**
  * API de Empresa — `/api/empresa` (ENDPOINTS.md §15).
- * Sólo existen `POST` / `PUT /{id}` / `DELETE /{id}`.
- * ⚠️ NO hay ningún GET de empresa (ni detalle ni listado) → SHG-BE-022.
+ * `SHG-BE-022` (done) agregó `GET /api/empresa/mia` — devuelve la empresa del
+ * SUPERUSER logueado (`{ id, nombre }`), resuelta server-side. Verificado
+ * contra el backend real corriendo en dev (SHG-FE-052): no existe `GET
+ * /api/empresa` (sin id) ni un listado — sólo el detalle "mía". `ENDPOINTS.md`
+ * §15 quedó desactualizado tras SHG-BE-022 (no se toca acá, es `planning/`).
  */
 export const empresaApi = {
-  // TODO SHG-BE-022: no existe `GET /api/empresa` ni `GET /api/empresa/{id}`.
-  // Necesario para el panel SUPERUSER. Lanza error explícito hasta que exista.
+  /**
+   * `GET /api/empresa/mia` — `EmpresaDTO { id, nombre }` de la empresa del
+   * SUPERUSER logueado. Rol `SUPERUSER`.
+   */
+  getMia: async () => {
+    const response = await restclient.get(`${API_URLS.EMPRESA_URL}/mia`);
+    return response.data;
+  },
+
+  // No existe listado ni `GET /api/empresa/{id}` de propósito general (el
+  // modelo es 1 empresa por instalación) — sólo `getMia()` de arriba.
   getAll: notImplemented(
     'SHG-BE-022',
-    'GET de empresa (listado) para el panel SUPERUSER',
+    'GET de empresa (listado) para el panel SUPERUSER — usar getMia()',
   ),
   get: notImplemented(
     'SHG-BE-022',
-    'GET de empresa (listado paginado) para el panel SUPERUSER',
+    'GET de empresa (listado paginado) para el panel SUPERUSER — usar getMia()',
   ),
   getById: notImplemented(
     'SHG-BE-022',
-    'GET /api/empresa/{id} (detalle de empresa)',
+    'GET /api/empresa/{id} (detalle de empresa) — usar getMia()',
   ),
 
   /**

@@ -10,3 +10,4 @@ export { default as SelectionBanner } from "@components/SelectionBanner";
 export { default as RowActionsMenu } from "@components/RowActionsMenu";
 export { default as ExportCsvButton } from "@components/ExportCsvButton";
 export { default as CaptchaField } from "@components/CaptchaField";
+export { default as OperatingSucursalSelector } from "@components/OperatingSucursalSelector";

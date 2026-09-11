@@ -10,6 +10,7 @@ import {
 } from '@tabler/icons-react';
 
 import PageContainer from '@components/PageContainer';
+import { useOperatingContext } from '@contexts/operatingContext';
 
 import { getDefaultFiltros, getPeriodoLabel, toDashboardParams } from './dashboard.helpers';
 import { mapResumenToKpis } from './dashboard.mappers';
@@ -30,7 +31,16 @@ import DesvioChart from './components/DesvioChart';
 const pct = (value) => (value == null ? '—' : `${Math.round(value)}%`);
 
 const DashboardPage = () => {
-  const [filtros, setFiltros] = useState(getDefaultFiltros);
+  // SHG-FE-052: sembrar el filtro de sucursal del dashboard con la sucursal
+  // operativa activa del selector del header (si el SUPERUSER eligió una).
+  // Sólo se usa como valor INICIAL — a partir de ahí `DashboardFiltros` (su
+  // propio selector, ya existente) manda; cambiar la sucursal del header
+  // mientras el dashboard sigue abierto no lo pisa, para no pelear con una
+  // elección manual que el usuario ya haya hecho en esta pantalla.
+  const { activeSucursalId } = useOperatingContext();
+  const [filtros, setFiltros] = useState(() =>
+    getDefaultFiltros(activeSucursalId != null ? String(activeSucursalId) : null),
+  );
 
   const params = useMemo(() => toDashboardParams(filtros), [filtros]);
 
