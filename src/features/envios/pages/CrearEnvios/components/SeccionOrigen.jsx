@@ -294,6 +294,22 @@ const SeccionOrigen = () => {
               />
             </Grid.Col>
             <Grid.Col span={6}>
+              <TextInput
+                key={form.key("piso")}
+                {...form.getInputProps("piso")}
+                label="Piso"
+                placeholder="Ej: 4"
+              />
+            </Grid.Col>
+            <Grid.Col span={6}>
+              <TextInput
+                key={form.key("departamento")}
+                {...form.getInputProps("departamento")}
+                label="Departamento"
+                placeholder="Ej: B"
+              />
+            </Grid.Col>
+            <Grid.Col span={6}>
               <Select
                 label="Provincia"
                 placeholder="Seleccioná una provincia"

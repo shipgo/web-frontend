@@ -4,8 +4,11 @@ import { z } from 'zod';
  * Alineado a `EnvioReqDTO` (CONTRACTS.md §2 / ENDPOINTS.md Apéndice A) y a la forma
  * ya usada por `EditarEnvio`/`DetalleEnvio` (mismo repo, ya conectados a la API real):
  * `nombre`, `apellido`, `emailRemitente`, `emailReceptor`, `prefijo`, `telefono`,
- * `destino: { nombreCalle, numeroCalle, localidad: { id }, latitud, longitud }`,
+ * `destino: { nombreCalle, numeroCalle, piso?, departamento?, localidad: { id }, latitud, longitud }`,
  * `detalleEnvios: [{ categoria: { id }, descripcion, peso }]`.
+ *
+ * `piso`/`departamento` (`SHG-BE-041`, `coordination/backend.md` 2026-09-11): `String`
+ * opcionales/nullable dentro de `PuntoEntregaDTO`, sin validación de formato.
  *
  * No hay `tamano`/`largo`/`ancho`/`alto` — se descartó en CONTRACT-002.
  */
@@ -37,6 +40,8 @@ export const CREAR_ENVIO_SCHEMA = z.object({
   telefono: z.string().trim().min(1, 'El teléfono es requerido'),
   nombreCalle: z.string().trim().min(1, 'La calle es requerida'),
   numeroCalle: z.string().optional(),
+  piso: z.string().optional(),
+  departamento: z.string().optional(),
   provinciaID: z.string().min(1, 'Seleccioná una provincia'),
   localidadID: z.string().min(1, 'Seleccioná una localidad'),
   coordenadas: z
@@ -58,6 +63,8 @@ export const INITIAL_VALUES = {
   telefono: '',
   nombreCalle: '',
   numeroCalle: '',
+  piso: '',
+  departamento: '',
   provinciaID: '',
   localidadID: '',
   coordenadas: null,
