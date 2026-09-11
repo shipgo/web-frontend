@@ -1,4 +1,4 @@
-import { useMantineColorScheme } from "@mantine/core";
+import { useComputedColorScheme } from "@mantine/core";
 
 import Mapbox, {
   FullscreenControl,
@@ -14,7 +14,7 @@ const MAP_STYLES = {
 };
 
 const Map = ({ children, initialViewState }) => {
-  const { colorScheme } = useMantineColorScheme();
+  const colorScheme = useComputedColorScheme("light");
 
   return (
     <Mapbox

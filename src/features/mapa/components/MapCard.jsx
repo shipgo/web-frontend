@@ -1,4 +1,4 @@
-import { Card, useMantineColorScheme } from '@mantine/core';
+import { Card, useComputedColorScheme } from '@mantine/core';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Map, { FullscreenControl, NavigationControl } from 'react-map-gl/mapbox';
@@ -13,7 +13,7 @@ const MAP_STYLES = {
 };
 
 const MapCard = ({ children, initialCenter = DEFAULT_CENTER, initialZoom = 13, ...rest }) => {
-  const { colorScheme } = useMantineColorScheme();
+  const colorScheme = useComputedColorScheme('light');
 
   return (
     <Card flex="1" p="0" {...rest}>
