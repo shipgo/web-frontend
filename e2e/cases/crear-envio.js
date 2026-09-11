@@ -33,22 +33,27 @@ import { loginAs } from "../lib/auth.js";
  * `Select` deselecciona si se clickea de nuevo la opción ya activa
  * (`allowDeselect`), así que "reforzar" una selección correcta la vacía.
  *
- * **Bug real encontrado (fuera de alcance de este repo, backend) — parche
- * de coordenadas:** `PuntoEntregaDTO.latitud`/`longitud`
- * (`backend/.../dto/PuntoEntregaDTO.java`) tienen `@DecimalMin("0.0")`, o sea
- * exigen coordenadas NO NEGATIVAS. Cualquier dirección real de Argentina
- * (todo el país está en latitud/longitud negativa) hace que el backend
- * rechace el alta con 400 (`"El campo latitud/longitud debe ser mayor que
- * 0."`) — un 400 real e inesperado que rompería el caso 1 (y el retry del
- * caso 4) sin que sea un problema del frontend ni de este harness. Reportado
- * aparte para que se abra un ticket de backend (`@DecimalMin` no tiene
- * sentido para lat/lng reales, debería ser `@NotNull` a lo sumo, o un rango
- * `-90..90`/`-180..180`). Mientras no se corrija, `parchearCoordenadasMapbox`
- * intercepta sólo la respuesta de `retrieve` de Mapbox (nunca la del POST
- * `/api/envio`) y le invierte el signo a `features[0].geometry.coordinates`
- * — mismo lugar real, mismo nombre de calle/provincia/localidad, sólo con el
- * signo del punto en el mapa dado vuelta para no pisar el bug de backend al
- * validar el resto del flujo (payload, notificación, ListaEnvios).
+ * **Bug real encontrado — ya resuelto (`SHG-BE-034` / `SHG-FE-047`):**
+ * `PuntoEntregaDTO.latitud`/`longitud` (`backend/.../dto/PuntoEntregaDTO.java`)
+ * tenían `@DecimalMin("0.0")`, o sea exigían coordenadas NO NEGATIVAS.
+ * Cualquier dirección real de Argentina (todo el país está en latitud/longitud
+ * negativa) hacía que el backend rechazara el alta con 400 (`"El campo
+ * latitud/longitud debe ser mayor que 0."`). Este caso tenía un parche
+ * (`parchearCoordenadasMapbox`) que invertía el signo de las coordenadas de
+ * Mapbox antes de enviarlas, sólo para poder validar el resto del flujo
+ * (payload, notificación, ListaEnvios) sin pisar el bug de backend — pero eso
+ * significaba que el caso 1 NUNCA ejercitaba de verdad una coordenada
+ * negativa real contra el backend, y no habría detectado una regresión de
+ * signo en `buildEnvioReqDTO` (`src/features/envios/utils.js`) ni en la
+ * validación del backend.
+ *
+ * `SHG-BE-034` cambió la constraint a un rango real (`@DecimalMin("-90.0")`/
+ * `@DecimalMax("90.0")` para latitud, `-180.0`/`180.0` para longitud), así que
+ * el parche ya no hace falta — se quitó, y el caso 1 ahora manda la
+ * coordenada real (negativa) de Mapbox sin modificar, y verifica
+ * explícitamente que `destino.latitud`/`longitud` sean negativos en el
+ * payload Y en la respuesta persistida (ver `problemas` más abajo), para que
+ * una regresión de signo en cualquiera de las dos puntas rompa este test.
  */
 export const name = "crear-envio";
 
@@ -162,25 +167,7 @@ async function completarFormularioValido(page, { datos, paquete }) {
   await agregarPaquete(page, paquete);
 }
 
-/**
- * Ver comentario de cabecera ("Bug real encontrado"). Sólo toca la respuesta
- * de `retrieve` de Mapbox (nunca el POST `/api/envio` real, ni el `suggest`) —
- * el resto del flujo de geocodificación queda intacto.
- */
-async function parchearCoordenadasMapbox(page) {
-  await page.route("**/autofill/v1/retrieve/**", async (route) => {
-    const response = await route.fetch();
-    const json = await response.json();
-    const coords = json?.features?.[0]?.geometry?.coordinates;
-    if (Array.isArray(coords)) {
-      json.features[0].geometry.coordinates = coords.map((c) => Math.abs(c));
-    }
-    await route.fulfill({ response, json });
-  });
-}
-
 async function irACrearEnvio(page) {
-  await parchearCoordenadasMapbox(page);
   await page.goto(`${config.webBaseUrl}/envios/crear`);
   await page.getByRole("heading", { name: "Crear nuevo envío" }).waitFor({ timeout: 15_000 });
 }
@@ -252,6 +239,15 @@ export async function run({ browser, logger }) {
           typeof payload.destino?.longitud !== "number"
         ) {
           problemas.push("destino.latitud/longitud");
+        } else if (payload.destino.latitud >= 0 || payload.destino.longitud >= 0) {
+          // Regresión de `SHG-BE-034`/`SHG-FE-047`: todo el territorio argentino
+          // tiene latitud/longitud NEGATIVA. Si esto alguna vez viene en 0/positivo,
+          // o el signo se invirtió en `buildEnvioReqDTO` o en la validación del
+          // backend volvió a exigir coordenadas no negativas (ver comentario de
+          // cabecera de este archivo).
+          problemas.push(
+            `destino.latitud/longitud no negativos (esperado: ambos < 0 para Argentina; vino lat=${payload.destino.latitud}, lng=${payload.destino.longitud})`,
+          );
         }
         if (!Array.isArray(payload.detalleEnvios) || payload.detalleEnvios.length !== 1) {
           problemas.push("detalleEnvios.length");
@@ -275,6 +271,28 @@ export async function run({ browser, logger }) {
         const codigoSeguimiento = body?.codigoSeguimiento;
         if (!codigoSeguimiento) {
           throw new Error(`La respuesta de POST /api/envio no trajo codigoSeguimiento: ${JSON.stringify(body)}`);
+        }
+
+        // `SHG-FE-047`: confirmar que lo persistido (vía GET, no sólo la respuesta
+        // del POST) trae las MISMAS coordenadas que se mandaron — no 0/null, no
+        // con el signo invertido.
+        if (!body?.id) {
+          throw new Error(`La respuesta de POST /api/envio no trajo id: ${JSON.stringify(body)}`);
+        }
+        const getResponse = await page.request.get(`${config.webBaseUrl}/api/envio/${body.id}`);
+        if (!getResponse.ok()) {
+          throw new Error(`GET /api/envio/${body.id} -> ${getResponse.status()} (se esperaba 2xx)`);
+        }
+        const envioPersistido = await getResponse.json();
+        if (
+          envioPersistido?.destino?.latitud !== payload.destino.latitud ||
+          envioPersistido?.destino?.longitud !== payload.destino.longitud
+        ) {
+          throw new Error(
+            `GET /api/envio/${body.id} no devolvió las mismas coordenadas enviadas ` +
+              `(enviado: lat=${payload.destino.latitud}, lng=${payload.destino.longitud}; ` +
+              `persistido: lat=${envioPersistido?.destino?.latitud}, lng=${envioPersistido?.destino?.longitud})`,
+          );
         }
 
         const toastExito = notificacion(page, /envío creado/i).filter({ hasText: codigoSeguimiento });
