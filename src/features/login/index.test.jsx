@@ -75,6 +75,60 @@ describe("LoginPage — captcha (SHG-FE-043)", () => {
     );
   });
 
+  // --- SHG-FE-054: logo → landing / redirect post-login ---
+
+  it("click en el logo sin sesión lleva siempre a la landing (/), incluso con ?redirect= en la URL", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginPage />, { route: "/login?redirect=%2Fviajes%2F12" });
+
+    await user.click(screen.getByRole("link", { name: /shipgo — inicio/i }));
+
+    expect(window.location.pathname).toBe("/");
+  });
+
+  it("login exitoso con ?redirect= a una ruta interna válida navega ahí (no al home por rol)", async () => {
+    const user = userEvent.setup();
+    mockUser = { authorities: [{ name: "ROLE_ADMIN" }] };
+    mockLogin.mockResolvedValue(true);
+    renderWithProviders(<LoginPage />, { route: "/login?redirect=%2Fviajes%2F12" });
+
+    await user.type(screen.getByLabelText("Usuario"), "juan");
+    await user.type(screen.getByLabelText("Contraseña"), "Shipgo123!");
+    await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
+
+    await waitFor(() => expect(window.location.pathname).toBe("/viajes/12"));
+  });
+
+  it("login exitoso sin ?redirect= navega al home por rol (comportamiento sin cambios)", async () => {
+    const user = userEvent.setup();
+    mockUser = { authorities: [{ name: "ROLE_CUSTOMER" }] };
+    mockLogin.mockResolvedValue(true);
+    renderWithProviders(<LoginPage />, { route: "/login" });
+
+    await user.type(screen.getByLabelText("Usuario"), "cliente");
+    await user.type(screen.getByLabelText("Contraseña"), "Shipgo123!");
+    await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
+
+    await waitFor(() => expect(window.location.pathname).toBe("/portal/envios"));
+  });
+
+  it("login exitoso con ?redirect= a una URL externa lo ignora (anti open-redirect) y cae al home por rol", async () => {
+    const user = userEvent.setup();
+    mockUser = { authorities: [{ name: "ROLE_ADMIN" }] };
+    mockLogin.mockResolvedValue(true);
+    renderWithProviders(<LoginPage />, {
+      route: "/login?redirect=https%3A%2F%2Fevil.com",
+    });
+
+    await user.type(screen.getByLabelText("Usuario"), "juan");
+    await user.type(screen.getByLabelText("Contraseña"), "Shipgo123!");
+    await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
+
+    await waitFor(() => expect(mockLogin).toHaveBeenCalledTimes(1));
+    expect(window.location.pathname).toBe("/");
+    expect(window.location.href).not.toContain("evil.com");
+  });
+
   it('captcha rechazado por el backend ("captcha_invalid"): avisa y re-emite el challenge, sin mostrar "usuario/contraseña incorrectos"', async () => {
     const user = userEvent.setup();
     mockLogin.mockRejectedValue({

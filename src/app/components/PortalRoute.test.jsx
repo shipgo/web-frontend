@@ -23,10 +23,11 @@ describe("PortalRoute", () => {
     mockUseAuth.mockReset();
   });
 
-  it("sin sesión redirige a /login", () => {
+  it("sin sesión redirige a /login preservando el destino en ?redirect= (SHG-FE-054)", () => {
     mockUseAuth.mockReturnValue({ user: null, isLoading: false, isAuthenticated: false });
-    renderRoute();
+    renderRoute("/portal/envios/55");
     expect(window.location.pathname).toBe("/login");
+    expect(window.location.search).toBe("?redirect=%2Fportal%2Fenvios%2F55");
     expect(screen.queryByText("Contenido del portal")).not.toBeInTheDocument();
   });
 

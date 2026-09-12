@@ -29,10 +29,11 @@ describe("ProtectedRoute", () => {
     expect(screen.queryByText("Contenido protegido")).not.toBeInTheDocument();
   });
 
-  it("redirige a /login si no está autenticado", () => {
+  it("redirige a /login si no está autenticado, preservando el destino en ?redirect= (SHG-FE-054)", () => {
     mockUseAuth.mockReturnValue({ user: null, isLoading: false, isAuthenticated: false });
-    renderRoute();
+    renderRoute(undefined, "/envios");
     expect(window.location.pathname).toBe("/login");
+    expect(window.location.search).toBe("?redirect=%2Fenvios");
     expect(screen.queryByText("Contenido protegido")).not.toBeInTheDocument();
   });
 
