@@ -1,4 +1,6 @@
 import {
+  ActionIcon,
+  Alert,
   Badge,
   Card,
   CopyButton,
@@ -8,12 +10,12 @@ import {
   Text,
   Title,
   Tooltip,
-  ActionIcon,
 } from '@mantine/core';
 import {
   IconCalendarClock,
   IconCheck,
   IconCopy,
+  IconKey,
   IconMapPin,
 } from '@tabler/icons-react';
 
@@ -46,6 +48,11 @@ const InfoRow = ({ icon, label, children }) => (
  * No expone nombre / email / teléfono ni la dirección exacta del remitente.
  *
  * Reutilizable por el portal CUSTOMER (`SHG-FE-026`).
+ *
+ * `palabraEntrega` (`SHG-BE-042`) se muestra sólo si el DTO la trae (ausente si
+ * el envío no tiene una generada) — es secreto remitente↔destinatario↔chofer,
+ * nunca se le pide de vuelta al backend después de creado el envío, y NUNCA se
+ * muestra en las vistas de operador (`ListaEnvios`/`DetalleEnvio`).
  *
  * @param {Object} props
  * @param {import('../api/tracking.api').PublicTrackingDTO} props.data
@@ -112,6 +119,20 @@ const TrackingResultado = ({ data }) => {
           </Group>
         </Stack>
       </Card>
+
+      {data.palabraEntrega ? (
+        <Alert color="yellow" variant="light" icon={<IconKey size={18} />} title="Tu palabra de entrega">
+          <Stack gap={2}>
+            <Title order={3} style={{ letterSpacing: '0.05em' }}>
+              {data.palabraEntrega}
+            </Title>
+            <Text size="sm">
+              Decísela al chofer cuando te entregue el envío — es la forma de confirmar que sos vos
+              quien lo recibe.
+            </Text>
+          </Stack>
+        </Alert>
+      ) : null}
 
       {data.ultimaUbicacionAprox ? (
         <Card withBorder padding="lg">

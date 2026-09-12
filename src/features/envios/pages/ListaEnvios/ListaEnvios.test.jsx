@@ -71,6 +71,19 @@ describe('ListaEnvios', () => {
     await waitFor(() => expect(envioApi.get).toHaveBeenCalled());
   });
 
+  it('nunca muestra palabraEntrega (secreto remitente↔destinatario↔chofer), aunque el backend la mande por error (SHG-FE-058)', async () => {
+    envioApi.get.mockResolvedValue({
+      content: [{ ...ENVIO_ENTREGADO, palabraEntrega: 'AB23K9', dniReceptor: '30111222' }],
+      totalElements: 1,
+      totalPages: 1,
+    });
+
+    renderWithProviders(<ListaEnvios />);
+
+    expect(await screen.findByText('SHG-DEV-0002')).toBeInTheDocument();
+    expect(screen.queryByText('AB23K9')).not.toBeInTheDocument();
+  });
+
   it('shows the empty state when there are no envíos', async () => {
     envioApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
 

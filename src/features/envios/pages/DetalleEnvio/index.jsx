@@ -286,6 +286,17 @@ const DetalleEnvio = () => {
                   : null
               }
             />
+            {/* `dniReceptor` (SHG-BE-042): sólo presente una vez entregado el envío
+                (`@JsonInclude(NON_EMPTY)`). A diferencia de `palabraEntrega`, este
+                campo SÍ es visible para el operador — es el dato de auditoría de
+                quién recibió el envío. NUNCA mostrar `palabraEntrega` acá. */}
+            {envio.dniReceptor && (
+              <InfoItem
+                icon={<IconUser size={16} />}
+                label="DNI de quien recibió"
+                value={envio.dniReceptor}
+              />
+            )}
           </SimpleGrid>
         </Stack>
       </Card>

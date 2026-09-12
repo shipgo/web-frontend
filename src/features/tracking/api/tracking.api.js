@@ -37,6 +37,9 @@ import { captchaHeader } from '@config/captcha';
  * @property {PublicTrackingDestino} [destino]            Sólo localidad + provincia (sin dirección exacta).
  * @property {string} [fechaEstimada]                     ISO `LocalDate`, sólo si el envío ya está en un viaje.
  * @property {PublicTrackingUbicacion} [ultimaUbicacionAprox]  Sólo si el envío está `en_camino`.
+ * @property {string} [palabraEntrega]  Palabra de entrega (`SHG-BE-042`) — ausente si `null`
+ *   (`@JsonInclude(NON_NULL)`). El destinatario se la dice al chofer al recibir el envío. Secreto
+ *   remitente↔destinatario↔chofer: NUNCA se expone en `EnvioDTO` (panel operador).
  *
  * Campos OMITIDOS a propósito por privacidad (el DTO del backend ya los filtra):
  * nombre / apellido / email / teléfono del remitente y del receptor, y la
