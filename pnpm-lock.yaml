@@ -32,6 +32,9 @@ importers:
       '@mantine/notifications':
         specifier: 9.4.1
         version: 9.4.1(@mantine/core@9.4.1(@mantine/hooks@9.4.1(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@9.4.1(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@mantine/spotlight':
+        specifier: 9.4.1
+        version: 9.4.1(@mantine/core@9.4.1(@mantine/hooks@9.4.1(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@9.4.1(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@mapbox/search-js-react':
         specifier: 1.5.1
         version: 1.5.1(mapbox-gl@3.14.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -685,6 +688,14 @@ packages:
 
   '@mantine/notifications@9.4.1':
     resolution: {integrity: sha512-Sm1g8E8RkFmesxpNz9zFvOjkTVxOa7dJJjMGoHNIXH+9/wO0s9kInny4mVnxTbLJJsD6nTqIQlk1v8tq2C4Ftw==}
+    peerDependencies:
+      '@mantine/core': 9.4.1
+      '@mantine/hooks': 9.4.1
+      react: ^19.2.0
+      react-dom: ^19.2.0
+
+  '@mantine/spotlight@9.4.1':
+    resolution: {integrity: sha512-gJ+7DdnGULeobtGXVGbVgvJSG3TeecxLXNxzpZo+ohl1OetPftCBGJOUrX2tYOOC6nJE1eHSIr/kpB31YIRjhQ==}
     peerDependencies:
       '@mantine/core': 9.4.1
       '@mantine/hooks': 9.4.1
@@ -3010,6 +3021,14 @@ snapshots:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
       react-transition-group: 4.4.5(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+
+  '@mantine/spotlight@9.4.1(@mantine/core@9.4.1(@mantine/hooks@9.4.1(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@9.4.1(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@mantine/core': 9.4.1(@mantine/hooks@9.4.1(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@mantine/hooks': 9.4.1(react@19.2.4)
+      '@mantine/store': 9.4.1(react@19.2.4)
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
 
   '@mantine/store@9.4.1(react@19.2.4)':
     dependencies:

@@ -4,12 +4,13 @@ import {
   Button,
   Flex,
   Group,
+  Kbd,
   Menu,
   rem,
   Stack,
   Text,
-  TextInput,
 } from "@mantine/core";
+import { spotlight } from "@mantine/spotlight";
 
 import { IconLogout, IconSearch } from "@tabler/icons-react";
 
@@ -17,6 +18,8 @@ import { useAuth } from "@contexts/auth";
 import { useAuthStore } from "@stores/auth.store";
 import { NotificacionesBell } from "@features/notificaciones";
 import { OperatingSucursalSelector } from "@components";
+
+import NavigationSpotlight from "./NavigationSpotlight";
 
 const AppHeader = () => {
   const { user } = useAuth();
@@ -48,15 +51,28 @@ const AppHeader = () => {
     <AppShellHeader component={Flex} justify="center">
       <Flex flex={1} maw={1440} px="xl" py="xs">
         <Group>
-          <TextInput
-            w="400"
-            type="search"
+          <Button
+            w={400}
+            justify="space-between"
             variant="filled"
-            placeholder="Buscá envíos, viajes..."
-            rightSection={<IconSearch size={20} />}
-          />
+            color="gray"
+            onClick={() => spotlight.open()}
+            leftSection={<IconSearch size={18} />}
+            rightSection={
+              <Group gap={4} wrap="nowrap">
+                <Kbd size="xs">Ctrl</Kbd>
+                <Kbd size="xs">K</Kbd>
+              </Group>
+            }
+          >
+            <Text size="sm" c="dimmed" fw={400}>
+              Buscar o navegar...
+            </Text>
+          </Button>
           <OperatingSucursalSelector />
         </Group>
+
+        <NavigationSpotlight />
 
         <Group ml="auto">
           <NotificacionesBell />
