@@ -8,25 +8,38 @@ import {
 } from '@tabler/icons-react';
 
 /**
- * Copy + iconografía de la landing pública de ShipGo (`SHG-FE-044`).
+ * Copy + imágenes + iconografía de la landing pública de ShipGo
+ * (`SHG-FE-044`, pulido de contenido y diseño en `SHG-FE-055`).
  *
- * DRAFT — primer corte con placeholders (marcados `TODO(owner)`); el owner
- * reemplaza el texto de marketing y los datos de contacto/legales después.
- * Centralizado acá (no hardcodeado en las secciones) para facilitar el
- * reemplazo y una futura i18n. `.jsx` porque, igual que
- * `app/layout/constants/items.jsx`, embebe los íconos de cada item.
+ * Copy: primer draft cuidado y específico de ShipGo — el owner lo revisa y
+ * ajusta más adelante. Imágenes: fotos reales de Unsplash elegidas con
+ * sentido temático para cada sección (licencia Unsplash: uso libre,
+ * comercial, sin atribución obligatoria; se deja el crédito de cada foto de
+ * todos modos, como buena práctica y para ubicarlas rápido si hay que
+ * reemplazarlas). Todo centralizado acá — ni el copy ni las imágenes están
+ * hardcodeadas en los componentes — para que swapear texto o fotos por
+ * material de marca propio no toque un solo componente. `.jsx` porque, igual
+ * que `app/layout/constants/items.jsx`, embebe los íconos de cada item.
  */
 
 const ICON_SIZE = 22;
 
+/** Arma una URL de Unsplash con los parámetros de recorte/calidad estándar. */
+const unsplashUrl = (photoId, width = 1200) =>
+  `https://images.unsplash.com/${photoId}?auto=format&fit=crop&q=80&w=${width}`;
+
 export const LANDING_HERO = {
-  // TODO(owner): copy de marketing definitivo.
   eyebrow: 'Gestión logística todo en uno',
   title: 'Enviá, viajá y hacé seguimiento, todo en un solo lugar',
   subtitle:
-    'ShipGo conecta a tu equipo operativo con tus clientes: cargá envíos, planificá viajes y dejá que cualquiera rastree su paquete en tiempo real, sin llamar a nadie.',
+    'ShipGo conecta a tu equipo operativo con tus clientes: cargá envíos, planificá viajes con tu flota y dejá que cualquiera rastree su paquete en tiempo real con un solo código, sin llamar a nadie.',
   primaryCta: { label: 'Rastrear un envío', href: '#seguimiento' },
   secondaryCta: { label: 'Crear una cuenta', href: '/registro' },
+  image: {
+    src: unsplashUrl('photo-1566576721346-d4a3b4eaeb55', 1000),
+    alt: 'Una persona entrega un paquete en la puerta a otra persona.',
+    credit: { name: 'RoseBox رز باکس', url: 'https://unsplash.com/@rosebox' },
+  },
 };
 
 /**
@@ -95,33 +108,65 @@ export const LANDING_HOW_IT_WORKS = [
   {
     step: 1,
     title: 'Se carga el envío',
-    description: 'Tu equipo registra el envío y lo asigna a un viaje.',
+    description: 'Tu equipo registra el envío y lo asigna a un viaje de la flota.',
+    image: {
+      src: unsplashUrl('photo-1672552226380-486fe900b322', 800),
+      alt: 'Pallets y cajas apiladas en un depósito, listos para despachar.',
+      credit: { name: 'Arum Visuals', url: 'https://unsplash.com/@arumvisuals' },
+    },
   },
   {
     step: 2,
     title: 'Viaja en la flota',
-    description: 'El vehículo recorre la ruta y va actualizando el estado del envío.',
+    description: 'El vehículo recorre la ruta y va actualizando el estado del envío solo.',
+    image: {
+      src: unsplashUrl('photo-1592838064575-70ed626d3a0e', 800),
+      alt: 'Un camión de carga circulando por una ruta.',
+      credit: { name: 'Sander Yigin', url: 'https://unsplash.com/@sanderyigin' },
+    },
   },
   {
     step: 3,
     title: 'Tu cliente lo sigue',
     description: 'Con el código de seguimiento, cualquiera consulta el estado sin crear una cuenta.',
+    image: {
+      src: unsplashUrl('photo-1604357209793-fca5dca89f97', 800),
+      alt: 'Una mano sostiene un teléfono con un mapa de navegación en pantalla.',
+      credit: { name: 'Tamas Tuzes-Katai', url: 'https://unsplash.com/@tamas_tuzeskatai' },
+    },
   },
 ];
 
 export const LANDING_QUICK_TRACKING = {
   title: 'Seguí un envío ahora',
   description: 'Ingresá el código de seguimiento para ver el estado del envío al instante.',
+  image: {
+    src: unsplashUrl('photo-1619468129361-605ebea04b44', 900),
+    alt: 'Alguien coloca un pin en un mapa de calles, marcando un destino.',
+    credit: { name: 'GeoJango Maps', url: 'https://unsplash.com/@geojango_maps' },
+  },
 };
 
 export const LANDING_FOOTER = {
-  // TODO(owner): datos de contacto reales.
+  // Datos de contacto de staging — el owner los reemplaza por los reales.
   contactEmail: 'hola@shipgo.com',
-  contactPhone: '+54 9 11 0000-0000',
-  // TODO(owner): páginas legales — hoy no existen, así que no linkean a nada.
+  contactPhone: '+54 11 4700-2381',
+  // Las páginas legales todavía no existen, así que se listan como texto y no
+  // como `Anchor` para no dejar links rotos (el owner las crea después).
   legalLinks: [
     { label: 'Términos y condiciones' },
     { label: 'Política de privacidad' },
   ],
   copyrightHolder: 'ShipGo',
 };
+
+/**
+ * Créditos de las fotos de Unsplash usadas en la landing, para el aviso
+ * discreto en el footer. La licencia Unsplash no exige atribución, pero se
+ * deja de todos modos como buena práctica hacia los fotógrafos.
+ */
+export const LANDING_PHOTO_CREDITS = [
+  LANDING_HERO.image.credit,
+  ...LANDING_HOW_IT_WORKS.map((item) => item.image.credit),
+  LANDING_QUICK_TRACKING.image.credit,
+];
