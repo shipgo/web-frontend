@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <!-- TODO(owner): Replace this placeholder monogram with the official ShipGo brand logo -->
+  <!-- Background circle with ShipGo teal color from Mantine theme -->
+  <circle cx="90" cy="90" r="90" fill="#009688"/>
+
+  <!-- White monogram "SG" -->
+  <text x="90" y="115" font-family="Arial, sans-serif" font-size="80" font-weight="bold" text-anchor="middle" fill="white">SG</text>
+</svg>
