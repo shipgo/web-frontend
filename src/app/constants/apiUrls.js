@@ -90,4 +90,8 @@ export const API_URLS = {
 
   // --- Archivos (ENDPOINTS.md §22) — subir foto de perfil = POST /api/files ---
   FILES_URL: '/files',
+
+  // --- Búsqueda unificada del spotlight de navegación (ENDPOINTS.md §24 · SHG-BE-045) ---
+  // GET /api/buscar?q=...&limit=... — sólo SU/AD.
+  BUSCAR_URL: '/buscar',
 };
