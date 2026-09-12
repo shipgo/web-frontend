@@ -30,6 +30,7 @@ describe("AppNavbar", () => {
 
     expect(screen.getByText("Usuarios")).toBeInTheDocument();
     expect(screen.getByText("Vehículos")).toBeInTheDocument();
+    expect(screen.getByText("Marcas y Modelos")).toBeInTheDocument();
     expect(screen.getByText("Mantenimientos")).toBeInTheDocument();
     expect(screen.queryByText("Sucursales")).not.toBeInTheDocument();
   });

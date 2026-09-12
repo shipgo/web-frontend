@@ -50,6 +50,7 @@ const ViajesRoutes = lazy(() => import('./viajes.routes'));
 const UsuariosRoutes = lazy(() => import('./usuarios.routes'));
 const SucursalesRoutes = lazy(() => import('./sucursales.routes'));
 const VehiculosRoutes = lazy(() => import('@features/vehiculos'));
+const CatalogoVehiculosRoutes = lazy(() => import('./catalogoVehiculos.routes'));
 
 const RouteFallback = () => (
   <Center h='60vh'>
@@ -126,6 +127,14 @@ const ProtectedRoutes = () => {
           <Route path='/vehiculos' nest>
             <ProtectedRoute roles={ROLES_WEB}>
               <VehiculosRoutes />
+            </ProtectedRoute>
+          </Route>
+          {/* Catálogo de Marca/Modelo (SHG-FE-059, ENDPOINTS.md §11/§12):
+              CRUD completo SU/AD — no restringido a SUPERUSER como
+              Sucursales. Tipo de Vehículo queda fuera (backend sólo GET). */}
+          <Route path='/catalogo-vehiculos' nest>
+            <ProtectedRoute roles={ROLES_WEB}>
+              <CatalogoVehiculosRoutes />
             </ProtectedRoute>
           </Route>
           <Route path='/mantenimientos' nest>
