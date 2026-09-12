@@ -58,6 +58,9 @@ vi.mock("./viajes.routes", () => ({ default: () => <div>Viajes</div> }));
 vi.mock("./usuarios.routes", () => ({ default: () => <div>Usuarios</div> }));
 vi.mock("./sucursales.routes", () => ({ default: () => <div>Sucursales</div> }));
 vi.mock("@features/vehiculos", () => ({ default: () => <div>Vehiculos</div> }));
+vi.mock("./catalogoVehiculos.routes", () => ({
+  default: () => <div>CatalogoVehiculos</div>,
+}));
 
 import AppRoutes from "./index";
 
@@ -190,6 +193,17 @@ describe("AppRoutes", () => {
     renderWithProviders(<AppRoutes />, { route: "/sucursales" });
 
     expect(await screen.findByText("Sucursales")).toBeInTheDocument();
+  });
+
+  it("ADMIN (no sólo SUPERUSER) accede a /catalogo-vehiculos", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/catalogo-vehiculos" });
+
+    expect(await screen.findByText("CatalogoVehiculos")).toBeInTheDocument();
   });
 
   // --- Portal CUSTOMER (SHG-FE-026) ---
