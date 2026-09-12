@@ -3,7 +3,6 @@ import { useLocation, useParams } from "wouter";
 import { Badge, Box, Button, Card, Stack, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
-import dayjs from "dayjs";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
@@ -15,39 +14,21 @@ import { applyApiError } from "@domain/apiError";
 import { VIAJE_ESTADOS_EDITABLES } from "../../constants";
 import { viajeApi } from "../../api/viajes.api";
 import SeccionDetalles from "../CrearViaje/SeccionDetalles";
+import SeccionEnvios from "../CrearViaje/SeccionEnvios";
+import SeccionResumen from "../CrearViaje/SeccionResumen";
 import {
   FormProvider,
   useForm,
 } from "../CrearViaje/contexts/EnviosFormContext";
+import { INITIAL_VALUES, validate } from "../CrearViaje/contexts/enviosFormConfig";
+import { buildViajeReqDTO } from "../CrearViaje/utils";
 
 import SeccionRecursos from "./SeccionRecursos";
 import Footer from "./Footer";
-import { buildViajeReqDTO } from "./utils";
-
-const INITIAL_VALUES = {
-  vehiculoID: null,
-  choferesID: [],
-  fechaHoraInicioPlanificada: null,
-  fechaHoraFinPlanificada: null,
-};
-
-const validate = {
-  vehiculoID: (value) => (!value ? "Seleccioná un vehículo" : null),
-  choferesID: (value) =>
-    !value || value.length === 0 ? "Seleccioná al menos un chofer" : null,
-  fechaHoraInicioPlanificada: (value) =>
-    !value ? "Seleccioná la fecha de salida planificada" : null,
-  fechaHoraFinPlanificada: (value, values) => {
-    if (!value) return "Seleccioná la fecha de llegada planificada";
-    if (
-      values.fechaHoraInicioPlanificada &&
-      dayjs(value).isBefore(dayjs(values.fechaHoraInicioPlanificada))
-    ) {
-      return "La llegada planificada no puede ser anterior a la salida";
-    }
-    return null;
-  },
-};
+import {
+  buildEnviosIncluidosFromRecorridos,
+  extraerEnviosDeRecorridos,
+} from "./utils";
 
 const EditarViaje = () => {
   const { id } = useParams();
@@ -82,17 +63,17 @@ const EditarViaje = () => {
       setViajeOriginal(viaje);
       if (viaje) {
         form.setValues({
-          vehiculoID: viaje.vehiculo?.id?.toString() || null,
-          choferesID: (viaje.choferes || []).map((chofer) =>
-            chofer.id?.toString(),
-          ),
+          vehiculo: viaje.vehiculo ?? null,
+          choferes: viaje.choferes || [],
           fechaHoraInicioPlanificada: viaje.fechaHoraInicioPlanificada
             ? new Date(viaje.fechaHoraInicioPlanificada)
             : null,
           fechaHoraFinPlanificada: viaje.fechaHoraFinPlanificada
             ? new Date(viaje.fechaHoraFinPlanificada)
             : null,
+          enviosIncluidos: buildEnviosIncluidosFromRecorridos(viaje.recorridos),
         });
+        form.resetDirty();
       }
     } catch (err) {
       console.error("Error cargando viaje:", err);
@@ -115,7 +96,7 @@ const EditarViaje = () => {
       try {
         setLoading(true);
 
-        const payload = buildViajeReqDTO(values, viajeOriginal);
+        const payload = buildViajeReqDTO(values);
 
         await viajeApi.update(id, payload);
 
@@ -150,12 +131,19 @@ const EditarViaje = () => {
     [id, navigate, viajeOriginal, esEditable, form],
   );
 
+  // Envíos ya asignados al viaje, aplanados — ver `extraerEnviosDeRecorridos`
+  // (`./utils`) sobre por qué hace falta reinyectarlos en "Envíos pendientes".
+  const enviosDelViajeOriginal = useMemo(
+    () => extraerEnviosDeRecorridos(viajeOriginal?.recorridos),
+    [viajeOriginal],
+  );
+
   return (
     <PageContainer>
       <PageBreadcrumbsHeader
         entidad="Viajes"
         accion="Editar viaje"
-        descripcion="Modificá el vehículo, los choferes y las fechas planificadas del viaje"
+        descripcion="Modificá los envíos, los recorridos, el vehículo, los choferes y las fechas planificadas del viaje"
       />
 
       <ScreenContainer
@@ -207,11 +195,13 @@ const EditarViaje = () => {
             ) : (
               <FormProvider form={form}>
                 <SeccionDetalles />
+                <SeccionEnvios extraEnviosPendientes={enviosDelViajeOriginal} />
                 <SeccionRecursos
                   viajeIdExcluido={id ? Number(id) : undefined}
                   vehiculoActual={viajeOriginal?.vehiculo}
                   choferesActuales={viajeOriginal?.choferes}
                 />
+                <SeccionResumen />
                 <Footer
                   loading={loading}
                   onSubmit={handleSubmit}

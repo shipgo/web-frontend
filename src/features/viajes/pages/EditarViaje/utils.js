@@ -1,38 +1,6 @@
-import dayjs from "dayjs";
+import { formatDireccion } from "@domain/format";
 
-/**
- * Formato que espera el backend para campos `java.time.LocalDateTime`
- * (`ViajeDTO.fechaHoraInicioPlanificada`/`fechaHoraFinPlanificada`): Jackson
- * los deserializa con `DateTimeFormatter.ISO_LOCAL_DATE_TIME`, que NO acepta
- * offset/zona (`Z` o `+00:00`) — sólo `yyyy-MM-ddTHH:mm:ss`.
- *
- * ⚠️ NO usar `dayjs(...).toISOString()` acá: convierte a UTC y agrega el
- * sufijo `Z` + milisegundos, lo que rompe el parseo en el backend
- * (`DateTimeParseException`) y además corre la hora local ~3hs (AR = UTC-3).
- * Mismo bug (y mismo fix) que `CrearViaje/utils.js` (`SHG-FE-008`, ver
- * `planning/coordination/frontend.md` entrada del 2026-09-05).
- */
-const LOCAL_DATE_TIME_FORMAT = "YYYY-MM-DDTHH:mm:ss";
-
-/** `Date` (o cualquier valor que entienda dayjs) -> `LocalDateTime` string del backend. */
-export const toLocalDateTimeString = (value) =>
-  dayjs(value).format(LOCAL_DATE_TIME_FORMAT);
-
-/**
- * Reconstruye el arreglo `enviosPuntoEntrega` a partir de los recorridos
- * existentes del viaje, agrupando los envíos ya asignados a cada recorrido.
- * Esta pantalla no permite modificar qué envíos viajan ni su punto de
- * entrega/sucursal destino: solo reenvía lo que ya existía para que el PUT
- * (que exige el contrato completo) no pierda esa información.
- */
-export const buildEnviosPuntoEntrega = (recorridos = []) =>
-  recorridos.map((recorrido) => ({
-    enviosID: (recorrido.detalleRecorridos || []).map(
-      (detalle) => detalle.envio?.id,
-    ),
-    puntoEntregaID: recorrido.puntoEntrega?.id ?? null,
-    sucursalDestinoID: recorrido.sucursalDestino?.id ?? null,
-  }));
+import { coordsDePunto } from "../CrearViaje/SeccionEnvios/utils";
 
 export const vehiculoLabel = (vehiculo) =>
   [vehiculo.patente, vehiculo.modelo?.nombre].filter(Boolean).join(" - ");
@@ -43,29 +11,80 @@ export const choferLabel = (chofer) =>
   `Chofer ${chofer.id}`;
 
 /**
- * Arma el `ViajeReqDTO` completo a partir de los `values` del form y el
- * viaje original (para no perder los envíos/recorridos ya asignados).
+ * Arma el `enviosIncluidos` inicial del form (mismo shape que produce
+ * `ListadoEnviosPendientes.handleOnSelectedAction` en `CrearViaje`, ver
+ * `CrearViaje/SeccionEnvios/utils.js#getGroupProperties`) a partir de los
+ * `recorridos` de un `ViajeDTO` ya persistido — así `EditarViaje` puede
+ * reusar `SeccionEnvios`/`SeccionResumen` de `CrearViaje` sin cambios
+ * (`SHG-FE-049`).
  *
- * `fechaHoraInicio`/`fechaHoraFin` (las fechas REALES) no se mandan: según
- * `SHG-BE-021`/`CONTRACTS.md §8`, el cliente en creación y edición manda
- * sólo las 2 fechas planificadas — esas fechas reales son nullable y las
- * completa el backend server-side (`iniciar`/`finalizar`). Es una regla del
- * contrato, no una necesidad técnica: el `ModelMapper` global tiene
- * `setSkipNullEnabled(true)`, así que reenviar `null` no pisaría un valor ya
- * seteado. Esta pantalla además sólo edita viajes en `creado`/`planificado`
- * (ver `ESTADOS_EDITABLES` en `index.jsx`), donde esas fechas reales siempre
- * son `null` de todos modos.
+ * Cada `recorrido` es 1:1 con una entrada del Map, igual que en creación:
+ * `puntoEntrega` XOR `sucursalDestino` (verificado contra el backend real,
+ * `GET /api/viaje/{id}` — el que no aplica ni siquiera viene como key en el
+ * JSON, no sólo `null`). El `envio` anidado en cada `detalleRecorridos` ya
+ * viene con `destino`/`peso`/`codigoSeguimiento` completos (mismo `EnvioDTO`
+ * que devuelve `GET /api/envio/paraViaje`), así que no hace falta un fetch
+ * aparte para poblar `ItemPaquete`.
+ *
+ * Se ordena por `orden` (igual que `DetalleViaje/components/RecorridosList.jsx`)
+ * para que el orden de paradas coincida con el que ya tiene el viaje.
  */
-export const buildViajeReqDTO = (values, viajeOriginal) => ({
-  viaje: {
-    fechaHoraInicioPlanificada: toLocalDateTimeString(
-      values.fechaHoraInicioPlanificada,
-    ),
-    fechaHoraFinPlanificada: toLocalDateTimeString(
-      values.fechaHoraFinPlanificada,
-    ),
-    vehiculoID: Number(values.vehiculoID),
-    choferesID: values.choferesID.map(Number),
-  },
-  enviosPuntoEntrega: buildEnviosPuntoEntrega(viajeOriginal.recorridos),
-});
+export const buildEnviosIncluidosFromRecorridos = (recorridos = []) => {
+  const ordenados = [...recorridos].sort(
+    (a, b) => (a.orden ?? 0) - (b.orden ?? 0),
+  );
+
+  const entries = ordenados.map((recorrido) => {
+    const esSucursal = Boolean(recorrido.sucursalDestino);
+
+    const packages = new Map(
+      (recorrido.detalleRecorridos || [])
+        .map((detalle) => detalle.envio)
+        .filter(Boolean)
+        .map((envio) => [envio.id, envio]),
+    );
+
+    const key = esSucursal
+      ? `sucursal_${recorrido.sucursalDestino.id}`
+      : `local_${recorrido.puntoEntrega?.id}`;
+
+    const label = esSucursal
+      ? recorrido.sucursalDestino.nombre
+      : formatDireccion(recorrido.puntoEntrega, { completa: true });
+
+    const coords = esSucursal
+      ? coordsDePunto(recorrido.sucursalDestino.puntoEntrega)
+      : coordsDePunto(recorrido.puntoEntrega);
+
+    return [
+      key,
+      {
+        puntoEntregaID: esSucursal ? null : (recorrido.puntoEntrega?.id ?? null),
+        sucursalDestinoID: esSucursal ? recorrido.sucursalDestino.id : null,
+        label,
+        coords,
+        packages,
+      },
+    ];
+  });
+
+  return new Map(entries);
+};
+
+/**
+ * Envíos ya asignados al viaje (aplanados, sin agrupar por recorrido) — se
+ * usan como `extraEnviosPendientes` de `SeccionEnvios` para que sigan
+ * apareciendo en "Envíos pendientes" (marcados "Incluido") aunque su estado
+ * (`asignado_a_viaje`) los excluya de `GET /api/envio/paraViaje`.
+ */
+export const extraerEnviosDeRecorridos = (recorridos = []) => {
+  const vistos = new Map();
+  recorridos.forEach((recorrido) => {
+    (recorrido.detalleRecorridos || []).forEach((detalle) => {
+      if (detalle.envio && !vistos.has(detalle.envio.id)) {
+        vistos.set(detalle.envio.id, detalle.envio);
+      }
+    });
+  });
+  return Array.from(vistos.values());
+};
