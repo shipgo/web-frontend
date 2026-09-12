@@ -68,6 +68,23 @@ describe('TrackingPublicoPage', () => {
     expect(screen.getByTestId('mapa-ubicacion')).toBeInTheDocument();
   });
 
+  it('muestra la palabra de entrega cuando el DTO la trae (SHG-BE-042/SHG-FE-058)', async () => {
+    mockTrack.mockResolvedValue({ ...DTO_OK, palabraEntrega: 'AB23K9' });
+    renderAt('/tracking/7K2M9QX4TP');
+
+    expect(await screen.findByText('Tu palabra de entrega')).toBeInTheDocument();
+    expect(screen.getByText('AB23K9')).toBeInTheDocument();
+    expect(screen.getByText(/decísela al chofer/i)).toBeInTheDocument();
+  });
+
+  it('no muestra nada de palabra de entrega si el DTO no la trae (envíos viejos)', async () => {
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking/7K2M9QX4TP');
+
+    await screen.findByText('7K2M9QX4TP');
+    expect(screen.queryByText('Tu palabra de entrega')).not.toBeInTheDocument();
+  });
+
   it('código con formato inválido: no llama al backend y avisa', async () => {
     renderAt('/tracking/@@@');
     expect(await screen.findByText(/código inválido/i)).toBeInTheDocument();

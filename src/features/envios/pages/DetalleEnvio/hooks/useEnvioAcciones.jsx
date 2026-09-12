@@ -1,10 +1,10 @@
-import { Text } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
 
 import { envioApi } from '@api';
 
+import EntregarModalBody from '../components/EntregarModalBody';
 import FalloEntregaModalBody from '../components/FalloEntregaModalBody';
 
 /**
@@ -61,30 +61,31 @@ const handleAccionError = (error, accionLabel) => {
  */
 export const useEnvioAcciones = (id, { onSuccess } = {}) => {
   const confirmEntregar = () => {
-    modals.openConfirmModal({
+    modals.open({
       title: 'Entregar envío',
       centered: true,
       children: (
-        <Text size="sm">
-          ¿Confirmás que el envío #{id} fue entregado? El estado pasará a "Entregado".
-        </Text>
+        <EntregarModalBody
+          id={id}
+          onVolver={() => modals.closeAll()}
+          onEntregado={() => {
+            modals.closeAll();
+            notifications.show({
+              title: 'Envío entregado',
+              message: `El envío #${id} fue marcado como entregado`,
+              color: 'green',
+              icon: <IconCheck />,
+            });
+            onSuccess?.();
+          }}
+          // Errores sin campo asociado (403/409/5xx/red) — el modal sigue
+          // abierto (`EntregarModalBody` no lo cierra en error), acá sólo se
+          // reutiliza el toast estándar del resto de las acciones del panel.
+          onErrorInesperado={(_message, error) =>
+            handleAccionError(error, 'marcar el envío como entregado')
+          }
+        />
       ),
-      labels: { confirm: 'Sí, entregar', cancel: 'Volver' },
-      confirmProps: { color: 'green' },
-      onConfirm: async () => {
-        try {
-          await envioApi.entregar(id);
-          notifications.show({
-            title: 'Envío entregado',
-            message: `El envío #${id} fue marcado como entregado`,
-            color: 'green',
-            icon: <IconCheck />,
-          });
-          onSuccess?.();
-        } catch (error) {
-          handleAccionError(error, 'marcar el envío como entregado');
-        }
-      },
     });
   };
 

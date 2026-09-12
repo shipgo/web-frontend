@@ -62,11 +62,22 @@ export const envioApi = {
 
   /**
    * `PUT /api/envio/{id}/entregar` — marca el envío como `entregado` (SU/AD/CH).
+   *
+   * Body **obligatorio** desde `SHG-BE-042` (antes no se mandaba nada): `dniReceptor`
+   * es requerido (`@NotEmpty`, sin validación de formato); `palabraEntregaIngresada`
+   * es opcional del lado del form (el operador no sabe de antemano si el envío tiene
+   * `palabraEntrega` generada — el backend la ignora si no aplica, o responde `400`
+   * `{ code: "delivery_word_mismatch" }` si no coincide). `latitud`/`longitud`
+   * opcionales (`SHG-BE-043`, sin uso desde la web todavía).
+   *
    * @param {number|string} id
+   * @param {{ dniReceptor: string, palabraEntregaIngresada?: string, latitud?: number, longitud?: number }} body
+   *   `EntregaEnvioReqDTO`.
    */
-  entregar: async (id) => {
+  entregar: async (id, body) => {
     const response = await restclient.put(
       `${API_URLS.ENVIO_URL}/${id}/entregar`,
+      body,
     );
     return response.data;
   },

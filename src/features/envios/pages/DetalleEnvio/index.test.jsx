@@ -239,7 +239,7 @@ describe("DetalleEnvio", () => {
       expect(screen.getByRole("button", { name: /marcar fallo/i })).toBeEnabled();
     });
 
-    it("entrega el envío tras confirmar y refetchea el detalle", async () => {
+    it("entrega el envío con dniReceptor tras confirmar y refetchea el detalle (SHG-FE-058)", async () => {
       const user = userEvent.setup();
       envioApi.entregar.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
 
@@ -250,15 +250,125 @@ describe("DetalleEnvio", () => {
       await user.click(await screen.findByRole("button", { name: /entregar/i }));
 
       const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
       await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
 
       await waitFor(() => {
-        expect(envioApi.entregar).toHaveBeenCalledWith("9");
+        expect(envioApi.entregar).toHaveBeenCalledWith("9", { dniReceptor: "30111222" });
       });
       expect(await screen.findByText("Envío entregado")).toBeInTheDocument();
       await waitFor(() => {
         expect(envioApi.getById).toHaveBeenCalledTimes(2);
       });
+    });
+
+    it("entrega el envío mandando también la palabra de entrega si se ingresó", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "AB23K9");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      await waitFor(() => {
+        expect(envioApi.entregar).toHaveBeenCalledWith("9", {
+          dniReceptor: "30111222",
+          palabraEntregaIngresada: "AB23K9",
+        });
+      });
+    });
+
+    it("regresión SHG-FE-058: el modal de Entregar no confirma sin dniReceptor, y no llama a la API sin body", async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      expect(
+        within(dialog).getByText("El DNI de quien recibe es obligatorio"),
+      ).toBeInTheDocument();
+      // Antes de SHG-FE-058 esto disparaba `entregar(id)` sin body → 400 real
+      // contra `EntregaEnvioReqDTO.dniReceptor` (`@NotEmpty`, `SHG-BE-042`).
+      expect(envioApi.entregar).not.toHaveBeenCalled();
+    });
+
+    it("delivery_word_mismatch: muestra el error dentro del modal, no lo cierra y mantiene el DNI tipeado", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: {
+            statusCode: 400,
+            message: "La palabra de entrega ingresada no coincide con la registrada para este envío.",
+            code: "delivery_word_mismatch",
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      const dniInput = within(dialog).getByLabelText(/dni de quien recibe/i);
+      await user.type(dniInput, "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "WRONG1");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      expect(
+        await within(dialog).findByText(
+          "La palabra de entrega ingresada no coincide con la registrada para este envío.",
+        ),
+      ).toBeInTheDocument();
+      // el modal sigue abierto y el DNI ya tipeado no se pierde
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(dniInput).toHaveValue("30111222");
+      expect(envioApi.getById).toHaveBeenCalledTimes(1);
+    });
+
+    it("dniReceptor faltante (ApiFieldError del backend): se muestra como error de campo estándar sin cerrar el modal", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: {
+            statusCode: 400,
+            message: "Revisá los campos marcados.",
+            fields: [{ field: "dniReceptor", error: "no debe estar vacío" }],
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      // el cliente ya valida el DNI localmente, pero igual la request puede
+      // volver con un `ApiFieldError` estándar (`CONTRACTS.md §5`) — se
+      // muestra vía `applyApiError`, igual que el resto de los forms del repo.
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      expect(await within(dialog).findByText("no debe estar vacío")).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
 
     it("el modal de fallo de entrega no confirma sin motivo (obligatorio)", async () => {
@@ -313,10 +423,53 @@ describe("DetalleEnvio", () => {
       await user.click(await screen.findByRole("button", { name: /entregar/i }));
 
       const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
       await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
 
       expect(await screen.findByText("No se puede completar la acción")).toBeInTheDocument();
       expect(screen.getByText("El envío no está en camino")).toBeInTheDocument();
+    });
+  });
+
+  describe("dniReceptor en Remitente y receptor (SHG-FE-058)", () => {
+    it("muestra el DNI del receptor cuando el envío está entregado", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        estado: "entregado",
+        dniReceptor: "30111222",
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByText("DNI de quien recibió")).toBeInTheDocument();
+      expect(screen.getByText("30111222")).toBeInTheDocument();
+    });
+
+    it("no muestra la sección de DNI de receptor cuando el envío todavía no fue entregado", async () => {
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByText("DNI de quien recibió")).not.toBeInTheDocument();
+    });
+
+    it("nunca muestra palabraEntrega en el panel de operador, aunque el backend la mande por error", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        estado: "entregado",
+        dniReceptor: "30111222",
+        palabraEntrega: "AB23K9",
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByText("AB23K9")).not.toBeInTheDocument();
     });
   });
 });
