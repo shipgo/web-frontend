@@ -68,11 +68,21 @@ describe("AppRoutes", () => {
     mockUseAuth.mockReset();
   });
 
-  it("no autenticado en una ruta protegida termina en /login", async () => {
+  it("no autenticado en una ruta protegida termina en /login preservando el destino en ?redirect= (SHG-FE-054)", async () => {
     setAuth({ user: null, isLoading: false, isAuthenticated: false });
-    renderWithProviders(<AppRoutes />, { route: "/envios" });
+    renderWithProviders(<AppRoutes />, { route: "/envios/123" });
 
     expect(await screen.findByText("Login:operator")).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/login");
+    expect(window.location.search).toBe("?redirect=%2Fenvios%2F123");
+  });
+
+  it("no autenticado en /portal/envios (guarda distinta, PortalRoute) también preserva el destino", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/portal/envios" });
+
+    expect(await screen.findByText("Login:operator")).toBeInTheDocument();
+    expect(window.location.search).toBe("?redirect=%2Fportal%2Fenvios");
   });
 
   it("CHOFER ve la pantalla 'usá la app' sin el layout de gestión", async () => {

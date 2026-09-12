@@ -18,6 +18,7 @@ import {
   ROLE_SUPERUSER,
   ROLES_WEB,
 } from '@domain/roles';
+import { buildLoginRedirectTo } from '@utils/redirect';
 import { Center, Loader, useMantineColorScheme } from '@mantine/core';
 
 const RecuperarCuentaPage = lazy(() => import('@features/login/RecuperarCuenta'));
@@ -65,7 +66,16 @@ const ProtectedRoutes = () => {
     if (isAuthenticated) setColorScheme('auto');
   }, [isAuthenticated]);
 
-  if (!isAuthenticated) return <Redirect to='/login' />;
+  // Acceso directo (link compartido) a una ruta protegida sin sesión: manda a
+  // `/login` preservando el destino en `?redirect=` (SHG-FE-054) en vez de
+  // perderlo — ver `@utils/redirect`. `ProtectedRoutes` es el fallback que
+  // matchea cualquier ruta no pública (última `<Route>` de `AppRoutes`, sin
+  // `path`), así que acá es donde realmente cae ese caso — la guarda interna
+  // de `ProtectedRoute` (por rol) sólo se monta ya autenticado.
+  if (!isAuthenticated) {
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    return <Redirect to={buildLoginRedirectTo(currentPath)} replace />;
+  }
 
   // CUSTOMER: sólo el portal (CONTRACTS.md §7). Si cae en cualquier ruta de
   // gestión, se lo manda al portal.

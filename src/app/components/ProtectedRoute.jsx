@@ -3,6 +3,7 @@ import { Center, Loader } from '@mantine/core';
 
 import { useAuth } from '@contexts/auth';
 import { hasAnyRole } from '@domain/roles';
+import { buildLoginRedirectTo } from '@utils/redirect';
 
 /**
  * Guarda de ruta: exige autenticación y, opcionalmente, uno de los `roles`
@@ -20,12 +21,15 @@ const ProtectedRoute = ({ children, roles }) => {
     );
   }
 
-  // Redirigir a login si no está autenticado.
-  // `~` fuerza una ruta absoluta: este componente se usa dentro de grupos de
-  // rutas anidados (`nest`), donde un `to` sin `~` se resolvería relativo al
-  // `base` de esa ruta (p. ej. "/sucursales/login") en vez de la raíz real.
+  // Redirigir a login si no está autenticado, preservando el destino original
+  // en `?redirect=` (SHG-FE-054) para volver ahí tras loguear — ver
+  // `@utils/redirect`. `~` fuerza una ruta absoluta: este componente se usa
+  // dentro de grupos de rutas anidados (`nest`), donde un `to` sin `~` se
+  // resolvería relativo al `base` de esa ruta (p. ej. "/sucursales/login") en
+  // vez de la raíz real.
   if (!isAuthenticated || !user) {
-    return <Redirect to="~/login" replace />;
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    return <Redirect to={buildLoginRedirectTo(currentPath)} replace />;
   }
 
   // Redirigir a home si el rol del usuario no está habilitado para esta ruta

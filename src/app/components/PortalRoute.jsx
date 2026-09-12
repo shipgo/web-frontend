@@ -3,11 +3,12 @@ import { Center, Loader } from '@mantine/core';
 
 import { useAuth } from '@contexts/auth';
 import { isCustomer, ADMIN_HOME_PATH } from '@domain/roles';
+import { buildLoginRedirectTo } from '@utils/redirect';
 
 /**
  * Guarda de las rutas del portal CUSTOMER (`/portal/**`, SHG-FE-026).
  *
- * - Sin sesión → `/login`.
+ * - Sin sesión → `/login?redirect=<ruta original>` (SHG-FE-054).
  * - Con sesión pero NO CUSTOMER (SUPERUSER / ADMIN) → su panel (`/`).
  * - CUSTOMER → pasa.
  *
@@ -25,7 +26,8 @@ const PortalRoute = ({ children }) => {
   }
 
   if (!isAuthenticated || !user) {
-    return <Redirect to="~/login" replace />;
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    return <Redirect to={buildLoginRedirectTo(currentPath)} replace />;
   }
 
   if (!isCustomer(user)) {

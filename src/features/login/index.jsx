@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, Link as WouterLink } from "wouter";
+import { useLocation, useSearch, Link as WouterLink } from "wouter";
 
 import logo from "/src/assets/logoipsum-custom-logo.svg";
 import background from "/src/assets/background.jpg";
@@ -31,6 +31,7 @@ import {
 
 import { useAuthStore } from "@stores/auth.store";
 import { landingPathFor } from "@domain/roles";
+import { resolvePostLoginRedirect } from "@utils/redirect";
 import { useCaptcha } from "@hooks/useCaptcha";
 import CaptchaField from "@components/CaptchaField";
 import { isCaptchaApiError } from "@config/captcha";
@@ -51,6 +52,7 @@ const DEFAULT_FORM_VALUES = { username: "", password: "", remember: false };
 const LoginPage = ({ variant = "operator" }) => {
   const copy = LOGIN_VARIANTS[variant] ?? LOGIN_VARIANTS.operator;
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const [loading, setLoading] = useState(false);
   const [storedUser, setStoredUser] = useLocalStorage({
     key: LOCAL_STORAGE_KEY,
@@ -100,8 +102,17 @@ const LoginPage = ({ variant = "operator" }) => {
 
       notifications.clean();
 
-      // Redirigir al home que corresponde al rol: CUSTOMER → portal, SU/AD → `/`.
-      setLocation(landingPathFor(useAuthStore.getState().user));
+      // Post-login (SHG-FE-054): si vino `?redirect=<ruta>` (acceso directo a
+      // una ruta protegida sin sesión) y sanea a una ruta interna válida,
+      // vuelve ahí; si no, al home que corresponde al rol (CUSTOMER → portal,
+      // SU/AD → `/`). Si el destino no fuera accesible para el rol logueado,
+      // la guarda de esa ruta lo rebota a su home sin loop — ver
+      // `@utils/redirect`.
+      const rawRedirect = new URLSearchParams(search).get("redirect");
+      const authenticatedUser = useAuthStore.getState().user;
+      setLocation(
+        resolvePostLoginRedirect(rawRedirect, landingPathFor(authenticatedUser)),
+      );
     } catch (error) {
       console.error("Login error:", error);
 
