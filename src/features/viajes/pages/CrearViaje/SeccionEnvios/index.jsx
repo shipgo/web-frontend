@@ -4,7 +4,11 @@ import { Card, Group, Text, Title, Box, Stack, ThemeIcon } from "@mantine/core";
 import EnviosPendientes from "./EnviosPendientes";
 import EnviosEnViaje from "./EnviosEnViaje";
 
-const SeccionEnvios = () => {
+/**
+ * `extraEnviosPendientes` (opcional): pasa directo a `EnviosPendientes` — ver
+ * ahí el porqué (`SHG-FE-049`, precarga de envíos ya asignados en `EditarViaje`).
+ */
+const SeccionEnvios = ({ extraEnviosPendientes }) => {
   return (
     <Card component={Stack} h="700">
       <Group gap="0.75rem">
@@ -21,7 +25,7 @@ const SeccionEnvios = () => {
       </Group>
 
       <Group justify="space-between" flex={1}>
-        <EnviosPendientes />
+        <EnviosPendientes extraEnvios={extraEnviosPendientes} />
         <EnviosEnViaje />
       </Group>
     </Card>

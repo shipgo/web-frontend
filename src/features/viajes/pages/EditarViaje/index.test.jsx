@@ -11,6 +11,59 @@ import { renderWithProviders as renderRaw } from "../../../../test/renderWithPro
 const renderWithProviders = (ui, options) =>
   renderRaw(<AppShell footer={{ height: 60 }}>{ui}</AppShell>, options);
 
+// `SeccionDetalles`/`SeccionEnvios`/`SeccionResumen` (reusados de `CrearViaje`,
+// `SHG-FE-049`) muestran la sucursal del usuario logueado en un campo de sólo
+// lectura y la usan para el origen del mapa/cálculo de ruta.
+vi.mock("@contexts/auth", () => ({
+  useAuth: () => ({ user: { sucursal: { nombre: "Sucursal Centro" } } }),
+}));
+
+// El mapa (Mapbox GL) no corre en jsdom (requiere WebGL) — se stubea, no es
+// parte de lo que este test verifica (mismo criterio que `CrearViaje/index.test.jsx`).
+vi.mock("@components", async () => {
+  const actual = await vi.importActual("@components");
+  return { ...actual, Map: () => null };
+});
+
+// react-virtuoso no renderiza filas en jsdom (mide alturas reales vía
+// ResizeObserver, que acá es un stub) — se reemplaza por un render simple y
+// síncrono de todos los items, igual que en `CrearViaje/index.test.jsx`.
+vi.mock("react-virtuoso", () => ({
+  Virtuoso: ({ data = [], itemContent, components = {} }) => {
+    if (data.length === 0 && components.EmptyPlaceholder) {
+      return <components.EmptyPlaceholder />;
+    }
+    return (
+      <div>
+        {data.map((item, index) => (
+          <div key={item?.id ?? index}>{itemContent(index, item)}</div>
+        ))}
+        {components.Footer ? <components.Footer /> : null}
+      </div>
+    );
+  },
+  GroupedVirtuoso: ({
+    groupCounts = [],
+    groupContent,
+    itemContent,
+    components = {},
+  }) => {
+    if (groupCounts.length === 0 && components.EmptyPlaceholder) {
+      return <components.EmptyPlaceholder />;
+    }
+    const rows = [];
+    let index = 0;
+    groupCounts.forEach((count, groupIndex) => {
+      rows.push(<div key={`group-${groupIndex}`}>{groupContent(groupIndex)}</div>);
+      for (let i = 0; i < count; i += 1) {
+        rows.push(<div key={`item-${index}`}>{itemContent(index, groupIndex)}</div>);
+        index += 1;
+      }
+    });
+    return <div>{rows}</div>;
+  },
+}));
+
 vi.mock("@api/viaje.api", () => ({
   viajeApi: {
     getById: vi.fn(),
@@ -20,19 +73,58 @@ vi.mock("@api/viaje.api", () => ({
 }));
 
 vi.mock("@api", () => ({
+  envioApi: { getParaViaje: vi.fn() },
   vehiculoApi: { getDisponibles: vi.fn() },
   usuarioApi: { getChoferesDisponibles: vi.fn() },
-}));
-
-// `SeccionDetalles` (reusado de `CrearViaje`) muestra la sucursal del usuario
-// logueado en un campo de sólo lectura.
-vi.mock("@contexts/auth", () => ({
-  useAuth: () => ({ user: { sucursal: { nombre: "Sucursal Centro" } } }),
+  sucursalApi: { getSucursalesRestantes: vi.fn() },
 }));
 
 import { viajeApi } from "@api/viaje.api";
-import { vehiculoApi, usuarioApi } from "@api";
+import { envioApi, vehiculoApi, usuarioApi, sucursalApi } from "@api";
 import EditarViaje from "./index";
+
+// Envíos ya asignados al viaje (uno por recorrido) — el DTO real incluye
+// `destino`/`peso`/`codigoSeguimiento` completos dentro de
+// `recorrido.detalleRecorridos[].envio` (verificado contra el backend real,
+// `GET /api/viaje/{id}`, ver bitácora de `SHG-FE-049`).
+const ENVIO_200 = {
+  id: 200,
+  codigoSeguimiento: "SEED000200",
+  peso: 12,
+  destino: {
+    id: 50,
+    nombreCalle: "Calle Falsa",
+    numeroCalle: "123",
+    localidad: { nombre: "San Rafael", provincia: { nombre: "Mendoza" } },
+  },
+};
+
+const ENVIO_201 = {
+  id: 201,
+  codigoSeguimiento: "SEED000201",
+  peso: 8,
+  destino: {
+    id: 51,
+    nombreCalle: "Otra Calle",
+    numeroCalle: "456",
+    localidad: { nombre: "Villa Maria", provincia: { nombre: "Córdoba" } },
+  },
+};
+
+// Envío pendiente (todavía no asignado a ningún viaje) que sí devuelve
+// `GET /api/envio/paraViaje`, para probar el flujo de "agregar".
+const ENVIO_300_PENDIENTE = {
+  id: 300,
+  codigoSeguimiento: "SEED000300",
+  estado: "en_sucursal",
+  peso: 5,
+  destino: {
+    id: 52,
+    nombreCalle: "Nueva Calle",
+    numeroCalle: "789",
+    localidad: { nombre: "Rosario", provincia: { nombre: "Santa Fe" } },
+  },
+};
 
 const EXISTING_VIAJE = {
   id: 42,
@@ -46,15 +138,31 @@ const EXISTING_VIAJE = {
   recorridos: [
     {
       id: 1,
-      puntoEntrega: { id: 3 },
+      orden: 1,
+      puntoEntrega: {
+        id: 50,
+        nombreCalle: "Calle Falsa",
+        numeroCalle: "123",
+        localidad: { nombre: "San Rafael", provincia: { nombre: "Mendoza" } },
+      },
       sucursalDestino: null,
-      detalleRecorridos: [{ id: 100, envio: { id: 200 } }, { id: 101, envio: { id: 201 } }],
+      detalleRecorridos: [{ id: 100, envio: ENVIO_200 }],
     },
     {
       id: 2,
+      orden: 2,
       puntoEntrega: null,
-      sucursalDestino: { id: 7 },
-      detalleRecorridos: [{ id: 102, envio: { id: 202 } }],
+      sucursalDestino: {
+        id: 7,
+        nombre: "Sucursal Norte",
+        puntoEntrega: {
+          id: 60,
+          nombreCalle: "Gral Paz",
+          numeroCalle: "567",
+          localidad: { nombre: "Villa Maria", provincia: { nombre: "Córdoba" } },
+        },
+      },
+      detalleRecorridos: [{ id: 101, envio: ENVIO_201 }],
     },
   ],
 };
@@ -77,6 +185,8 @@ describe("EditarViaje", () => {
     viajeApi.update.mockResolvedValue({ id: 42 });
     vehiculoApi.getDisponibles.mockResolvedValue(VEHICULOS);
     usuarioApi.getChoferesDisponibles.mockResolvedValue(CHOFERES);
+    envioApi.getParaViaje.mockResolvedValue([]);
+    sucursalApi.getSucursalesRestantes.mockResolvedValue([]);
   });
 
   it("muestra el header canónico (breadcrumbs Viajes / Editar viaje + ayuda)", async () => {
@@ -92,7 +202,7 @@ describe("EditarViaje", () => {
     ).toHaveAttribute("href", "https://shipgo.gitbook.io/manual");
   });
 
-  it("prefills the vehículo, choferes and planned dates from the fetched viaje", async () => {
+  it("prefills el vehículo, choferes, fechas planificadas y envíos/recorridos del viaje", async () => {
     renderWithProviders(
       <Route path="/viajes/:id/editar" component={EditarViaje} />,
       { route: "/viajes/42/editar" }
@@ -115,6 +225,12 @@ describe("EditarViaje", () => {
     expect(screen.getByLabelText(/llegada planificada/i)).toHaveTextContent(
       "01/08/2026 17:00"
     );
+
+    // Los envíos ya asignados al viaje aparecen en "Envíos seleccionados"
+    // (SHG-FE-049) aunque su estado (`asignado_a_viaje`) los excluya de
+    // `GET /api/envio/paraViaje`.
+    expect(await screen.findByText("SEED000200")).toBeInTheDocument();
+    expect(await screen.findByText("SEED000201")).toBeInTheDocument();
 
     // Usa los endpoints de disponibilidad (SHG-BE-006), no `getAll`/`getChoferes`,
     // reinyectando el viaje propio (`viajeIdExcluido`) para que su vehículo/chofer
@@ -147,6 +263,7 @@ describe("EditarViaje", () => {
         "AB123CD - Hilux"
       );
     });
+    await screen.findByText("SEED000200");
 
     // Cambiar el vehículo seleccionado
     await user.click(screen.getByRole("combobox", { name: /^vehículo/i }));
@@ -176,9 +293,142 @@ describe("EditarViaje", () => {
     });
 
     expect(payload.enviosPuntoEntrega).toEqual([
-      { enviosID: [200, 201], puntoEntregaID: 3, sucursalDestinoID: null },
-      { enviosID: [202], puntoEntregaID: null, sucursalDestinoID: 7 },
+      { enviosID: [200], puntoEntregaID: 50, sucursalDestinoID: null },
+      { enviosID: [201], puntoEntregaID: null, sucursalDestinoID: 7 },
     ]);
+  });
+
+  it("agrega un envío pendiente al viaje y lo incluye en el payload al guardar (SHG-FE-049)", async () => {
+    envioApi.getParaViaje.mockResolvedValue([
+      {
+        localidad: { id: 9, nombre: "Rosario", provincia: { nombre: "Santa Fe" } },
+        envios: [ENVIO_300_PENDIENTE],
+      },
+    ]);
+
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+        "AB123CD - Hilux"
+      );
+    });
+    await screen.findByText("SEED000200");
+
+    // El envío pendiente aparece en "Envíos pendientes" junto con los que ya
+    // están en el viaje.
+    await user.click(await screen.findByText("SEED000300"));
+    await user.click(
+      await screen.findByRole("button", { name: /marcar envíos para/i }),
+    );
+    await user.click(await screen.findByText(/entrega a destino final/i));
+
+    // Pasa a "Envíos seleccionados" y desaparece de "pendientes" (el switch
+    // "ocultar ya agregados" está activo por defecto, mismo comportamiento
+    // que `CrearViaje`) — sigue habiendo una única aparición en pantalla.
+    await waitFor(() => {
+      expect(screen.getAllByText("SEED000300")).toHaveLength(1);
+    });
+    expect(
+      screen.getByText("SEED000300").closest("li").querySelector(".tabler-icon-trash"),
+    ).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+    await waitFor(() => expect(viajeApi.update).toHaveBeenCalledTimes(1));
+
+    const [, payload] = viajeApi.update.mock.calls[0];
+    expect(payload.enviosPuntoEntrega).toEqual(
+      expect.arrayContaining([
+        { enviosID: [200], puntoEntregaID: 50, sucursalDestinoID: null },
+        { enviosID: [201], puntoEntregaID: null, sucursalDestinoID: 7 },
+        { enviosID: [300], puntoEntregaID: 52, sucursalDestinoID: null },
+      ]),
+    );
+    expect(payload.enviosPuntoEntrega).toHaveLength(3);
+  });
+
+  it("quita un envío del viaje (recorrido completo) y lo excluye del payload al guardar (SHG-FE-049)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+        "AB123CD - Hilux"
+      );
+    });
+    const item200 = (await screen.findByText("SEED000200")).closest("li");
+    expect(item200).not.toBeNull();
+
+    const trashIcon = item200.querySelector(".tabler-icon-trash");
+    expect(trashIcon).not.toBeNull();
+    await user.click(trashIcon);
+
+    // El envío 200 era el único de su recorrido: al quitarlo sale de "Envíos
+    // seleccionados" (ya no tiene botón eliminar) — vuelve a aparecer en
+    // "Envíos pendientes", ahora seleccionable (dejó de estar "Incluido").
+    await waitFor(() => {
+      const li = screen.getByText("SEED000200").closest("li");
+      expect(li.querySelector(".tabler-icon-trash")).toBeNull();
+    });
+    expect(
+      screen.getByText("SEED000201").closest("li").querySelector(".tabler-icon-trash"),
+    ).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+    await waitFor(() => expect(viajeApi.update).toHaveBeenCalledTimes(1));
+
+    const [, payload] = viajeApi.update.mock.calls[0];
+    expect(payload.enviosPuntoEntrega).toEqual([
+      { enviosID: [201], puntoEntregaID: null, sucursalDestinoID: 7 },
+    ]);
+  });
+
+  it("no deja guardar si se quitan TODOS los envíos del viaje (misma validación que crear)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+        "AB123CD - Hilux"
+      );
+    });
+
+    const item200 = (await screen.findByText("SEED000200")).closest("li");
+    await user.click(item200.querySelector(".tabler-icon-trash"));
+
+    await waitFor(() => {
+      const li = screen.getByText("SEED000200").closest("li");
+      expect(li.querySelector(".tabler-icon-trash")).toBeNull();
+    });
+
+    const item201 = screen.getByText("SEED000201").closest("li");
+    await user.click(item201.querySelector(".tabler-icon-trash"));
+
+    // Sin ningún recorrido, "Envíos seleccionados" vuelve a su estado vacío.
+    expect(
+      await screen.findByText("No hay envíos seleccionados"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByText(/agregá al menos un envío al viaje/i).length,
+      ).toBeGreaterThan(0);
+    });
+    expect(viajeApi.update).not.toHaveBeenCalled();
   });
 
   it("blocks editing (no form, no submit) when the viaje is not in creado/planificado", async () => {
@@ -209,6 +459,7 @@ describe("EditarViaje", () => {
 
     expect(vehiculoApi.getDisponibles).not.toHaveBeenCalled();
     expect(usuarioApi.getChoferesDisponibles).not.toHaveBeenCalled();
+    expect(envioApi.getParaViaje).not.toHaveBeenCalled();
   });
 
   describe("estados de carga/error (SHG-QA-003)", () => {
