@@ -4,16 +4,17 @@ import { useEffect } from 'react';
  * SEO básico para páginas públicas que no tienen su propio HTML estático
  * (`index.html` sólo define el `<title>` por defecto de toda la SPA):
  * setea `document.title` y crea/actualiza `<meta name="description">` +
- * Open Graph (`og:title`, `og:description`, `og:type`, `og:url`) mientras el
- * componente está montado, restaurando lo previo al desmontar (para no
- * "ensuciar" el `<head>` si el visitante navega a otra pantalla).
+ * Open Graph (`og:title`, `og:description`, `og:type`, `og:url`, `og:image`)
+ * mientras el componente está montado, restaurando lo previo al desmontar
+ * (para no "ensuciar" el `<head>` si el visitante navega a otra pantalla).
  *
  * @param {Object} meta
  * @param {string} meta.title
  * @param {string} [meta.description]
  * @param {string} [meta.ogType='website']
+ * @param {string} [meta.ogImage]
  */
-export const useDocumentMeta = ({ title, description, ogType = 'website' }) => {
+export const useDocumentMeta = ({ title, description, ogType = 'website', ogImage }) => {
   useEffect(() => {
     const previousTitle = document.title;
     if (title) document.title = title;
@@ -23,6 +24,7 @@ export const useDocumentMeta = ({ title, description, ogType = 'website' }) => {
       { attr: 'property', key: 'og:title', content: title },
       { attr: 'property', key: 'og:description', content: description },
       { attr: 'property', key: 'og:type', content: ogType },
+      { attr: 'property', key: 'og:image', content: ogImage },
       { attr: 'property', key: 'og:url', content: window.location.href },
     ].filter((tag) => tag.content);
 
@@ -47,5 +49,5 @@ export const useDocumentMeta = ({ title, description, ogType = 'website' }) => {
       document.title = previousTitle;
       restoreFns.forEach((restore) => restore());
     };
-  }, [title, description, ogType]);
+  }, [title, description, ogType, ogImage]);
 };

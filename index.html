@@ -23,6 +23,14 @@
       `useDocumentMeta` sigue actualizando estos tags en runtime (no hace
       daño y ayuda si alguien navega dentro de la SPA), pero ya no es la
       única fuente: este bloque es lo que ven los crawlers sin JS.
+
+      `og:image` (SHG-FE-055): foto de Unsplash del hero de la landing como
+      interina — reemplaza el placeholder de `og:image` que dejó SHG-FE-046
+      (favicon 512x512, ver PR #128) apenas esa rama esté mergeada; si hay
+      conflicto en este bloque al mergear, esta es la versión que gana.
+      Sigue siendo interina: el owner la cambia por un asset de marca cuando
+      lo tenga (ver crédito en `src/features/landing/constants/content.jsx`,
+      `LANDING_HERO.image.credit`).
     -->
     <title>ShipGo — Envíos, viajes y seguimiento en vivo</title>
     <meta
@@ -35,8 +43,12 @@
       content="ShipGo centraliza la gestión de envíos y viajes de tu operación, con seguimiento en vivo para tus clientes. Ingresá, creá tu cuenta o rastreá un envío por código."
     />
     <meta property="og:type" content="website" />
-    <!-- TODO(owner): Replace og:image with official ShipGo branded image for social media previews -->
-    <meta property="og:image" content="/favicon-512x512.png" />
+    <meta
+      property="og:image"
+      content="https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&q=80&w=1200&h=630"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
   </head>
   <body>
     <div id="root"></div>
