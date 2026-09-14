@@ -7,6 +7,7 @@ import {
   View,
 } from '@react-pdf/renderer';
 
+import { COLOR_PALETTE } from '@constants/colorPalette';
 import {
   getEnviosTotal,
   getFlotaTotal,
@@ -28,7 +29,7 @@ import {
  */
 
 const COLORS = {
-  primary: '#004d40',
+  primary: COLOR_PALETTE[9],
   text: '#1f2937',
   dimmed: '#6b7280',
   border: '#e5e7eb',
