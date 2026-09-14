@@ -16,9 +16,11 @@ import LandingFooter from '../../components/LandingFooter';
  * sesión — con sesión viva, `routes/index.jsx` (`RootRoute`) redirige al home
  * que corresponde al rol antes de montar esta página.
  *
- * Fuerza tema `light` igual que `LoginPage`/`AuthCardShell` (mismo criterio
- * para pantallas públicas). A diferencia del shell interno (≥1440px, decisión
- * 2026-09-07), esta página SÍ se soporta en mobile: es superficie pública.
+ * Fuerza tema `light` (igual que `LoginPage`/`AuthCardShell`) porque tiene una
+ * foto/hero de marca fija que no fue diseñada para dark mode. Es una vista
+ * pública sin autenticación; contrasta con las rutas autenticadas que sí
+ * respetan la preferencia del usuario (SHG-FE-061). Rediseñar para dark mode
+ * sería una tarea de diseño aparte, fuera del alcance de SHG-FE-062.
  */
 const LandingPage = () => {
   useDocumentMeta(LANDING_SEO);

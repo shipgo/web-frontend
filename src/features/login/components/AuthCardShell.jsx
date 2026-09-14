@@ -14,8 +14,12 @@ const FORM_WIDTH = "32rem";
 
 /**
  * Contenedor visual compartido por las pantallas públicas de autenticación
- * (login, recuperar cuenta, reset por token). Fuerza el tema `light` igual que
- * `LoginPage` y centra una `Card` con el logo, un título y un subtítulo.
+ * (login, recuperar cuenta, reset por token). Fuerza tema `light` porque estas
+ * vistas tienen un fondo/logo de marca fijo que no fue diseñado para dark mode.
+ * Es un patrón igual al de Landing — vistas públicas sin autenticación que
+ * contrastan con las rutas autenticadas (SHG-FE-061). Rediseñar para dark mode
+ * sería una tarea de diseño aparte, fuera del alcance de SHG-FE-062.
+ * Centra una `Card` con el logo, un título y un subtítulo.
  */
 const AuthCardShell = ({ title, subtitle, children }) => (
   <MantineProvider forceColorScheme="light">
