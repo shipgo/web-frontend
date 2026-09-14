@@ -159,6 +159,10 @@ const LoginPage = ({ variant = "operator" }) => {
     }
   };
 
+  // Fuerza tema light: esta vista tiene un fondo/hero de marca fijo que no fue diseñado
+  // para dark mode. Es una vista pública (sin autenticación requerida), similar a Landing;
+  // contrasta con las rutas autenticadas que sí respetan la preferencia del usuario (SHG-FE-061).
+  // Rediseñar para dark mode sería una tarea de diseño aparte, fuera del alcance.
   return (
     <MantineProvider forceColorScheme="light">
       <Group align="flex-start" gap="0" wrap="nowrap">
