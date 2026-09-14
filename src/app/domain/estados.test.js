@@ -50,8 +50,10 @@ describe("estadoBadge", () => {
       label: "En camino",
       color: "orange",
       // Ajuste de contraste del variant `light` de Badge (SHG-FE-041) — ver
-      // `BADGE_TEXT_CONTRAST_OVERRIDE` en estados.js.
-      textColor: "#99350a",
+      // `BADGE_TEXT_CONTRAST_OVERRIDE` en estados.js. Token CSS (no un hex
+      // fijo) desde SHG-FE-060: resuelve distinto por light/dark mode en
+      // `cssVariablesResolver.js`.
+      textColor: "var(--shg-badge-text-orange)",
     });
     expect(estadoBadge("viaje", "con_problemas")).toEqual({
       label: "Con problemas",
