@@ -58,13 +58,42 @@ const RouteFallback = () => (
   </Center>
 );
 
+// Clave por defecto que usa el `localStorageColorSchemeManager` interno de
+// Mantine (no pasamos uno custom a `MantineProvider` en App.jsx) para
+// persistir la preferencia de color scheme entre sesiones/navegaciones.
+const MANTINE_COLOR_SCHEME_STORAGE_KEY = 'mantine-color-scheme-value';
+
+/**
+ * true si el usuario ya eligió explícitamente "claro" u "oscuro" (vía el
+ * toggle de `Navbar`). Si nunca tocó el toggle, Mantine no tiene nada
+ * persistido para esta clave (o vale 'auto') y debe seguir siguiendo al SO.
+ */
+const hasExplicitColorSchemePreference = () => {
+  try {
+    const stored = window.localStorage.getItem(MANTINE_COLOR_SCHEME_STORAGE_KEY);
+    return stored === 'light' || stored === 'dark';
+  } catch {
+    // localStorage no disponible (SSR, modo privado, etc.) → tratamos como
+    // "sin preferencia explícita" y dejamos que gane el default 'auto'.
+    return false;
+  }
+};
+
 const ProtectedRoutes = () => {
   const isAuthenticated = useIsAuthenticated();
   const { user } = useAuth();
   const { setColorScheme } = useMantineColorScheme();
 
   useEffect(() => {
-    if (isAuthenticated) setColorScheme('auto');
+    // SHG-FE-061: antes esto forzaba 'auto' incondicionalmente en cada mount
+    // de una ruta autenticada, pisando cualquier elección manual de "Modo
+    // claro"/"Modo oscuro" que el usuario hubiera hecho segundos antes (el
+    // toggle "funcionaba" al tocarlo pero no sobrevivía a la siguiente
+    // navegación). Ahora sólo resetea a 'auto' cuando no hay una preferencia
+    // explícita ya persistida por Mantine.
+    if (isAuthenticated && !hasExplicitColorSchemePreference()) {
+      setColorScheme('auto');
+    }
   }, [isAuthenticated]);
 
   // Acceso directo (link compartido) a una ruta protegida sin sesión: manda a
