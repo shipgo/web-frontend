@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { screen } from "@testing-library/react";
 
 import { renderWithProviders } from "../../test/renderWithProviders";
@@ -349,5 +349,58 @@ describe("AppRoutes", () => {
 
     expect(await screen.findByText("Home")).toBeInTheDocument();
     expect(screen.queryByText("Login:customer")).not.toBeInTheDocument();
+  });
+
+  // --- Persistencia del color scheme (SHG-FE-061) ---
+  // Antes, un efecto en `ProtectedRoutes` forzaba `setColorScheme('auto')`
+  // incondicionalmente en cada mount de una ruta autenticada, pisando
+  // cualquier elección manual de "Modo claro"/"Modo oscuro" ya persistida.
+  describe("color scheme", () => {
+    const COLOR_SCHEME_KEY = "mantine-color-scheme-value";
+
+    afterEach(() => {
+      window.localStorage.removeItem(COLOR_SCHEME_KEY);
+    });
+
+    it("respeta 'claro' ya elegido manualmente y no lo resetea a 'auto' en mounts sucesivos de rutas autenticadas", async () => {
+      window.localStorage.setItem(COLOR_SCHEME_KEY, "light");
+      setAuth({
+        user: { authorities: [{ name: "ROLE_ADMIN" }] },
+        isLoading: false,
+        isAuthenticated: true,
+      });
+
+      const { unmount } = renderWithProviders(<AppRoutes />, { route: "/envios" });
+      expect(await screen.findByText("Envios")).toBeInTheDocument();
+      expect(window.localStorage.getItem(COLOR_SCHEME_KEY)).toBe("light");
+      unmount();
+
+      // Simula la navegación a otra ruta autenticada remontando
+      // `ProtectedRoutes` (el escenario real del bug).
+      const second = renderWithProviders(<AppRoutes />, { route: "/viajes" });
+      expect(await screen.findByText("Viajes")).toBeInTheDocument();
+      expect(window.localStorage.getItem(COLOR_SCHEME_KEY)).toBe("light");
+      second.unmount();
+
+      renderWithProviders(<AppRoutes />, { route: "/usuarios" });
+      expect(await screen.findByText("Usuarios")).toBeInTheDocument();
+      expect(window.localStorage.getItem(COLOR_SCHEME_KEY)).toBe("light");
+    });
+
+    it("sigue default a 'auto' cuando el usuario nunca eligió manualmente", async () => {
+      expect(window.localStorage.getItem(COLOR_SCHEME_KEY)).toBeNull();
+      setAuth({
+        user: { authorities: [{ name: "ROLE_ADMIN" }] },
+        isLoading: false,
+        isAuthenticated: true,
+      });
+
+      renderWithProviders(<AppRoutes />, { route: "/envios" });
+      expect(await screen.findByText("Envios")).toBeInTheDocument();
+
+      await vi.waitFor(() => {
+        expect(window.localStorage.getItem(COLOR_SCHEME_KEY)).toBe("auto");
+      });
+    });
   });
 });
