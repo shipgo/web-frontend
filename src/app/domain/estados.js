@@ -62,13 +62,23 @@ const FALLBACK = { label: '—', color: 'gray' };
  * (`gray`/`blue`/`cyan`/`indigo`/`red`/`yellow`) ya pasa con su shade
  * default, así que no necesitan entrada acá.
  *
+ * Los valores son `var(--shg-badge-text-*)`, NO un hex fijo: el fondo
+ * tintado de `variant="light"` es distinto en `light`/`dark` mode (shades y
+ * alpha distintos — ver `v8-css-variables-resolver` de Mantine), así que el
+ * texto que da ≥4.5:1 también tiene que ser distinto por modo. Cada token
+ * resuelve a un valor por color scheme en `cssVariablesResolver.js` (rama
+ * `light`/`dark`) — acá no se hardcodea ninguno de los dos, sólo se referencia
+ * el token. Dark mode agregado en SHG-FE-060 (antes sólo existía la rama
+ * `light`, texto casi ilegible en dark — confirmado en vivo en `/envios` y
+ * `/viajes`).
+ *
  * `estadoBadge` expone esto como `textColor` — quien pinte el `<Badge>`
  * decide si lo pasa a `c` (ver `ListaEnviosTabla`/`ListaViajesTabla`); no
  * cambia nada para quien no lo use.
  */
 const BADGE_TEXT_CONTRAST_OVERRIDE = {
-  orange: '#99350a',
-  green: '#1f6e33',
+  orange: 'var(--shg-badge-text-orange)',
+  green: 'var(--shg-badge-text-green)',
 };
 
 /**
@@ -82,6 +92,10 @@ const BADGE_TEXT_CONTRAST_OVERRIDE = {
  * en `/envios/:id` y `/viajes/:id` reales en estado `en_camino` (el único
  * estado no terminal en el que estos botones se muestran — SHG-FE-045).
  *
+ * Igual que `BADGE_TEXT_CONTRAST_OVERRIDE`, son tokens `var(--shg-button-text-*)`
+ * con un valor por color scheme (`cssVariablesResolver.js`), no un hex fijo
+ * — dark mode agregado en SHG-FE-060.
+ *
  * No es un mapa entidad→estado como `ESTADO_*` (estos colores son semántica
  * de acción positiva/negativa, no de un estado de dominio), así que vive
  * acá como constante standalone en vez de una entrada de `ENTIDADES_CON_ESTADO`.
@@ -89,8 +103,8 @@ const BADGE_TEXT_CONTRAST_OVERRIDE = {
  * quien no lo use.
  */
 export const BUTTON_ACTION_TEXT_COLOR = {
-  green: '#1f6e33',
-  red: '#a51818',
+  green: 'var(--shg-button-text-green)',
+  red: 'var(--shg-button-text-red)',
 };
 
 /**
