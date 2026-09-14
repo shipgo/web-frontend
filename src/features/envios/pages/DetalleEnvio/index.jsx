@@ -218,7 +218,7 @@ const DetalleEnvio = () => {
         )}
       </PageBreadcrumbsHeader>
 
-      <Card withBorder shadow="sm" p="xl">
+      <Card withBorder shadow="sm">
         <Stack gap="md">
           <Group gap="xs">
             <IconBuilding size={24} />
@@ -247,7 +247,7 @@ const DetalleEnvio = () => {
         </Stack>
       </Card>
 
-      <Card withBorder shadow="sm" p="xl">
+      <Card withBorder shadow="sm">
         <Stack gap="md">
           <Group gap="xs">
             <IconUser size={24} />
@@ -301,7 +301,7 @@ const DetalleEnvio = () => {
         </Stack>
       </Card>
 
-      <Card withBorder shadow="sm" p="xl">
+      <Card withBorder shadow="sm">
         <Stack gap="md">
           <Group gap="xs">
             <IconMapPin size={24} />
@@ -330,7 +330,7 @@ const DetalleEnvio = () => {
         </Stack>
       </Card>
 
-      <Card withBorder shadow="sm" p="xl">
+      <Card withBorder shadow="sm">
         <Stack gap="md">
           <Group justify="space-between">
             <Group gap="xs">
@@ -375,7 +375,7 @@ const DetalleEnvio = () => {
         </Stack>
       </Card>
 
-      <Card withBorder shadow="sm" p="xl">
+      <Card withBorder shadow="sm">
         <Stack gap="md">
           <Group gap="xs">
             <IconRoute size={24} />
@@ -425,7 +425,7 @@ const DetalleEnvio = () => {
         </Stack>
       </Card>
 
-      <Card withBorder shadow="sm" p="xl">
+      <Card withBorder shadow="sm">
         <Stack gap="md">
           <Title order={4}>Historial de estados</Title>
           {historial.length === 0 ? (
