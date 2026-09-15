@@ -58,9 +58,17 @@ const FALLBACK = { label: '—', color: 'gray' };
  * variant) da ~3.8:1 contra su propio fondo tintado — por debajo del 4.5:1
  * de WCAG 2 AA. Confirmado por axe-core (`color-contrast`, serio) en
  * `/envios` y `/viajes` (SHG-FE-041: estados "En camino"/"Entregado"/
- * "Finalizado"). El resto de los colores usados en `ESTADO_*`
- * (`gray`/`blue`/`cyan`/`indigo`/`red`/`yellow`) ya pasa con su shade
- * default, así que no necesitan entrada acá.
+ * "Finalizado").
+ *
+ * `indigo` (`ESTADO_ENVIO.en_vehiculo`, "En vehículo") se sumó en
+ * SHG-FE-067: pasaba con su shade default en light mode (auditado en
+ * SHG-FE-041) pero NO en dark mode — nunca se había auditado ese caso con
+ * axe-core real hasta correr `e2e/cases/axe-dark-mode-badges.js` en dark
+ * mode de verdad (`#748ffc` contra `#31364a`, 4.02:1). Auditados los 4 mapas
+ * `ESTADO_*` completos en dark mode (SHG-FE-067): el resto de los colores
+ * usados (`gray`/`blue`/`cyan`/`red`/`yellow`) sí pasa con su shade default
+ * en ambos modos, confirmado por axe-core real, así que no necesitan entrada
+ * acá.
  *
  * Los valores son `var(--shg-badge-text-*)`, NO un hex fijo: el fondo
  * tintado de `variant="light"` es distinto en `light`/`dark` mode (shades y
@@ -68,9 +76,9 @@ const FALLBACK = { label: '—', color: 'gray' };
  * texto que da ≥4.5:1 también tiene que ser distinto por modo. Cada token
  * resuelve a un valor por color scheme en `cssVariablesResolver.js` (rama
  * `light`/`dark`) — acá no se hardcodea ninguno de los dos, sólo se referencia
- * el token. Dark mode agregado en SHG-FE-060 (antes sólo existía la rama
- * `light`, texto casi ilegible en dark — confirmado en vivo en `/envios` y
- * `/viajes`).
+ * el token. Dark mode agregado en SHG-FE-060 para `orange`/`green` (antes
+ * sólo existía la rama `light`, texto casi ilegible en dark — confirmado en
+ * vivo en `/envios` y `/viajes`); agregado para `indigo` en SHG-FE-067.
  *
  * `estadoBadge` expone esto como `textColor` — quien pinte el `<Badge>`
  * decide si lo pasa a `c` (ver `ListaEnviosTabla`/`ListaViajesTabla`); no
@@ -79,6 +87,7 @@ const FALLBACK = { label: '—', color: 'gray' };
 const BADGE_TEXT_CONTRAST_OVERRIDE = {
   orange: 'var(--shg-badge-text-orange)',
   green: 'var(--shg-badge-text-green)',
+  indigo: 'var(--shg-badge-text-indigo)',
 };
 
 /**
