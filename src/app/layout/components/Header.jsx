@@ -54,8 +54,7 @@ const AppHeader = () => {
           <Button
             w={400}
             justify="space-between"
-            variant="filled"
-            color="gray"
+            variant="default"
             onClick={() => spotlight.open()}
             leftSection={<IconSearch size={18} />}
             rightSection={
