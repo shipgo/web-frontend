@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Card, Stack, Text, ThemeIcon, Title, Tooltip } from '@mantine/core';
 import { IconMapPinOff, IconTruck } from '@tabler/icons-react';
-import { Layer, Marker, Source } from 'react-map-gl/mapbox';
+import { Layer, Marker, Source, useMap } from 'react-map-gl/mapbox';
+import { LngLatBounds } from 'mapbox-gl';
 
 import Map from '@components/Map';
 
@@ -60,6 +61,31 @@ const puntosDeHistorial = (historial = []) =>
     .map((p) => ({ lat: p.latitud, lng: p.longitud, orden: p.orden }));
 
 /**
+ * `initialViewState` de react-map-gl sólo se aplica al montar el `<Map>`: acá
+ * `ubicacion`/`historial` llegan por queries que se habilitan recién después
+ * de que el viaje resuelve (`useViajeDetalle`), es decir DESPUÉS de que este
+ * mapa ya se montó — sin este efecto la cámara queda fija donde estaba
+ * (sólo paradas, o el centro por defecto) y nunca sigue al camión/track.
+ */
+const MapAutoFit = ({ puntos }) => {
+  const { current: map } = useMap();
+
+  useEffect(() => {
+    if (!map || puntos.length === 0) return;
+    if (puntos.length === 1) {
+      map.flyTo({ center: [puntos[0].lng, puntos[0].lat], zoom: 13, duration: 1000 });
+      return;
+    }
+    const bounds = new LngLatBounds();
+    puntos.forEach((p) => bounds.extend([p.lng, p.lat]));
+    map.fitBounds(bounds, { padding: 60, duration: 1000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, puntos.length]);
+
+  return null;
+};
+
+/**
  * Mini-mapa del viaje: paradas de los recorridos + (si `estado === 'en_camino'`)
  * el recorrido GPS trazado hasta ahora (`historial`, `SHG-QA-010`) y la última
  * ubicación conocida vía tracking. Si no hay GPS o el viaje no está en camino,
@@ -112,6 +138,7 @@ const ViajeMapa = ({ recorridos = [], estado, ubicacion, historial = [] }) => {
         </Title>
         <div style={{ height: 350 }} data-testid="viaje-mapa-track" data-track-puntos={trackPuntos.length}>
           <Map initialViewState={initialViewState}>
+            <MapAutoFit puntos={puntos} />
             {trackGeoJson && (
               <Source type="geojson" data={trackGeoJson}>
                 <Layer {...TRACK_LINE_LAYER} />

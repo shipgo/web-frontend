@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { ThemeIcon, Tooltip } from "@mantine/core";
 import { IconBuilding } from "@tabler/icons-react";
-import { Layer, Marker, Source } from "react-map-gl/mapbox";
+import { Layer, Marker, Source, useMap } from "react-map-gl/mapbox";
+import { LngLatBounds } from "mapbox-gl";
 
 import { Map } from "@components";
 
@@ -40,23 +41,48 @@ const StopMarker = ({ orden, coords }) => (
 );
 
 /**
+ * `initialViewState` de react-map-gl sólo se aplica al montar el `<Map>`:
+ * `origenCoords` puede llegar antes, pero la ruta calculada (`routeGeometry`,
+ * `hooks/useRouteCalculation`) siempre llega DESPUÉS, tras el click en
+ * "Calcular trayecto sugerido" — sin este efecto la cámara nunca se mueve
+ * para mostrarla. Mismo patrón que `mapa/components/MapRoute.jsx`.
+ */
+const MapAutoFit = ({ puntos }) => {
+  const { current: map } = useMap();
+
+  useEffect(() => {
+    if (!map || puntos.length === 0) return;
+    if (puntos.length === 1) {
+      map.flyTo({ center: puntos[0], zoom: 13, duration: 1000 });
+      return;
+    }
+    const bounds = new LngLatBounds();
+    puntos.forEach((p) => bounds.extend(p));
+    map.fitBounds(bounds, { padding: 60, duration: 1000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, puntos.length]);
+
+  return null;
+};
+
+/**
  * Mini-mapa de `SeccionResumen` (`SHG-FE-048`): un marcador numerado por cada
  * parada, EN EL ORDEN elegido (`SeccionEnvios/utils.moverParada`) + la
  * sucursal de origen (si se conoce) + la polilínea de la ruta sugerida una
  * vez calculada (`hooks/useRouteCalculation`, Mapbox Directions).
- *
- * A diferencia de `mapa/components/MapRoute.jsx` (mapa en vivo, con tracking)
- * no usa `useMap()`/`fitBounds`: acá no hay nada moviéndose que justifique
- * reencuadrar en cada render, así que alcanza con centrar una vez al
- * promediar los puntos conocidos — mismo criterio que
- * `DetalleViaje/components/ViajeMapa.jsx`.
  */
 const RutaMapa = ({ origenCoords, paradas = [], routeGeometry }) => {
-  const initialViewState = useMemo(() => {
-    const puntos = [
+  const puntos = useMemo(() => {
+    const paradasCoords = paradas.map((parada) => parada.coords).filter(Boolean);
+    const rutaCoords = routeGeometry?.coordinates ?? [];
+    return [
       ...(origenCoords ? [origenCoords] : []),
-      ...paradas.map((parada) => parada.coords).filter(Boolean),
+      ...paradasCoords,
+      ...rutaCoords,
     ];
+  }, [origenCoords, paradas, routeGeometry]);
+
+  const initialViewState = useMemo(() => {
     if (puntos.length === 0) return undefined;
 
     return {
@@ -64,14 +90,12 @@ const RutaMapa = ({ origenCoords, paradas = [], routeGeometry }) => {
       latitude: puntos.reduce((sum, [, lat]) => sum + lat, 0) / puntos.length,
       zoom: 11,
     };
-    // Sólo se recalcula si cambia la CANTIDAD de puntos conocidos: no hace
-    // falta re-centrar la cámara en cada reordenamiento de paradas ya
-    // visibles, sólo cuando aparece/desaparece alguna.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origenCoords, paradas.length]);
+  }, []);
 
   return (
     <Map initialViewState={initialViewState}>
+      <MapAutoFit puntos={puntos} />
       {origenCoords && (
         <Marker
           longitude={origenCoords[0]}
