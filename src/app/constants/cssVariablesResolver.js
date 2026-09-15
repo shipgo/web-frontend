@@ -9,10 +9,10 @@ import { v8CssVariablesResolver } from "@mantine/core";
  *
  * - `--mantine-color-dimmed` → `gray.6` (`#868e96`, ~3.3:1 contra blanco).
  *   Todo lo que usa `c="dimmed"` (subtítulos, KPIs, `EmptyState`, etc.).
- *   Sólo `light` — SHG-FE-041.
+ *   Rama `light` — SHG-FE-041.
  * - `--mantine-color-placeholder` → `gray.5` (`#adb5bd`, ~2.1:1). Placeholder
  *   de cualquier input (`DatePickerInput`/`DateTimePicker` vacíos, etc.).
- *   Sólo `light` — SHG-FE-041.
+ *   Rama `light` — SHG-FE-041.
  * - `--shg-badge-text-orange` / `--shg-badge-text-green` / `--shg-button-text-green` /
  *   `--shg-button-text-red`: el texto de `<Badge variant="light"
  *   color="orange|green">` ("En camino"/"Entregado"/"Finalizado") y de
@@ -34,9 +34,38 @@ import { v8CssVariablesResolver } from "@mantine/core";
  *   confirmado ≥4.5:1 por axe-core real contra `/envios` y `/viajes` en dark
  *   mode (ver `e2e/cases/axe-dark-mode-badges.js`).
  *
- * Ajuste puntual: no se inventa ningún color nuevo (los tokens de dark mode
- * son shades ya existentes de la MISMA escala orange/green/red), no se toca
- * `COLOR_PALETTE` ni el resto de `v8CssVariablesResolver`.
+ * SHG-FE-067 (auditoría real de dark mode, encontrada corriendo axe-core en
+ * `e2e/cases/axe-dark-mode-badges.js` — antes sólo forzaba dark mode para
+ * los 3 tokens de arriba, nunca se había auditado el resto):
+ *
+ * - `--mantine-color-dimmed`/`--mantine-color-placeholder` en rama `dark`:
+ *   nunca existían (el comentario viejo de este archivo decía "sólo light,
+ *   el resto no mostró problemas" — resultó ser una suposición nunca
+ *   verificada, no una auditoría real). El resolver v8 les da por default
+ *   `dark.2` (`#828282`, dimmed) y `dark.3` (`#696969`, placeholder) — contra
+ *   los fondos reales de la app (`#212529`/`#242424`/`#2e2e2e`) dan
+ *   3.53–4.03:1 y 2.47:1 respectivamente axe-core en mano. Se resuelve
+ *   apuntando ambos a `dark.1` (`#b8b8b8`), que da ≥6.8:1 contra esos mismos
+ *   fondos (mismo patrón: shade ya existente de la escala `dark`, no un
+ *   color nuevo).
+ * - `--shg-badge-text-indigo`: análogo a `--shg-badge-text-orange`/`-green`
+ *   pero para `<Badge variant="light" color="indigo">` ("En vehículo",
+ *   `ESTADO_ENVIO.en_vehiculo`) — el único color de los 4 mapas `ESTADO_*`
+ *   sin override que falló al auditar los 4 completos en dark mode (todos
+ *   los demás — `gray`/`cyan`/`blue`/`red`/`yellow` — pasan con su shade
+ *   default tanto en `light` como en `dark`, confirmado por axe-core real,
+ *   no descartados a ojo). Rama `light`: `indigo-9` (`#364fc7`), que es
+ *   exactamente el shade default que ya usa `variant="light"` en light mode
+ *   (confirmado ≥4.5:1 por axe-core — SHG-FE-041) — se fija explícito acá
+ *   sólo porque `estadoBadge` ahora pasa `c` con este token para `indigo`
+ *   también, no porque haya cambiado nada visualmente en light mode. Rama
+ *   `dark`: `indigo-3` (`#91a7ff`) reemplaza el shade default `indigo-4`
+ *   (`#748ffc`, 4.02:1 contra su fondo tintado) — confirmado ≥4.5:1 por
+ *   axe-core real (ver `e2e/cases/axe-dark-mode-badges.js`).
+ *
+ * Ajuste puntual: no se inventa ningún color nuevo (todos los tokens de dark
+ * mode son shades ya existentes de la MISMA escala orange/green/red/dark/
+ * indigo), no se toca `COLOR_PALETTE` ni el resto de `v8CssVariablesResolver`.
  */
 export const cssVariablesResolver = (theme) => {
   const result = v8CssVariablesResolver(theme);
@@ -48,13 +77,17 @@ export const cssVariablesResolver = (theme) => {
       "--mantine-color-placeholder": "var(--mantine-color-gray-7)",
       "--shg-badge-text-orange": "#99350a",
       "--shg-badge-text-green": "#1f6e33",
+      "--shg-badge-text-indigo": "var(--mantine-color-indigo-9)",
       "--shg-button-text-green": "#1f6e33",
       "--shg-button-text-red": "#a51818",
     },
     dark: {
       ...result.dark,
+      "--mantine-color-dimmed": "var(--mantine-color-dark-1)",
+      "--mantine-color-placeholder": "var(--mantine-color-dark-1)",
       "--shg-badge-text-orange": "var(--mantine-color-orange-5)",
       "--shg-badge-text-green": "var(--mantine-color-green-5)",
+      "--shg-badge-text-indigo": "var(--mantine-color-indigo-3)",
       "--shg-button-text-green": "var(--mantine-color-green-5)",
       "--shg-button-text-red": "var(--mantine-color-red-4)",
     },

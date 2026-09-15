@@ -61,6 +61,16 @@ describe("estadoBadge", () => {
     });
   });
 
+  it("aplica el override de contraste de indigo (SHG-FE-067, 'En vehículo')", () => {
+    expect(estadoBadge("envio", "en_vehiculo")).toEqual({
+      label: "En vehículo",
+      color: "indigo",
+      // Igual que orange/green (SHG-FE-041/SHG-FE-060): token CSS, no un hex
+      // fijo — el resolver define el valor por light/dark mode.
+      textColor: "var(--shg-badge-text-indigo)",
+    });
+  });
+
   it("acepta labels históricos en mayúsculas / con espacios", () => {
     expect(estadoBadge("envio", "EN_CAMINO").label).toBe("En camino");
     expect(estadoBadge("vehiculo", "Fuera De Servicio").color).toBe("red");
