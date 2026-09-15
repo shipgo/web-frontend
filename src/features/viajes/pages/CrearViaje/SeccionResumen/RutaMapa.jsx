@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { ThemeIcon, Tooltip } from "@mantine/core";
 import { IconBuilding } from "@tabler/icons-react";
-import { Layer, Marker, Source } from "react-map-gl/mapbox";
+import { Layer, Marker, Source, useMap } from "react-map-gl/mapbox";
+import { LngLatBounds } from "mapbox-gl";
 
 import { Map } from "@components";
 
@@ -40,23 +41,67 @@ const StopMarker = ({ orden, coords }) => (
 );
 
 /**
+ * `initialViewState` de react-map-gl sólo se aplica al montar el `<Map>`:
+ * `origenCoords` puede llegar antes, pero la ruta calculada (`routeGeometry`,
+ * `hooks/useRouteCalculation`) siempre llega DESPUÉS, tras el click en
+ * "Calcular trayecto sugerido" — sin este efecto la cámara nunca se mueve
+ * para mostrarla. Mismo patrón que `mapa/components/MapRoute.jsx`.
+ */
+const MapAutoFit = ({ puntos }) => {
+  const { current: map } = useMap();
+
+  useEffect(() => {
+    if (!map || puntos.length === 0) return;
+    if (puntos.length === 1) {
+      map.flyTo({ center: puntos[0], zoom: 13, duration: 1000 });
+      return;
+    }
+    const bounds = new LngLatBounds();
+    puntos.forEach((p) => bounds.extend(p));
+    map.fitBounds(bounds, { padding: 60, duration: 1000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, puntos.length]);
+
+  return null;
+};
+
+/**
  * Mini-mapa de `SeccionResumen` (`SHG-FE-048`): un marcador numerado por cada
  * parada, EN EL ORDEN elegido (`SeccionEnvios/utils.moverParada`) + la
  * sucursal de origen (si se conoce) + la polilínea de la ruta sugerida una
  * vez calculada (`hooks/useRouteCalculation`, Mapbox Directions).
- *
- * A diferencia de `mapa/components/MapRoute.jsx` (mapa en vivo, con tracking)
- * no usa `useMap()`/`fitBounds`: acá no hay nada moviéndose que justifique
- * reencuadrar en cada render, así que alcanza con centrar una vez al
- * promediar los puntos conocidos — mismo criterio que
- * `DetalleViaje/components/ViajeMapa.jsx`.
  */
 const RutaMapa = ({ origenCoords, paradas = [], routeGeometry }) => {
-  const initialViewState = useMemo(() => {
-    const puntos = [
+  const puntos = useMemo(() => {
+    const paradasCoords = paradas.map((parada) => parada.coords).filter(Boolean);
+
+    // Calcular bbox de la ruta de forma eficiente (sin expandir array con cientos de puntos)
+    let routeBbox = null;
+    if (routeGeometry?.coordinates && routeGeometry.coordinates.length > 0) {
+      routeBbox = routeGeometry.coordinates.reduce(
+        (bbox, [lng, lat]) => ({
+          minLng: Math.min(bbox.minLng, lng),
+          minLat: Math.min(bbox.minLat, lat),
+          maxLng: Math.max(bbox.maxLng, lng),
+          maxLat: Math.max(bbox.maxLat, lat),
+        }),
+        {
+          minLng: routeGeometry.coordinates[0][0],
+          minLat: routeGeometry.coordinates[0][1],
+          maxLng: routeGeometry.coordinates[0][0],
+          maxLat: routeGeometry.coordinates[0][1],
+        }
+      );
+    }
+
+    return [
       ...(origenCoords ? [origenCoords] : []),
-      ...paradas.map((parada) => parada.coords).filter(Boolean),
+      ...paradasCoords,
+      ...(routeBbox ? [[routeBbox.minLng, routeBbox.minLat], [routeBbox.maxLng, routeBbox.maxLat]] : []),
     ];
+  }, [origenCoords, paradas, routeGeometry]);
+
+  const initialViewState = useMemo(() => {
     if (puntos.length === 0) return undefined;
 
     return {
@@ -64,14 +109,12 @@ const RutaMapa = ({ origenCoords, paradas = [], routeGeometry }) => {
       latitude: puntos.reduce((sum, [, lat]) => sum + lat, 0) / puntos.length,
       zoom: 11,
     };
-    // Sólo se recalcula si cambia la CANTIDAD de puntos conocidos: no hace
-    // falta re-centrar la cámara en cada reordenamiento de paradas ya
-    // visibles, sólo cuando aparece/desaparece alguna.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origenCoords, paradas.length]);
+  }, []);
 
   return (
     <Map initialViewState={initialViewState}>
+      <MapAutoFit puntos={puntos} />
       {origenCoords && (
         <Marker
           longitude={origenCoords[0]}
