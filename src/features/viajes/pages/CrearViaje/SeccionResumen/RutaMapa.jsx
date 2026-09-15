@@ -74,11 +74,30 @@ const MapAutoFit = ({ puntos }) => {
 const RutaMapa = ({ origenCoords, paradas = [], routeGeometry }) => {
   const puntos = useMemo(() => {
     const paradasCoords = paradas.map((parada) => parada.coords).filter(Boolean);
-    const rutaCoords = routeGeometry?.coordinates ?? [];
+
+    // Calcular bbox de la ruta de forma eficiente (sin expandir array con cientos de puntos)
+    let routeBbox = null;
+    if (routeGeometry?.coordinates && routeGeometry.coordinates.length > 0) {
+      routeBbox = routeGeometry.coordinates.reduce(
+        (bbox, [lng, lat]) => ({
+          minLng: Math.min(bbox.minLng, lng),
+          minLat: Math.min(bbox.minLat, lat),
+          maxLng: Math.max(bbox.maxLng, lng),
+          maxLat: Math.max(bbox.maxLat, lat),
+        }),
+        {
+          minLng: routeGeometry.coordinates[0][0],
+          minLat: routeGeometry.coordinates[0][1],
+          maxLng: routeGeometry.coordinates[0][0],
+          maxLat: routeGeometry.coordinates[0][1],
+        }
+      );
+    }
+
     return [
       ...(origenCoords ? [origenCoords] : []),
       ...paradasCoords,
-      ...rutaCoords,
+      ...(routeBbox ? [[routeBbox.minLng, routeBbox.minLat], [routeBbox.maxLng, routeBbox.maxLat]] : []),
     ];
   }, [origenCoords, paradas, routeGeometry]);
 
