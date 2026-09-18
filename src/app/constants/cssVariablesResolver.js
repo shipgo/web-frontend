@@ -66,6 +66,40 @@ import { v8CssVariablesResolver } from "@mantine/core";
  * Ajuste puntual: no se inventa ningún color nuevo (todos los tokens de dark
  * mode son shades ya existentes de la MISMA escala orange/green/red/dark/
  * indigo), no se toca `COLOR_PALETTE` ni el resto de `v8CssVariablesResolver`.
+ *
+ * SHG-FE-069 (bug detectado y pospuesto dos veces — SHG-FE-060, SHG-FE-067 —
+ * sin abrir tarea de seguimiento, ver nit del `revisor` en la revisión de
+ * PR #148):
+ *
+ * - `--shg-button-text-primary`: análogo a `--shg-button-text-green`/`-red`
+ *   pero para `<Button variant="light">` SIN `color` explícito, es decir
+ *   usando el color PRIMARIO del theme (`colorPalette`, teal —
+ *   `COLOR_PALETTE` en `constants/colorPalette.js`), como el botón "Ver
+ *   viaje" de `DetalleEnvio`. Con `primaryShade: 9` (único valor, misma
+ *   sombra en `light`/`dark` — `theme.js`), el default de
+ *   `v8CssVariablesResolver` para `--mantine-color-colorPalette-light-color`
+ *   en dark mode es el shade `primaryShade - 5 = 4` (`#26a69a`) — el mismo
+ *   shade que mide axe-core en este botón, ~4.05:1 contra el fondo tintado
+ *   de `variant="light"` (`alpha(colorPalette-7, .15)` sobre el fondo real
+ *   de la card, `dark.6`/`#2e2e2e`), por debajo de 4.5:1. Rama `light`: sin
+ *   cambios de verdad, sólo se fija explícito el mismo shade que ya usa por
+ *   default (`colorPalette-9`, `primaryShade`) para no depender de la cadena
+ *   `--mantine-primary-color-light-color` → ... Rama `dark`: `colorPalette-2`
+ *   (`#80cbc4`) en vez del shade 4 default — mismo patrón que
+ *   `--shg-badge-text-indigo` (shade ya existente de la MISMA escala, no un
+ *   color nuevo), confirmado ≥4.5:1 por axe-core real (ver
+ *   `e2e/cases/axe-dark-mode-badges.js`).
+ * - No se agrega a `BUTTON_ACTION_TEXT_COLOR` (`@domain/estados`): ese mapa
+ *   es semántica de acción positiva/negativa (`green`/`red`, Entregar/
+ *   Cancelar/etc.), no aplica a "Ver viaje" (sin semántica de estado, sólo
+ *   el color primario del theme) — se referencia el token directo en el
+ *   `Button` que lo necesita, igual que cualquier otro `c="var(--shg-...)"`
+ *   de este archivo.
+ * - Auditados el resto de los `<Button variant="light">` en las pantallas
+ *   que ya cubre `e2e/cases/axe-dark-mode-badges.js` (`/envios`, `/viajes`,
+ *   `/vehiculos`, `/envios/:id`, `/viajes/:id`): todos los demás pasan
+ *   `color` explícito (`green`/`red`/`blue`, no el primario) — "Ver viaje"
+ *   es el único caso real de este bug en esas pantallas.
  */
 export const cssVariablesResolver = (theme) => {
   const result = v8CssVariablesResolver(theme);
@@ -80,6 +114,7 @@ export const cssVariablesResolver = (theme) => {
       "--shg-badge-text-indigo": "var(--mantine-color-indigo-9)",
       "--shg-button-text-green": "#1f6e33",
       "--shg-button-text-red": "#a51818",
+      "--shg-button-text-primary": `var(--mantine-color-${theme.primaryColor}-9)`,
     },
     dark: {
       ...result.dark,
@@ -90,6 +125,7 @@ export const cssVariablesResolver = (theme) => {
       "--shg-badge-text-indigo": "var(--mantine-color-indigo-3)",
       "--shg-button-text-green": "var(--mantine-color-green-5)",
       "--shg-button-text-red": "var(--mantine-color-red-4)",
+      "--shg-button-text-primary": `var(--mantine-color-${theme.primaryColor}-2)`,
     },
   };
 };

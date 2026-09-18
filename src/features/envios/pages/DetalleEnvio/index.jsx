@@ -413,10 +413,16 @@ const DetalleEnvio = () => {
                   {destinoRecorrido(recorridoActual)}
                 </Text>
               </Box>
+              {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+                  `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto
+                  del color primario en `variant="light"` no llega a 4.5:1 en
+                  dark mode (axe-core `color-contrast`, detectado en
+                  SHG-FE-060/SHG-FE-067 y pospuesto dos veces). */}
               <Button
                 variant="light"
                 leftSection={<IconRoute size={16} />}
                 onClick={() => navigate(`~/viajes/${viajeAsociado.id}`)}
+                c="var(--shg-button-text-primary)"
               >
                 Ver viaje
               </Button>

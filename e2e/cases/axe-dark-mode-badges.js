@@ -21,8 +21,8 @@ import { runAxe, blockingViolations, summarizeViolation } from "../lib/axe.js";
  * en dark mode (SHG-FE-041 sólo había corregido su rama `light`) y CADA color
  * de los 4 mapas `ESTADO_*` sin override manual (`gray`/`cyan`/`blue`/
  * `indigo`/`red`/`yellow` — no sólo `indigo`, que fue el único que se vio en
- * la corrida que abrió la tarea). `IN_SCOPE_FG_COLORS`/`OUT_OF_SCOPE_*` abajo
- * reflejan el alcance ampliado.
+ * la corrida que abrió la tarea). `IN_SCOPE_FG_COLORS` abajo refleja el
+ * alcance ampliado (SHG-FE-069 lo amplió una vez más — ver nota abajo).
  *
  * Este caso replica el patrón de `axe-mvp-audit.js` (mismo helper `runAxe`/
  * `fetchJson`, mismo criterio de bloqueo `critical`/`serious`) pero:
@@ -48,6 +48,18 @@ import { runAxe, blockingViolations, summarizeViolation } from "../lib/axe.js";
  * directorio de artefactos del caso, igual que `axe-mvp-audit.js` — evidencia
  * reproducible, no un cálculo manual (ver advertencia del `revisor` en
  * SHG-FE-039, citada también en el task file de esta tarea).
+ *
+ * SHG-FE-069: corrige el único `color-contrast` que SHG-FE-067 había dejado
+ * deliberadamente fuera de alcance (allowlisteado como
+ * `OUT_OF_SCOPE_PRIMARY_BUTTON_FG_COLORS`/`isOutOfScopeNode`/
+ * `splitOutOfScopeNodes`, ahora eliminados de este archivo por no hacer
+ * falta más) — el botón "Ver viaje" (`DetalleEnvio`, `<Button
+ * variant="light">` con el color primario). `--shg-button-text-primary`
+ * (`cssVariablesResolver.js`) resuelve esto igual que
+ * `--shg-badge-text-*`/`--shg-button-text-green`/`-red`, así que se suma al
+ * mismo `IN_SCOPE_FG_COLORS`/`IN_SCOPE_LABEL_RE` en vez de mantener una
+ * categoría de "fuera de alcance" separada — no queda ningún
+ * `color-contrast` conocido sin clasificar tras esta tarea.
  */
 export const name = "axe-dark-mode-badges";
 
@@ -86,73 +98,17 @@ const isKnownAccepted = (violation) =>
  * `html` con "..." en nodos con muchos hermanos idénticos, ej. la lista de
  * paradas de un recorrido, así que un regex sobre `html` puede perder nodos
  * reales — visto en la primera corrida de este caso).
+ *
+ * `#80cbc4` agregado en SHG-FE-069: `--shg-button-text-primary`
+ * (`colorPalette-2`, ver `cssVariablesResolver.js`) — texto del botón "Ver
+ * viaje" (`DetalleEnvio`, `<Button variant="light">` con el color primario
+ * del theme, sin `color` explícito). A diferencia de los demás tokens de
+ * este set, este hex SÍ depende de `COLOR_PALETTE`/`theme.primaryColor` (no
+ * es un color "estático" de Mantine como `orange`/`green`/`indigo`/`red`) —
+ * sigue siendo seguro fijarlo acá porque ninguna de las dos cosas cambia sin
+ * tocar `theme.js`/`colorPalette.js` explícitamente.
  */
-const IN_SCOPE_FG_COLORS = new Set(["#ff922b", "#51cf66", "#ff8787", "#91a7ff"]);
-
-/**
- * `--mantine-color-dimmed`/`--mantine-color-placeholder` en dark mode
- * (SHG-FE-067): a diferencia de los badges, no tienen un fg fijo por color
- * de estado — se identifican por el nodo en sí (estilo inline
- * `color: var(--mantine-color-dimmed)` que deja Mantine, o la clase de
- * placeholder de `DatePickerInput`/inputs en general), no por su hex
- * resuelto (que además cambia según qué shade `dark-N` termine eligiéndose).
- */
-const isDimmedOrPlaceholderNode = (node) =>
-  /color:\s*var\(--mantine-color-dimmed\)/.test(node.html) ||
-  /mantine-InputPlaceholder-placeholder/.test(node.html);
-
-/**
- * `color-contrast` en dark mode que sigue fuera de alcance TRAS SHG-FE-067:
- * el botón "Ver viaje" (`<Button variant="light">`, `DetalleEnvio`) usa el
- * color PRIMARIO (`colorPalette`, teal — `COLOR_PALETTE` en
- * `constants/colorPalette.js`), no un color de `ESTADO_*` ni
- * `BUTTON_ACTION_TEXT_COLOR` (que sólo cubre `green`/`red` — Entregar/Marcar
- * fallo/Finalizar/Cancelar). Es un bug de contraste real (fg `#26a69a`
- * medido por axe-core contra el fondo tintado del botón, ~4.05:1, por debajo
- * de 4.5:1) pero un problema DISTINTO (contraste del color primario en
- * `variant="light"`, no mencionado en el alcance de SHG-FE-060 ni de
- * SHG-FE-067 — ver task files de ambas) — corregirlo acá sería scope creep
- * (`planning/AGENTS.md` regla 5). Se allowlistea explícitamente (no
- * silenciosamente: queda logueado) para que el `revisor`/orquestador decida
- * si abre una tarea aparte.
- */
-const OUT_OF_SCOPE_PRIMARY_BUTTON_FG_COLORS = new Set(["#26a69a"]);
-
-const isOutOfScopeNode = (node) => {
-  if (isDimmedOrPlaceholderNode(node)) return false;
-  const fg = node.any?.find((c) => c.data?.fgColor)?.data?.fgColor?.toLowerCase();
-  if (fg && IN_SCOPE_FG_COLORS.has(fg)) return false;
-  if (fg && OUT_OF_SCOPE_PRIMARY_BUTTON_FG_COLORS.has(fg)) return true;
-  // Cualquier otro `color-contrast` no identificado explícitamente (ni
-  // badge/botón en alcance, ni el único caso ya conocido fuera de alcance)
-  // es tratado como EN alcance — a diferencia del diseño pre-SHG-FE-067 (que
-  // asumía "todo lo que no sea orange/green está fuera de alcance"), ahora
-  // que se auditaron los 4 mapas `ESTADO_*` completos + dimmed/placeholder
-  // no debería quedar nada sin clasificar; si aparece, mejor que bloquee la
-  // corrida (y se lo clasifique acá) a que se cuele silenciosamente.
-  return false;
-};
-
-const OUT_OF_SCOPE_LABEL = "SHG-FE-067 (contraste del botón 'Ver viaje', color primario — bug real distinto, no incluido)";
-
-/**
- * Separa, DENTRO de una violación `color-contrast`, los nodos que son deuda
- * ya conocida y fuera de alcance (`isOutOfScopeNode`) de los que sí son
- * parte del alcance de esta tarea. A diferencia de `isKnownAccepted` (que
- * descarta la violación entera por ruta+regla), acá hace falta partir los
- * NODOS de una misma violación — la misma regla `color-contrast` dispara
- * tanto para un badge nuestro como para el botón "Ver viaje" de al lado, en
- * la misma página.
- */
-const splitOutOfScopeNodes = (violation) => {
-  if (violation.id !== "color-contrast") return { inScope: violation, outOfScope: null };
-  const outOfScopeNodes = violation.nodes.filter(isOutOfScopeNode);
-  const inScopeNodes = violation.nodes.filter((n) => !isOutOfScopeNode(n));
-  return {
-    inScope: inScopeNodes.length > 0 ? { ...violation, nodes: inScopeNodes } : null,
-    outOfScope: outOfScopeNodes.length > 0 ? { ...violation, nodes: outOfScopeNodes } : null,
-  };
-};
+const IN_SCOPE_FG_COLORS = new Set(["#ff922b", "#51cf66", "#ff8787", "#91a7ff", "#80cbc4"]);
 
 const fetchJson = async (page, url) =>
   page.evaluate(async (u) => {
@@ -196,9 +152,10 @@ const assertDarkModeActive = async (page) => {
  * "no violó", sino "axe-core efectivamente evaluó este elemento y pasó") de
  * que el fix se ejercitó de verdad en alguna ruta, no sólo que ninguna ruta
  * lo renderizó. `en_vehiculo` ("En vehículo") agregado en SHG-FE-067.
+ * "Ver viaje" agregado en SHG-FE-069 (`--shg-button-text-primary`).
  */
 const IN_SCOPE_LABEL_RE =
-  /En camino|Entregado|Finalizado(?! c\/)|Entregar|Marcar fallo|Cancelar|En vehículo/;
+  /En camino|Entregado|Finalizado(?! c\/)|Entregar|Marcar fallo|Cancelar|En vehículo|Ver viaje/;
 
 /** Labels de badges/botones en alcance que axe-core evaluó y confirmó ≥4.5:1 en ESTA página. */
 const collectConfirmedPassingLabels = (results) => {
@@ -251,34 +208,22 @@ const auditCurrentPage = async ({ page, logger, caseName, routeLabel }) => {
     );
   }
 
-  // Partir cada violación bloqueante en lo que es alcance de esta tarea vs.
-  // el único caso ya conocido fuera de alcance (`OUT_OF_SCOPE_PRIMARY_BUTTON_FG_COLORS`)
-  // ANTES de aplicar `isKnownAccepted` (esa función descarta la violación
-  // entera por ruta+regla, acá hace falta separar nodos dentro de la misma
-  // violación — ver `splitOutOfScopeNodes`).
+  // SHG-FE-069: ya no hace falta partir violaciones en alcance/fuera de
+  // alcance (`splitOutOfScopeNodes`, eliminado) — el único caso que motivaba
+  // esa separación (el botón "Ver viaje", color primario) está resuelto, así
+  // que cualquier violación `color-contrast` bloqueante que quede es alcance
+  // de este caso sin excepción, salvo `KNOWN_ACCEPTED_VIOLATIONS`.
   const allBlocking = blockingViolations(results).map((v) => ({ route: routeLabel, ...v }));
-  const outOfScope = [];
-  const scoped = [];
-  for (const v of allBlocking) {
-    const { inScope, outOfScope: oos } = splitOutOfScopeNodes(v);
-    if (inScope) scoped.push(inScope);
-    if (oos) outOfScope.push(oos);
-  }
-
-  const known = scoped.filter(isKnownAccepted);
-  const newBlocking = scoped.filter((v) => !isKnownAccepted(v));
+  const known = allBlocking.filter(isKnownAccepted);
+  const newBlocking = allBlocking.filter((v) => !isKnownAccepted(v));
 
   logger.log(
     `[${caseName}] ${routeLabel}: ${results.violations.length} violación(es) totales, ` +
-      `${scoped.length} crítica(s)/seria(s) en alcance (${known.length} ya conocida(s)/aceptada(s)), ` +
-      `${outOfScope.length} fuera de alcance (${OUT_OF_SCOPE_LABEL}). ` +
+      `${allBlocking.length} crítica(s)/seria(s) (${known.length} ya conocida(s)/aceptada(s)). ` +
       `Reporte: ${path.relative(logger.runDir, reportPath)}`,
   );
   known.forEach((v) => logger.log(`[${caseName}]   ⚠ CONOCIDA ${routeLabel}: ${summarizeViolation(v)}`));
   newBlocking.forEach((v) => logger.log(`[${caseName}]   ⚠ ${routeLabel}: ${summarizeViolation(v)}`));
-  outOfScope.forEach((v) =>
-    logger.log(`[${caseName}]   ℹ FUERA DE ALCANCE (${OUT_OF_SCOPE_LABEL}) ${routeLabel}: ${summarizeViolation(v)}`),
-  );
 
   return { newBlocking, confirmedPassingLabels, confirmedDimmedPlaceholder };
 };
@@ -395,15 +340,21 @@ export async function run({ browser, logger }) {
   // el tipo de evidencia no reproducible que el `revisor` rechazó en
   // SHG-FE-039. Exige que axe-core haya confirmado ≥4.5:1 en AL MENOS un
   // badge naranja ("En camino"), uno verde ("Entregado"/"Finalizado"), uno
-  // indigo ("En vehículo" — SHG-FE-067), y al menos un nodo `dimmed` y un
-  // `placeholder` (SHG-FE-067).
+  // indigo ("En vehículo" — SHG-FE-067), el botón "Ver viaje" (color
+  // primario — SHG-FE-069), y al menos un nodo `dimmed` y un `placeholder`
+  // (SHG-FE-067). Cualquier envío `en_vehiculo`/`en_camino`/`entregado` ya
+  // tiene un viaje asociado (por eso esos estados existen), así que las
+  // mismas rutas que confirman indigo/naranja/verde también confirman "Ver
+  // viaje" — no hace falta una ruta extra sólo para este botón.
   const gotOrange = allConfirmedPassingLabels.has("En camino");
   const gotGreen = [...allConfirmedPassingLabels].some((l) => l === "Entregado" || l === "Finalizado");
   const gotIndigo = allConfirmedPassingLabels.has("En vehículo");
+  const gotVerViaje = allConfirmedPassingLabels.has("Ver viaje");
   const missing = [
     !gotOrange && "naranja (\"En camino\")",
     !gotGreen && "verde (\"Entregado\"/\"Finalizado\")",
     !gotIndigo && "indigo (\"En vehículo\")",
+    !gotVerViaje && "botón \"Ver viaje\" (color primario)",
     !dimmedConfirmed && "c=\"dimmed\"",
     !placeholderConfirmed && "placeholder",
   ].filter(Boolean);
@@ -416,9 +367,9 @@ export async function run({ browser, logger }) {
 
   logger.log(
     `[${name}] Sin violaciones críticas/serias NUEVAS de axe-core en dark mode ` +
-      `(badges/botones de \`@domain/estados\` + dimmed/placeholder — SHG-FE-060/SHG-FE-067). ` +
-      `${KNOWN_ACCEPTED_VIOLATIONS.length} excepción(es) ya conocida(s)/aceptada(s), ` +
-      `${OUT_OF_SCOPE_LABEL} sigue fuera de esta tarea. ` +
+      `(badges/botones de \`@domain/estados\` + botón "Ver viaje" + dimmed/placeholder — ` +
+      `SHG-FE-060/SHG-FE-067/SHG-FE-069). ` +
+      `${KNOWN_ACCEPTED_VIOLATIONS.length} excepción(es) ya conocida(s)/aceptada(s). ` +
       `Labels confirmados ≥4.5:1 por axe-core real: ${[...allConfirmedPassingLabels].join(", ")}; ` +
       `dimmed=${dimmedConfirmed}, placeholder=${placeholderConfirmed}.`,
   );
