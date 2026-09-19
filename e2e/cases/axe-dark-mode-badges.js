@@ -104,23 +104,10 @@ export const name = "axe-dark-mode-badges";
  * antes. Se allowlistea (no silenciosamente) para no bloquear esta corrida
  * por una deuda no relacionada; queda para que se abra una tarea aparte si
  * corresponde.
- *
- * `mapa-detalle-dark`/`aria-progressbar-name` (SHG-FE-070): el `<Progress>`
- * de Mantine que pinta el panel de `MapDetalles` (progreso del viaje
- * seleccionado) no tiene `aria-label`/nombre accesible — bug real
- * (`aria-progressbar-name`, serio) pero de nombre accesible en un control
- * ARIA, nada que ver con contraste de color/dark mode (alcance de esta
- * tarea). Encontrado de rebote al sumar `/mapa` con un viaje seleccionado a
- * este caso para auditar "Ver detalle completo" — nadie había corrido
- * axe-core contra ese panel antes (`axe-mvp-audit.js` visita `/mapa` pero
- * nunca selecciona un viaje). Se allowlistea (no silenciosamente) por el
- * mismo motivo que `vehiculos-lista-dark`/`label`; queda para que se abra
- * una tarea aparte si corresponde.
  */
 const KNOWN_ACCEPTED_VIOLATIONS = [
   { route: "viajes-lista-dark", ruleId: "nested-interactive" },
   { route: "vehiculos-lista-dark", ruleId: "label" },
-  { route: "mapa-detalle-dark", ruleId: "aria-progressbar-name" },
 ];
 
 const isKnownAccepted = (violation) =>
