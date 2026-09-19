@@ -67,6 +67,10 @@ const DashboardPage = () => {
           <Text c="dimmed">Resumen operativo · {periodoLabel}</Text>
         </Stack>
         <Flex gap="xs">
+          {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+              `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto
+              del color primario en `variant="light"` no llega a 4.5:1 en
+              dark mode (axe-core `color-contrast`, SHG-FE-070). */}
           <Button
             variant="light"
             leftSection={<IconDownload size={16} />}
@@ -78,6 +82,7 @@ const DashboardPage = () => {
                 series: seriesQuery.data,
               })
             }
+            c="var(--shg-button-text-primary)"
           >
             Exportar PDF
           </Button>
