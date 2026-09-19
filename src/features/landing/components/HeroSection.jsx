@@ -37,12 +37,20 @@ const HeroSection = () => (
             >
               {LANDING_HERO.primaryCta.label}
             </Button>
+            {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+                `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto
+                del color primario en `variant="light"` no llega a 4.5:1 en
+                dark mode (axe-core `color-contrast`, SHG-FE-070). La
+                landing usa el mismo `MantineProvider`/`defaultColorScheme=
+                "auto"` que el resto de la app (`App.jsx`), así que sigue
+                `prefers-color-scheme` igual que las pantallas internas. */}
             <Button
               component={Link}
               href={LANDING_HERO.secondaryCta.href}
               variant="light"
               size="md"
               leftSection={<IconUserPlus size={18} />}
+              c="var(--shg-button-text-primary)"
             >
               {LANDING_HERO.secondaryCta.label}
             </Button>

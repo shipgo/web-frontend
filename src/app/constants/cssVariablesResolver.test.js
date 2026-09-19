@@ -14,10 +14,12 @@ import { cssVariablesResolver } from "./cssVariablesResolver";
  * patrón, para `<Badge color="indigo">`, "En vehículo") a la lista.
  * SHG-FE-069 sumó `--shg-button-text-primary` (mismo patrón, para
  * `<Button variant="light">` sin `color` explícito — el color PRIMARIO del
- * theme, ej. "Ver viaje" en `DetalleEnvio`). No reemplaza la verificación de
- * contraste real con axe-core (ver `e2e/cases/axe-dark-mode-badges.js`) —
- * sólo previene que alguien borre por accidente la rama `dark` o deje el
- * mismo valor en las dos.
+ * theme, ej. "Ver viaje" en `DetalleEnvio`). SHG-FE-070 sumó
+ * `--shg-badge-text-primary` (mismo patrón, para `<Badge variant="light">`
+ * sin `color` explícito — encontrado auditando `MapDetalles`, badge "0/N
+ * paradas"). No reemplaza la verificación de contraste real con axe-core
+ * (ver `e2e/cases/axe-dark-mode-badges.js`) — sólo previene que alguien
+ * borre por accidente la rama `dark` o deje el mismo valor en las dos.
  */
 describe("cssVariablesResolver — tokens de contraste de badges/botones de estado", () => {
   const fullTheme = mergeMantineTheme(DEFAULT_THEME, THEME);
@@ -30,9 +32,10 @@ describe("cssVariablesResolver — tokens de contraste de badges/botones de esta
     "--shg-button-text-green",
     "--shg-button-text-red",
     "--shg-button-text-primary",
+    "--shg-badge-text-primary",
   ];
 
-  it("define los 6 tokens en la rama light y en la rama dark", () => {
+  it("define los 7 tokens en la rama light y en la rama dark", () => {
     for (const token of TOKENS) {
       expect(result.light[token], `light.${token}`).toBeTruthy();
       expect(result.dark[token], `dark.${token}`).toBeTruthy();
@@ -74,5 +77,16 @@ describe("cssVariablesResolver — tokens de contraste de badges/botones de esta
     expect(result.dark["--shg-button-text-primary"]).toBe(
       `var(--mantine-color-${fullTheme.primaryColor}-2)`,
     );
+  });
+
+  /**
+   * SHG-FE-070: `--shg-badge-text-primary` usa exactamente los mismos
+   * shades que `--shg-button-text-primary` (mismo patrón que
+   * `--shg-badge-text-green`/`--shg-button-text-green`, que también
+   * comparten valor idéntico entre Badge y Button).
+   */
+  it("--shg-badge-text-primary usa el mismo shade que --shg-button-text-primary en ambas ramas", () => {
+    expect(result.light["--shg-badge-text-primary"]).toBe(result.light["--shg-button-text-primary"]);
+    expect(result.dark["--shg-badge-text-primary"]).toBe(result.dark["--shg-button-text-primary"]);
   });
 });

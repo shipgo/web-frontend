@@ -100,6 +100,25 @@ import { v8CssVariablesResolver } from "@mantine/core";
  *   `/vehiculos`, `/envios/:id`, `/viajes/:id`): todos los demás pasan
  *   `color` explícito (`green`/`red`/`blue`, no el primario) — "Ver viaje"
  *   es el único caso real de este bug en esas pantallas.
+ *
+ * SHG-FE-070 (auditoría completa de `variant="light"` con color primario
+ * implícito en TODO `src/`, no sólo las pantallas ya cubiertas por
+ * `axe-dark-mode-badges.js` — encontró y corrigió otros 11 `<Button
+ * variant="light">` con el mismo bug de SHG-FE-069, ver ese caso e2e):
+ *
+ * - `--shg-badge-text-primary`: mismo bug que `--shg-button-text-primary`
+ *   pero para `<Badge variant="light">` SIN `color` explícito (color
+ *   primario del theme) — encontrado por rebote auditando `MapDetalles`
+ *   para el botón "Ver detalle completo" (`e2e/cases/axe-dark-mode-badges.js`,
+ *   ruta `mapa-detalle-dark`): el badge "0/N paradas" del panel de progreso
+ *   mide el mismo `#26a69a` (shade `primaryShade - 5 = 4`) contra el mismo
+ *   tipo de fondo tintado, 4.05:1, confirmado por axe-core real. Mismos
+ *   valores que `--shg-button-text-primary` en ambas ramas (mismo patrón que
+ *   `--shg-badge-text-green`/`--shg-button-text-green` y `-red`, que también
+ *   comparten valor idéntico entre Badge y Button) — se define aparte (no se
+ *   reusa `--shg-button-text-primary` directo en el `Badge`) por
+ *   consistencia con el resto del archivo, donde Badge y Button siempre
+ *   tienen su propio token con el mismo nombre semántico.
  */
 export const cssVariablesResolver = (theme) => {
   const result = v8CssVariablesResolver(theme);
@@ -115,6 +134,7 @@ export const cssVariablesResolver = (theme) => {
       "--shg-button-text-green": "#1f6e33",
       "--shg-button-text-red": "#a51818",
       "--shg-button-text-primary": `var(--mantine-color-${theme.primaryColor}-9)`,
+      "--shg-badge-text-primary": `var(--mantine-color-${theme.primaryColor}-9)`,
     },
     dark: {
       ...result.dark,
@@ -126,6 +146,7 @@ export const cssVariablesResolver = (theme) => {
       "--shg-button-text-green": "var(--mantine-color-green-5)",
       "--shg-button-text-red": "var(--mantine-color-red-4)",
       "--shg-button-text-primary": `var(--mantine-color-${theme.primaryColor}-2)`,
+      "--shg-badge-text-primary": `var(--mantine-color-${theme.primaryColor}-2)`,
     },
   };
 };
