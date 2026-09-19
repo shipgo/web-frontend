@@ -24,6 +24,7 @@ vi.mock('react-map-gl/mapbox', () => ({
   Marker: ({ children }) => <div>{children}</div>,
   Source: ({ children }) => <div>{children}</div>,
   Layer: () => null,
+  useMap: () => ({ current: null }),
 }));
 
 import { trackingApi, viajeApi } from '@api';
