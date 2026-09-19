@@ -205,7 +205,7 @@ const MapDetalles = () => {
             {paradasEntregadas}/{paradasTotales} paradas
           </Badge>
         </Group>
-        <Progress value={porcentaje} size="sm" />
+        <Progress value={porcentaje} size="sm" aria-label={`Progreso del viaje: ${porcentaje.toFixed(0)}%`} />
         <Group gap={6}>
           <IconPackage size={14} />
           <Text size="xs" c="dimmed">
