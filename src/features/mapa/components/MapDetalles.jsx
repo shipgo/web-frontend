@@ -196,7 +196,12 @@ const MapDetalles = () => {
           <Text size="sm" fw={600}>
             Progreso
           </Text>
-          <Badge variant="light" size="sm">
+          {/* `c="var(--shg-badge-text-primary)"`: ver ese token en
+              `cssVariablesResolver.js` (SHG-FE-070) — sin esto, el texto del
+              color primario en `variant="light"` no llega a 4.5:1 en dark
+              mode (axe-core `color-contrast`, encontrado auditando este
+              mismo panel para "Ver detalle completo"). */}
+          <Badge variant="light" size="sm" c="var(--shg-badge-text-primary)">
             {paradasEntregadas}/{paradasTotales} paradas
           </Badge>
         </Group>
@@ -208,7 +213,18 @@ const MapDetalles = () => {
           </Text>
         </Group>
 
-        <Button component={Link} to={`~/viajes/${selectedViajeId}`} variant="light" size="xs" fullWidth>
+        {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+            `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto del
+            color primario en `variant="light"` no llega a 4.5:1 en dark mode
+            (axe-core `color-contrast`, SHG-FE-070). */}
+        <Button
+          component={Link}
+          to={`~/viajes/${selectedViajeId}`}
+          variant="light"
+          size="xs"
+          fullWidth
+          c="var(--shg-button-text-primary)"
+        >
           Ver detalle completo
         </Button>
       </Stack>

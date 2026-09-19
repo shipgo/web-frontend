@@ -49,11 +49,16 @@ const SeccionHeader = ({
           events={{ hover: !canCalculateNewRoute && !isPending }}
           label="La ruta calculada es válida para los paquetes seleccionados y la opción de retorno actual"
         >
+          {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+              `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto del
+              color primario en `variant="light"` no llega a 4.5:1 en dark
+              mode (axe-core `color-contrast`, SHG-FE-070). */}
           <Button
             variant="light"
             onClick={onRouteCalculation}
             disabled={!canCalculateNewRoute}
             loading={isPending}
+            c="var(--shg-button-text-primary)"
           >
             Calcular trayecto sugerido
           </Button>

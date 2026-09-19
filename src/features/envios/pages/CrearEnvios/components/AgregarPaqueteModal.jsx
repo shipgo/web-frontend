@@ -46,10 +46,15 @@ const AgregarPaqueteModal = ({ categorias = [], onAdd }) => {
 
   return (
     <>
+      {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+          `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto del
+          color primario en `variant="light"` no llega a 4.5:1 en dark mode
+          (axe-core `color-contrast`, SHG-FE-070). */}
       <Button
         variant="light"
         leftSection={<IconPlus size={16} />}
         onClick={open}
+        c="var(--shg-button-text-primary)"
       >
         Añadir paquete
       </Button>

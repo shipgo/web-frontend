@@ -42,7 +42,19 @@ const AccessCard = ({ access }) => {
             {access.description}
           </Text>
         </Stack>
-        <Button component={Link} href={access.href} variant="light" fullWidth>
+        {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+            `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto del
+            color primario en `variant="light"` no llega a 4.5:1 en dark
+            mode (axe-core `color-contrast`, SHG-FE-070). La landing usa el
+            mismo `MantineProvider`/`defaultColorScheme="auto"` que el resto
+            de la app (`App.jsx`). */}
+        <Button
+          component={Link}
+          href={access.href}
+          variant="light"
+          fullWidth
+          c="var(--shg-button-text-primary)"
+        >
           {access.ctaLabel}
         </Button>
       </Stack>

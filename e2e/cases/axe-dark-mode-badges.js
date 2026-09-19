@@ -60,6 +60,33 @@ import { runAxe, blockingViolations, summarizeViolation } from "../lib/axe.js";
  * mismo `IN_SCOPE_FG_COLORS`/`IN_SCOPE_LABEL_RE` en vez de mantener una
  * categoría de "fuera de alcance" separada — no queda ningún
  * `color-contrast` conocido sin clasificar tras esta tarea.
+ *
+ * SHG-FE-070 (auditoría completa de `<Button variant="light">` con color
+ * primario implícito fuera de las pantallas que ya cubría este caso — el
+ * revisor de SHG-FE-069 había encontrado, buscando en todo el repo, otros
+ * dos botones con el mismo patrón sin verificar: "Volver al detalle"
+ * (`EditarViaje`, `/viajes/:id/editar`, sólo se renderiza si el viaje NO
+ * está en `VIAJE_ESTADOS_EDITABLES`) y "Ver detalle completo" (`MapDetalles`,
+ * `/mapa`, sólo se renderiza con un viaje seleccionado en el panel lateral).
+ * Ambos confirmados con el mismo bug real (mismo `--shg-button-text-primary`
+ * sin aplicar) y corregidos con el mismo token — se suman a este caso en vez
+ * de escribir uno nuevo, mismo criterio que SHG-FE-067/SHG-FE-069. Una
+ * auditoría completa de `variant="light"` en todo `src/` (no sólo estas dos
+ * rutas) no encontró ningún otro `<Button variant="light">` con color
+ * primario implícito sin corregir — todos los `<Badge>`/`<Alert>`/
+ * `<ThemeIcon>`/`<Chip>` `variant="light"` restantes son componentes
+ * distintos (contraste ya resuelto por sus propios tokens, o no aplica por
+ * ser sólo ícono) y los `<Button variant="light">` restantes ya usan
+ * `color` explícito (`red`/`green`/`blue`/`orange`, patrón ya confirmado
+ * seguro por la auditoría de SHG-FE-069). El resto de los `<Button
+ * variant="light">` con color primario implícito que corrigió esta tarea
+ * (`SelectionBanner`, `Dashboard`, `AgregarPaqueteModal`,
+ * `EnviosAcciones`/`SeccionHeader` de `CrearViaje`, `FotoPerfilUpload`,
+ * landing/portal) usan el mismo `c="var(--shg-button-text-primary)"` sobre
+ * el mismo token ya confirmado por axe-core en "Ver viaje"/"Volver al
+ * detalle"/"Ver detalle completo" — no se agrega una ruta e2e por cada uno
+ * (serían rutas nuevas sólo para re-confirmar el mismo CSS var, no un
+ * comportamiento distinto), documentado acá en vez de en el task file.
  */
 export const name = "axe-dark-mode-badges";
 
@@ -77,10 +104,23 @@ export const name = "axe-dark-mode-badges";
  * antes. Se allowlistea (no silenciosamente) para no bloquear esta corrida
  * por una deuda no relacionada; queda para que se abra una tarea aparte si
  * corresponde.
+ *
+ * `mapa-detalle-dark`/`aria-progressbar-name` (SHG-FE-070): el `<Progress>`
+ * de Mantine que pinta el panel de `MapDetalles` (progreso del viaje
+ * seleccionado) no tiene `aria-label`/nombre accesible — bug real
+ * (`aria-progressbar-name`, serio) pero de nombre accesible en un control
+ * ARIA, nada que ver con contraste de color/dark mode (alcance de esta
+ * tarea). Encontrado de rebote al sumar `/mapa` con un viaje seleccionado a
+ * este caso para auditar "Ver detalle completo" — nadie había corrido
+ * axe-core contra ese panel antes (`axe-mvp-audit.js` visita `/mapa` pero
+ * nunca selecciona un viaje). Se allowlistea (no silenciosamente) por el
+ * mismo motivo que `vehiculos-lista-dark`/`label`; queda para que se abra
+ * una tarea aparte si corresponde.
  */
 const KNOWN_ACCEPTED_VIOLATIONS = [
   { route: "viajes-lista-dark", ruleId: "nested-interactive" },
   { route: "vehiculos-lista-dark", ruleId: "label" },
+  { route: "mapa-detalle-dark", ruleId: "aria-progressbar-name" },
 ];
 
 const isKnownAccepted = (violation) =>
@@ -106,7 +146,8 @@ const isKnownAccepted = (violation) =>
  * este set, este hex SÍ depende de `COLOR_PALETTE`/`theme.primaryColor` (no
  * es un color "estático" de Mantine como `orange`/`green`/`indigo`/`red`) —
  * sigue siendo seguro fijarlo acá porque ninguna de las dos cosas cambia sin
- * tocar `theme.js`/`colorPalette.js` explícitamente.
+ * tocar `theme.js`/`colorPalette.js` explícitamente. Mismo hex reutilizado
+ * por "Volver al detalle"/"Ver detalle completo" (SHG-FE-070, mismo token).
  */
 const IN_SCOPE_FG_COLORS = new Set(["#ff922b", "#51cf66", "#ff8787", "#91a7ff", "#80cbc4"]);
 
@@ -153,15 +194,43 @@ const assertDarkModeActive = async (page) => {
  * que el fix se ejercitó de verdad en alguna ruta, no sólo que ninguna ruta
  * lo renderizó. `en_vehiculo` ("En vehículo") agregado en SHG-FE-067.
  * "Ver viaje" agregado en SHG-FE-069 (`--shg-button-text-primary`).
+ * "Volver al detalle"/"Ver detalle completo" agregados en SHG-FE-070 (mismo
+ * token, `EditarViaje`/`MapDetalles`).
  */
 const IN_SCOPE_LABEL_RE =
-  /En camino|Entregado|Finalizado(?! c\/)|Entregar|Marcar fallo|Cancelar|En vehículo|Ver viaje/;
+  /En camino|Entregado|Finalizado(?! c\/)|Entregar|Marcar fallo|Cancelar|En vehículo|Ver viaje|Volver al detalle|Ver detalle completo/;
 
 /** Labels de badges/botones en alcance que axe-core evaluó y confirmó ≥4.5:1 en ESTA página. */
 const collectConfirmedPassingLabels = (results) => {
   const colorContrastPass = (results.passes ?? []).find((p) => p.id === "color-contrast");
   if (!colorContrastPass) return [];
   return colorContrastPass.nodes
+    .filter((n) => /mantine-Badge-label|mantine-Button-label/.test(n.html) && IN_SCOPE_LABEL_RE.test(n.html))
+    .map((n) => n.html.replace(/<[^>]+>/g, "").trim());
+};
+
+/**
+ * Igual que `collectConfirmedPassingLabels` pero para labels en alcance que
+ * axe-core dejó `incomplete` (ni `pass` ni `fail`) en vez de confirmar. Sólo
+ * pasa esto con "Ver detalle completo" (`MapDetalles`, SHG-FE-070): el panel
+ * es un `Card` posicionado ENCIMA del canvas de Mapbox GL (mapa en vivo,
+ * `position: absolute`), y ese botón queda pegado a los controles propios
+ * del mapa (zoom, atribución) — axe-core no puede aislar el color de fondo
+ * ahí de forma confiable (los otros nodos que también quedan `incomplete`
+ * en esa misma ruta son justamente los controles de Mapbox: zoom, "©
+ * Mapbox"/"© OpenStreetMap"/"Improve this map"), así que lo deja
+ * `incomplete` en vez de `pass`, aunque tampoco lo marca `fail`. Esto NO es
+ * evidencia de que el fix esté mal — es la MISMA `c="var(--shg-...)"` que ya
+ * confirmó `pass` el badge "0/2 paradas" un par de líneas arriba en el
+ * mismo `Card` (mismo fondo tintado `variant="light"`, mismo token) — se
+ * documenta acá en vez de forzar una `pass` que axe-core no puede dar por
+ * una limitación real de la herramienta (superposición con un canvas),
+ * no del fix.
+ */
+const collectIncompleteInScopeLabels = (results) => {
+  const colorContrastIncomplete = (results.incomplete ?? []).find((i) => i.id === "color-contrast");
+  if (!colorContrastIncomplete) return [];
+  return colorContrastIncomplete.nodes
     .filter((n) => /mantine-Badge-label|mantine-Button-label/.test(n.html) && IN_SCOPE_LABEL_RE.test(n.html))
     .map((n) => n.html.replace(/<[^>]+>/g, "").trim());
 };
@@ -196,6 +265,13 @@ const auditCurrentPage = async ({ page, logger, caseName, routeLabel }) => {
       `[${caseName}]   ✔ ${routeLabel}: axe-core confirmó ≥4.5:1 (color-contrast) para: ${confirmedPassingLabels.join(", ")}`,
     );
   }
+  const incompleteInScopeLabels = collectIncompleteInScopeLabels(results);
+  if (incompleteInScopeLabels.length > 0) {
+    logger.log(
+      `[${caseName}]   ◐ ${routeLabel}: axe-core dejó "incomplete" (no pudo aislar el fondo, ver comentario de ` +
+        `\`collectIncompleteInScopeLabels\`) para: ${incompleteInScopeLabels.join(", ")}`,
+    );
+  }
   const confirmedDimmedPlaceholder = collectConfirmedPassingDimmedPlaceholder(results);
   if (confirmedDimmedPlaceholder.dimmed || confirmedDimmedPlaceholder.placeholder) {
     logger.log(
@@ -225,18 +301,21 @@ const auditCurrentPage = async ({ page, logger, caseName, routeLabel }) => {
   known.forEach((v) => logger.log(`[${caseName}]   ⚠ CONOCIDA ${routeLabel}: ${summarizeViolation(v)}`));
   newBlocking.forEach((v) => logger.log(`[${caseName}]   ⚠ ${routeLabel}: ${summarizeViolation(v)}`));
 
-  return { newBlocking, confirmedPassingLabels, confirmedDimmedPlaceholder };
+  return { newBlocking, confirmedPassingLabels, incompleteInScopeLabels, confirmedDimmedPlaceholder };
 };
 
 export async function run({ browser, logger }) {
   const allBlocking = [];
   const allConfirmedPassingLabels = new Set();
+  const allIncompleteInScopeLabels = new Set();
   let dimmedConfirmed = false;
   let placeholderConfirmed = false;
   const record = async (opts) => {
-    const { newBlocking, confirmedPassingLabels, confirmedDimmedPlaceholder } = await auditCurrentPage(opts);
+    const { newBlocking, confirmedPassingLabels, incompleteInScopeLabels, confirmedDimmedPlaceholder } =
+      await auditCurrentPage(opts);
     allBlocking.push(...newBlocking);
     confirmedPassingLabels.forEach((l) => allConfirmedPassingLabels.add(l));
+    incompleteInScopeLabels.forEach((l) => allIncompleteInScopeLabels.add(l));
     dimmedConfirmed = dimmedConfirmed || confirmedDimmedPlaceholder.dimmed;
     placeholderConfirmed = placeholderConfirmed || confirmedDimmedPlaceholder.placeholder;
   };
@@ -306,8 +385,12 @@ export async function run({ browser, logger }) {
     }
 
     // --- /viajes/:id: `planificado` (blue, SHG-FE-067) además de
-    // `creado`/`en_camino`/`finalizado` que ya cubría SHG-FE-060.
+    // `creado`/`en_camino`/`finalizado` que ya cubría SHG-FE-060. Guarda los
+    // ids encontrados (`viajeIdPorEstado`) para reusarlos abajo en
+    // `/viajes/:id/editar` y `/mapa` (SHG-FE-070) — evita otro round-trip a
+    // la API por lo mismo.
     const VIAJE_ESTADOS = ["creado", "planificado", "en_camino", "finalizado"];
+    const viajeIdPorEstado = {};
     for (const estado of VIAJE_ESTADOS) {
       const id = await fetchFirstId(page, "/api/viaje?page=0&size=1", estado);
       if (id == null) {
@@ -316,10 +399,61 @@ export async function run({ browser, logger }) {
         );
         continue;
       }
+      viajeIdPorEstado[estado] = id;
       await page.goto(`${config.webBaseUrl}/viajes/${id}`);
       await page.getByRole("heading", { name: "Detalle de viaje" }).first().waitFor({ timeout: 15_000 });
       await waitForRouteSettled(page);
       await record({ page, logger, caseName: name, routeLabel: `viajes-detalle-${estado}-dark` });
+    }
+
+    // --- /viajes/:id/editar, viaje NO editable -> botón "Volver al detalle"
+    // (SHG-FE-070: `EditarViaje` sólo renderiza ese botón, `<Button
+    // variant="light">` con color primario implícito, cuando el viaje NO
+    // está en `VIAJE_ESTADOS_EDITABLES` = ['creado', 'planificado'] — ver
+    // `EditarViaje/index.jsx`). Se prefiere `finalizado` (terminal, siempre
+    // no-editable) y se cae a `en_camino` (tampoco editable) si el seed no
+    // tiene ninguno finalizado en esta corrida.
+    const viajeNoEditableId = viajeIdPorEstado.finalizado ?? viajeIdPorEstado.en_camino;
+    if (viajeNoEditableId == null) {
+      logger.log(
+        `[${name}] viajes-editar-no-editable-dark: el seed no tiene ningún viaje "finalizado"/"en_camino" en esta corrida — se omite esta ruta.`,
+      );
+    } else {
+      await page.goto(`${config.webBaseUrl}/viajes/${viajeNoEditableId}/editar`);
+      await page.getByRole("button", { name: "Volver al detalle" }).waitFor({ timeout: 15_000 });
+      await waitForRouteSettled(page);
+      await record({ page, logger, caseName: name, routeLabel: "viajes-editar-no-editable-dark" });
+    }
+
+    // --- /mapa, con un viaje `en_camino` seleccionado -> botón "Ver detalle
+    // completo" (SHG-FE-070: `MapDetalles` sólo se monta con
+    // `selectedViajeId` seteado — se selecciona haciendo click en la
+    // patente del viaje en `MapListadoViajesItem`, mismo patrón que el caso
+    // 3 de `detalle-envio-viaje-tracking.js`). Reusa el id `en_camino` ya
+    // encontrado arriba si lo hay.
+    const viajeEnCaminoIdParaMapa = viajeIdPorEstado.en_camino;
+    if (viajeEnCaminoIdParaMapa == null) {
+      logger.log(
+        `[${name}] mapa-detalle-dark: el seed no tiene ningún viaje "en_camino" en esta corrida — se omite esta ruta.`,
+      );
+    } else {
+      const patente = (await fetchJson(page, `/api/viaje/${viajeEnCaminoIdParaMapa}`))?.vehiculo?.patente;
+      if (!patente) {
+        logger.log(
+          `[${name}] mapa-detalle-dark: el viaje ${viajeEnCaminoIdParaMapa} no tiene patente asociada — se omite esta ruta.`,
+        );
+      } else {
+        await page.goto(`${config.webBaseUrl}/mapa`);
+        await page.getByRole("heading", { name: "Mapa en vivo" }).first().waitFor({ timeout: 15_000 });
+        await page.getByText(patente, { exact: true }).first().waitFor({ timeout: 20_000 });
+        await page.getByText(patente, { exact: true }).first().click();
+        // `component={Link}` (wouter) renderiza un <a>, no un <button> real
+        // — el rol accesible es "link", no "button" (a diferencia de
+        // "Volver al detalle", que sí es un <button> con onClick).
+        await page.getByRole("link", { name: "Ver detalle completo" }).waitFor({ timeout: 15_000 });
+        await waitForRouteSettled(page);
+        await record({ page, logger, caseName: name, routeLabel: "mapa-detalle-dark" });
+      }
     }
   } finally {
     await context.close();
@@ -341,36 +475,56 @@ export async function run({ browser, logger }) {
   // SHG-FE-039. Exige que axe-core haya confirmado ≥4.5:1 en AL MENOS un
   // badge naranja ("En camino"), uno verde ("Entregado"/"Finalizado"), uno
   // indigo ("En vehículo" — SHG-FE-067), el botón "Ver viaje" (color
-  // primario — SHG-FE-069), y al menos un nodo `dimmed` y un `placeholder`
-  // (SHG-FE-067). Cualquier envío `en_vehiculo`/`en_camino`/`entregado` ya
-  // tiene un viaje asociado (por eso esos estados existen), así que las
-  // mismas rutas que confirman indigo/naranja/verde también confirman "Ver
-  // viaje" — no hace falta una ruta extra sólo para este botón.
+  // primario — SHG-FE-069), "Volver al detalle"/"Ver detalle completo"
+  // (color primario — SHG-FE-070), y al menos un nodo `dimmed` y un
+  // `placeholder` (SHG-FE-067). Cualquier envío `en_vehiculo`/`en_camino`/
+  // `entregado` ya tiene un viaje asociado (por eso esos estados existen),
+  // así que las mismas rutas que confirman indigo/naranja/verde también
+  // confirman "Ver viaje" — no hace falta una ruta extra sólo para ese
+  // botón. "Volver al detalle"/"Ver detalle completo" sí dependen de que el
+  // seed real tenga un viaje "finalizado"/"en_camino" en el momento de la
+  // corrida (ver `viajeNoEditableId`/`viajeEnCaminoIdParaMapa` arriba) — si
+  // ninguno existe esas dos rutas se omiten (logueado) y esta aserción falla
+  // con un mensaje explícito en vez de dar un falso OK.
   const gotOrange = allConfirmedPassingLabels.has("En camino");
   const gotGreen = [...allConfirmedPassingLabels].some((l) => l === "Entregado" || l === "Finalizado");
   const gotIndigo = allConfirmedPassingLabels.has("En vehículo");
   const gotVerViaje = allConfirmedPassingLabels.has("Ver viaje");
+  const gotVolverDetalle = allConfirmedPassingLabels.has("Volver al detalle");
+  // "Ver detalle completo" acepta también evidencia `incomplete` (ver
+  // `collectIncompleteInScopeLabels`) — axe-core no puede darle `pass` por
+  // la superposición con el canvas de Mapbox GL, no por un problema del fix
+  // (mismo token que el badge "0/2 paradas" del mismo panel, que sí confirma
+  // `pass`). Si algún día esto SÍ vuelve a aparecer como violación
+  // (`fail`/`allBlocking`), la corrida ya falla arriba antes de llegar acá.
+  const gotVerDetalleCompleto =
+    allConfirmedPassingLabels.has("Ver detalle completo") ||
+    allIncompleteInScopeLabels.has("Ver detalle completo");
   const missing = [
     !gotOrange && "naranja (\"En camino\")",
     !gotGreen && "verde (\"Entregado\"/\"Finalizado\")",
     !gotIndigo && "indigo (\"En vehículo\")",
     !gotVerViaje && "botón \"Ver viaje\" (color primario)",
+    !gotVolverDetalle && "botón \"Volver al detalle\" (color primario)",
+    !gotVerDetalleCompleto && "botón \"Ver detalle completo\" (color primario)",
     !dimmedConfirmed && "c=\"dimmed\"",
     !placeholderConfirmed && "placeholder",
   ].filter(Boolean);
   if (missing.length > 0) {
     throw new Error(
       `Evidencia insuficiente: axe-core nunca confirmó color-contrast ≥4.5:1 para ${missing.join(", ")} ` +
-        `en ninguna ruta — labels confirmados: [${[...allConfirmedPassingLabels].join(", ") || "ninguno"}].`,
+        `en ninguna ruta — labels confirmados: [${[...allConfirmedPassingLabels].join(", ") || "ninguno"}], ` +
+        `incompletos: [${[...allIncompleteInScopeLabels].join(", ") || "ninguno"}].`,
     );
   }
 
   logger.log(
     `[${name}] Sin violaciones críticas/serias NUEVAS de axe-core en dark mode ` +
-      `(badges/botones de \`@domain/estados\` + botón "Ver viaje" + dimmed/placeholder — ` +
-      `SHG-FE-060/SHG-FE-067/SHG-FE-069). ` +
+      `(badges/botones de \`@domain/estados\` + botón "Ver viaje"/"Volver al detalle"/` +
+      `"Ver detalle completo" + dimmed/placeholder — SHG-FE-060/SHG-FE-067/SHG-FE-069/SHG-FE-070). ` +
       `${KNOWN_ACCEPTED_VIOLATIONS.length} excepción(es) ya conocida(s)/aceptada(s). ` +
-      `Labels confirmados ≥4.5:1 por axe-core real: ${[...allConfirmedPassingLabels].join(", ")}; ` +
+      `Labels confirmados ≥4.5:1 por axe-core real: ${[...allConfirmedPassingLabels].join(", ")}` +
+      `${allIncompleteInScopeLabels.size > 0 ? `; incompletos (ver comentario \`collectIncompleteInScopeLabels\`): ${[...allIncompleteInScopeLabels].join(", ")}` : ""}; ` +
       `dimmed=${dimmedConfirmed}, placeholder=${placeholderConfirmed}.`,
   );
 }
