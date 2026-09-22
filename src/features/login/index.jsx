@@ -170,8 +170,10 @@ const LoginPage = ({ variant = "operator" }) => {
           w={{ base: '100%', sm: FORM_WIDHT }}
           miw={{ base: 0, sm: FORM_WIDHT }}
           mih="100svh"
+          mah="100svh"
           p="xl"
           withBorder
+          style={{ overflowY: 'auto' }}
         >
           <Stack
             p="xl"
