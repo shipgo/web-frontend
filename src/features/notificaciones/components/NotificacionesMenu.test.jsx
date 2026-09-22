@@ -5,6 +5,7 @@ import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Router } from 'wouter';
 import { memoryLocation } from 'wouter/memory-location';
+import { formatFechaHora } from '@domain/format';
 
 const mockGetMias = vi.fn();
 const mockDelete = vi.fn();
@@ -113,42 +114,53 @@ describe('NotificacionesMenu', () => {
     expect(await screen.findByText('No tenés notificaciones.')).toBeInTheDocument();
   });
 
-  it('expone el indicador de no leída (aria-label) cuando visto:false', async () => {
+  it('expone el indicador de no leída (VisuallyHidden "Sin leer") cuando visto:false', async () => {
     mockGetMias.mockResolvedValue(NOTIFS);
     renderMenu();
 
     await userEvent.click(await screen.findByLabelText(/Notificaciones/));
 
-    const unreadNotif = await screen.findByLabelText(/Viaje planificado, sin leer/);
-    expect(unreadNotif).toBeInTheDocument();
+    // Buscar el texto "Sin leer" que aparece en VisuallyHidden dentro de la fila de no leída
+    const sinLeerText = await screen.findByText('Sin leer');
+    expect(sinLeerText).toBeInTheDocument();
   });
 
-  it('no expone ", sin leer" en aria-label cuando visto:true', async () => {
+  it('no expone "Sin leer" cuando visto:true', async () => {
     mockGetMias.mockResolvedValue(NOTIFS);
     renderMenu();
 
     await userEvent.click(await screen.findByLabelText(/Notificaciones/));
 
-    const readNotif = screen.queryByLabelText(/Viaje rechazado, sin leer/);
-    expect(readNotif).not.toBeInTheDocument();
-    // Verificar que la notificación leída existe pero sin ", sin leer"
+    // Verificar que la notificación leída existe
     expect(await screen.findByText('Viaje rechazado')).toBeInTheDocument();
+
+    // Verificar que sólo hay UN "Sin leer" (el de la notificación no leída, no el de la leída)
+    const sinLeerTexts = screen.getAllByText('Sin leer');
+    expect(sinLeerTexts).toHaveLength(1);
   });
 
-  it('expone el horario absoluto (formatFechaHora) vía tooltip en la fila de notificación', async () => {
+  it('expone el horario absoluto (formatFechaHora) vía tooltip al pasar el mouse', async () => {
     mockGetMias.mockResolvedValue(NOTIFS);
     renderMenu();
 
     await userEvent.click(await screen.findByLabelText(/Notificaciones/));
 
-    // Verificar que existe al menos una fila de notificación con texto de horario
-    // El Tooltip envuelve el Text que contiene formatDesdeAhora
-    await waitFor(() => {
-      // Debe haber al menos una notificación visible (la primera sin leer)
-      expect(screen.getByText('Viaje planificado')).toBeInTheDocument();
-    });
+    // Esperar a que la notificación sea visible
+    await screen.findByText('Viaje planificado');
 
-    // La fila contiene una notificación, lo que significa que el horario está presente
-    // (aunque el test de tooltip visual requeriría interacción del usuario)
+    // Obtener el elemento de texto relativo ("hace" + tiempo)
+    const relativeTimeElements = screen.getAllByText(/hace/);
+    expect(relativeTimeElements.length).toBeGreaterThan(0);
+
+    const relativeTimeElement = relativeTimeElements[0];
+
+    // Pasar el mouse sobre el elemento para triggear el tooltip
+    await userEvent.hover(relativeTimeElement);
+
+    // Esperar a que el tooltip con el horario absoluto aparezca
+    const absoluteTime = formatFechaHora(NOTIFS[0].fecha);
+    const tooltip = await screen.findByText(absoluteTime);
+    expect(tooltip).toBeInTheDocument();
+    expect(tooltip).toHaveRole('tooltip');
   });
 });
