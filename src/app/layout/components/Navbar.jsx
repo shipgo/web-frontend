@@ -6,6 +6,7 @@ import {
   NavLink,
   Text,
   UnstyledButton,
+  useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
 
@@ -26,7 +27,15 @@ import { hasAnyRole } from "@domain/roles";
 
 const AppNavbar = () => {
   const [location] = useLocation();
-  const { toggleColorScheme, colorScheme } = useMantineColorScheme();
+  const { setColorScheme } = useMantineColorScheme();
+  // `colorScheme` crudo puede valer "auto" (hasta que el usuario elige
+  // explícitamente) — usamos el valor resuelto para que la etiqueta/ícono
+  // siempre coincida con lo que realmente se está pintando, y para decidir
+  // a qué alternar en el click (evita el bug de necesitar dos clicks).
+  const computedColorScheme = useComputedColorScheme("light");
+
+  const handleToggleColorScheme = () =>
+    setColorScheme(computedColorScheme === "dark" ? "light" : "dark");
   const { user } = useAuth();
 
   const pages = PAGES.filter(({ roles }) => hasAnyRole(user, roles));
@@ -102,10 +111,10 @@ const AppNavbar = () => {
       />
 
       <NavLink
-        onClick={toggleColorScheme}
-        label={colorScheme === "dark" ? "Modo oscuro" : "Modo claro"}
+        onClick={handleToggleColorScheme}
+        label={computedColorScheme === "dark" ? "Modo oscuro" : "Modo claro"}
         leftSection={
-          colorScheme === "dark" ? (
+          computedColorScheme === "dark" ? (
             <IconMoonStars size={18} />
           ) : (
             <IconSun size={18} />
