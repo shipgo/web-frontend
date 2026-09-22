@@ -12,7 +12,13 @@ const MAP_STYLES = {
   light: 'mapbox://styles/joado97/cmbhc0hiv001u01s9bay1fbap',
 };
 
-const MapCard = ({ children, initialCenter = DEFAULT_CENTER, initialZoom = 13, ...rest }) => {
+const MapCard = ({
+  children,
+  initialCenter = DEFAULT_CENTER,
+  initialZoom = 13,
+  onClick,
+  ...rest
+}) => {
   const colorScheme = useComputedColorScheme('light');
 
   return (
@@ -26,6 +32,7 @@ const MapCard = ({ children, initialCenter = DEFAULT_CENTER, initialZoom = 13, .
         mapboxAccessToken={VITE_MAPBOX_API_KEY}
         mapStyle={MAP_STYLES[colorScheme]}
         style={{ width: '100%', height: '100%' }}
+        onClick={onClick}
       >
         {children}
         <FullscreenControl position="bottom-right" />

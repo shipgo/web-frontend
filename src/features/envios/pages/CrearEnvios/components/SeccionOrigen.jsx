@@ -63,9 +63,16 @@ const parseStreetAddress = (line) => {
 
 const SeccionOrigen = () => {
   const form = useEnvioFormContext();
-  const coordenadas = form.values.coordenadas ?? DEFAULT_CENTER;
   const [geocodedCoords, setGeocodedCoords] = useState(null);
   const [searchValue, setSearchValue] = useState("");
+  // Centro inicial del mapa: sólo se actualiza al elegir una dirección nueva
+  // del autocompletado (ver `onSelect`), nunca al arrastrar/clickear el
+  // marcador. Así el `<MapCard>` (que sólo lee `initialCenter` al montar) se
+  // remonta para recentrar la vista cuando cambia la dirección, pero no en
+  // cada ajuste manual de la posición (evita perder zoom/centro, SHG-FE-078).
+  const [mapCenter, setMapCenter] = useState(
+    () => form.values.coordenadas ?? DEFAULT_CENTER,
+  );
 
   const [provincias, setProvincias] = useState([]);
   const [localidades, setLocalidades] = useState([]);
@@ -141,6 +148,7 @@ const SeccionOrigen = () => {
       form.setFieldValue("numeroCalle", numeroCalle);
       form.setFieldValue("coordenadas", coords);
       setGeocodedCoords(coords);
+      setMapCenter(coords);
 
       const matchedProvincia = matchByName(provincias, provinciaName);
       if (!matchedProvincia) {
@@ -181,6 +189,17 @@ const SeccionOrigen = () => {
   };
 
   const handleMarkerDragEnd = (event) => {
+    form.setFieldValue("coordenadas", {
+      lat: event.lngLat.lat,
+      lng: event.lngLat.lng,
+    });
+  };
+
+  // Permite fijar la posición a mano clickeando el mapa, sin depender de
+  // haber elegido antes una dirección del autocompletado (ej: direcciones
+  // que el geocoder no encuentra). Sólo toca `coordenadas`, nunca el texto
+  // de la dirección ingresada (SHG-FE-078).
+  const handleMapClick = (event) => {
     form.setFieldValue("coordenadas", {
       lat: event.lngLat.lat,
       lng: event.lngLat.lng,
@@ -351,13 +370,6 @@ const SeccionOrigen = () => {
               show: loadingMap,
               description: "Obteniendo ubicación...",
             }}
-            onEmptyData={{
-              show: form.values.coordenadas === null,
-              icon: <IconMapPin size={50} />,
-              title: "Sin ubicación",
-              description:
-                "Elegí una sugerencia del buscador de direcciones para visualizar el mapa",
-            }}
             styleProps={{
               h: "100%",
               mih: 0,
@@ -365,21 +377,46 @@ const SeccionOrigen = () => {
               bg: "var(--mantine-color-default)",
             }}
           >
+            {/* El mapa se muestra siempre (aunque no haya dirección elegida
+                todavía) para permitir click-to-place. La `key` sólo cambia
+                cuando se elige una dirección nueva (`mapCenter`), no en cada
+                drag/click, así el mapa no se remonta ni pierde zoom/centro. */}
             <MapCard
-              key={`mapa-${form.values.coordenadas?.lat}-${form.values.coordenadas?.lng}`}
-              initialCenter={form.values.coordenadas ?? DEFAULT_CENTER}
+              key={`mapa-${mapCenter.lat}-${mapCenter.lng}`}
+              initialCenter={mapCenter}
               initialZoom={15}
+              onClick={handleMapClick}
               h="100%"
             >
-              <Marker
-                longitude={coordenadas.lng}
-                latitude={coordenadas.lat}
-                draggable
-                onDragEnd={handleMarkerDragEnd}
-                color="red"
-              />
+              {form.values.coordenadas && (
+                <Marker
+                  longitude={form.values.coordenadas.lng}
+                  latitude={form.values.coordenadas.lat}
+                  draggable
+                  onDragEnd={handleMarkerDragEnd}
+                  color="red"
+                />
+              )}
             </MapCard>
           </ScreenContainer>
+          {!form.values.coordenadas && (
+            <Text
+              pos="absolute"
+              bottom={10}
+              left={10}
+              size="sm"
+              px="sm"
+              py={4}
+              bg="var(--mantine-color-body)"
+              style={{
+                borderRadius: "var(--mantine-radius-sm)",
+                zIndex: 1,
+                pointerEvents: "none",
+              }}
+            >
+              Hacé click en el mapa para ubicar el envío
+            </Text>
+          )}
           {geocodedCoords && (
             <Tooltip label="Reiniciar posición del marcador" position="left">
               <ActionIcon
