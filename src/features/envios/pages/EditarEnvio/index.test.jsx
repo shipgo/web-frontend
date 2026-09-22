@@ -16,10 +16,19 @@ vi.mock("@api", () => ({
   localidadApi: { getByProvincia: vi.fn() },
 }));
 
-// El mapa (mapbox-gl / react-map-gl) no corre en jsdom; sólo importa que reciba
-// las coordenadas correctas.
+// El mapa (mapbox-gl / react-map-gl) no corre en jsdom; el stub expone
+// `data-initial-center` (el prop `initialCenter` de `MapCard`) para poder
+// verificar que EditarEnvio centra el mapa en las coordenadas del envío
+// precargado y no en `DEFAULT_CENTER` (SHG-FE-078).
 vi.mock("@features/mapa/components/MapCard", () => ({
-  default: ({ children }) => <div data-testid="map-card">{children}</div>,
+  default: ({ children, initialCenter }) => (
+    <div
+      data-testid="map-card"
+      data-initial-center={`${initialCenter.lat},${initialCenter.lng}`}
+    >
+      {children}
+    </div>
+  ),
 }));
 vi.mock("react-map-gl/mapbox", () => ({
   Marker: () => null,
@@ -194,6 +203,19 @@ describe("EditarEnvio", () => {
     expect(
       await screen.findByText("El teléfono no es válido."),
     ).toBeInTheDocument();
+  });
+
+  it("centra el mapa en las coordenadas del envío precargado, no en DEFAULT_CENTER (SHG-FE-078)", async () => {
+    renderEditarEnvio();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+    });
+
+    expect(screen.getByTestId("map-card")).toHaveAttribute(
+      "data-initial-center",
+      `${EXISTING_ENVIO.destino.latitud},${EXISTING_ENVIO.destino.longitud}`,
+    );
   });
 
   it("no permite editar un envío en estado terminal (entregado/rechazado)", async () => {
