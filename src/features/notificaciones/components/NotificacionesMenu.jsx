@@ -50,6 +50,7 @@ const NotificacionFila = ({ notificacion, onNavigate, onMarcarLeida }) => {
       <UnstyledButton
         style={{ flex: 1, cursor: href ? 'pointer' : 'default' }}
         onClick={() => onNavigate(notificacion, href)}
+        aria-label={noLeida ? `${notificacion?.title || 'Notificación'}, sin leer` : undefined}
       >
         <Text size="sm" fw={noLeida ? 700 : 500} lineClamp={1}>
           {notificacion?.title || 'Notificación'}
