@@ -14,7 +14,7 @@ import {
 } from '@mantine/core';
 import { IconBell, IconCheck } from '@tabler/icons-react';
 
-import { formatDesdeAhora } from '@domain/format';
+import { formatDesdeAhora, formatFechaHora } from '@domain/format';
 
 import { notificacionHref } from '../constants';
 import { useNotificaciones } from '../hooks/useNotificaciones';
@@ -34,6 +34,19 @@ const NotificacionFila = ({ notificacion, onNavigate, onMarcarLeida }) => {
       py="xs"
       bg={noLeida ? 'var(--mantine-color-default-hover)' : undefined}
     >
+      {noLeida ? (
+        <div
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: 'var(--mantine-color-red-6)',
+            flexShrink: 0,
+            marginTop: 6,
+          }}
+          aria-hidden="true"
+        />
+      ) : null}
       <UnstyledButton
         style={{ flex: 1, cursor: href ? 'pointer' : 'default' }}
         onClick={() => onNavigate(notificacion, href)}
@@ -46,9 +59,11 @@ const NotificacionFila = ({ notificacion, onNavigate, onMarcarLeida }) => {
             {notificacion.body}
           </Text>
         ) : null}
-        <Text size="10px" c="dimmed" mt={2}>
-          {formatDesdeAhora(notificacion?.fecha)}
-        </Text>
+        <Tooltip label={formatFechaHora(notificacion?.fecha)} withArrow position="bottom">
+          <Text size="10px" c="dimmed" mt={2} style={{ cursor: 'help' }}>
+            {formatDesdeAhora(notificacion?.fecha)}
+          </Text>
+        </Tooltip>
       </UnstyledButton>
 
       {noLeida ? (
