@@ -8,6 +8,8 @@ import SelectableItemList from "@components/SelectableItemList";
 import { VirtuosoItem } from "@components/VirtuosoListA11y";
 import { formatDireccion } from "@domain/format";
 
+import { formatDestinoEnvio } from "@features/envios/utils";
+
 import ItemPaquete from "./ItemPaquete";
 import EnviosAcciones from "./EnviosAcciones";
 
@@ -15,13 +17,18 @@ import { ACTIONS } from "../constants";
 import { useFormContext } from "../contexts/EnviosFormContext";
 import { coordsDePunto } from "./utils";
 
+/**
+ * `formatDestinoEnvio` (`SHG-FE-085`) devuelve "Retiro en sucursal · <nombre>"
+ * para envíos de retiro, así que la búsqueda por destino también matchea el
+ * nombre de la sucursal — no sólo la dirección de entrega a domicilio.
+ */
 const matchesSearch = (envio, search) => {
   if (!search) return true;
   const term = search.trim().toLowerCase();
   if (!term) return true;
 
-  const direccion = formatDireccion(envio.destino, { completa: true });
-  return [String(envio.id), envio.codigoSeguimiento, direccion]
+  const destino = formatDestinoEnvio(envio, { completa: true });
+  return [String(envio.id), envio.codigoSeguimiento, destino]
     .filter(Boolean)
     .some((field) => field.toLowerCase().includes(term));
 };

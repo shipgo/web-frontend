@@ -1,4 +1,27 @@
+import { formatDireccion } from "@domain/format";
+
 import { TIPO_ENTREGA, TIPO_ENTREGA_DEFAULT } from "./constants";
+
+/**
+ * Texto de destino de un `EnvioDTO` para listados (`SHG-FE-085`): un envío de
+ * retiro en sucursal (`tipoEntrega = 'sucursal'`) no trae `destino` — trae
+ * `sucursalEntrega` (`SHG-CONTRACT-012`) — así que `formatDireccion(envio.destino)`
+ * da siempre "—" para ese caso (mismo hueco que cerró `SHG-FE-084` en
+ * `DetalleEnvio`, acá para los listados de `CrearViaje`/`EditarViaje`).
+ *
+ * Devuelve "Retiro en sucursal · <nombre>" cuando hay sucursal de retiro, o
+ * "Retiro en sucursal" a secas si por algún motivo viene sin `nombre`; para
+ * `domicilio` delega en `formatDireccion` como siempre (`opts.completa` sólo
+ * aplica a ese caso).
+ */
+export const formatDestinoEnvio = (envio, opts = {}) => {
+  if (envio?.tipoEntrega === TIPO_ENTREGA.SUCURSAL) {
+    const nombreSucursal = envio.sucursalEntrega?.nombre;
+    return nombreSucursal ? `Retiro en sucursal · ${nombreSucursal}` : "Retiro en sucursal";
+  }
+
+  return formatDireccion(envio?.destino, opts);
+};
 
 /**
  * Arma el `EnvioReqDTO` (`CONTRACTS.md §2`, `tipoEntrega`/`sucursalEntregaId`

@@ -188,6 +188,37 @@ const ENVIOS_MISMO_DESTINO_Y_OTRO = [
   },
 ];
 
+// `SHG-FE-085`: un envío de retiro en sucursal no trae `destino` — trae
+// `sucursalEntrega` (`SHG-CONTRACT-012`) — y antes del fix se mostraba "—"
+// en vez de la sucursal de retiro.
+const ENVIOS_RETIRO_SUCURSAL = [
+  {
+    localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
+    envios: [
+      {
+        id: 200,
+        codigoSeguimiento: "SHG-DEV-0001",
+        estado: "en_sucursal",
+        peso: 12,
+        destino: {
+          id: 5,
+          nombreCalle: "Calle Falsa",
+          numeroCalle: "123",
+          localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
+        },
+      },
+      {
+        id: 300,
+        codigoSeguimiento: "SHG-DEV-0099",
+        estado: "en_sucursal",
+        peso: 3,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: { id: 9, nombre: "ShipGo Norte" },
+      },
+    ],
+  },
+];
+
 describe("CrearViaje", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -511,5 +542,48 @@ describe("CrearViaje", () => {
     expect(mockSaveViaje.mock.calls[0][0].enviosPuntoEntrega).toEqual([
       { enviosID: [200], puntoEntregaID: null, sucursalDestinoID: 3 },
     ]);
+  });
+
+  describe("envíos con retiro en sucursal (SHG-FE-085)", () => {
+    beforeEach(() => {
+      mockGetParaViaje.mockResolvedValue(ENVIOS_RETIRO_SUCURSAL);
+    });
+
+    it("muestra la sucursal de retiro en vez de '—' en 'Envíos pendientes'", async () => {
+      renderWithProviders(<CrearViaje />);
+
+      expect(
+        await screen.findByText("Retiro en sucursal · ShipGo Norte"),
+      ).toBeInTheDocument();
+    });
+
+    it("un envío a domicilio sigue mostrando su dirección completa sin cambios", async () => {
+      renderWithProviders(<CrearViaje />);
+
+      expect(
+        await screen.findByText("Calle Falsa 123 · Villa María, Córdoba"),
+      ).toBeInTheDocument();
+    });
+
+    it("la búsqueda por destino encuentra el envío de retiro por el nombre de la sucursal", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await screen.findByText("SHG-DEV-0001");
+      await screen.findByText("SHG-DEV-0099");
+
+      await user.type(
+        screen.getByPlaceholderText(/buscá por código o por destino/i),
+        "Norte",
+      );
+
+      await waitFor(
+        () => {
+          expect(screen.queryByText("SHG-DEV-0001")).not.toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
+      expect(screen.getByText("SHG-DEV-0099")).toBeInTheDocument();
+    });
   });
 });
