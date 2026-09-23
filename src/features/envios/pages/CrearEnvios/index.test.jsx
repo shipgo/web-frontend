@@ -21,13 +21,38 @@ vi.mock("@contexts/auth", () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
-// El mapa (mapbox-gl / react-map-gl) no corre en jsdom; solo nos interesa
-// que reciba las coordenadas correctas, así que lo reemplazamos por un stub.
+// El mapa (mapbox-gl / react-map-gl) no corre en jsdom, así que lo reemplazamos
+// por un stub que expone lo necesario para probar SHG-FE-078 sin un mapa real:
+// - `data-initial-center` refleja el prop `initialCenter` que recibe `MapCard`
+//   (el mismo valor que usa como `key` en `SeccionOrigen`) — si el fix del
+//   remount se revierte a usar `form.values.coordenadas` en vez de un estado
+//   separado, este atributo cambiaría en cada click/drag y los tests de abajo
+//   que verifican que NO cambia fallarían.
+// - clickear el `data-testid="map-card"` dispara el `onClick` recibido (fija
+//   coordenadas por click, SHG-FE-078).
 vi.mock("@features/mapa/components/MapCard", () => ({
-  default: ({ children }) => <div data-testid="map-card">{children}</div>,
+  default: ({ children, onClick, initialCenter }) => (
+    <div
+      data-testid="map-card"
+      data-initial-center={`${initialCenter.lat},${initialCenter.lng}`}
+      onClick={() => onClick?.({ lngLat: { lat: -31.5, lng: -64.2 } })}
+    >
+      {children}
+    </div>
+  ),
 }));
+// El `Marker` real de react-map-gl tampoco corre en jsdom. El stub expone
+// lat/lng recibidos y simula un `onDragEnd` al clickearlo (con coordenadas
+// distintas a las del click de arriba, para diferenciar ambos caminos).
 vi.mock("react-map-gl/mapbox", () => ({
-  Marker: () => null,
+  Marker: ({ latitude, longitude, onDragEnd }) => (
+    <div
+      data-testid="marker"
+      data-lat={latitude}
+      data-lng={longitude}
+      onClick={() => onDragEnd?.({ lngLat: { lat: -31.6, lng: -64.3 } })}
+    />
+  ),
 }));
 
 // El geocoding real (Mapbox Search JS) se prueba en useAddressAutofill.
@@ -192,6 +217,86 @@ describe("CrearEnvios", () => {
     });
 
     await screen.findByText(/código de seguimiento: shg-dev-0009/i);
+  });
+
+  describe("SHG-FE-078 — fijar el marcador en el mapa (drag/click) sin remontar", () => {
+    it("sin coordenadas muestra el hint de click-to-place y no renderiza el marcador; al geocodificar, al revés", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        screen.getByText(/hacé click en el mapa para ubicar el envío/i),
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId("marker")).not.toBeInTheDocument();
+
+      await fillRemitenteYReceptor(user);
+      await geocodeDireccion();
+
+      expect(
+        screen.queryByText(/hacé click en el mapa para ubicar el envío/i),
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("marker")).toBeInTheDocument();
+    });
+
+    it("clickear el mapa fija coordenadas sin pisar la dirección/provincia/localidad ya cargadas", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+      await fillRemitenteYReceptor(user);
+      await geocodeDireccion();
+      await agregarPaquete(user);
+
+      await user.click(screen.getByTestId("map-card"));
+
+      // La dirección/provincia/localidad no se tocan por fijar el marcador a mano.
+      expect(screen.getByLabelText(/^calle/i)).toHaveValue("Av. Colón");
+      expect(screen.getByLabelText(/número/i)).toHaveValue("1234");
+
+      await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+      await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+      expect(envioApi.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          destino: expect.objectContaining({
+            nombreCalle: "Av. Colón",
+            numeroCalle: "1234",
+            localidad: { id: 5 },
+            // Coordenadas del click del stub de MapCard (ver mock arriba),
+            // no las que trajo el geocoder.
+            latitud: -31.5,
+            longitud: -64.2,
+          }),
+        }),
+      );
+    });
+
+    it("no remonta el MapCard (mantiene initialCenter) al clickear el mapa o arrastrar el marcador", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+      await fillRemitenteYReceptor(user);
+      await geocodeDireccion();
+
+      const initialCenterBefore = screen
+        .getByTestId("map-card")
+        .getAttribute("data-initial-center");
+      expect(initialCenterBefore).toBe("-31.4,-64.18");
+
+      await user.click(screen.getByTestId("map-card"));
+      expect(
+        screen.getByTestId("map-card").getAttribute("data-initial-center"),
+      ).toBe(initialCenterBefore);
+
+      await user.click(screen.getByTestId("marker"));
+      expect(
+        screen.getByTestId("map-card").getAttribute("data-initial-center"),
+      ).toBe(initialCenterBefore);
+    });
   });
 
   it("no envía el formulario si falta geocodificar la dirección", async () => {
