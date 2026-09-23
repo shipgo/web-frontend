@@ -6,8 +6,6 @@ import {
   NavLink,
   Text,
   UnstyledButton,
-  useComputedColorScheme,
-  useMantineColorScheme,
 } from "@mantine/core";
 
 import logo from "/src/assets/logoipsum-custom-logo.svg";
@@ -24,18 +22,11 @@ import { ADMIN, PAGES } from "../constants/items";
 import { IconMap } from "@tabler/icons-react";
 import { useAuth } from "@contexts/auth";
 import { hasAnyRole } from "@domain/roles";
+import { useToggleColorScheme } from "@hooks/useToggleColorScheme";
 
 const AppNavbar = () => {
   const [location] = useLocation();
-  const { setColorScheme } = useMantineColorScheme();
-  // `colorScheme` crudo puede valer "auto" (hasta que el usuario elige
-  // explícitamente) — usamos el valor resuelto para que la etiqueta/ícono
-  // siempre coincida con lo que realmente se está pintando, y para decidir
-  // a qué alternar en el click (evita el bug de necesitar dos clicks).
-  const computedColorScheme = useComputedColorScheme("light");
-
-  const handleToggleColorScheme = () =>
-    setColorScheme(computedColorScheme === "dark" ? "light" : "dark");
+  const { computedColorScheme, handleToggleColorScheme } = useToggleColorScheme();
   const { user } = useAuth();
 
   const pages = PAGES.filter(({ roles }) => hasAnyRole(user, roles));
