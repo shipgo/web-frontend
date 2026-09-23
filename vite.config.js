@@ -1,6 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 
+// La app es Argentina (UTC-3): fijar la zona horaria de forma determinística
+// para que los tests que comparan fechas locales funcionen igual en CI/CD
+// (donde TZ podría ser UTC) que en desarrollo local. Esto es especialmente
+// crítico para tests que verifican off-by-one errors con fechas en horarios
+// límite (p.ej. 23:30 ART = 02:30 UTC del día siguiente, SHG-FE-082).
+// eslint-disable-next-line no-undef
+process.env.TZ = 'America/Argentina/Buenos_Aires';
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],

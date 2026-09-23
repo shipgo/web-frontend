@@ -31,7 +31,7 @@ export default defineConfig([
   },
   {
     files: ['**/*.{js,jsx}'],
-    ignores: ['**/*.test.{js,jsx}'],
+    ignores: ['**/*.test.{js,jsx}', 'e2e/**/*.js'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -39,6 +39,19 @@ export default defineConfig([
           patterns: ['**/mocks.js', '**/PACKAGES.json'],
         },
       ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.property.name="toISOString"]',
+          message: '.toISOString() returns UTC date, risking off-by-one errors in local date logic (SHG-FE-008). Use dayjs().format() for local dates, or explicitly handle UTC conversion.',
+        },
+      ],
+      // Nota: No se agregó regla para toLocaleString/toLocaleDateString/toLocaleTimeString sin 'es-AR'
+      // porque es impráctica con no-restricted-syntax (requeriría selector que verifique argumentos
+      // específicos y distinguir calls sin argumentos de calls con locale diferente). La cobertura
+      // actual de formato argentino en UI (@domain/format → formatFecha/formatFechaHora, Mantine
+      // DateInput/DateTimePicker con valueFormat, DatesProvider con locale: 'es') es suficiente
+      // y no hay instancias de toLocale*String en código de producción (SHG-FE-082 relevamiento).
     },
   },
   {
