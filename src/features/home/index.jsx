@@ -1,19 +1,19 @@
 import { SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { useMantineColorScheme } from '@mantine/core';
 
 import PageContainer from '@components/PageContainer';
 import { useAuth } from '@contexts/auth';
+import { useToggleColorScheme } from '@hooks/useToggleColorScheme';
 
 import { getHomeItems } from './getHomeItems.js';
 import HomeItem from './components/HomeItem.jsx';
 
 const HomePage = () => {
-  const { toggleColorScheme } = useMantineColorScheme();
+  const { handleToggleColorScheme } = useToggleColorScheme();
   const { user } = useAuth();
   const items = getHomeItems(user);
 
   const resolveonClick = (action) => {
-    if (action === 'toggleTheme') return toggleColorScheme;
+    if (action === 'toggleTheme') return handleToggleColorScheme;
     return undefined;
   };
 
