@@ -48,6 +48,24 @@ const SeccionDetalles = () => {
             label="Salida planificada"
             placeholder="Seleccioná una fecha"
             valueFormat="DD/MM/YYYY HH:mm"
+            /*
+              SHG-FE-090: con `dropdownType="popover"` (el default),
+              @mantine/dates posiciona el calendario con `Popover`
+              (floating-ui), que calcula sus coordenadas de forma asíncrona
+              relativas al input que lo abrió (un ciclo de render extra
+              después de montarlo). Confirmado con `document.elementFromPoint`
+              en Chrome real: un clic disparado apenas se abre un popover
+              (por ejemplo el de "Llegada", inmediatamente después de
+              confirmar "Salida" con el botón ✓) puede caer sobre ese hueco
+              de posicionamiento y terminar golpeando el contenido de abajo
+              ("Selección de envíos") en lugar del calendario — no pasa nada
+              visible, y hace falta un clic extra una vez que el popover ya
+              tiene posición. `dropdownType="modal"` evita todo esto: el
+              calendario se muestra centrado en un `Modal` fijo, sin
+              posicionamiento relativo al input, así que no hay ventana de
+              carrera entre los dos selectores.
+            */
+            dropdownType="modal"
             {...getInputProps("fechaHoraInicioPlanificada")}
           />
 
@@ -55,6 +73,7 @@ const SeccionDetalles = () => {
             label="Llegada planificada"
             placeholder="Seleccioná una fecha"
             valueFormat="DD/MM/YYYY HH:mm"
+            dropdownType="modal"
             {...getInputProps("fechaHoraFinPlanificada")}
           />
 
