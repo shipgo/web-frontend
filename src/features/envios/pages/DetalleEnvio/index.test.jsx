@@ -154,6 +154,65 @@ describe("DetalleEnvio", () => {
     expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument();
   });
 
+  describe("tarjeta Destino — retiro en sucursal (SHG-FE-084)", () => {
+    it("muestra la sucursal de retiro y su dirección cuando tipoEntrega=sucursal, sin campos vacíos", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: {
+          id: 2,
+          nombre: "ShipGo Norte",
+          email: "norte@shipgo.com",
+          prefijo: "351",
+          telefono: "9876543",
+          empresa: "ShipGo",
+          puntoEntrega: {
+            numeroCalle: "500",
+            nombreCalle: "Av. Rafael Núñez",
+            localidad: {
+              id: 5,
+              nombre: "Córdoba",
+              provincia: { id: 2, nombre: "Córdoba" },
+            },
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByText("Retiro en sucursal")).toBeInTheDocument();
+      expect(screen.getByText("ShipGo Norte")).toBeInTheDocument();
+      expect(screen.getByText("Av. Rafael Núñez 500")).toBeInTheDocument();
+      expect(screen.queryByText("Dirección de entrega")).not.toBeInTheDocument();
+    });
+
+    it("no rompe cuando tipoEntrega=sucursal pero sucursalEntrega viene null", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: null,
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByText("Retiro en sucursal")).toBeInTheDocument();
+      expect(screen.getAllByText("-").length).toBeGreaterThan(0);
+    });
+
+    it("un envío a domicilio sigue mostrando Dirección de entrega como antes", async () => {
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByText("Dirección de entrega")).toBeInTheDocument();
+      expect(screen.queryByText("Retiro en sucursal")).not.toBeInTheDocument();
+    });
+  });
+
   describe("estados de carga/error/vacío (SHG-QA-003)", () => {
     it("muestra el estado de error cuando envioApi.getById rechaza, y reintentar hace una nueva llamada", async () => {
       const user = userEvent.setup();

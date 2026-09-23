@@ -44,6 +44,7 @@ import { BUTTON_ACTION_TEXT_COLOR, esEstadoTerminal, estadoBadge, estadoLabel } 
 import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
 import { useAuthStore } from "@stores/auth.store";
 
+import { TIPO_ENTREGA } from "../../constants";
 import { puedeAccionarEntrega, puedeConfirmarRetiro } from "./acciones";
 import { useEnvioAcciones } from "./hooks/useEnvioAcciones";
 
@@ -114,10 +115,20 @@ const DetalleEnvio = () => {
   const canEdit = envio ? !esEstadoTerminal("envio", envio.estado) : false;
   const canAccionarEstado = envio ? puedeAccionarEntrega(user, envio.estado) : false;
   const canConfirmarRetiro = envio ? puedeConfirmarRetiro(user, envio) : false;
+  const esRetiroSucursal = envio?.tipoEntrega === TIPO_ENTREGA.SUCURSAL;
   const destino = envio?.destino ?? {};
   const localidad = destino.localidad ?? {};
   const provincia = localidad.provincia ?? {};
   const direccion = [destino.nombreCalle, destino.numeroCalle].filter(Boolean).join(" ");
+  // `sucursalEntrega` (SHG-CONTRACT-012): sucursal de retiro elegida por el
+  // remitente cuando `tipoEntrega = 'sucursal'`. Distinta de `envio.sucursal`
+  // (sucursal de origen). Su dirección vive en `sucursalEntrega.puntoEntrega`
+  // (forma verificada en vivo contra el backend, SHG-FE-084).
+  const sucursalRetiro = envio?.sucursalEntrega ?? null;
+  const puntoRetiro = sucursalRetiro?.puntoEntrega ?? {};
+  const localidadRetiro = puntoRetiro.localidad ?? {};
+  const provinciaRetiro = localidadRetiro.provincia ?? {};
+  const direccionRetiro = [puntoRetiro.nombreCalle, puntoRetiro.numeroCalle].filter(Boolean).join(" ");
   const detalleEnvios = envio?.detalleEnvios ?? [];
   const pesoTotal = detalleEnvios.reduce((sum, d) => sum + (d.peso ?? 0), 0);
 
@@ -323,29 +334,42 @@ const DetalleEnvio = () => {
       <Card withBorder shadow="sm">
         <Stack gap="md">
           <Group gap="xs">
-            <IconMapPin size={24} />
+            {esRetiroSucursal ? <IconBuildingStore size={24} /> : <IconMapPin size={24} />}
             <Box>
               <Text size="lg" fw={600}>
                 Destino
               </Text>
               <Text size="sm" c="dimmed">
-                Dirección de entrega
+                {esRetiroSucursal ? "Retiro en sucursal" : "Dirección de entrega"}
               </Text>
             </Box>
           </Group>
           <Divider />
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-            <InfoItem icon={<IconMapPin size={16} />} label="Dirección" value={direccion} />
-            {/* `piso`/`departamento` (SHG-BE-041): opcionales, sólo se muestran si vienen cargados. */}
-            {destino.piso && (
-              <InfoItem icon={<IconMapPin size={16} />} label="Piso" value={destino.piso} />
-            )}
-            {destino.departamento && (
-              <InfoItem icon={<IconMapPin size={16} />} label="Departamento" value={destino.departamento} />
-            )}
-            <InfoItem icon={<IconMapPin size={16} />} label="Localidad" value={localidad.nombre} />
-            <InfoItem icon={<IconMapPin size={16} />} label="Provincia" value={provincia.nombre} />
-          </SimpleGrid>
+          {esRetiroSucursal ? (
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+              <InfoItem
+                icon={<IconBuildingStore size={16} />}
+                label="Sucursal de retiro"
+                value={sucursalRetiro?.nombre}
+              />
+              <InfoItem icon={<IconMapPin size={16} />} label="Dirección" value={direccionRetiro} />
+              <InfoItem icon={<IconMapPin size={16} />} label="Localidad" value={localidadRetiro.nombre} />
+              <InfoItem icon={<IconMapPin size={16} />} label="Provincia" value={provinciaRetiro.nombre} />
+            </SimpleGrid>
+          ) : (
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+              <InfoItem icon={<IconMapPin size={16} />} label="Dirección" value={direccion} />
+              {/* `piso`/`departamento` (SHG-BE-041): opcionales, sólo se muestran si vienen cargados. */}
+              {destino.piso && (
+                <InfoItem icon={<IconMapPin size={16} />} label="Piso" value={destino.piso} />
+              )}
+              {destino.departamento && (
+                <InfoItem icon={<IconMapPin size={16} />} label="Departamento" value={destino.departamento} />
+              )}
+              <InfoItem icon={<IconMapPin size={16} />} label="Localidad" value={localidad.nombre} />
+              <InfoItem icon={<IconMapPin size={16} />} label="Provincia" value={provincia.nombre} />
+            </SimpleGrid>
+          )}
         </Stack>
       </Card>
 
