@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MantineProvider } from '@mantine/core';
+import { ModalsProvider } from '@mantine/modals';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Router } from 'wouter';
 import { memoryLocation } from 'wouter/memory-location';
@@ -9,6 +10,7 @@ import { formatFechaHora } from '@domain/format';
 
 const mockGetMias = vi.fn();
 const mockDelete = vi.fn();
+const mockVaciarTodas = vi.fn();
 
 vi.mock('@api/catalogs.api', () => ({
   notificacionesApi: {
@@ -16,6 +18,7 @@ vi.mock('@api/catalogs.api', () => ({
     save: vi.fn(),
     update: vi.fn(),
     delete: (...args) => mockDelete(...args),
+    vaciarTodas: (...args) => mockVaciarTodas(...args),
   },
 }));
 
@@ -49,9 +52,11 @@ const renderMenu = () => {
   render(
     <QueryClientProvider client={queryClient}>
       <MantineProvider>
-        <Router hook={hook}>
-          <NotificacionesMenu />
-        </Router>
+        <ModalsProvider>
+          <Router hook={hook}>
+            <NotificacionesMenu />
+          </Router>
+        </ModalsProvider>
       </MantineProvider>
     </QueryClientProvider>,
   );
@@ -64,6 +69,8 @@ describe('NotificacionesMenu', () => {
     mockGetMias.mockReset();
     mockDelete.mockReset();
     mockDelete.mockResolvedValue({});
+    mockVaciarTodas.mockReset();
+    mockVaciarTodas.mockResolvedValue({});
   });
 
   it('muestra el contador de no leídas', async () => {
@@ -162,5 +169,67 @@ describe('NotificacionesMenu', () => {
     const tooltip = await screen.findByText(absoluteTime);
     expect(tooltip).toBeInTheDocument();
     expect(tooltip).toHaveRole('tooltip');
+  });
+
+  it('muestra la acción "vaciar todas" sólo cuando hay notificaciones', async () => {
+    mockGetMias.mockResolvedValue([]);
+    renderMenu();
+
+    await userEvent.click(await screen.findByLabelText('Notificaciones'));
+    await screen.findByText('No tenés notificaciones.');
+
+    expect(
+      screen.queryByLabelText('Vaciar todas las notificaciones'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('vacía todas las notificaciones al confirmar (DELETE /api/notificaciones)', async () => {
+    mockGetMias.mockResolvedValue(NOTIFS);
+    renderMenu();
+
+    expect(
+      await screen.findByLabelText('Notificaciones, 1 sin leer'),
+    ).toBeInTheDocument();
+
+    await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+    await userEvent.click(
+      await screen.findByLabelText('Vaciar todas las notificaciones'),
+    );
+
+    mockGetMias.mockResolvedValue([]);
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Vaciar todas' }),
+    );
+
+    await waitFor(() => expect(mockVaciarTodas).toHaveBeenCalled());
+
+    // el listado queda vacío sin recargar la página...
+    expect(
+      await screen.findByText('No tenés notificaciones.'),
+    ).toBeInTheDocument();
+
+    // ...y el badge de la campana vuelve a 0.
+    expect(
+      await screen.findByLabelText('Notificaciones'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/sin leer/),
+    ).not.toBeInTheDocument();
+  });
+
+  it('no vacía las notificaciones si se cancela la confirmación', async () => {
+    mockGetMias.mockResolvedValue(NOTIFS);
+    renderMenu();
+
+    await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+    await userEvent.click(
+      await screen.findByLabelText('Vaciar todas las notificaciones'),
+    );
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Cancelar' }),
+    );
+
+    expect(mockVaciarTodas).not.toHaveBeenCalled();
   });
 });

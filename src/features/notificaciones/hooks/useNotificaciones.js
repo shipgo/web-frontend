@@ -21,6 +21,10 @@ const porFechaDesc = (a, b) =>
  * sólo marca la notificación como vista (sigue apareciendo en el listado, ya
  * leída). No hay endpoint de "marcar todas".
  *
+ * "Vaciar todas" es `DELETE /api/notificaciones` (sin `{id}`, `SHG-BE-058`):
+ * marca `oculta=true` en todas las notificaciones del usuario, así que el
+ * listado (y el conteo de no leídas) queda en blanco tras invalidar la query.
+ *
  * El `refetchInterval` es el fallback in-app: si el push llega, el listener de
  * OneSignal (`usePushNotifications`) invalida esta query al instante.
  */
@@ -52,10 +56,17 @@ export const useNotificaciones = ({ enabled = true } = {}) => {
       queryClient.invalidateQueries({ queryKey: NOTIFICACIONES_QUERY_KEY }),
   });
 
+  const vaciarTodas = useMutation({
+    mutationFn: () => notificacionesApi.vaciarTodas(),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: NOTIFICACIONES_QUERY_KEY }),
+  });
+
   return {
     ...query,
     notificaciones,
     unreadCount,
     marcarLeida,
+    vaciarTodas,
   };
 };
