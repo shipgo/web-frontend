@@ -7,20 +7,18 @@ import { VIAJE_ESTADOS_EDITABLES } from '../../constants';
  * refetch). Acá sólo se decide si el botón se muestra/habilita según
  * `estado` + rol (`@domain/roles`) — sin ejecutar ninguna transición.
  *
- * - `iniciar`   -> `PUT /viaje/{id}/iniciar` (SU/AD/CH), desde creado/planificado/en carga.
+ * - `iniciar`   -> **NO EXISTE en la web** (SHG-FE-083). El backend
+ *   (`ViajeService.iniciarViaje`) solo acepta al chofer asignado, y la web es
+ *   exclusiva SU/AD. Mobile inicia desde ROLE_CHOFER en su propio repo.
  * - `finalizar` -> `PUT /viaje/{id}/finalizar` (SU/AD/CH), sólo con el viaje en_camino.
  * - `cancelar`  -> `PUT /viaje/{id}/cancelar` (SU/AD), estados cancelables (SHG-BE-009).
  * - `editar`    -> navega a `EditarViaje` (SU/AD), ya implementado; no es una
  *   transición de estado por lo que no está bloqueado por SHG-FE-012.
  */
-const ESTADOS_INICIABLES = ['creado', 'planificado', 'en_proceso_de_carga'];
 const ESTADOS_CANCELABLES = ['creado', 'planificado', 'en_proceso_de_carga'];
 
 export const puedeEditar = (user, estado) =>
   isAdminOrSuper(user) && VIAJE_ESTADOS_EDITABLES.includes(estado);
-
-export const puedeIniciar = (user, estado) =>
-  hasAnyRole(user, [ROLE_SUPERUSER, ROLE_ADMIN, ROLE_CHOFER]) && ESTADOS_INICIABLES.includes(estado);
 
 export const puedeFinalizar = (user, estado) =>
   hasAnyRole(user, [ROLE_SUPERUSER, ROLE_ADMIN, ROLE_CHOFER]) && estado === 'en_camino';
