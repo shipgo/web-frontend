@@ -62,6 +62,36 @@ describe("buildEnviosPuntoEntrega", () => {
       (v) => v != null,
     )).toHaveLength(1);
   });
+
+  it("blindaje SHG-FE-086: filtra (no manda) una entrada con puntoEntregaID y sucursalDestinoID ambos null", () => {
+    const enviosIncluidos = new Map([
+      [
+        "local_5",
+        {
+          puntoEntregaID: 5,
+          sucursalDestinoID: null,
+          label: "x",
+          packages: new Map([[1, { id: 1 }]]),
+        },
+      ],
+      [
+        // No debería poder armarse desde la UI (ver `ListadoEnviosPendientes`),
+        // pero si llegara acá no debe mandarse al backend como recorrido sin
+        // destino (`400 BadRequestException`, `CONTRACTS.md §8`).
+        "sucursal_undefined",
+        {
+          puntoEntregaID: null,
+          sucursalDestinoID: null,
+          label: "—",
+          packages: new Map([[2, { id: 2 }]]),
+        },
+      ],
+    ]);
+
+    expect(buildEnviosPuntoEntrega(enviosIncluidos)).toEqual([
+      { enviosID: [1], puntoEntregaID: 5, sucursalDestinoID: null },
+    ]);
+  });
 });
 
 describe("toLocalDateTimeString", () => {

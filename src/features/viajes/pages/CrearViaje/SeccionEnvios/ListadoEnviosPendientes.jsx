@@ -8,6 +8,7 @@ import SelectableItemList from "@components/SelectableItemList";
 import { VirtuosoItem } from "@components/VirtuosoListA11y";
 import { formatDireccion } from "@domain/format";
 
+import { TIPO_ENTREGA } from "@features/envios/constants";
 import { formatDestinoEnvio } from "@features/envios/utils";
 
 import ItemPaquete from "./ItemPaquete";
@@ -77,6 +78,22 @@ const ListadoEnviosPendientes = ({
    * entrada — a partir del `destino` del primer envío (entrega local) o del
    * `puntoEntrega` de la sucursal elegida (transferencia); lo consume el
    * mapa de `SeccionResumen` y `hooks/useRouteCalculation`.
+   *
+   * `SHG-FE-086`: un envío `tipoEntrega = 'sucursal'` (`SHG-CONTRACT-012`) no
+   * tiene `destino` — su destino final ES la sucursal que eligió el
+   * remitente (`envio.sucursalEntrega`). Agruparlo por `destino?.id` (como
+   * antes) mandaba todos los retiros a la misma key `local_undefined` con
+   * `puntoEntregaID` y `sucursalDestinoID` ambos `null` (payload inválido,
+   * `CONTRACTS.md §8` exige XOR). Acá "entrega a destino final" para un
+   * retiro se rutea igual que el backend espera: como recorrido de sucursal
+   * (`sucursalDestinoID = envio.sucursalEntrega.id`, key `sucursal_<id>`,
+   * agrupado por sucursal de retiro — dos envíos de sucursales distintas dan
+   * dos recorridos). Los envíos a domicilio siguen el camino de siempre.
+   *
+   * Si dos envíos de retiro comparten sucursal con una entrada ya creada por
+   * "Transferencia a sucursal" (misma `sucursal_<id>`), se fusionan en el
+   * mismo recorrido — es el mismo destino físico, ver `ENDPOINTS.md §4`
+   * ("El front elige `sucursalDestinoID = envio.sucursalEntrega.id`").
    */
   const handleOnSelectedAction = ({ action, sucursal }) => {
     const seleccionados = Array.from(selectedPackages.values());
@@ -84,7 +101,17 @@ const ListadoEnviosPendientes = ({
 
     if (action === ACTIONS.ENTREGA_LOCAL) {
       const porDestino = new Map();
+      const porSucursalRetiro = new Map();
+
       seleccionados.forEach((envio) => {
+        if (envio.tipoEntrega === TIPO_ENTREGA.SUCURSAL) {
+          const sucursalId = envio.sucursalEntrega?.id;
+          if (!porSucursalRetiro.has(sucursalId))
+            porSucursalRetiro.set(sucursalId, []);
+          porSucursalRetiro.get(sucursalId).push(envio);
+          return;
+        }
+
         const destinoId = envio.destino?.id;
         if (!porDestino.has(destinoId)) porDestino.set(destinoId, []);
         porDestino.get(destinoId).push(envio);
@@ -104,6 +131,32 @@ const ListadoEnviosPendientes = ({
 
         const newPackages = new Map(prev.packages);
         enviosDelDestino.forEach((envio) => newPackages.set(envio.id, envio));
+
+        updated.set(key, { ...prev, packages: newPackages });
+      });
+
+      porSucursalRetiro.forEach((enviosDeLaSucursal, sucursalId) => {
+        // `sucursalId` sólo puede faltar si un envío `tipoEntrega=sucursal`
+        // llega sin `sucursalEntrega` — no debería pasar (`CONTRACTS.md §12`
+        // la exige obligatoria en ese caso), pero si pasa no generamos una
+        // entrada `puntoEntregaID`/`sucursalDestinoID` ambos `null`:
+        // `buildEnviosPuntoEntrega` (`CrearViaje/utils.js`) la filtra igual,
+        // así que acá directamente no se agrupa (el envío queda sin marcar,
+        // visible como "pendiente" en vez de armar un recorrido inválido).
+        if (sucursalId == null) return;
+
+        const sucursalEntrega = enviosDeLaSucursal[0].sucursalEntrega;
+        const key = `sucursal_${sucursalId}`;
+        const prev = updated.get(key) ?? {
+          puntoEntregaID: null,
+          sucursalDestinoID: sucursalId,
+          label: sucursalEntrega?.nombre ?? "—",
+          coords: coordsDePunto(sucursalEntrega?.puntoEntrega),
+          packages: new Map(),
+        };
+
+        const newPackages = new Map(prev.packages);
+        enviosDeLaSucursal.forEach((envio) => newPackages.set(envio.id, envio));
 
         updated.set(key, { ...prev, packages: newPackages });
       });
