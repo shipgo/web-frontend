@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
+import { Notifications, notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Router } from 'wouter';
 import { memoryLocation } from 'wouter/memory-location';
@@ -56,6 +57,7 @@ const renderMenu = () => {
           <Router hook={hook}>
             <NotificacionesMenu />
           </Router>
+          <Notifications />
         </ModalsProvider>
       </MantineProvider>
     </QueryClientProvider>,
@@ -71,6 +73,11 @@ describe('NotificacionesMenu', () => {
     mockDelete.mockResolvedValue({});
     mockVaciarTodas.mockReset();
     mockVaciarTodas.mockResolvedValue({});
+    // el store de notificaciones de Mantine es un singleton fuera de React:
+    // sin esto, un toast mostrado en un test queda en cola/pantalla para el
+    // siguiente (contaminación entre tests).
+    notifications.clean();
+    notifications.cleanQueue();
   });
 
   it('muestra el contador de no leídas', async () => {
@@ -231,5 +238,34 @@ describe('NotificacionesMenu', () => {
     );
 
     expect(mockVaciarTodas).not.toHaveBeenCalled();
+  });
+
+  it('muestra un toast de error y no vacía el listado si el DELETE falla', async () => {
+    mockGetMias.mockResolvedValue(NOTIFS);
+    mockVaciarTodas.mockRejectedValue({
+      response: { status: 500, data: { message: 'Error interno del servidor' } },
+    });
+    renderMenu();
+
+    await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+    await userEvent.click(
+      await screen.findByLabelText('Vaciar todas las notificaciones'),
+    );
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Vaciar todas' }),
+    );
+
+    await waitFor(() => expect(mockVaciarTodas).toHaveBeenCalled());
+
+    expect(
+      await screen.findByText('Error interno del servidor'),
+    ).toBeInTheDocument();
+
+    // la lista no desaparece: sigue mostrando las notificaciones originales.
+    expect(screen.getByText('Viaje planificado')).toBeInTheDocument();
+    expect(screen.getByText('Viaje rechazado')).toBeInTheDocument();
+    expect(
+      screen.queryByText('No tenés notificaciones.'),
+    ).not.toBeInTheDocument();
   });
 });

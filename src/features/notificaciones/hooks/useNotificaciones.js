@@ -1,5 +1,7 @@
-import { useMemo } from 'react';
+import { createElement, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { notifications } from '@mantine/notifications';
+import { IconX } from '@tabler/icons-react';
 
 import { notificacionesApi } from '@api';
 
@@ -60,6 +62,17 @@ export const useNotificaciones = ({ enabled = true } = {}) => {
     mutationFn: () => notificacionesApi.vaciarTodas(),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: NOTIFICACIONES_QUERY_KEY }),
+    onError: (error) => {
+      console.error('Error al vaciar las notificaciones:', error);
+      notifications.show({
+        title: 'Error',
+        message:
+          error.response?.data?.message ||
+          'No se pudieron vaciar las notificaciones',
+        color: 'red',
+        icon: createElement(IconX),
+      });
+    },
   });
 
   return {
