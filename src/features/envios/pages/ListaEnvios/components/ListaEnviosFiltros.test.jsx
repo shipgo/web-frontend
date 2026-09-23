@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import dayjs from "dayjs";
 
 import { renderWithProviders } from "../../../../../test/renderWithProviders";
 import ListaEnviosFiltros from "./ListaEnviosFiltros";
@@ -38,10 +39,38 @@ describe("ListaEnviosFiltros", () => {
     await waitFor(() => expect(onFiltersChange).toHaveBeenCalled());
 
     const payload = onFiltersChange.mock.calls.at(-1)[0];
-    const today = new Date().toISOString().slice(0, 10);
+    const today = dayjs().format('YYYY-MM-DD');
     expect(payload.estado).toEqual({ label: "estado", values: ["en_sucursal"] });
     expect(payload.fechaDesde).toEqual({ label: "fechaDesde", values: today });
     expect(payload.fechaHasta).toEqual({ label: "fechaHasta", values: today });
+  });
+
+  it('"Salen hoy" a las 23:30 ART usa fecha local correcta (no UTC)', async () => {
+    // Regresión SHG-FE-082: el test viejo usaba new Date().toISOString() (UTC),
+    // que a las 23:30 ART es ya el día siguiente en UTC.
+    // Verificamos que el nuevo test (usando dayjs().format()) calcula la fecha local.
+    // 2026-09-22 23:30:00 ART = 2026-09-23 02:30:00 UTC
+    const daytime = new Date('2026-09-23T02:30:00Z'); // 23:30 ART
+    vi.setSystemTime(daytime);
+
+    const user = userEvent.setup();
+    const onFiltersChange = vi.fn();
+    renderWithProviders(<ListaEnviosFiltros onFiltersChange={onFiltersChange} />);
+
+    await user.click(screen.getByText("Salen hoy"));
+
+    await waitFor(() => expect(onFiltersChange).toHaveBeenCalled());
+
+    const payload = onFiltersChange.mock.calls.at(-1)[0];
+    // En ART es 2026-09-22, pero en UTC es 2026-09-23.
+    // El componente usa dayjs().format() que respeta la zona horaria local,
+    // así que debería ser 2026-09-22.
+    const today = dayjs().format('YYYY-MM-DD');
+    expect(payload.estado).toEqual({ label: "estado", values: ["en_sucursal"] });
+    expect(payload.fechaDesde).toEqual({ label: "fechaDesde", values: today });
+    expect(payload.fechaHasta).toEqual({ label: "fechaHasta", values: today });
+
+    vi.useRealTimers();
   });
 
   it('"En camino" manda el estado canónico directamente', async () => {

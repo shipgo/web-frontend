@@ -31,12 +31,19 @@ export default defineConfig([
   },
   {
     files: ['**/*.{js,jsx}'],
-    ignores: ['**/*.test.{js,jsx}'],
+    ignores: ['**/*.test.{js,jsx}', 'e2e/**/*.js'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: ['**/mocks.js', '**/PACKAGES.json'],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.property.name="toISOString"]',
+          message: '.toISOString() returns UTC date, risking off-by-one errors in local date logic (SHG-FE-008). Use dayjs().format() for local dates, or explicitly handle UTC conversion.',
         },
       ],
     },
