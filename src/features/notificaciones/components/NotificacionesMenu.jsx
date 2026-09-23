@@ -13,7 +13,8 @@ import {
   UnstyledButton,
   VisuallyHidden,
 } from '@mantine/core';
-import { IconBell, IconCheck } from '@tabler/icons-react';
+import { modals } from '@mantine/modals';
+import { IconBell, IconCheck, IconTrash } from '@tabler/icons-react';
 
 import { formatDesdeAhora, formatFechaHora } from '@domain/format';
 
@@ -98,7 +99,7 @@ const NotificacionFila = ({ notificacion, onNavigate, onMarcarLeida }) => {
 const NotificacionesMenu = () => {
   const [, navigate] = useLocation();
   const [opened, setOpened] = useState(false);
-  const { notificaciones, unreadCount, isLoading, isError, marcarLeida } =
+  const { notificaciones, unreadCount, isLoading, isError, marcarLeida, vaciarTodas } =
     useNotificaciones();
 
   const badge =
@@ -110,6 +111,21 @@ const NotificacionesMenu = () => {
       setOpened(false);
       navigate(href);
     }
+  };
+
+  const handleVaciarTodas = () => {
+    modals.openConfirmModal({
+      title: 'Vaciar notificaciones',
+      centered: true,
+      children: (
+        <Text size="sm">
+          ¿Confirmás que querés vaciar todas tus notificaciones? Esta acción no se puede deshacer.
+        </Text>
+      ),
+      labels: { confirm: 'Vaciar todas', cancel: 'Cancelar' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => vaciarTodas.mutate(),
+    });
   };
 
   return (
@@ -147,7 +163,23 @@ const NotificacionesMenu = () => {
       </Indicator>
 
       <Menu.Dropdown>
-        <Menu.Label>Notificaciones</Menu.Label>
+        <Group justify="space-between" wrap="nowrap" pr="xs">
+          <Menu.Label>Notificaciones</Menu.Label>
+          {notificaciones.length > 0 ? (
+            <Tooltip label="Vaciar todas" withArrow>
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                color="gray"
+                aria-label="Vaciar todas las notificaciones"
+                loading={vaciarTodas.isPending}
+                onClick={handleVaciarTodas}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null}
+        </Group>
 
         {isLoading ? (
           <Group justify="center" py="md">

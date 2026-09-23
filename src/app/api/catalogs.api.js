@@ -265,6 +265,16 @@ export const notificacionesApi = {
     );
     return response.data;
   },
+
+  /**
+   * `DELETE /api/notificaciones` (sin `{id}`, `SHG-BE-058`) — vacía todas las
+   * notificaciones del usuario logueado (`oculta=true` server-side, no toca
+   * `visto`). `200` con body vacío.
+   */
+  vaciarTodas: async () => {
+    const response = await restclient.delete(API_URLS.NOTIFICACIONES_URL);
+    return response.data;
+  },
 };
 
 /**

@@ -1,5 +1,7 @@
-import { useMemo } from 'react';
+import { createElement, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { notifications } from '@mantine/notifications';
+import { IconX } from '@tabler/icons-react';
 
 import { notificacionesApi } from '@api';
 
@@ -20,6 +22,10 @@ const porFechaDesc = (a, b) =>
  * `@SQLDelete(... SET visto=true ...)`, así que el borrado es un soft-delete que
  * sólo marca la notificación como vista (sigue apareciendo en el listado, ya
  * leída). No hay endpoint de "marcar todas".
+ *
+ * "Vaciar todas" es `DELETE /api/notificaciones` (sin `{id}`, `SHG-BE-058`):
+ * marca `oculta=true` en todas las notificaciones del usuario, así que el
+ * listado (y el conteo de no leídas) queda en blanco tras invalidar la query.
  *
  * El `refetchInterval` es el fallback in-app: si el push llega, el listener de
  * OneSignal (`usePushNotifications`) invalida esta query al instante.
@@ -52,10 +58,28 @@ export const useNotificaciones = ({ enabled = true } = {}) => {
       queryClient.invalidateQueries({ queryKey: NOTIFICACIONES_QUERY_KEY }),
   });
 
+  const vaciarTodas = useMutation({
+    mutationFn: () => notificacionesApi.vaciarTodas(),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: NOTIFICACIONES_QUERY_KEY }),
+    onError: (error) => {
+      console.error('Error al vaciar las notificaciones:', error);
+      notifications.show({
+        title: 'Error',
+        message:
+          error.response?.data?.message ||
+          'No se pudieron vaciar las notificaciones',
+        color: 'red',
+        icon: createElement(IconX),
+      });
+    },
+  });
+
   return {
     ...query,
     notificaciones,
     unreadCount,
     marcarLeida,
+    vaciarTodas,
   };
 };
