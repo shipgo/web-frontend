@@ -29,6 +29,7 @@ const EXISTING_ENVIO = {
   estado: "en_camino",
   codigoSeguimiento: "ABC123XYZ",
   fechaEntrega: "2026-09-10",
+  sucursalOrigen: { id: 2, nombre: "Sucursal Norte" },
   sucursal: { id: 1, nombre: "Sucursal Centro" },
   destino: {
     id: 3,
@@ -103,13 +104,46 @@ describe("DetalleEnvio", () => {
     expect((await screen.findAllByText("En camino")).length).toBeGreaterThan(0);
   });
 
-  it("renders sucursal actual and fecha de entrega", async () => {
+  it("renders sucursal de origen, sucursal actual and fecha de entrega", async () => {
     renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
       route: "/envios/9",
     });
 
-    expect(await screen.findByText("Sucursal Centro")).toBeInTheDocument();
+    expect(await screen.findByText("Sucursal de origen")).toBeInTheDocument();
+    expect(screen.getByText("Sucursal Norte")).toBeInTheDocument();
+    expect(screen.getByText("Sucursal Centro")).toBeInTheDocument();
     expect(screen.getByText("10/09/2026")).toBeInTheDocument();
+  });
+
+  it("muestra origen y ubicación actual distintos cuando el envío fue transferido (SHG-FE-088)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      sucursalOrigen: { id: 2, nombre: "Sucursal Norte" },
+      sucursal: { id: 5, nombre: "Sucursal Sur" },
+    });
+
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(await screen.findByText("Sucursal de origen")).toBeInTheDocument();
+    expect(screen.getByText("Sucursal Norte")).toBeInTheDocument();
+    expect(screen.getByText("Sucursal Sur")).toBeInTheDocument();
+  });
+
+  it("muestra '-' cuando sucursalOrigen es null (SHG-FE-088)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      sucursalOrigen: null,
+    });
+
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(await screen.findByText("Sucursal de origen")).toBeInTheDocument();
+    // The InfoItem renders "-" for null values
+    expect(screen.getByText("Sucursal Centro")).toBeInTheDocument();
   });
 
   it("renders the historial de estados timeline ordered by fecha", async () => {
