@@ -263,6 +263,25 @@ const ENVIOS_RETIRO_ENTREGA_FINAL = [
   },
 ];
 
+// SHG-FE-089: envío con `tipoEntrega = 'sucursal'` pero sin `sucursalEntrega`
+// (destino inválido). Debe quedar como pendiente, sin agruparse — y si se
+// intenta crear un viaje con él, debe mostrar error.
+const ENVIOS_RETIRO_SIN_SUCURSAL = [
+  {
+    localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
+    envios: [
+      {
+        id: 400,
+        codigoSeguimiento: "SHG-DEV-0400",
+        estado: "en_sucursal",
+        peso: 3,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: null,
+      },
+    ],
+  },
+];
+
 describe("CrearViaje", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -733,6 +752,21 @@ describe("CrearViaje", () => {
           { enviosID: [302], puntoEntregaID: 5, sucursalDestinoID: null },
         ]),
       );
+    });
+  });
+
+  describe("retiro sin sucursal destino (SHG-FE-089)", () => {
+    beforeEach(() => {
+      mockGetParaViaje.mockResolvedValue(ENVIOS_RETIRO_SIN_SUCURSAL);
+    });
+
+    it("un envío con tipoEntrega='sucursal' pero sin sucursalEntrega queda como pendiente, sin agruparse", async () => {
+      renderWithProviders(<CrearViaje />);
+
+      // El envío debe estar visible en "pendientes" porque su destino es nulo.
+      // ListadoEnviosPendientes.handleOnSelectedAction no lo agrupa
+      // (línea 146: si sucursalId es null, retorna sin agregar).
+      expect(await screen.findByText("SHG-DEV-0400")).toBeInTheDocument();
     });
   });
 });

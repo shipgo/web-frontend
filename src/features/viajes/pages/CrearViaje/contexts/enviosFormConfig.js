@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { getInvalidEnvios } from "../utils";
 
 /**
  * Shape del form compartido por `CrearViaje` (`EnviosFormProvider.jsx`) y
@@ -29,8 +30,19 @@ export const validate = {
     }
     return null;
   },
-  enviosIncluidos: (value) =>
-    !value || value.size === 0 ? "Agregá al menos un envío al viaje" : null,
+  enviosIncluidos: (value) => {
+    if (!value || value.size === 0) {
+      return "Agregá al menos un envío al viaje";
+    }
+    // SHG-FE-089: detecta envíos con destino inválido (null en ambos campos).
+    const invalidEnvios = getInvalidEnvios(value);
+    if (invalidEnvios.length > 0) {
+      return `No se pueden crear recorridos sin destino. Envíos afectados: ${invalidEnvios.join(
+        ", ",
+      )}`;
+    }
+    return null;
+  },
   vehiculo: (value) => (!value ? "Seleccioná un vehículo" : null),
   choferes: (value) =>
     !value || value.length === 0 ? "Seleccioná al menos un chofer" : null,

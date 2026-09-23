@@ -9,7 +9,7 @@ import { createCrudApi } from './base.api';
  * @property {string|string[]} [estado]  Valor(es) canónico(s) → `estado IN (...)` (param repetido).
  * @property {string} [fechaDesde]  `yyyy-MM-dd`, límite inferior inclusive (fecha de alta).
  * @property {string} [fechaHasta]  `yyyy-MM-dd`, límite superior inclusive.
- * @property {number} [sucursal]    Id de sucursal de origen (solo SUPERUSER).
+ * @property {number} [sucursal]    Id de sucursal actual (ubicación física del envío, cambia con cada hub/transferencia). Solo SUPERUSER. Nota: filtra por `Envio.sucursal`, no por `sucursalOrigen` (SHG-BE-068).
  * @property {string} [sort]        `campo:asc` / `campo:desc`.
  */
 
