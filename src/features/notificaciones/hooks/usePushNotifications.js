@@ -75,6 +75,21 @@ export const usePushNotifications = ({ enabled }) => {
         await ensureInit();
         if (cancelado) return;
 
+        // OJO (SHG-FE-073): NO llamar `event.preventDefault()` ni
+        // `event.notification.display()` acá. Verificado leyendo el bundle
+        // real que sirve el CDN (`OneSignalSDK.sw.js`, v16.06.10, el mismo
+        // que importa `public/OneSignalSDKWorker.js`): si la pestaña está
+        // visible, el SW hace broadcast de `foregroundWillDisplay` a la
+        // página y espera la respuesta de `preventDefault` (síncrona) antes
+        // de decidir si muestra la notificación nativa — el default
+        // (ningún listener llama `preventDefault()`) YA es mostrarla. Llamar
+        // `display()` acá sin haber llamado antes `preventDefault()` sólo
+        // duplica el `showNotification()` del lado del SW (deduplicado por
+        // `tag`, pero innecesario). Si un push real no aparece a nivel de
+        // SO, el gap NO está en este handler — revisar permisos del
+        // navegador y, en macOS, que el navegador tenga notificaciones
+        // habilitadas en Configuración del Sistema (fuera del control de
+        // esta app).
         OneSignal.Notifications.addEventListener('foregroundWillDisplay', invalidar);
         OneSignal.Notifications.addEventListener('click', invalidar);
         OneSignal.User.PushSubscription.addEventListener('change', onSubscriptionChange);
