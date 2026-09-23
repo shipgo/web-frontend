@@ -219,6 +219,50 @@ const ENVIOS_RETIRO_SUCURSAL = [
   },
 ];
 
+// `SHG-FE-086`: un envío de retiro en sucursal (`tipoEntrega = 'sucursal'`) no
+// tiene `destino` — su destino final ES `sucursalEntrega`. Mezcla envíos de
+// retiro de DOS sucursales distintas (300, 301) con uno a domicilio (302)
+// para poder probar los tres casos del alcance con una sola carga.
+const ENVIOS_RETIRO_ENTREGA_FINAL = [
+  {
+    localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
+    envios: [
+      {
+        id: 300,
+        codigoSeguimiento: "SHG-DEV-0300",
+        estado: "en_sucursal",
+        peso: 3,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: {
+          id: 9,
+          nombre: "ShipGo Norte",
+          puntoEntrega: { latitud: -31.4, longitud: -64.2 },
+        },
+      },
+      {
+        id: 301,
+        codigoSeguimiento: "SHG-DEV-0301",
+        estado: "en_sucursal",
+        peso: 4,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: { id: 10, nombre: "ShipGo Sur" },
+      },
+      {
+        id: 302,
+        codigoSeguimiento: "SHG-DEV-0302",
+        estado: "en_sucursal",
+        peso: 2,
+        destino: {
+          id: 5,
+          nombreCalle: "Calle Falsa",
+          numeroCalle: "123",
+          localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
+        },
+      },
+    ],
+  },
+];
+
 describe("CrearViaje", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -584,6 +628,111 @@ describe("CrearViaje", () => {
         { timeout: 2000 },
       );
       expect(screen.getByText("SHG-DEV-0099")).toBeInTheDocument();
+    });
+  });
+
+  describe("'Entrega a destino final' con envíos de retiro en sucursal (SHG-FE-086)", () => {
+    // Bug: antes de este fix, un envío de retiro se agrupaba por
+    // `envio.destino?.id` (siempre `undefined` para retiro) junto con
+    // CUALQUIER otro retiro seleccionado, armando un recorrido sin destino
+    // (`puntoEntregaID` y `sucursalDestinoID` ambos `null` → `400` del
+    // backend, `CONTRACTS.md §8`). El fix rutea cada retiro a su propia
+    // sucursal de retiro (`sucursalDestinoID = envio.sucursalEntrega.id`).
+    beforeEach(() => {
+      mockGetParaViaje.mockResolvedValue(ENVIOS_RETIRO_ENTREGA_FINAL);
+      mockGetDisponibles.mockResolvedValue([
+        {
+          id: 9,
+          patente: "AB123CD",
+          pesoMaximo: 3000,
+          modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+        },
+      ]);
+      mockGetChoferesDisponibles.mockResolvedValue([
+        { id: 15, nombre: "Juan", apellido: "Perez", email: "juan@shipgo.dev" },
+      ]);
+    });
+
+    // Completa fechas + vehículo + chofer y postea, común a los tres casos.
+    const completarYCrearViaje = async (user) => {
+      fireEvent.change(screen.getByLabelText(/salida planificada/i), {
+        target: { value: "2026-09-10T08:00" },
+      });
+      fireEvent.change(screen.getByLabelText(/llegada planificada/i), {
+        target: { value: "2026-09-10T18:00" },
+      });
+
+      await user.click(await screen.findByText("AB123CD"));
+      await user.click(await screen.findByText("Juan Perez"));
+
+      await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+      await waitFor(() => expect(mockSaveViaje).toHaveBeenCalledTimes(1));
+    };
+
+    it("un envío de retiro va a un recorrido con sucursalDestinoID = su sucursal de retiro (no un recorrido sin destino)", async () => {
+      mockSaveViaje.mockResolvedValue({ id: 300, estado: "planificado" });
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await user.click(await screen.findByText("SHG-DEV-0300"));
+      await user.click(
+        await screen.findByRole("button", { name: /marcar envíos para/i }),
+      );
+      await user.click(await screen.findByText(/entrega a destino final/i));
+
+      await completarYCrearViaje(user);
+
+      expect(mockSaveViaje.mock.calls[0][0].enviosPuntoEntrega).toEqual([
+        { enviosID: [300], puntoEntregaID: null, sucursalDestinoID: 9 },
+      ]);
+    });
+
+    it("dos envíos de retiro de sucursales distintas arman dos recorridos separados", async () => {
+      mockSaveViaje.mockResolvedValue({ id: 301, estado: "planificado" });
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await user.click(await screen.findByText("SHG-DEV-0300"));
+      await user.click(await screen.findByText("SHG-DEV-0301"));
+      await user.click(
+        await screen.findByRole("button", { name: /marcar envíos para/i }),
+      );
+      await user.click(await screen.findByText(/entrega a destino final/i));
+
+      await completarYCrearViaje(user);
+
+      const { enviosPuntoEntrega } = mockSaveViaje.mock.calls[0][0];
+      expect(enviosPuntoEntrega).toHaveLength(2);
+      expect(enviosPuntoEntrega).toEqual(
+        expect.arrayContaining([
+          { enviosID: [300], puntoEntregaID: null, sucursalDestinoID: 9 },
+          { enviosID: [301], puntoEntregaID: null, sucursalDestinoID: 10 },
+        ]),
+      );
+    });
+
+    it("mezcla domicilio + retiro en la misma acción: cada uno arma su propio recorrido (domicilio sin cambios)", async () => {
+      mockSaveViaje.mockResolvedValue({ id: 302, estado: "planificado" });
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await user.click(await screen.findByText("SHG-DEV-0300"));
+      await user.click(await screen.findByText("SHG-DEV-0302"));
+      await user.click(
+        await screen.findByRole("button", { name: /marcar envíos para/i }),
+      );
+      await user.click(await screen.findByText(/entrega a destino final/i));
+
+      await completarYCrearViaje(user);
+
+      const { enviosPuntoEntrega } = mockSaveViaje.mock.calls[0][0];
+      expect(enviosPuntoEntrega).toHaveLength(2);
+      expect(enviosPuntoEntrega).toEqual(
+        expect.arrayContaining([
+          { enviosID: [300], puntoEntregaID: null, sucursalDestinoID: 9 },
+          { enviosID: [302], puntoEntregaID: 5, sucursalDestinoID: null },
+        ]),
+      );
     });
   });
 });

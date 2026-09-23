@@ -26,15 +26,25 @@ export const toLocalDateTimeString = (value) =>
  * Cada entrada del Map ya es 1:1 con un recorrido: `puntoEntregaID` XOR
  * `sucursalDestinoID` (uno de los dos siempre `null`, igual que
  * `EditarViaje` — el backend valida que sea exactamente uno de los dos).
+ *
+ * Blindaje (`SHG-FE-086`): una entrada con **ambos** `null` es un dato
+ * inconsistente (nunca debería armarse desde la UI — ver
+ * `ListadoEnviosPendientes.handleOnSelectedAction` — pero si por algún motivo
+ * llega una, filtrarla acá es la última barrera antes de mandarle al backend
+ * un `enviosPuntoEntrega` que va a rebotar con `400 BadRequestException`,
+ * `CONTRACTS.md §8`) en vez de silenciarse en un recorrido sin destino.
  */
 export const buildEnviosPuntoEntrega = (enviosIncluidos) =>
-  Array.from(enviosIncluidos.values()).map(
-    ({ puntoEntregaID, sucursalDestinoID, packages }) => ({
+  Array.from(enviosIncluidos.values())
+    .filter(
+      ({ puntoEntregaID, sucursalDestinoID }) =>
+        puntoEntregaID != null || sucursalDestinoID != null,
+    )
+    .map(({ puntoEntregaID, sucursalDestinoID, packages }) => ({
       enviosID: Array.from(packages.keys()),
       puntoEntregaID: puntoEntregaID ?? null,
       sucursalDestinoID: sucursalDestinoID ?? null,
-    }),
-  );
+    }));
 
 /**
  * Arma el `ViajeReqDTO` completo a partir de los `values` del form.
