@@ -141,8 +141,14 @@ describe("DetalleEnvio", () => {
       route: "/envios/9",
     });
 
-    expect(await screen.findByText("Sucursal de origen")).toBeInTheDocument();
-    // The InfoItem renders "-" for null values
+    const sucursalOrigenLabel = await screen.findByText("Sucursal de origen");
+    expect(sucursalOrigenLabel).toBeInTheDocument();
+
+    // Find the InfoItem container (Box) and verify "-" is shown within it
+    const infoItemContainer = sucursalOrigenLabel.closest("div").parentElement;
+    expect(within(infoItemContainer).getByText("-")).toBeInTheDocument();
+
+    // Verify sucursal actual still shows its value
     expect(screen.getByText("Sucursal Centro")).toBeInTheDocument();
   });
 
