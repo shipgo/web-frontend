@@ -5,6 +5,7 @@ import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Router } from 'wouter';
 import { memoryLocation } from 'wouter/memory-location';
+import { formatFechaHora } from '@domain/format';
 
 const mockGetMias = vi.fn();
 const mockDelete = vi.fn();
@@ -111,5 +112,55 @@ describe('NotificacionesMenu', () => {
 
     await userEvent.click(await screen.findByLabelText('Notificaciones'));
     expect(await screen.findByText('No tenés notificaciones.')).toBeInTheDocument();
+  });
+
+  it('expone el indicador de no leída (VisuallyHidden "Sin leer") cuando visto:false', async () => {
+    mockGetMias.mockResolvedValue(NOTIFS);
+    renderMenu();
+
+    await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+
+    // Buscar el texto "Sin leer" que aparece en VisuallyHidden dentro de la fila de no leída
+    const sinLeerText = await screen.findByText('Sin leer');
+    expect(sinLeerText).toBeInTheDocument();
+  });
+
+  it('no expone "Sin leer" cuando visto:true', async () => {
+    mockGetMias.mockResolvedValue(NOTIFS);
+    renderMenu();
+
+    await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+
+    // Verificar que la notificación leída existe
+    expect(await screen.findByText('Viaje rechazado')).toBeInTheDocument();
+
+    // Verificar que sólo hay UN "Sin leer" (el de la notificación no leída, no el de la leída)
+    const sinLeerTexts = screen.getAllByText('Sin leer');
+    expect(sinLeerTexts).toHaveLength(1);
+  });
+
+  it('expone el horario absoluto (formatFechaHora) vía tooltip al pasar el mouse', async () => {
+    mockGetMias.mockResolvedValue(NOTIFS);
+    renderMenu();
+
+    await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+
+    // Esperar a que la notificación sea visible
+    await screen.findByText('Viaje planificado');
+
+    // Obtener el elemento de texto relativo ("hace" + tiempo)
+    const relativeTimeElements = screen.getAllByText(/hace/);
+    expect(relativeTimeElements.length).toBeGreaterThan(0);
+
+    const relativeTimeElement = relativeTimeElements[0];
+
+    // Pasar el mouse sobre el elemento para triggear el tooltip
+    await userEvent.hover(relativeTimeElement);
+
+    // Esperar a que el tooltip con el horario absoluto aparezca
+    const absoluteTime = formatFechaHora(NOTIFS[0].fecha);
+    const tooltip = await screen.findByText(absoluteTime);
+    expect(tooltip).toBeInTheDocument();
+    expect(tooltip).toHaveRole('tooltip');
   });
 });
