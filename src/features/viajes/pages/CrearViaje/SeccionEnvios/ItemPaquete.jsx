@@ -1,9 +1,14 @@
 import { Badge, Flex, Group, Stack, Text, ThemeIcon } from "@mantine/core";
-import { IconMapPin, IconTrash } from "@tabler/icons-react";
+import { IconBuildingStore, IconMapPin, IconTrash } from "@tabler/icons-react";
 
-import { formatDireccion, formatPeso } from "@domain/format";
+import { formatPeso } from "@domain/format";
+
+import { TIPO_ENTREGA } from "@features/envios/constants";
+import { formatDestinoEnvio } from "@features/envios/utils";
 
 const ItemPaquete = ({ item, onRemove, isIncludedInTrip = false }) => {
+  const esRetiroSucursal = item.tipoEntrega === TIPO_ENTREGA.SUCURSAL;
+
   return (
     <>
       <Stack gap="0.25rem" mr="auto">
@@ -20,8 +25,8 @@ const ItemPaquete = ({ item, onRemove, isIncludedInTrip = false }) => {
         </Group>
 
         <Flex align="center" gap="0.25rem" c="dimmed">
-          <IconMapPin size={20} />
-          <Text size="sm">{formatDireccion(item.destino, { completa: true })}</Text>
+          {esRetiroSucursal ? <IconBuildingStore size={20} /> : <IconMapPin size={20} />}
+          <Text size="sm">{formatDestinoEnvio(item, { completa: true })}</Text>
         </Flex>
       </Stack>
 

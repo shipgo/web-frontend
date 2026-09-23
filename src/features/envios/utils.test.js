@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildEnvioFormValues, buildEnvioReqDTO } from "./utils";
+import { buildEnvioFormValues, buildEnvioReqDTO, formatDestinoEnvio } from "./utils";
 
 describe("buildEnvioReqDTO", () => {
   const baseValues = {
@@ -258,5 +258,48 @@ describe("buildEnvioFormValues", () => {
       coordenadas: null,
       detalleEnvios: [],
     });
+  });
+});
+
+describe("formatDestinoEnvio (SHG-FE-085)", () => {
+  it("para tipoEntrega=sucursal devuelve 'Retiro en sucursal · <nombre>' en vez de la dirección", () => {
+    const envio = {
+      tipoEntrega: "sucursal",
+      sucursalEntrega: { id: 9, nombre: "ShipGo Norte" },
+      destino: null,
+    };
+
+    expect(formatDestinoEnvio(envio, { completa: true })).toBe(
+      "Retiro en sucursal · ShipGo Norte",
+    );
+  });
+
+  it("no rompe cuando tipoEntrega=sucursal pero sucursalEntrega viene null/sin nombre", () => {
+    expect(
+      formatDestinoEnvio({ tipoEntrega: "sucursal", sucursalEntrega: null }),
+    ).toBe("Retiro en sucursal");
+  });
+
+  it("para tipoEntrega=domicilio (u omitido) delega en formatDireccion como antes", () => {
+    const envio = {
+      tipoEntrega: "domicilio",
+      destino: {
+        nombreCalle: "Av. Colón",
+        numeroCalle: "1234",
+        localidad: { nombre: "Córdoba", provincia: { nombre: "Córdoba" } },
+      },
+    };
+
+    expect(formatDestinoEnvio(envio, { completa: true })).toBe(
+      "Av. Colón 1234 · Córdoba, Córdoba",
+    );
+  });
+
+  it("cuando falta tipoEntrega se comporta como domicilio (default del backend)", () => {
+    const envio = {
+      destino: { nombreCalle: "San Martín", numeroCalle: "50" },
+    };
+
+    expect(formatDestinoEnvio(envio)).toBe("San Martín 50");
   });
 });
