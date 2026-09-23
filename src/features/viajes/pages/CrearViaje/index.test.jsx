@@ -113,6 +113,7 @@ vi.mock("@api", () => ({
 }));
 
 import CrearViaje from "./index";
+import { validate } from "./contexts/enviosFormConfig";
 
 const ENVIOS_PARA_VIAJE = [
   {
@@ -758,6 +759,17 @@ describe("CrearViaje", () => {
   describe("retiro sin sucursal destino (SHG-FE-089)", () => {
     beforeEach(() => {
       mockGetParaViaje.mockResolvedValue(ENVIOS_RETIRO_SIN_SUCURSAL);
+      mockGetDisponibles.mockResolvedValue([
+        {
+          id: 9,
+          patente: "AB123CD",
+          pesoMaximo: 3000,
+          modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+        },
+      ]);
+      mockGetChoferesDisponibles.mockResolvedValue([
+        { id: 15, nombre: "Juan", apellido: "Perez", email: "juan@shipgo.dev" },
+      ]);
     });
 
     it("un envío con tipoEntrega='sucursal' pero sin sucursalEntrega queda como pendiente, sin agruparse", async () => {
@@ -767,6 +779,29 @@ describe("CrearViaje", () => {
       // ListadoEnviosPendientes.handleOnSelectedAction no lo agrupa
       // (línea 146: si sucursalId es null, retorna sin agregar).
       expect(await screen.findByText("SHG-DEV-0400")).toBeInTheDocument();
+    });
+
+    it("validación: si hubiera entrada con ambos destinos null, mostraría error con código de seguimiento", () => {
+      // Test unitario de la validación: probamos que `validate.enviosIncluidos`
+      // detecta la entrada inválida y reporta códigos de seguimiento.
+      // SHG-FE-089: el blindaje previene POST silencioso.
+      const envioInvalido = new Map([
+        [
+          "invalid_1",
+          {
+            puntoEntregaID: null,
+            sucursalDestinoID: null,
+            label: "—",
+            packages: new Map([
+              [999, { id: 999, codigoSeguimiento: "SHG-INV-999" }],
+            ]),
+          },
+        ],
+      ]);
+
+      const error = validate.enviosIncluidos(envioInvalido);
+      expect(error).toContain("No se pueden crear recorridos sin destino");
+      expect(error).toContain("SHG-INV-999");
     });
   });
 });

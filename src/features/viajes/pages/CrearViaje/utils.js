@@ -55,15 +55,15 @@ export const buildEnviosPuntoEntrega = (enviosIncluidos) =>
  * para que el usuario corrija antes de intentar crear/editar.
  *
  * @param {Map} enviosIncluidos
- * @returns {number[]} array de IDs de envíos con destino inválido.
+ * @returns {string[]} array de códigos de seguimiento de envíos con destino inválido (fallback a id si falta).
  */
 export const getInvalidEnvios = (enviosIncluidos) => {
   const invalid = [];
   Array.from(enviosIncluidos.values()).forEach((entry) => {
     if (entry.puntoEntregaID == null && entry.sucursalDestinoID == null) {
       // Todos los envíos de esta entrada tienen el mismo destino nulo.
-      Array.from(entry.packages.keys()).forEach((envioId) => {
-        invalid.push(envioId);
+      Array.from(entry.packages.values()).forEach((envio) => {
+        invalid.push(envio.codigoSeguimiento || String(envio.id));
       });
     }
   });

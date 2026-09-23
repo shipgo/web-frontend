@@ -150,3 +150,118 @@ describe("buildViajeReqDTO", () => {
     ]);
   });
 });
+
+// SHG-FE-089: tests de `getInvalidEnvios`
+import { getInvalidEnvios } from "./utils";
+
+describe("getInvalidEnvios", () => {
+  it("devuelve array vacío si todas las entradas tienen destino válido", () => {
+    const enviosIncluidos = new Map([
+      [
+        "local_5",
+        {
+          puntoEntregaID: 5,
+          sucursalDestinoID: null,
+          packages: new Map([
+            [200, { id: 200, codigoSeguimiento: "SHG-001" }],
+            [201, { id: 201, codigoSeguimiento: "SHG-002" }],
+          ]),
+        },
+      ],
+      [
+        "sucursal_9",
+        {
+          puntoEntregaID: null,
+          sucursalDestinoID: 9,
+          packages: new Map([
+            [300, { id: 300, codigoSeguimiento: "SHG-300" }],
+          ]),
+        },
+      ],
+    ]);
+
+    expect(getInvalidEnvios(enviosIncluidos)).toEqual([]);
+  });
+
+  it("devuelve códigos de seguimiento de envíos cuya entrada tiene ambos destinos null", () => {
+    const enviosIncluidos = new Map([
+      [
+        "invalid_1",
+        {
+          puntoEntregaID: null,
+          sucursalDestinoID: null,
+          packages: new Map([
+            [400, { id: 400, codigoSeguimiento: "SHG-400" }],
+            [401, { id: 401, codigoSeguimiento: "SHG-401" }],
+          ]),
+        },
+      ],
+    ]);
+
+    expect(getInvalidEnvios(enviosIncluidos)).toEqual([
+      "SHG-400",
+      "SHG-401",
+    ]);
+  });
+
+  it("usa fallback a id si falta codigoSeguimiento", () => {
+    const enviosIncluidos = new Map([
+      [
+        "invalid_2",
+        {
+          puntoEntregaID: null,
+          sucursalDestinoID: null,
+          packages: new Map([
+            [500, { id: 500 }],
+            [501, { id: 501, codigoSeguimiento: "SHG-501" }],
+          ]),
+        },
+      ],
+    ]);
+
+    expect(getInvalidEnvios(enviosIncluidos)).toEqual([
+      "500",
+      "SHG-501",
+    ]);
+  });
+
+  it("devuelve lista combinada de múltiples entradas inválidas", () => {
+    const enviosIncluidos = new Map([
+      [
+        "local_5",
+        {
+          puntoEntregaID: 5,
+          sucursalDestinoID: null,
+          packages: new Map([
+            [200, { id: 200, codigoSeguimiento: "SHG-001" }],
+          ]),
+        },
+      ],
+      [
+        "invalid_1",
+        {
+          puntoEntregaID: null,
+          sucursalDestinoID: null,
+          packages: new Map([
+            [400, { id: 400, codigoSeguimiento: "SHG-400" }],
+          ]),
+        },
+      ],
+      [
+        "invalid_2",
+        {
+          puntoEntregaID: null,
+          sucursalDestinoID: null,
+          packages: new Map([
+            [500, { id: 500, codigoSeguimiento: "SHG-500" }],
+          ]),
+        },
+      ],
+    ]);
+
+    expect(getInvalidEnvios(enviosIncluidos)).toEqual([
+      "SHG-400",
+      "SHG-500",
+    ]);
+  });
+});
