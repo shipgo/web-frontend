@@ -52,15 +52,6 @@ export const viajeApi = {
   },
 
   /**
-   * `PUT /api/viaje/{id}/iniciar` — estado → `en_camino` (SU/AD/CH).
-   * @param {number|string} id
-   */
-  iniciar: async (id) => {
-    const response = await restclient.put(`${API_URLS.VIAJE_URL}/${id}/iniciar`);
-    return response.data;
-  },
-
-  /**
    * `PUT /api/viaje/{id}/finalizar` — estado → `finalizado` (SU/AD/CH).
    * @param {number|string} id
    */

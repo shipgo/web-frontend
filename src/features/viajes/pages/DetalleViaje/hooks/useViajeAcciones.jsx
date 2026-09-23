@@ -55,34 +55,11 @@ const handleAccionError = (error, accionLabel) => {
  * (`api/viaje.api.js`), muestra un toast de resultado y dispara `onSuccess`
  * (refetch del detalle) si salió bien.
  *
- * `puedeIniciar`/`puedeFinalizar`/`puedeCancelar` (`../acciones.js`) ya deciden
- * si el botón se muestra según estado + rol; acá sólo se ejecuta la transición.
+ * "Iniciar" no se expone — solo el chofer asignado puede iniciar (backend
+ * valida en ViajeService.iniciarViaje), y la web es exclusiva SU/AD (SHG-FE-083).
+ * Mobile inicia desde ROLE_CHOFER en su propio repo.
  */
 export const useViajeAcciones = (id, { onSuccess } = {}) => {
-  const confirmIniciar = () => {
-    modals.openConfirmModal({
-      title: 'Iniciar viaje',
-      centered: true,
-      children: <Text size="sm">¿Confirmás el inicio del viaje #{id}? El estado pasará a "En camino".</Text>,
-      labels: { confirm: 'Sí, iniciar', cancel: 'Volver' },
-      confirmProps: { color: 'blue' },
-      onConfirm: async () => {
-        try {
-          await viajeApi.iniciar(id);
-          notifications.show({
-            title: 'Viaje iniciado',
-            message: `El viaje #${id} se inició correctamente`,
-            color: 'green',
-            icon: <IconCheck />,
-          });
-          onSuccess?.();
-        } catch (error) {
-          handleAccionError(error, 'iniciar el viaje');
-        }
-      },
-    });
-  };
-
   const confirmFinalizar = () => {
     modals.openConfirmModal({
       title: 'Finalizar viaje',
@@ -138,5 +115,5 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
     });
   };
 
-  return { confirmIniciar, confirmFinalizar, confirmCancelar };
+  return { confirmFinalizar, confirmCancelar };
 };

@@ -8,7 +8,6 @@ import { renderWithProviders } from '../../../../test/renderWithProviders';
 vi.mock('@api', () => ({
   viajeApi: {
     getById: vi.fn(),
-    iniciar: vi.fn(),
     finalizar: vi.fn(),
     cancelar: vi.fn(),
   },

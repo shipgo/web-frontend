@@ -1,11 +1,11 @@
 import { Badge, Box, Button, Divider, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { IconBan, IconEdit, IconFlagCheck, IconPlayerPlay } from '@tabler/icons-react';
+import { IconBan, IconEdit, IconFlagCheck } from '@tabler/icons-react';
 
 import { BUTTON_ACTION_TEXT_COLOR, estadoBadge } from '@domain/estados';
 import { formatFechaHora } from '@domain/format';
 import { useAuthStore } from '@stores/auth.store';
 
-import { puedeCancelar, puedeEditar, puedeFinalizar, puedeIniciar } from '../acciones';
+import { puedeCancelar, puedeEditar, puedeFinalizar } from '../acciones';
 
 const InfoItem = ({ label, value }) => (
   <Box>
@@ -21,7 +21,7 @@ const InfoItem = ({ label, value }) => (
 const choferLabel = (chofer) =>
   [chofer?.nombre, chofer?.apellido].filter(Boolean).join(' ') || chofer?.username || '—';
 
-const DetalleViajeHeader = ({ viaje, id, onEditar, onIniciar, onFinalizar, onCancelar }) => {
+const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onCancelar }) => {
   const user = useAuthStore((state) => state.user);
   const estadoInfo = estadoBadge('viaje', viaje.estado);
   const choferes = viaje.choferes?.length ? viaje.choferes : viaje.chofer ? [viaje.chofer] : [];
@@ -54,11 +54,6 @@ const DetalleViajeHeader = ({ viaje, id, onEditar, onIniciar, onFinalizar, onCan
             </Button>
           )}
 
-          {puedeIniciar(user, viaje.estado) && (
-            <Button variant="light" color="blue" leftSection={<IconPlayerPlay size={18} />} onClick={onIniciar}>
-              Iniciar
-            </Button>
-          )}
           {/* `c={BUTTON_ACTION_TEXT_COLOR.*}`: ver ese comentario en
               `@domain/estados` — sin esto, "Finalizar"/"Cancelar" no llegan
               a 4.5:1 (axe-core `color-contrast`, SHG-FE-045). */}
