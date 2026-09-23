@@ -21,6 +21,7 @@ import {
 import {
   IconBan,
   IconBuilding,
+  IconBuildingStore,
   IconCheck,
   IconCircleDot,
   IconCopy,
@@ -43,7 +44,7 @@ import { BUTTON_ACTION_TEXT_COLOR, esEstadoTerminal, estadoBadge, estadoLabel } 
 import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
 import { useAuthStore } from "@stores/auth.store";
 
-import { puedeAccionarEntrega } from "./acciones";
+import { puedeAccionarEntrega, puedeConfirmarRetiro } from "./acciones";
 import { useEnvioAcciones } from "./hooks/useEnvioAcciones";
 
 const InfoItem = ({ icon, label, value }) => (
@@ -104,12 +105,15 @@ const DetalleEnvio = () => {
     loadEnvio();
   }, [loadEnvio]);
 
-  const { confirmEntregar, confirmFalloEntrega } = useEnvioAcciones(id, { onSuccess: loadEnvio });
+  const { confirmEntregar, confirmFalloEntrega, confirmRetiroSucursal } = useEnvioAcciones(id, {
+    onSuccess: loadEnvio,
+  });
 
   // Precompute derived values only if envio exists to avoid errors
   const estadoInfo = envio ? estadoBadge("envio", envio.estado) : null;
   const canEdit = envio ? !esEstadoTerminal("envio", envio.estado) : false;
   const canAccionarEstado = envio ? puedeAccionarEntrega(user, envio.estado) : false;
+  const canConfirmarRetiro = envio ? puedeConfirmarRetiro(user, envio) : false;
   const destino = envio?.destino ?? {};
   const localidad = destino.localidad ?? {};
   const provincia = localidad.provincia ?? {};
@@ -214,6 +218,21 @@ const DetalleEnvio = () => {
             onClick={confirmFalloEntrega}
           >
             Marcar fallo
+          </Button>
+        )}
+        {/* "Confirmar retiro" (SHG-FE-080 / SHG-CONTRACT-012): sólo para envíos
+            `tipoEntrega = 'sucursal'` que llegaron a `en_sucursal` — rango de
+            estado disjunto de `canAccionarEstado` (en_camino/en_vehiculo), así
+            que nunca se muestra junto con Entregar/Marcar fallo. */}
+        {canConfirmarRetiro && (
+          <Button
+            variant="light"
+            color="green"
+            c={BUTTON_ACTION_TEXT_COLOR.green}
+            leftSection={<IconBuildingStore size={18} />}
+            onClick={confirmRetiroSucursal}
+          >
+            Confirmar retiro
           </Button>
         )}
       </PageBreadcrumbsHeader>

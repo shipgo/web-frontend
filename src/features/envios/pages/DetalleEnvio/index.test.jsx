@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { notifications } from "@mantine/notifications";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Route } from "wouter";
 
@@ -66,6 +67,13 @@ describe("DetalleEnvio", () => {
     vi.clearAllMocks();
     envioApi.getById.mockResolvedValue(EXISTING_ENVIO);
     useAuthStore.setState({ user: null, isAuthenticated: false });
+    // El store de `@mantine/notifications` vive fuera del árbol de React (no
+    // se resetea al desmontar entre tests) — sin esto, toasts de tests
+    // anteriores (p. ej. "Envío entregado") se acumulan hasta el `limit`
+    // default de `<Notifications />` y un toast nuevo con texto distinto deja
+    // de renderizarse, aunque `notifications.show` sí se haya llamado.
+    notifications.clean();
+    notifications.cleanQueue();
   });
 
   it("renders sender, receiver, destino and package info from the API response", async () => {
@@ -428,6 +436,196 @@ describe("DetalleEnvio", () => {
 
       expect(await screen.findByText("No se puede completar la acción")).toBeInTheDocument();
       expect(screen.getByText("El envío no está en camino")).toBeInTheDocument();
+    });
+  });
+
+  describe("confirmar retiro en sucursal (SHG-FE-080 / SHG-CONTRACT-012)", () => {
+    const ENVIO_EN_SUCURSAL_PARA_RETIRO = {
+      ...EXISTING_ENVIO,
+      estado: "en_sucursal",
+      tipoEntrega: "sucursal",
+      sucursalEntrega: { id: 1, nombre: "Sucursal Centro" },
+    };
+
+    beforeEach(() => {
+      useAuthStore.setState({
+        user: new Usuario({ id: 1, username: "admin1", authorities: ["ROLE_ADMIN"] }),
+        isAuthenticated: true,
+      });
+    });
+
+    it('muestra "Confirmar retiro" sólo cuando estado=en_sucursal y tipoEntrega=sucursal', async () => {
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByRole("button", { name: /confirmar retiro/i })).toBeInTheDocument();
+      // Rango de estados disjunto de Entregar/Marcar fallo (en_camino/en_vehiculo).
+      expect(screen.queryByRole("button", { name: "Entregar" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /marcar fallo/i })).not.toBeInTheDocument();
+    });
+
+    it('no muestra "Confirmar retiro" si el envío es en_sucursal pero tipoEntrega=domicilio', async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        estado: "en_sucursal",
+        tipoEntrega: "domicilio",
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /confirmar retiro/i })).not.toBeInTheDocument();
+    });
+
+    it('no muestra "Confirmar retiro" si tipoEntrega=sucursal pero el envío no está en_sucursal', async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        estado: "en_camino",
+        tipoEntrega: "sucursal",
+        sucursalEntrega: { id: 1, nombre: "Sucursal Centro" },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /confirmar retiro/i })).not.toBeInTheDocument();
+    });
+
+    it('no muestra "Confirmar retiro" para un usuario sin rol admin/superuser', async () => {
+      useAuthStore.setState({
+        user: new Usuario({ id: 2, username: "carga1", authorities: ["ROLE_CARGA"] }),
+        isAuthenticated: true,
+      });
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /confirmar retiro/i })).not.toBeInTheDocument();
+    });
+
+    it("no confirma sin DNI ni palabra de entrega (ambos obligatorios acá, a diferencia de Entregar)", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /confirmar retiro/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+
+      expect(within(dialog).getByText("El DNI de quien recibe es obligatorio")).toBeInTheDocument();
+      expect(within(dialog).getByText("La palabra de entrega es obligatoria")).toBeInTheDocument();
+      expect(envioApi.entregar).not.toHaveBeenCalled();
+    });
+
+    it("confirma el retiro con DNI + palabra, refetchea el detalle y no pisa el flujo de Entregar", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+      envioApi.entregar.mockResolvedValue({ ...ENVIO_EN_SUCURSAL_PARA_RETIRO, estado: "entregado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /confirmar retiro/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien retira/i), "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "AB23K9");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+
+      await waitFor(() => {
+        expect(envioApi.entregar).toHaveBeenCalledWith("9", {
+          dniReceptor: "30111222",
+          palabraEntregaIngresada: "AB23K9",
+        });
+      });
+      expect(await screen.findByText("Retiro confirmado")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("delivery_word_mismatch: muestra el error dentro del modal sin cerrarlo", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+      envioApi.entregar.mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: {
+            statusCode: 400,
+            message: "La palabra de entrega ingresada no coincide con la registrada para este envío.",
+            code: "delivery_word_mismatch",
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /confirmar retiro/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      const dniInput = within(dialog).getByLabelText(/dni de quien retira/i);
+      await user.type(dniInput, "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "WRONG1");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+
+      expect(
+        await within(dialog).findByText(
+          "La palabra de entrega ingresada no coincide con la registrada para este envío.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(dniInput).toHaveValue("30111222");
+      expect(envioApi.getById).toHaveBeenCalledTimes(1);
+    });
+
+    it("sucursal de retiro no coincide (validación de SHG-BE-061): muestra el mensaje del backend sin cerrar el modal, sin 400 crudo", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+      envioApi.entregar.mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: {
+            statusCode: 400,
+            message: "Este envío no está en su sucursal de retiro: no se puede confirmar el retiro acá.",
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /confirmar retiro/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien retira/i), "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "AB23K9");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+
+      expect(
+        await screen.findByText(
+          "Este envío no está en su sucursal de retiro: no se puede confirmar el retiro acá.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(envioApi.getById).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -4,6 +4,7 @@ import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
 
 import { envioApi } from '@api';
 
+import ConfirmarRetiroModalBody from '../components/ConfirmarRetiroModalBody';
 import EntregarModalBody from '../components/EntregarModalBody';
 import FalloEntregaModalBody from '../components/FalloEntregaModalBody';
 
@@ -115,5 +116,36 @@ export const useEnvioAcciones = (id, { onSuccess } = {}) => {
     });
   };
 
-  return { confirmEntregar, confirmFalloEntrega };
+  /**
+   * "Confirmar retiro" en sucursal (`SHG-FE-080`) — mismo endpoint/transición
+   * que `confirmEntregar`, distinto modal (DNI + palabra ambos obligatorios,
+   * `puedeConfirmarRetiro` en `../acciones.js` decide cuándo se ofrece).
+   */
+  const confirmRetiroSucursal = () => {
+    modals.open({
+      title: 'Confirmar retiro en sucursal',
+      centered: true,
+      children: (
+        <ConfirmarRetiroModalBody
+          id={id}
+          onVolver={() => modals.closeAll()}
+          onRetirado={() => {
+            modals.closeAll();
+            notifications.show({
+              title: 'Retiro confirmado',
+              message: `El envío #${id} fue marcado como entregado`,
+              color: 'green',
+              icon: <IconCheck />,
+            });
+            onSuccess?.();
+          }}
+          onErrorInesperado={(_message, error) =>
+            handleAccionError(error, 'confirmar el retiro del envío')
+          }
+        />
+      ),
+    });
+  };
+
+  return { confirmEntregar, confirmFalloEntrega, confirmRetiroSucursal };
 };

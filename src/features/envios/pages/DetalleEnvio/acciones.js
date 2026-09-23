@@ -1,4 +1,7 @@
+import { normalizarEstado } from '@domain/estados';
 import { isAdminOrSuper } from '@domain/roles';
+
+import { TIPO_ENTREGA } from '../../constants';
 
 /**
  * Acciones de ciclo de vida de Envío disponibles en `DetalleEnvio` (`SHG-FE-007`).
@@ -18,3 +21,22 @@ const ESTADOS_ACCIONABLES = ['en_vehiculo', 'en_camino'];
 
 export const puedeAccionarEntrega = (user, estado) =>
   isAdminOrSuper(user) && ESTADOS_ACCIONABLES.includes(estado);
+
+/**
+ * Acción "Confirmar retiro" (`SHG-FE-080` / `SHG-CONTRACT-012`): sólo para
+ * envíos con `tipoEntrega = 'sucursal'` que ya llegaron a la sucursal de
+ * retiro elegida por el remitente (`estado = 'en_sucursal'`). Distinta de
+ * `puedeAccionarEntrega` (esa es para la entrega a domicilio, `en_camino`/
+ * `en_vehiculo`) — los rangos de estado de ambas acciones no se solapan, así
+ * que nunca se muestran los dos botones a la vez.
+ *
+ * Reusa el mismo endpoint `PUT /envio/{id}/entregar` que `entregar` de
+ * arriba (`ENDPOINTS.md §4`, sección "retiro en sucursal") — el backend
+ * (`EnvioService.validarRetiroEnSucursal`) es quien valida que
+ * `envio.sucursal` (ubicación física actual) coincida con
+ * `envio.sucursalEntrega`; acá sólo se decide si se ofrece el botón.
+ */
+export const puedeConfirmarRetiro = (user, envio) =>
+  isAdminOrSuper(user) &&
+  normalizarEstado(envio?.estado) === 'en_sucursal' &&
+  envio?.tipoEntrega === TIPO_ENTREGA.SUCURSAL;
