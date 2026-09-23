@@ -514,6 +514,46 @@ describe("CrearEnvios", () => {
       expect(sucursalApi.getParaEntrega).not.toHaveBeenCalled();
     });
 
+    it("el SegmentedControl de tipo de entrega tiene nombre de grupo accesible (radiogroup)", async () => {
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        screen.getByRole("radiogroup", { name: /método de entrega/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("si falla GET /api/sucursal/paraEntrega, muestra un error en el Select y reintenta al click", async () => {
+      const user = userEvent.setup();
+      sucursalApi.getParaEntrega.mockRejectedValueOnce(new Error("network"));
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+
+      await waitFor(() => expect(sucursalApi.getParaEntrega).toHaveBeenCalledTimes(1));
+
+      expect(
+        await screen.findByText("No se pudieron cargar las sucursales"),
+      ).toBeInTheDocument();
+
+      await user.click(
+        screen.getByRole("button", { name: /reintentar cargar las sucursales/i }),
+      );
+
+      await waitFor(() => expect(sucursalApi.getParaEntrega).toHaveBeenCalledTimes(2));
+      expect(
+        await screen.findByText(/sucursal centro — av\. colón 500/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("No se pudieron cargar las sucursales"),
+      ).not.toBeInTheDocument();
+    });
+
     it("al elegir 'Retiro en sucursal' reemplaza el buscador de dirección + mapa por el selector de sucursal", async () => {
       const user = userEvent.setup();
       renderCrearEnvios();

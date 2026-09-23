@@ -5,6 +5,7 @@ import {
   Card,
   Grid,
   Group,
+  Input,
   Loader,
   Select,
   SegmentedControl,
@@ -17,7 +18,7 @@ import {
 } from "@mantine/core";
 import { useEffect, useRef, useState } from "react";
 import { notifications } from "@mantine/notifications";
-import { IconCurrentLocation, IconMapPin } from "@tabler/icons-react";
+import { IconCurrentLocation, IconMapPin, IconRefresh } from "@tabler/icons-react";
 import { Marker } from "react-map-gl/mapbox";
 
 import MapCard from "@features/mapa/components/MapCard";
@@ -72,8 +73,12 @@ const SeccionOrigen = () => {
   // `SHG-CONTRACT-012`/`SHG-BE-061`: sólo se pide la lista de sucursales
   // cuando hace falta (modo "retiro en sucursal") — evita el fetch mientras
   // el form está en "domicilio" (default).
-  const { options: sucursalesOptions, isLoading: loadingSucursales } =
-    useSucursalesParaEntrega({ enabled: esRetiroEnSucursal });
+  const {
+    options: sucursalesOptions,
+    isLoading: loadingSucursales,
+    isError: errorSucursales,
+    refetch: refetchSucursales,
+  } = useSucursalesParaEntrega({ enabled: esRetiroEnSucursal });
 
   const [geocodedCoords, setGeocodedCoords] = useState(null);
   const [searchValue, setSearchValue] = useState("");
@@ -237,13 +242,22 @@ const SeccionOrigen = () => {
           {/* `SHG-CONTRACT-012`/`SHG-BE-061`: elegir entre dirección de
               destino (flujo de siempre) o retiro en una sucursal de la
               empresa. Comparte esta sección con `EditarEnvio` (mismo
-              componente reutilizado, `EditarEnvioForm.jsx`). */}
-          <SegmentedControl
-            fullWidth
-            value={tipoEntrega}
-            onChange={(value) => form.setFieldValue("tipoEntrega", value)}
-            data={TIPO_ENTREGA_OPTIONS}
-          />
+              componente reutilizado, `EditarEnvioForm.jsx`).
+              `SegmentedControl` no tiene prop `label` propio (a diferencia de
+              los `Select`/`TextInput` vecinos) — `Input.Label` da el rótulo
+              visible y `aria-label` en el control da el nombre accesible del
+              grupo de radios (rol `radiogroup`), ya que el label visible no
+              queda asociado por `htmlFor` a ningún input puntual. */}
+          <Box>
+            <Input.Label>Método de entrega</Input.Label>
+            <SegmentedControl
+              fullWidth
+              aria-label="Método de entrega"
+              value={tipoEntrega}
+              onChange={(value) => form.setFieldValue("tipoEntrega", value)}
+              data={TIPO_ENTREGA_OPTIONS}
+            />
+          </Box>
 
           <Grid>
             <Grid.Col span={6}>
@@ -313,8 +327,28 @@ const SeccionOrigen = () => {
                   searchable
                   required
                   disabled={loadingSucursales}
-                  rightSection={loadingSucursales ? <Loader size="xs" /> : undefined}
-                  error={form.errors.sucursalEntregaID}
+                  rightSection={
+                    loadingSucursales ? (
+                      <Loader size="xs" />
+                    ) : errorSucursales ? (
+                      <Tooltip label="Reintentar">
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          onClick={() => refetchSucursales()}
+                          aria-label="Reintentar cargar las sucursales"
+                        >
+                          <IconRefresh size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    ) : undefined
+                  }
+                  error={
+                    form.errors.sucursalEntregaID ||
+                    (errorSucursales
+                      ? "No se pudieron cargar las sucursales"
+                      : undefined)
+                  }
                   value={form.values.sucursalEntregaID || null}
                   onChange={(value) =>
                     form.setFieldValue("sucursalEntregaID", value ?? "")

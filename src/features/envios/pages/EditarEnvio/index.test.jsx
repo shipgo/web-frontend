@@ -22,10 +22,11 @@ vi.mock("@api", () => ({
 // verificar que EditarEnvio centra el mapa en las coordenadas del envío
 // precargado y no en `DEFAULT_CENTER` (SHG-FE-078).
 vi.mock("@features/mapa/components/MapCard", () => ({
-  default: ({ children, initialCenter }) => (
+  default: ({ children, initialCenter, onClick }) => (
     <div
       data-testid="map-card"
       data-initial-center={`${initialCenter.lat},${initialCenter.lng}`}
+      onClick={() => onClick?.({ lngLat: { lat: -31.5, lng: -64.2 } })}
     >
       {children}
     </div>
@@ -312,6 +313,81 @@ describe("EditarEnvio", () => {
       );
       const [, payload] = envioApi.update.mock.calls[0];
       expect(payload).not.toHaveProperty("destino");
+    });
+
+    it("permite cambiar de retiro en sucursal a domicilio y guarda destino/tipoEntrega", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: { id: 5, nombre: "Sucursal Centro" },
+        destino: null,
+      });
+
+      const user = userEvent.setup();
+      renderEditarEnvio();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("radio", { name: /retiro en sucursal/i }),
+        ).toBeChecked();
+      });
+
+      await user.click(
+        screen.getByRole("radio", { name: /entrega a domicilio/i }),
+      );
+
+      // Sin destino precargado (era un envío de retiro en sucursal): hay que
+      // completar la dirección a mano — no hay geocoding disponible en este
+      // test (`useAddressAutofill` stubeado), así que se completa cada campo
+      // y se fija la posición clickeando el mapa (stub de `MapCard`).
+      await user.type(screen.getByLabelText(/^calle/i), "Av. Colón");
+      await user.type(screen.getByLabelText(/número/i), "1234");
+
+      const provinciaCombobox = screen.getByRole("combobox", {
+        name: /provincia/i,
+      });
+      await user.click(provinciaCombobox);
+      const provinciaListbox = document.getElementById(
+        provinciaCombobox.getAttribute("aria-controls"),
+      );
+      await user.click(
+        await within(provinciaListbox).findByText("Córdoba"),
+      );
+
+      const localidadCombobox = screen.getByRole("combobox", {
+        name: /localidad/i,
+      });
+      await user.click(localidadCombobox);
+      const localidadListbox = document.getElementById(
+        localidadCombobox.getAttribute("aria-controls"),
+      );
+      await user.click(
+        await within(localidadListbox).findByText("Córdoba"),
+      );
+
+      await user.click(screen.getByTestId("map-card"));
+
+      await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+      await waitFor(() => {
+        expect(envioApi.update).toHaveBeenCalledTimes(1);
+      });
+
+      expect(envioApi.update).toHaveBeenCalledWith(
+        "9",
+        expect.objectContaining({
+          tipoEntrega: "domicilio",
+          destino: expect.objectContaining({
+            nombreCalle: "Av. Colón",
+            numeroCalle: "1234",
+            localidad: { id: 5 },
+            latitud: -31.5,
+            longitud: -64.2,
+          }),
+        }),
+      );
+      const [, payload] = envioApi.update.mock.calls[0];
+      expect(payload).not.toHaveProperty("sucursalEntregaId");
     });
   });
 
