@@ -11,6 +11,7 @@ vi.mock("@api", () => ({
   categoriaApi: { getAll: vi.fn() },
   provinciaApi: { getAll: vi.fn() },
   localidadApi: { getByProvincia: vi.fn() },
+  sucursalApi: { getParaEntrega: vi.fn() },
 }));
 
 // Por default un ADMIN con sucursal propia (comportamiento de siempre, previo
@@ -79,6 +80,7 @@ import {
   categoriaApi,
   provinciaApi,
   localidadApi,
+  sucursalApi,
 } from "@api";
 import CrearEnvios from "./index";
 
@@ -133,6 +135,13 @@ describe("CrearEnvios", () => {
     provinciaApi.getAll.mockResolvedValue([{ id: 2, nombre: "Córdoba" }]);
     localidadApi.getByProvincia.mockResolvedValue([
       { id: 5, nombre: "Córdoba" },
+    ]);
+    sucursalApi.getParaEntrega.mockResolvedValue([
+      {
+        id: 5,
+        nombre: "Sucursal Centro",
+        puntoEntrega: { nombreCalle: "Av. Colón", numeroCalle: "500" },
+      },
     ]);
     envioApi.save.mockResolvedValue({ id: 9, codigoSeguimiento: "SHG-DEV-0009" });
   });
@@ -200,6 +209,7 @@ describe("CrearEnvios", () => {
       emailReceptor: "receptor@test.com",
       prefijo: "351",
       telefono: "1234567",
+      tipoEntrega: "domicilio",
       destino: {
         nombreCalle: "Av. Colón",
         numeroCalle: "1234",
@@ -483,6 +493,174 @@ describe("CrearEnvios", () => {
       expect(
         screen.getByRole("button", { name: /registrar envío/i }),
       ).toBeEnabled();
+    });
+  });
+
+  describe("SHG-FE-079/SHG-CONTRACT-012 — retiro en sucursal como método de entrega", () => {
+    it("por defecto queda en modo domicilio (buscador + mapa visibles, sin selector de sucursal)", async () => {
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        screen.getByRole("radio", { name: /entrega a domicilio/i }),
+      ).toBeChecked();
+      expect(
+        screen.getByRole("combobox", { name: /buscar dirección/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByLabelText(/sucursal de retiro/i),
+      ).not.toBeInTheDocument();
+      expect(sucursalApi.getParaEntrega).not.toHaveBeenCalled();
+    });
+
+    it("el SegmentedControl de tipo de entrega tiene nombre de grupo accesible (radiogroup)", async () => {
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        screen.getByRole("radiogroup", { name: /método de entrega/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("si falla GET /api/sucursal/paraEntrega, muestra un error en el Select y reintenta al click", async () => {
+      const user = userEvent.setup();
+      sucursalApi.getParaEntrega.mockRejectedValueOnce(new Error("network"));
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+
+      await waitFor(() => expect(sucursalApi.getParaEntrega).toHaveBeenCalledTimes(1));
+
+      expect(
+        await screen.findByText("No se pudieron cargar las sucursales"),
+      ).toBeInTheDocument();
+
+      await user.click(
+        screen.getByRole("button", { name: /reintentar cargar las sucursales/i }),
+      );
+
+      await waitFor(() => expect(sucursalApi.getParaEntrega).toHaveBeenCalledTimes(2));
+      expect(
+        await screen.findByText(/sucursal centro — av\. colón 500/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("No se pudieron cargar las sucursales"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("al elegir 'Retiro en sucursal' reemplaza el buscador de dirección + mapa por el selector de sucursal", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+
+      await waitFor(() => expect(sucursalApi.getParaEntrega).toHaveBeenCalled());
+
+      expect(
+        screen.queryByRole("combobox", { name: /buscar dirección/i }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("map-card")).not.toBeInTheDocument();
+      expect(
+        await screen.findByText(/sucursal centro — av\. colón 500/i),
+      ).toBeInTheDocument();
+    });
+
+    it("crea un envío de retiro en sucursal: manda tipoEntrega/sucursalEntregaId, sin destino", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await fillRemitenteYReceptor(user);
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+
+      await selectOption(
+        user,
+        document.body,
+        /sucursal de retiro/i,
+        /sucursal centro/i,
+      );
+
+      await agregarPaquete(user);
+
+      await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+      await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+      expect(envioApi.save).toHaveBeenCalledWith({
+        nombre: "Juan",
+        apellido: "García",
+        emailRemitente: "remitente@test.com",
+        emailReceptor: "receptor@test.com",
+        prefijo: "351",
+        telefono: "1234567",
+        tipoEntrega: "sucursal",
+        sucursalEntregaId: 5,
+        detalleEnvios: [
+          {
+            categoria: { id: 1 },
+            descripcion: null,
+            peso: 3,
+          },
+        ],
+      });
+    });
+
+    it("no envía el formulario si falta elegir la sucursal de retiro", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await fillRemitenteYReceptor(user);
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+      await agregarPaquete(user);
+
+      await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+      expect(envioApi.save).not.toHaveBeenCalled();
+      await screen.findByText("Seleccioná una sucursal de retiro");
+    });
+
+    it("volver a 'Entrega a domicilio' restaura el buscador de dirección + mapa", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+      await waitFor(() =>
+        expect(
+          screen.getByRole("combobox", { name: /sucursal de retiro/i }),
+        ).toBeInTheDocument(),
+      );
+
+      await user.click(
+        screen.getByRole("radio", { name: /entrega a domicilio/i }),
+      );
+
+      expect(
+        screen.getByRole("combobox", { name: /buscar dirección/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("combobox", { name: /sucursal de retiro/i }),
+      ).not.toBeInTheDocument();
     });
   });
 });

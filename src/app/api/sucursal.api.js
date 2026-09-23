@@ -37,4 +37,17 @@ export const sucursalApi = {
     );
     return response.data;
   },
+
+  /**
+   * `GET /api/sucursal/paraEntrega` — `SucursalDTO[]` (SU/AD, `SHG-BE-061`).
+   * A diferencia de `getSucursalesRestantes`, **incluye** la sucursal propia
+   * del usuario actual — el remitente puede elegir su propia sucursal como
+   * punto de retiro (`SHG-CONTRACT-012`, `ENDPOINTS.md §4`).
+   */
+  getParaEntrega: async () => {
+    const response = await restclient.get(
+      `${API_URLS.SUCURSAL_URL}/paraEntrega`,
+    );
+    return response.data;
+  },
 };
