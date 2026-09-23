@@ -84,6 +84,51 @@ describe("CREAR_ENVIO_SCHEMA", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  describe("SHG-CONTRACT-012/SHG-BE-061 — tipoEntrega: sucursal", () => {
+    it("acepta un envío de retiro en sucursal sin dirección", () => {
+      const result = CREAR_ENVIO_SCHEMA.safeParse({
+        nombre: "Juan",
+        apellido: "García",
+        emailRemitente: "remitente@test.com",
+        emailReceptor: "receptor@test.com",
+        prefijo: "351",
+        telefono: "1234567",
+        tipoEntrega: "sucursal",
+        sucursalEntregaID: "5",
+        detalleEnvios: [{ categoriaID: "1", peso: "2", descripcion: "" }],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rechaza tipoEntrega: sucursal sin sucursalEntregaID", () => {
+      const result = CREAR_ENVIO_SCHEMA.safeParse({
+        nombre: "Juan",
+        apellido: "García",
+        emailRemitente: "remitente@test.com",
+        emailReceptor: "receptor@test.com",
+        prefijo: "351",
+        telefono: "1234567",
+        tipoEntrega: "sucursal",
+        sucursalEntregaID: "",
+        detalleEnvios: [{ categoriaID: "1", peso: "2", descripcion: "" }],
+      });
+      expect(result.success).toBe(false);
+      expect(result.error.issues[0].path).toEqual(["sucursalEntregaID"]);
+    });
+
+    it("sin tipoEntrega (default domicilio) sigue exigiendo dirección completa", () => {
+      const { tipoEntrega: _tipoEntrega, ...sinTipoEntrega } = VALID_ENVIO;
+      const result = CREAR_ENVIO_SCHEMA.safeParse({
+        ...sinTipoEntrega,
+        nombreCalle: "",
+        provinciaID: "",
+        localidadID: "",
+        coordenadas: null,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
 });
 
 describe("PAQUETE_SCHEMA", () => {

@@ -12,3 +12,12 @@ export const TIPO_ENTREGA = {
   DOMICILIO: 'domicilio',
   SUCURSAL: 'sucursal',
 };
+
+/** Default del backend cuando `tipoEntrega` se omite en el `EnvioReqDTO`. */
+export const TIPO_ENTREGA_DEFAULT = TIPO_ENTREGA.DOMICILIO;
+
+/** Opciones para el `SegmentedControl` de elección de tipo de entrega (`SHG-FE-079`). */
+export const TIPO_ENTREGA_OPTIONS = [
+  { value: TIPO_ENTREGA.DOMICILIO, label: 'Entrega a domicilio' },
+  { value: TIPO_ENTREGA.SUCURSAL, label: 'Retiro en sucursal' },
+];

@@ -7,6 +7,7 @@ import {
   Group,
   Loader,
   Select,
+  SegmentedControl,
   Stack,
   Text,
   TextInput,
@@ -22,8 +23,10 @@ import { Marker } from "react-map-gl/mapbox";
 import MapCard from "@features/mapa/components/MapCard";
 import ScreenContainer from "@components/ScreenContainer";
 import { provinciaApi, localidadApi } from "@api";
+import { TIPO_ENTREGA, TIPO_ENTREGA_OPTIONS } from "@features/envios/constants";
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
 import { useAddressAutofill } from "../hooks/useAddressAutofill";
+import { useSucursalesParaEntrega } from "../hooks/useSucursalesParaEntrega";
 
 const DEFAULT_CENTER = { lat: -32.40949761013196, lng: -63.24437044777056 };
 
@@ -63,6 +66,15 @@ const parseStreetAddress = (line) => {
 
 const SeccionOrigen = () => {
   const form = useEnvioFormContext();
+  const tipoEntrega = form.values.tipoEntrega ?? TIPO_ENTREGA.DOMICILIO;
+  const esRetiroEnSucursal = tipoEntrega === TIPO_ENTREGA.SUCURSAL;
+
+  // `SHG-CONTRACT-012`/`SHG-BE-061`: sólo se pide la lista de sucursales
+  // cuando hace falta (modo "retiro en sucursal") — evita el fetch mientras
+  // el form está en "domicilio" (default).
+  const { options: sucursalesOptions, isLoading: loadingSucursales } =
+    useSucursalesParaEntrega({ enabled: esRetiroEnSucursal });
+
   const [geocodedCoords, setGeocodedCoords] = useState(null);
   const [searchValue, setSearchValue] = useState("");
   // Centro inicial del mapa: sólo se actualiza al elegir una dirección nueva
@@ -208,7 +220,7 @@ const SeccionOrigen = () => {
 
   return (
     <Group align="stretch" gap="md">
-      <Card flex={7}>
+      <Card flex={esRetiroEnSucursal ? 12 : 7}>
         <Stack>
           <Group gap="0.75rem">
             <ThemeIcon size="xl" variant="light">
@@ -217,10 +229,21 @@ const SeccionOrigen = () => {
             <Box>
               <Title order={4}>Origen y destino</Title>
               <Text c="dimmed" size="sm">
-                Indicá los datos de contacto y la dirección de entrega
+                Indicá los datos de contacto y cómo se entrega el envío
               </Text>
             </Box>
           </Group>
+
+          {/* `SHG-CONTRACT-012`/`SHG-BE-061`: elegir entre dirección de
+              destino (flujo de siempre) o retiro en una sucursal de la
+              empresa. Comparte esta sección con `EditarEnvio` (mismo
+              componente reutilizado, `EditarEnvioForm.jsx`). */}
+          <SegmentedControl
+            fullWidth
+            value={tipoEntrega}
+            onChange={(value) => form.setFieldValue("tipoEntrega", value)}
+            data={TIPO_ENTREGA_OPTIONS}
+          />
 
           <Grid>
             <Grid.Col span={6}>
@@ -280,161 +303,185 @@ const SeccionOrigen = () => {
                 placeholder="receptor@ejemplo.com"
               />
             </Grid.Col>
-            <Grid.Col span={12}>
-              <Autocomplete
-                label="Buscar dirección"
-                description="Completa automáticamente la calle, localidad y ubicación en el mapa"
-                error={form.errors.coordenadas}
-                value={searchValue}
-                onChange={handleSearchChange}
-                onOptionSubmit={handleSelect}
-                data={autocompleteDataWithDisabled}
-                placeholder="Ej: Av. Corrientes 1234, Buenos Aires"
-                filter={({ options }) => options}
-                rightSection={loadingInput ? <Loader size="xs" /> : undefined}
-                clearable={!loadingInput}
-              />
-            </Grid.Col>
-            <Grid.Col span={8}>
-              <TextInput
-                key={form.key("nombreCalle")}
-                {...form.getInputProps("nombreCalle")}
-                required
-                label="Calle"
-                placeholder="Ej: Av. Colón"
-              />
-            </Grid.Col>
-            <Grid.Col span={4}>
-              <TextInput
-                key={form.key("numeroCalle")}
-                {...form.getInputProps("numeroCalle")}
-                label="Número"
-                placeholder="Ej: 1234"
-              />
-            </Grid.Col>
-            <Grid.Col span={6}>
-              <TextInput
-                key={form.key("piso")}
-                {...form.getInputProps("piso")}
-                label="Piso"
-                placeholder="Ej: 4"
-              />
-            </Grid.Col>
-            <Grid.Col span={6}>
-              <TextInput
-                key={form.key("departamento")}
-                {...form.getInputProps("departamento")}
-                label="Departamento"
-                placeholder="Ej: B"
-              />
-            </Grid.Col>
-            <Grid.Col span={6}>
-              <Select
-                label="Provincia"
-                placeholder="Seleccioná una provincia"
-                data={provincias}
-                searchable
-                required
-                error={form.errors.provinciaID}
-                value={form.values.provinciaID || null}
-                onChange={(value) => {
-                  form.setFieldValue("provinciaID", value ?? "");
-                  form.setFieldValue("localidadID", "");
-                }}
-              />
-            </Grid.Col>
-            <Grid.Col span={6}>
-              <Select
-                key={form.key("localidadID")}
-                {...form.getInputProps("localidadID")}
-                required
-                label="Localidad"
-                placeholder={
-                  form.values.provinciaID
-                    ? "Seleccioná una localidad"
-                    : "Elegí primero una provincia"
-                }
-                data={localidades}
-                searchable
-                disabled={!form.values.provinciaID}
-              />
-            </Grid.Col>
+            {esRetiroEnSucursal ? (
+              <Grid.Col span={12}>
+                <Select
+                  label="Sucursal de retiro"
+                  description="El receptor va a poder retirar el envío en esta sucursal"
+                  placeholder="Seleccioná una sucursal"
+                  data={sucursalesOptions}
+                  searchable
+                  required
+                  disabled={loadingSucursales}
+                  rightSection={loadingSucursales ? <Loader size="xs" /> : undefined}
+                  error={form.errors.sucursalEntregaID}
+                  value={form.values.sucursalEntregaID || null}
+                  onChange={(value) =>
+                    form.setFieldValue("sucursalEntregaID", value ?? "")
+                  }
+                />
+              </Grid.Col>
+            ) : (
+              <>
+                <Grid.Col span={12}>
+                  <Autocomplete
+                    label="Buscar dirección"
+                    description="Completa automáticamente la calle, localidad y ubicación en el mapa"
+                    error={form.errors.coordenadas}
+                    value={searchValue}
+                    onChange={handleSearchChange}
+                    onOptionSubmit={handleSelect}
+                    data={autocompleteDataWithDisabled}
+                    placeholder="Ej: Av. Corrientes 1234, Buenos Aires"
+                    filter={({ options }) => options}
+                    rightSection={loadingInput ? <Loader size="xs" /> : undefined}
+                    clearable={!loadingInput}
+                  />
+                </Grid.Col>
+                <Grid.Col span={8}>
+                  <TextInput
+                    key={form.key("nombreCalle")}
+                    {...form.getInputProps("nombreCalle")}
+                    required
+                    label="Calle"
+                    placeholder="Ej: Av. Colón"
+                  />
+                </Grid.Col>
+                <Grid.Col span={4}>
+                  <TextInput
+                    key={form.key("numeroCalle")}
+                    {...form.getInputProps("numeroCalle")}
+                    label="Número"
+                    placeholder="Ej: 1234"
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <TextInput
+                    key={form.key("piso")}
+                    {...form.getInputProps("piso")}
+                    label="Piso"
+                    placeholder="Ej: 4"
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <TextInput
+                    key={form.key("departamento")}
+                    {...form.getInputProps("departamento")}
+                    label="Departamento"
+                    placeholder="Ej: B"
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Select
+                    label="Provincia"
+                    placeholder="Seleccioná una provincia"
+                    data={provincias}
+                    searchable
+                    required
+                    error={form.errors.provinciaID}
+                    value={form.values.provinciaID || null}
+                    onChange={(value) => {
+                      form.setFieldValue("provinciaID", value ?? "");
+                      form.setFieldValue("localidadID", "");
+                    }}
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Select
+                    key={form.key("localidadID")}
+                    {...form.getInputProps("localidadID")}
+                    required
+                    label="Localidad"
+                    placeholder={
+                      form.values.provinciaID
+                        ? "Seleccioná una localidad"
+                        : "Elegí primero una provincia"
+                    }
+                    data={localidades}
+                    searchable
+                    disabled={!form.values.provinciaID}
+                  />
+                </Grid.Col>
+              </>
+            )}
           </Grid>
         </Stack>
       </Card>
 
-      <Card padding={0} flex={5}>
-        <Box pos="relative" h="100%">
-          <ScreenContainer
-            onLoading={{
-              show: loadingMap,
-              description: "Obteniendo ubicación...",
-            }}
-            styleProps={{
-              h: "100%",
-              mih: 0,
-              radius: "md",
-              bg: "var(--mantine-color-default)",
-            }}
-          >
-            {/* El mapa se muestra siempre (aunque no haya dirección elegida
-                todavía) para permitir click-to-place. La `key` sólo cambia
-                cuando se elige una dirección nueva (`mapCenter`), no en cada
-                drag/click, así el mapa no se remonta ni pierde zoom/centro. */}
-            <MapCard
-              key={`mapa-${mapCenter.lat}-${mapCenter.lng}`}
-              initialCenter={mapCenter}
-              initialZoom={15}
-              onClick={handleMapClick}
-              h="100%"
-            >
-              {form.values.coordenadas && (
-                <Marker
-                  longitude={form.values.coordenadas.lng}
-                  latitude={form.values.coordenadas.lat}
-                  draggable
-                  onDragEnd={handleMarkerDragEnd}
-                  color="red"
-                />
-              )}
-            </MapCard>
-          </ScreenContainer>
-          {!form.values.coordenadas && (
-            <Text
-              pos="absolute"
-              bottom={10}
-              left={10}
-              size="sm"
-              px="sm"
-              py={4}
-              bg="var(--mantine-color-body)"
-              style={{
-                borderRadius: "var(--mantine-radius-sm)",
-                zIndex: 1,
-                pointerEvents: "none",
+      {!esRetiroEnSucursal && (
+        <Card padding={0} flex={5}>
+          <Box pos="relative" h="100%">
+            <ScreenContainer
+              onLoading={{
+                show: loadingMap,
+                description: "Obteniendo ubicación...",
+              }}
+              styleProps={{
+                h: "100%",
+                mih: 0,
+                radius: "md",
+                bg: "var(--mantine-color-default)",
               }}
             >
-              Hacé click en el mapa para ubicar el envío
-            </Text>
-          )}
-          {geocodedCoords && (
-            <Tooltip label="Reiniciar posición del marcador" position="left">
-              <ActionIcon
-                pos="absolute"
-                top={10}
-                right={10}
-                size="lg"
-                variant="white"
-                onClick={handleResetMarker}
-                style={{ zIndex: 1 }}
-                aria-label="Reiniciar posición del marcador"
+              {/* El mapa se muestra siempre (aunque no haya dirección elegida
+                  todavía) para permitir click-to-place. La `key` sólo cambia
+                  cuando se elige una dirección nueva (`mapCenter`), no en cada
+                  drag/click, así el mapa no se remonta ni pierde zoom/centro. */}
+              <MapCard
+                key={`mapa-${mapCenter.lat}-${mapCenter.lng}`}
+                initialCenter={mapCenter}
+                initialZoom={15}
+                onClick={handleMapClick}
+                h="100%"
               >
-                <IconCurrentLocation size={18} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </Box>
-      </Card>
+                {form.values.coordenadas && (
+                  <Marker
+                    longitude={form.values.coordenadas.lng}
+                    latitude={form.values.coordenadas.lat}
+                    draggable
+                    onDragEnd={handleMarkerDragEnd}
+                    color="red"
+                  />
+                )}
+              </MapCard>
+            </ScreenContainer>
+            {!form.values.coordenadas && (
+              <Text
+                pos="absolute"
+                bottom={10}
+                left={10}
+                size="sm"
+                px="sm"
+                py={4}
+                bg="var(--mantine-color-body)"
+                style={{
+                  borderRadius: "var(--mantine-radius-sm)",
+                  zIndex: 1,
+                  pointerEvents: "none",
+                }}
+              >
+                Hacé click en el mapa para ubicar el envío
+              </Text>
+            )}
+            {geocodedCoords && (
+              <Tooltip label="Reiniciar posición del marcador" position="left">
+                <ActionIcon
+                  pos="absolute"
+                  top={10}
+                  right={10}
+                  size="lg"
+                  variant="white"
+                  onClick={handleResetMarker}
+                  style={{ zIndex: 1 }}
+                  aria-label="Reiniciar posición del marcador"
+                >
+                  <IconCurrentLocation size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Box>
+        </Card>
+      )}
     </Group>
   );
 };

@@ -1,7 +1,10 @@
+import { TIPO_ENTREGA, TIPO_ENTREGA_DEFAULT } from "./constants";
+
 /**
- * Arma el `EnvioReqDTO` (`CONTRACTS.md §2`) a partir de los `values` del form,
- * compartido entre `CrearEnvios` y `EditarEnvio` (`SHG-FE-004`) para que el
- * shape del payload no diverja entre las dos pantallas: `detalleEnvios[].categoria`
+ * Arma el `EnvioReqDTO` (`CONTRACTS.md §2`, `tipoEntrega`/`sucursalEntregaId`
+ * agregados por `SHG-CONTRACT-012`/`SHG-BE-061`) a partir de los `values` del
+ * form, compartido entre `CrearEnvios` y `EditarEnvio` (`SHG-FE-004`) para que
+ * el shape del payload no diverja entre las dos pantallas: `detalleEnvios[].categoria`
  * y `destino.localidad` van anidados como `{ id }` (no `categoriaID`/`localidadID`
  * planos) — verificado contra el backend real (`DetalleEnvioReqDTO`/`PuntoEntregaDTO`)
  * en `SHG-FE-003`.
@@ -18,6 +21,12 @@
  * contenido (trim), igual que `descripcion` de paquete — se omiten del
  * payload en vez de mandar `""`, así el backend los persiste como
  * `null`/ausentes en vez de string vacío.
+ *
+ * `tipoEntrega`: si es `sucursal` (`SHG-FE-079`), el payload manda
+ * `sucursalEntregaId` y **omite** `destino` por completo (obligatorio sólo
+ * si `tipoEntrega = domicilio` del lado del backend); si es `domicilio` (o
+ * ausente), se manda `destino` como siempre y no se incluye
+ * `sucursalEntregaId`.
  *
  * @param {Object} values
  * @param {{ id?: number, latitud?: number, longitud?: number }} [destinoExtra]
@@ -48,6 +57,9 @@ export const buildEnvioFormValues = (envio) => {
     emailReceptor: envio?.emailReceptor ?? "",
     prefijo: envio?.prefijo ?? "",
     telefono: envio?.telefono ?? "",
+    tipoEntrega: envio?.tipoEntrega ?? TIPO_ENTREGA_DEFAULT,
+    sucursalEntregaID:
+      envio?.sucursalEntrega?.id != null ? String(envio.sucursalEntrega.id) : "",
     nombreCalle: destino.nombreCalle ?? "",
     numeroCalle: destino.numeroCalle ?? "",
     piso: destino.piso ?? "",
@@ -68,17 +80,37 @@ export const buildEnvioFormValues = (envio) => {
 };
 
 export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
-  const coordenadas = values.coordenadas ?? {};
-  const piso = values.piso?.trim() || null;
-  const departamento = values.departamento?.trim() || null;
+  const tipoEntrega = values.tipoEntrega ?? TIPO_ENTREGA_DEFAULT;
 
-  return {
+  const base = {
     nombre: values.nombre,
     apellido: values.apellido,
     emailRemitente: values.emailRemitente,
     emailReceptor: values.emailReceptor,
     prefijo: values.prefijo,
     telefono: values.telefono,
+    tipoEntrega,
+    detalleEnvios: values.detalleEnvios.map((paquete) => ({
+      ...(paquete.id != null ? { id: paquete.id } : {}),
+      categoria: { id: Number(paquete.categoriaID) },
+      descripcion: paquete.descripcion || null,
+      peso: Number(paquete.peso),
+    })),
+  };
+
+  if (tipoEntrega === TIPO_ENTREGA.SUCURSAL) {
+    return {
+      ...base,
+      sucursalEntregaId: Number(values.sucursalEntregaID),
+    };
+  }
+
+  const coordenadas = values.coordenadas ?? {};
+  const piso = values.piso?.trim() || null;
+  const departamento = values.departamento?.trim() || null;
+
+  return {
+    ...base,
     destino: {
       ...(destinoExtra.id != null ? { id: destinoExtra.id } : {}),
       nombreCalle: values.nombreCalle,
@@ -89,11 +121,5 @@ export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
       latitud: destinoExtra.latitud ?? coordenadas.lat,
       longitud: destinoExtra.longitud ?? coordenadas.lng,
     },
-    detalleEnvios: values.detalleEnvios.map((paquete) => ({
-      ...(paquete.id != null ? { id: paquete.id } : {}),
-      categoria: { id: Number(paquete.categoriaID) },
-      descripcion: paquete.descripcion || null,
-      peso: Number(paquete.peso),
-    })),
   };
 };

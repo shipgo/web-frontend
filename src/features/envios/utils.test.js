@@ -28,6 +28,7 @@ describe("buildEnvioReqDTO", () => {
       emailReceptor: "receptor@test.com",
       prefijo: "351",
       telefono: "1234567",
+      tipoEntrega: "domicilio",
       destino: {
         nombreCalle: "Av. Colón",
         numeroCalle: "1234",
@@ -38,6 +39,41 @@ describe("buildEnvioReqDTO", () => {
       detalleEnvios: [
         { categoria: { id: 1 }, descripcion: "Sobre", peso: 0.5 },
       ],
+    });
+  });
+
+  it("por defecto (sin tipoEntrega en los values) manda tipoEntrega: domicilio", () => {
+    const values = { ...baseValues, coordenadas: { lat: 0, lng: 0 } };
+    delete values.tipoEntrega;
+
+    expect(buildEnvioReqDTO(values).tipoEntrega).toBe("domicilio");
+  });
+
+  describe("SHG-CONTRACT-012/SHG-BE-061 — tipoEntrega: sucursal", () => {
+    it("manda sucursalEntregaId y omite destino cuando tipoEntrega es sucursal", () => {
+      const values = {
+        ...baseValues,
+        tipoEntrega: "sucursal",
+        sucursalEntregaID: "5",
+        coordenadas: null,
+      };
+
+      const payload = buildEnvioReqDTO(values);
+
+      expect(payload).toEqual({
+        nombre: "Juan",
+        apellido: "García",
+        emailRemitente: "remitente@test.com",
+        emailReceptor: "receptor@test.com",
+        prefijo: "351",
+        telefono: "1234567",
+        tipoEntrega: "sucursal",
+        sucursalEntregaId: 5,
+        detalleEnvios: [
+          { categoria: { id: 1 }, descripcion: "Sobre", peso: 0.5 },
+        ],
+      });
+      expect(payload).not.toHaveProperty("destino");
     });
   });
 
@@ -147,6 +183,8 @@ describe("buildEnvioFormValues", () => {
       emailReceptor: "receptor@test.com",
       prefijo: "351",
       telefono: "1234567",
+      tipoEntrega: "domicilio",
+      sucursalEntregaID: "",
       nombreCalle: "Av. Colón",
       numeroCalle: "1234",
       piso: "",
@@ -158,6 +196,19 @@ describe("buildEnvioFormValues", () => {
         { id: 11, categoriaID: "1", descripcion: "Sobre", peso: 0.5 },
       ],
     });
+  });
+
+  it("precarga tipoEntrega/sucursalEntregaID cuando el envío es de retiro en sucursal (SHG-CONTRACT-012)", () => {
+    const envioSucursal = {
+      ...ENVIO,
+      tipoEntrega: "sucursal",
+      sucursalEntrega: { id: 7, nombre: "Sucursal Centro" },
+      destino: null,
+    };
+
+    const values = buildEnvioFormValues(envioSucursal);
+    expect(values.tipoEntrega).toBe("sucursal");
+    expect(values.sucursalEntregaID).toBe("7");
   });
 
   it("precarga piso/departamento del destino cuando vienen cargados (SHG-BE-041)", () => {
@@ -196,6 +247,8 @@ describe("buildEnvioFormValues", () => {
       emailReceptor: "",
       prefijo: "",
       telefono: "",
+      tipoEntrega: "domicilio",
+      sucursalEntregaID: "",
       nombreCalle: "",
       numeroCalle: "",
       piso: "",
