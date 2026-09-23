@@ -24,6 +24,7 @@ vi.mock('react-map-gl/mapbox', () => ({
   Marker: ({ children }) => <div>{children}</div>,
   Source: ({ children }) => <div>{children}</div>,
   Layer: () => null,
+  useMap: () => ({ current: null }),
 }));
 
 import { trackingApi, viajeApi } from '@api';
@@ -130,27 +131,38 @@ describe('DetalleViaje', () => {
   describe('acciones de ciclo de vida (SHG-FE-012)', () => {
     const VIAJE_PLANIFICADO = { ...EXISTING_VIAJE, estado: 'planificado' };
 
-    it('inicia un viaje planificado tras confirmar y refetchea el detalle', async () => {
-      const user = userEvent.setup();
+    it('no muestra el botón "Iniciar" para ADMIN (SHG-FE-083)', async () => {
       viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
-      viajeApi.iniciar.mockResolvedValue({ ...VIAJE_PLANIFICADO, estado: 'en_camino' });
 
       renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
         route: '/viajes/42',
       });
 
-      await user.click(await screen.findByRole('button', { name: 'Iniciar' }));
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
 
-      const dialog = await screen.findByRole('dialog');
-      await user.click(within(dialog).getByRole('button', { name: 'Sí, iniciar' }));
+      // El botón "Iniciar" no debería estar presente para ADMIN
+      expect(screen.queryByRole('button', { name: 'Iniciar' })).not.toBeInTheDocument();
+    });
+
+    it('no muestra el botón "Iniciar" para SUPERUSER (SHG-FE-083)', async () => {
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+      useAuthStore.setState({
+        user: new Usuario({ id: 1, username: 'super1', authorities: ['ROLE_SUPERUSER'] }),
+        isAuthenticated: true,
+      });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
 
       await waitFor(() => {
-        expect(viajeApi.iniciar).toHaveBeenCalledWith('42');
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
       });
-      expect(await screen.findByText('Viaje iniciado')).toBeInTheDocument();
-      await waitFor(() => {
-        expect(viajeApi.getById).toHaveBeenCalledTimes(2);
-      });
+
+      // El botón "Iniciar" no debería estar presente para SUPERUSER
+      expect(screen.queryByRole('button', { name: 'Iniciar' })).not.toBeInTheDocument();
     });
 
     it('cancela un viaje planificado con motivo opcional', async () => {
