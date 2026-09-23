@@ -257,12 +257,17 @@ const DetalleEnvio = () => {
                 Ubicación actual y seguimiento
               </Text>
               <Text size="sm" c="dimmed">
-                Sucursal actual y fecha de entrega
+                Origen, ubicación actual y fecha de entrega
               </Text>
             </Box>
           </Group>
           <Divider />
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+            <InfoItem
+              icon={<IconBuilding size={16} />}
+              label="Sucursal de origen"
+              value={envio.sucursalOrigen?.nombre}
+            />
             <InfoItem
               icon={<IconBuilding size={16} />}
               label="Sucursal actual"
