@@ -122,7 +122,7 @@ const DetalleEnvio = () => {
   const direccion = [destino.nombreCalle, destino.numeroCalle].filter(Boolean).join(" ");
   // `sucursalEntrega` (SHG-CONTRACT-012): sucursal de retiro elegida por el
   // remitente cuando `tipoEntrega = 'sucursal'`. Distinta de `envio.sucursal`
-  // (sucursal de origen). Su dirección vive en `sucursalEntrega.puntoEntrega`
+  // (ubicación actual del envío). Su dirección vive en `sucursalEntrega.puntoEntrega`
   // (forma verificada en vivo contra el backend, SHG-FE-084).
   const sucursalRetiro = envio?.sucursalEntrega ?? null;
   const puntoRetiro = sucursalRetiro?.puntoEntrega ?? {};
@@ -254,10 +254,10 @@ const DetalleEnvio = () => {
             <IconBuilding size={24} />
             <Box>
               <Text size="lg" fw={600}>
-                Origen y seguimiento
+                Ubicación actual y seguimiento
               </Text>
               <Text size="sm" c="dimmed">
-                Sucursal de origen y fecha de entrega
+                Sucursal actual y fecha de entrega
               </Text>
             </Box>
           </Group>
@@ -265,7 +265,7 @@ const DetalleEnvio = () => {
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             <InfoItem
               icon={<IconBuilding size={16} />}
-              label="Sucursal de origen"
+              label="Sucursal actual"
               value={envio.sucursal?.nombre}
             />
             <InfoItem

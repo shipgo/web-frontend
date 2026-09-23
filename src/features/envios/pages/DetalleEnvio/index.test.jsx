@@ -103,7 +103,7 @@ describe("DetalleEnvio", () => {
     expect((await screen.findAllByText("En camino")).length).toBeGreaterThan(0);
   });
 
-  it("renders sucursal de origen and fecha de entrega", async () => {
+  it("renders sucursal actual and fecha de entrega", async () => {
     renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
       route: "/envios/9",
     });
