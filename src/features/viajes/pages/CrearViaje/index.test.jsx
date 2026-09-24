@@ -113,6 +113,7 @@ vi.mock("@api", () => ({
 }));
 
 import CrearViaje from "./index";
+import { validate } from "./contexts/enviosFormConfig";
 
 const ENVIOS_PARA_VIAJE = [
   {
@@ -258,6 +259,25 @@ const ENVIOS_RETIRO_ENTREGA_FINAL = [
           numeroCalle: "123",
           localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
         },
+      },
+    ],
+  },
+];
+
+// SHG-FE-089: envío con `tipoEntrega = 'sucursal'` pero sin `sucursalEntrega`
+// (destino inválido). Debe quedar como pendiente, sin agruparse — y si se
+// intenta crear un viaje con él, debe mostrar error.
+const ENVIOS_RETIRO_SIN_SUCURSAL = [
+  {
+    localidad: { id: 1, nombre: "Villa María", provincia: { nombre: "Córdoba" } },
+    envios: [
+      {
+        id: 400,
+        codigoSeguimiento: "SHG-DEV-0400",
+        estado: "en_sucursal",
+        peso: 3,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: null,
       },
     ],
   },
@@ -733,6 +753,55 @@ describe("CrearViaje", () => {
           { enviosID: [302], puntoEntregaID: 5, sucursalDestinoID: null },
         ]),
       );
+    });
+  });
+
+  describe("retiro sin sucursal destino (SHG-FE-089)", () => {
+    beforeEach(() => {
+      mockGetParaViaje.mockResolvedValue(ENVIOS_RETIRO_SIN_SUCURSAL);
+      mockGetDisponibles.mockResolvedValue([
+        {
+          id: 9,
+          patente: "AB123CD",
+          pesoMaximo: 3000,
+          modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+        },
+      ]);
+      mockGetChoferesDisponibles.mockResolvedValue([
+        { id: 15, nombre: "Juan", apellido: "Perez", email: "juan@shipgo.dev" },
+      ]);
+    });
+
+    it("un envío con tipoEntrega='sucursal' pero sin sucursalEntrega queda como pendiente, sin agruparse", async () => {
+      renderWithProviders(<CrearViaje />);
+
+      // El envío debe estar visible en "pendientes" porque su destino es nulo.
+      // ListadoEnviosPendientes.handleOnSelectedAction no lo agrupa
+      // (línea 146: si sucursalId es null, retorna sin agregar).
+      expect(await screen.findByText("SHG-DEV-0400")).toBeInTheDocument();
+    });
+
+    it("validación: si hubiera entrada con ambos destinos null, mostraría error con código de seguimiento", () => {
+      // Test unitario de la validación: probamos que `validate.enviosIncluidos`
+      // detecta la entrada inválida y reporta códigos de seguimiento.
+      // SHG-FE-089: el blindaje previene POST silencioso.
+      const envioInvalido = new Map([
+        [
+          "invalid_1",
+          {
+            puntoEntregaID: null,
+            sucursalDestinoID: null,
+            label: "—",
+            packages: new Map([
+              [999, { id: 999, codigoSeguimiento: "SHG-INV-999" }],
+            ]),
+          },
+        ],
+      ]);
+
+      const error = validate.enviosIncluidos(envioInvalido);
+      expect(error).toContain("No se pueden crear recorridos sin destino");
+      expect(error).toContain("SHG-INV-999");
     });
   });
 });

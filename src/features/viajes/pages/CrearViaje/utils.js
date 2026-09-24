@@ -47,6 +47,30 @@ export const buildEnviosPuntoEntrega = (enviosIncluidos) =>
     }));
 
 /**
+ * Detecta envíos que serían filtrados por `buildEnviosPuntoEntrega`
+ * (entrada con `puntoEntregaID` y `sucursalDestinoID` ambos `null`).
+ * Utilizado por validación del form para mostrar error visible.
+ *
+ * SHG-FE-089: reporta qué envíos van a desaparecer si se manda el viaje,
+ * para que el usuario corrija antes de intentar crear/editar.
+ *
+ * @param {Map} enviosIncluidos
+ * @returns {string[]} array de códigos de seguimiento de envíos con destino inválido (fallback a id si falta).
+ */
+export const getInvalidEnvios = (enviosIncluidos) => {
+  const invalid = [];
+  Array.from(enviosIncluidos.values()).forEach((entry) => {
+    if (entry.puntoEntregaID == null && entry.sucursalDestinoID == null) {
+      // Todos los envíos de esta entrada tienen el mismo destino nulo.
+      Array.from(entry.packages.values()).forEach((envio) => {
+        invalid.push(envio.codigoSeguimiento || String(envio.id));
+      });
+    }
+  });
+  return invalid;
+};
+
+/**
  * Arma el `ViajeReqDTO` completo a partir de los `values` del form.
  * `responsable`/`sucursal` los resuelve el backend server-side; las fechas
  * reales (`fechaHoraInicio`/`fechaHoraFin`) NO se mandan en creación —
