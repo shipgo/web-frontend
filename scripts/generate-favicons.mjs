@@ -131,7 +131,11 @@ function faviconSvg(size) {
 async function assertNoEdgeInk(pngPath, label) {
   const { data, info } = await sharp(pngPath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width, height, channels } = info;
-  const TOLERANCE = 8; // allow minor anti-aliasing/compression noise around the flat background color
+  // sharp's PNG decode + `.raw()` is lossless, so there's no compression
+  // noise to tolerate here — any deviation from the flat background color
+  // is real ink. Same threshold mobile's `assertNoEdgeAlpha` uses
+  // (`alpha > 0`, i.e. tolerance 0).
+  const TOLERANCE = 0;
   const isBackground = (x, y) => {
     const idx = (y * width + x) * channels;
     return (
