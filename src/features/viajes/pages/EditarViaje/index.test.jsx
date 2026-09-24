@@ -2,6 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { AppShell } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { Route } from "wouter";
 
 import { renderWithProviders as renderRaw } from "../../../../test/renderWithProviders";
@@ -496,6 +497,200 @@ describe("EditarViaje", () => {
           "AB123CD - Hilux"
         );
       });
+    });
+  });
+
+  describe("submit inválido — un campo roto por vez (SHG-FE-091)", () => {
+    beforeEach(() => {
+      // Ver el mismo comentario en `CrearViaje/index.test.jsx`: el store de
+      // `@mantine/notifications` no se resetea entre tests.
+      notifications.clean();
+    });
+
+    it("sin vehículo (el viaje se cargó sin vehículo asignado): muestra el aviso y no llama a PUT", async () => {
+      // El `Select` de vehículo (`EditarViaje/SeccionRecursos.jsx`) no es
+      // `clearable` — no hay forma de "romper" este campo por UI una vez
+      // cargado un viaje válido. Se simula con un viaje que llega sin
+      // vehículo asignado (p. ej. un "creado" al que todavía no se le asignó
+      // uno), dejando el resto del form (fechas, choferes, envíos) intacto.
+      viajeApi.getById.mockResolvedValue({ ...EXISTING_VIAJE, vehiculo: null });
+
+      renderWithProviders(
+        <Route path="/viajes/:id/editar" component={EditarViaje} />,
+        { route: "/viajes/42/editar" }
+      );
+
+      await screen.findByText("SEED000200");
+
+      const user = userEvent.setup();
+      await user.click(
+        screen.getByRole("button", { name: /guardar cambios/i })
+      );
+
+      // `SeccionRecursos` usa `getInputProps("vehiculo")`, así que el mismo
+      // mensaje aparece dos veces: como error de campo bajo el `Select` Y en
+      // la notificación de `handleInvalid` — de ahí `getAllByText`.
+      await waitFor(() => {
+        expect(
+          screen.getAllByText(/seleccioná un vehículo/i).length
+        ).toBeGreaterThan(0);
+      });
+      expect(viajeApi.update).not.toHaveBeenCalled();
+    });
+
+    it("sin chofer (se quitan todos los choferes del viaje): muestra el aviso y no llama a PUT", async () => {
+      renderWithProviders(
+        <Route path="/viajes/:id/editar" component={EditarViaje} />,
+        { route: "/viajes/42/editar" }
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+          "AB123CD - Hilux"
+        );
+      });
+      await screen.findByText("SEED000200");
+
+      const user = userEvent.setup();
+      const choferesInput = screen.getByRole("combobox", {
+        name: /choferes/i,
+      });
+      await user.click(choferesInput);
+      // Con el campo de búsqueda vacío, Backspace quita el último chofer
+      // seleccionado (comportamiento estándar del `MultiSelect` de Mantine)
+      // — acá sólo hay uno (Juan Perez), así que lo deja en `[]`.
+      await user.keyboard("{Backspace}");
+
+      await user.click(
+        screen.getByRole("button", { name: /guardar cambios/i })
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getAllByText(/seleccioná al menos un chofer/i).length
+        ).toBeGreaterThan(0);
+      });
+      expect(viajeApi.update).not.toHaveBeenCalled();
+    });
+
+    it("fechas vacías (el viaje se cargó sin fecha de llegada planificada): muestra el aviso y no llama a PUT", async () => {
+      viajeApi.getById.mockResolvedValue({
+        ...EXISTING_VIAJE,
+        fechaHoraFinPlanificada: null,
+      });
+
+      renderWithProviders(
+        <Route path="/viajes/:id/editar" component={EditarViaje} />,
+        { route: "/viajes/42/editar" }
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+          "AB123CD - Hilux"
+        );
+      });
+      await screen.findByText("SEED000200");
+
+      const user = userEvent.setup();
+      await user.click(
+        screen.getByRole("button", { name: /guardar cambios/i })
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getAllByText(/seleccioná la fecha de llegada planificada/i)
+            .length
+        ).toBeGreaterThan(0);
+      });
+      expect(viajeApi.update).not.toHaveBeenCalled();
+    });
+
+    it("salida planificada ≥ llegada planificada: muestra el aviso y no llama a PUT", async () => {
+      viajeApi.getById.mockResolvedValue({
+        ...EXISTING_VIAJE,
+        fechaHoraInicioPlanificada: "2026-08-01T17:00:00",
+        fechaHoraFinPlanificada: "2026-08-01T17:00:00",
+      });
+
+      renderWithProviders(
+        <Route path="/viajes/:id/editar" component={EditarViaje} />,
+        { route: "/viajes/42/editar" }
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+          "AB123CD - Hilux"
+        );
+      });
+      await screen.findByText("SEED000200");
+
+      const user = userEvent.setup();
+      await user.click(
+        screen.getByRole("button", { name: /guardar cambios/i })
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getAllByText(
+            /la llegada planificada debe ser posterior a la salida planificada/i
+          ).length
+        ).toBeGreaterThan(0);
+      });
+      expect(viajeApi.update).not.toHaveBeenCalled();
+    });
+
+    // "sin envíos" ya está cubierto por "no deja guardar si se quitan TODOS
+    // los envíos del viaje (misma validación que crear)" (arriba).
+
+    it("un recorrido con destino inválido (ambos destinos null): muestra el aviso y no llama a PUT (SHG-FE-089)", async () => {
+      // El blindaje de `ListadoEnviosPendientes.handleOnSelectedAction`
+      // (SHG-FE-086/089, ver el harness de `CrearViaje/index.test.jsx`)
+      // evita que este estado se arme desde la UI — pero acá sí puede llegar
+      // así desde el backend (`GET /api/viaje/{id}`, un recorrido corrupto o
+      // legacy sin `puntoEntrega` NI `sucursalDestino`):
+      // `buildEnviosIncluidosFromRecorridos` (`./utils.js`) lo traduce
+      // fielmente a una entrada con ambos ids `null`, que es justo el caso
+      // que `validate.enviosIncluidos`/`getInvalidEnvios`
+      // (`../CrearViaje/utils.js`) detectan.
+      viajeApi.getById.mockResolvedValue({
+        ...EXISTING_VIAJE,
+        recorridos: [
+          {
+            id: 99,
+            orden: 1,
+            puntoEntrega: null,
+            sucursalDestino: null,
+            detalleRecorridos: [
+              {
+                id: 999,
+                envio: { id: 400, codigoSeguimiento: "SEED000400", peso: 3 },
+              },
+            ],
+          },
+        ],
+      });
+
+      renderWithProviders(
+        <Route path="/viajes/:id/editar" component={EditarViaje} />,
+        { route: "/viajes/42/editar" }
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+          "AB123CD - Hilux"
+        );
+      });
+
+      const user = userEvent.setup();
+      await user.click(
+        screen.getByRole("button", { name: /guardar cambios/i })
+      );
+
+      expect(
+        await screen.findByText(/no se pueden crear recorridos sin destino/i)
+      ).toBeInTheDocument();
+      expect(screen.getAllByText(/SEED000400/).length).toBeGreaterThan(0);
+      expect(viajeApi.update).not.toHaveBeenCalled();
     });
   });
 });

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppShell } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 
 import { renderWithProviders as renderRaw } from "../../../../test/renderWithProviders";
 
@@ -112,8 +113,15 @@ vi.mock("@api", () => ({
   },
 }));
 
+import { useEffect } from "react";
+
 import CrearViaje from "./index";
 import { validate } from "./contexts/enviosFormConfig";
+import EnviosFormProvider from "./contexts/EnviosFormProvider";
+import { useFormContext } from "./contexts/EnviosFormContext";
+import SeccionDetalles from "./SeccionDetalles";
+import SeccionRecursos from "./SeccionRecursos";
+import Footer from "./Footer";
 
 const ENVIOS_PARA_VIAJE = [
   {
@@ -282,6 +290,77 @@ const ENVIOS_RETIRO_SIN_SUCURSAL = [
     ],
   },
 ];
+
+/**
+ * SHG-FE-091: helpers para los tests de "submit inválido" — arman el camino
+ * feliz completo (envío + fechas + vehículo + chofer) para poder romper UN
+ * solo campo a la vez y aislar su validación (`enviosFormConfig.js`).
+ */
+const seleccionarEnvioParaEntregaLocal = async (
+  user,
+  codigo = "SHG-DEV-0001",
+) => {
+  await user.click(await screen.findByText(codigo));
+  await user.click(
+    await screen.findByRole("button", { name: /marcar envíos para/i }),
+  );
+  await user.click(await screen.findByText(/entrega a destino final/i));
+};
+
+const setearFechasValidas = () => {
+  fireEvent.change(screen.getByLabelText(/salida planificada/i), {
+    target: { value: "2026-09-10T08:00" },
+  });
+  fireEvent.change(screen.getByLabelText(/llegada planificada/i), {
+    target: { value: "2026-09-10T18:00" },
+  });
+};
+
+const seleccionarVehiculoYChofer = async (user) => {
+  await user.click(await screen.findByText("AB123CD"));
+  await user.click(await screen.findByText("Juan Perez"));
+};
+
+/**
+ * SHG-FE-091: harness mínimo para el caso de SHG-FE-089 (envío con destino
+ * inválido —`puntoEntregaID`/`sucursalDestinoID` ambos `null`— ya presente en
+ * `enviosIncluidos`). `ListadoEnviosPendientes.handleOnSelectedAction`
+ * (SHG-FE-086/089) evita por diseño que se llegue a este estado completando
+ * el wizard real (un retiro sin `sucursalEntrega` queda sin agrupar, ver el
+ * describe "retiro sin sucursal destino" más abajo) — por eso no se puede
+ * reproducir por UI. Se compone acá el mismo árbol real que usa `CrearViaje`
+ * (`EnviosFormProvider` + `SeccionDetalles` + `SeccionRecursos` + `Footer`,
+ * sin `SeccionEnvios`) y se inyecta directamente en `enviosIncluidos` la
+ * entrada inconsistente que `validate.enviosIncluidos`/`getInvalidEnvios`
+ * (`../utils.js`) están pensadas para blindar, para ejercitar el camino
+ * completo submit → `handleInvalid` → notificación → sin POST (y no sólo la
+ * función pura, como el test unitario ya existente más abajo).
+ */
+const InyectarEnvioDestinoInvalido = () => {
+  const form = useFormContext();
+
+  useEffect(() => {
+    form.setFieldValue(
+      "enviosIncluidos",
+      new Map([
+        [
+          "invalid_1",
+          {
+            puntoEntregaID: null,
+            sucursalDestinoID: null,
+            label: "—",
+            packages: new Map([
+              [999, { id: 999, codigoSeguimiento: "SHG-INV-999" }],
+            ]),
+          },
+        ],
+      ]),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return null;
+};
 
 describe("CrearViaje", () => {
   beforeEach(() => {
@@ -802,6 +881,160 @@ describe("CrearViaje", () => {
       const error = validate.enviosIncluidos(envioInvalido);
       expect(error).toContain("No se pueden crear recorridos sin destino");
       expect(error).toContain("SHG-INV-999");
+    });
+  });
+
+  describe("submit inválido — un campo roto por vez (SHG-FE-091)", () => {
+    beforeEach(() => {
+      // Las notificaciones de `@mantine/notifications` viven en un store
+      // global que no se resetea entre tests (ni con `vi.clearAllMocks()`):
+      // sin este `clean()`, los toasts de tests anteriores (de este mismo
+      // archivo) se acumulan y pueden ralentizar el render lo suficiente
+      // como para que `findByText` (timeout 1000ms) llegue a expirar antes
+      // de que aparezca el aviso NUEVO que cada test de acá verifica.
+      notifications.clean();
+      mockGetDisponibles.mockResolvedValue([
+        {
+          id: 9,
+          patente: "AB123CD",
+          pesoMaximo: 3000,
+          modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+        },
+      ]);
+      mockGetChoferesDisponibles.mockResolvedValue([
+        { id: 15, nombre: "Juan", apellido: "Perez", email: "juan@shipgo.dev" },
+      ]);
+    });
+
+    it("sin vehículo: muestra el aviso y no llama a POST /api/viaje", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await seleccionarEnvioParaEntregaLocal(user);
+      setearFechasValidas();
+      await waitFor(() => expect(mockGetDisponibles).toHaveBeenCalled());
+      // Sólo se elige el chofer — el vehículo queda sin seleccionar.
+      await user.click(await screen.findByText("Juan Perez"));
+
+      await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+      expect(
+        await screen.findByText(/seleccioná un vehículo/i),
+      ).toBeInTheDocument();
+      expect(mockSaveViaje).not.toHaveBeenCalled();
+    });
+
+    it("sin chofer: muestra el aviso y no llama a POST /api/viaje", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await seleccionarEnvioParaEntregaLocal(user);
+      setearFechasValidas();
+      await waitFor(() =>
+        expect(mockGetChoferesDisponibles).toHaveBeenCalled(),
+      );
+      // Sólo se elige el vehículo — el chofer queda sin seleccionar.
+      await user.click(await screen.findByText("AB123CD"));
+
+      await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+      expect(
+        await screen.findByText(/seleccioná al menos un chofer/i),
+      ).toBeInTheDocument();
+      expect(mockSaveViaje).not.toHaveBeenCalled();
+    });
+
+    it("fechas vacías (sin fecha de llegada): muestra el aviso y no llama a POST /api/viaje", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await seleccionarEnvioParaEntregaLocal(user);
+      // Sólo se completa la salida. Sin la llegada, `useDisponibilidadParams`
+      // deshabilita las queries de disponibilidad, así que vehículo y chofer
+      // tampoco se pueden elegir — pero el orden de `validate` en
+      // `enviosFormConfig.js` (fechaHoraInicioPlanificada,
+      // fechaHoraFinPlanificada, enviosIncluidos, vehiculo, choferes) hace
+      // que el primer error — y el único mensaje que se ve en la
+      // notificación de `handleInvalid` — siga siendo el de la fecha de
+      // llegada, que es lo que este test verifica.
+      fireEvent.change(screen.getByLabelText(/salida planificada/i), {
+        target: { value: "2026-09-10T08:00" },
+      });
+
+      await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+      expect(
+        await screen.findByText(/seleccioná la fecha de llegada planificada/i),
+      ).toBeInTheDocument();
+      expect(mockSaveViaje).not.toHaveBeenCalled();
+    });
+
+    it("salida planificada ≥ llegada planificada: muestra el aviso y no llama a POST /api/viaje", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await seleccionarEnvioParaEntregaLocal(user);
+      // Misma hora para salida y llegada (caso límite de "salida ≥
+      // llegada") — inválido porque la llegada debe ser estrictamente
+      // posterior. Al no ser una ventana válida, vehículo y chofer tampoco
+      // quedan disponibles (mismo caso que la fecha vacía, arriba).
+      fireEvent.change(screen.getByLabelText(/salida planificada/i), {
+        target: { value: "2026-09-10T08:00" },
+      });
+      fireEvent.change(screen.getByLabelText(/llegada planificada/i), {
+        target: { value: "2026-09-10T08:00" },
+      });
+
+      await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+      expect(
+        await screen.findByText(
+          /la llegada planificada debe ser posterior a la salida planificada/i,
+        ),
+      ).toBeInTheDocument();
+      expect(mockSaveViaje).not.toHaveBeenCalled();
+    });
+
+    it("sin envíos: muestra el aviso y no llama a POST /api/viaje", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      // No se selecciona ningún envío — fechas, vehículo y chofer sí.
+      setearFechasValidas();
+      await waitFor(() => expect(mockGetDisponibles).toHaveBeenCalled());
+      await seleccionarVehiculoYChofer(user);
+
+      await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+      expect(
+        await screen.findByText(/agregá al menos un envío al viaje/i),
+      ).toBeInTheDocument();
+      expect(mockSaveViaje).not.toHaveBeenCalled();
+    });
+
+    it("envío con destino inválido ya incluido (ambos destinos null, SHG-FE-089): muestra el aviso y no llama a POST /api/viaje", async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(
+        <EnviosFormProvider>
+          <InyectarEnvioDestinoInvalido />
+          <SeccionDetalles />
+          <SeccionRecursos />
+          <Footer />
+        </EnviosFormProvider>,
+      );
+
+      setearFechasValidas();
+      await waitFor(() => expect(mockGetDisponibles).toHaveBeenCalled());
+      await seleccionarVehiculoYChofer(user);
+
+      await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+
+      expect(
+        await screen.findByText(/no se pueden crear recorridos sin destino/i),
+      ).toBeInTheDocument();
+      expect(screen.getAllByText(/SHG-INV-999/).length).toBeGreaterThan(0);
+      expect(mockSaveViaje).not.toHaveBeenCalled();
     });
   });
 });
