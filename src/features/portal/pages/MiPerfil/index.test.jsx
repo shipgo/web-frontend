@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { notifications } from '@mantine/notifications';
 
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 
@@ -20,9 +21,9 @@ vi.mock('@stores/auth.store', () => ({
   useAuthStore: (selector) => selector({ getUserInfo: mockGetUserInfo }),
 }));
 
-// Stub: `CambiarPasswordCard` (reusada de `usuarios`) ya tiene sus propios
-// tests — acá sólo nos importa que la pantalla la renderiza.
-vi.mock('../../../usuarios/components/CambiarPasswordCard', () => ({
+// Stub: `CambiarPasswordCard` (compartido, `src/app/components`) ya tiene sus
+// propios tests — acá sólo nos importa que la pantalla la renderiza.
+vi.mock('@components/CambiarPasswordCard', () => ({
   default: () => <div>stub-cambiar-password</div>,
 }));
 
@@ -44,6 +45,11 @@ const exactLabel = (text) => new RegExp(`^${text}\\s*\\*?$`, 'i');
 
 describe('MiPerfilPage', () => {
   beforeEach(() => {
+    // Los toasts de Mantine viven en un store global fuera del árbol de React
+    // (no se resetean con el unmount/cleanup entre tests): sin esto, dos
+    // tests que muestran el mismo título ("Perfil actualizado") chocan y
+    // `findByText` falla por match ambiguo.
+    notifications.clean();
     mockUseMiPerfil.mockReset();
     mockUpdateMe.mockReset();
     mockGetUserInfo.mockReset();
@@ -103,6 +109,23 @@ describe('MiPerfilPage', () => {
     );
     await waitFor(() => expect(mockGetUserInfo).toHaveBeenCalled());
     expect(await screen.findByText('Perfil actualizado')).toBeInTheDocument();
+  });
+
+  it('si el PUT sale bien pero falla el refresh de auth.store, igual muestra éxito (no error)', async () => {
+    const user = userEvent.setup();
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockUseMiPerfil.mockReturnValue({ ...base, data: CUSTOMER_ME });
+    mockUpdateMe.mockResolvedValue({ ...CUSTOMER_ME, nombre: 'Carla Nueva' });
+    mockGetUserInfo.mockRejectedValue(new Error('whoami/customer-me caídos'));
+    renderWithProviders(<MiPerfilPage />);
+
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(await screen.findByText('Perfil actualizado')).toBeInTheDocument();
+    expect(screen.queryByText('Error')).not.toBeInTheDocument();
+    await waitFor(() => expect(mockGetUserInfo).toHaveBeenCalled());
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('ve errores por campo (ApiFieldError) si el backend rechaza el PUT', async () => {

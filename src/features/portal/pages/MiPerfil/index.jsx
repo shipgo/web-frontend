@@ -19,10 +19,11 @@ import { applyApiError } from '@domain/apiError';
 import { useAuthStore } from '@stores/auth.store';
 
 // Reuso del card de cambio de contraseña propia (`POST /api/changePassword`):
-// no depende de nada específico de `usuarios`, sólo del usuario logueado en
-// `auth.store` (ver JSDoc del componente) — habilitado para CUSTOMER desde
-// `SHG-BE-074`, junto con el `PUT /api/customer/me` de esta pantalla.
-import CambiarPasswordCard from '../../../usuarios/components/CambiarPasswordCard';
+// componente compartido (`src/app/components`, CLAUDE.md) — no depende de
+// nada específico de un feature, sólo del usuario logueado en `auth.store`
+// (ver JSDoc del componente) — habilitado para CUSTOMER desde `SHG-BE-074`,
+// junto con el `PUT /api/customer/me` de esta pantalla.
+import CambiarPasswordCard from '@components/CambiarPasswordCard';
 
 import { portalApi } from '../../api/portal.api';
 import { useMiPerfil, MI_PERFIL_QUERY_KEY } from './hooks/useMiPerfil';
@@ -71,19 +72,27 @@ const MiPerfilPage = () => {
       });
       queryClient.setQueryData(MI_PERFIL_QUERY_KEY, updated);
 
-      // El nombre visible en `PortalLayout` (menú de la cuenta) sale de
-      // `auth.store`, no de esta query: hay que refrescarlo aparte. Reusa el
-      // mismo fallback `GET /api/customer/me` que ya arma `getUserInfo()`
-      // para un CUSTOMER (`WHOAMI_URL` le da `403`), así no duplicamos acá la
-      // lógica de armar el `Usuario` con `authorities: [ROLE_CUSTOMER]`.
-      await getUserInfo();
-
       notifications.show({
         title: 'Perfil actualizado',
         message: 'Tus datos se guardaron correctamente.',
         color: 'green',
         icon: <IconCheck />,
       });
+
+      // El nombre visible en `PortalLayout` (menú de la cuenta) sale de
+      // `auth.store`, no de esta query: hay que refrescarlo aparte. Reusa el
+      // mismo fallback `GET /api/customer/me` que ya arma `getUserInfo()`
+      // para un CUSTOMER (`WHOAMI_URL` le da `403`), así no duplicamos acá la
+      // lógica de armar el `Usuario` con `authorities: [ROLE_CUSTOMER]`.
+      // Best-effort y FUERA del try del PUT: el guardado ya fue exitoso (y ya
+      // se avisó), así que si esto falla no hay que mostrar un error — sólo
+      // loguearlo. El nombre del header queda desactualizado hasta el
+      // próximo refresh, pero eso no es un error del usuario.
+      try {
+        await getUserInfo();
+      } catch (refreshError) {
+        console.error('No se pudo refrescar auth.store tras guardar el perfil:', refreshError);
+      }
     } catch (error) {
       const message = applyApiError(form, error, {
         fallbackMessage: 'No se pudieron guardar los cambios. Intentá nuevamente.',
