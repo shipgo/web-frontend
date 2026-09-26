@@ -51,7 +51,8 @@ export const notificacionHref = (notificacion) => {
   let resourceType = data.resource_type;
   let resourceId = data.resource_id;
 
-  // Fallback: derivar de `action_url` ("shipgo://viaje/123" o "/viaje/123").
+  // Fallback 1: derivar de `action_url` ("shipgo://viaje/123" o "/viaje/123")
+  // cuando resourceType o resourceId faltan.
   if ((!resourceType || resourceId == null) && typeof data.action_url === 'string') {
     const match = data.action_url.match(/([a-zA-Z]+)\/(\d+)\/?$/);
     if (match) {
@@ -63,5 +64,20 @@ export const notificacionHref = (notificacion) => {
   if (resourceType == null || resourceId == null || resourceId === '') return null;
 
   const build = RESOURCE_TO_PATH[String(resourceType).toLowerCase()];
+
+  // Fallback 2: si resourceType no está mapeado pero action_url existe,
+  // intentar parsear action_url para extraer el destino navegable.
+  // Ej: resourceType="recorrido" (no mapeado) + actionUrl="shipgo://viaje/123"
+  // → parseamos viaje/123 y lo resolvemos.
+  if (!build && typeof data.action_url === 'string') {
+    const match = data.action_url.match(/([a-zA-Z]+)\/(\d+)\/?$/);
+    if (match) {
+      const altBuild = RESOURCE_TO_PATH[String(match[1]).toLowerCase()];
+      if (altBuild) {
+        return altBuild(match[2]);
+      }
+    }
+  }
+
   return build ? build(resourceId) : null;
 };

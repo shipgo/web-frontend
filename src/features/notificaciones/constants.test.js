@@ -51,4 +51,25 @@ describe('notificacionHref', () => {
     ).toBeNull();
     expect(notificacionHref({ data: '{"resource_type":"viaje"}' })).toBeNull();
   });
+
+  it('usa action_url como fallback cuando resourceType no está mapeado', () => {
+    // Caso real: RECORRIDO_FINALIZADO_PROBLEMAS (SHG-BE-049)
+    // resourceType="recorrido" no está en RESOURCE_TO_PATH,
+    // pero actionUrl="shipgo://viaje/<id>" apunta a un recurso navegable.
+    expect(
+      notificacionHref({
+        data: '{"resource_type":"recorrido","resource_id":2,"action_url":"shipgo://viaje/123"}',
+      }),
+    ).toBe('/viajes/123');
+  });
+
+  it('los tipos mapeados siguen funcionando igual (no se regresan con action_url)', () => {
+    // Verificar que cuando tenemos un tipo mapeado + action_url,
+    // seguimos usando resource_type + resource_id (no action_url).
+    expect(
+      notificacionHref({
+        data: '{"resource_type":"viaje","resource_id":7,"action_url":"shipgo://envio/999"}',
+      }),
+    ).toBe('/viajes/7');
+  });
 });
