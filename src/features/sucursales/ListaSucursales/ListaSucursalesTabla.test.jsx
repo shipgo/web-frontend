@@ -80,11 +80,10 @@ describe("ListaSucursalesTabla", () => {
 
   it("prevents double-click on delete confirmation button", async () => {
     const user = userEvent.setup({ delay: null });
-    const onRefresh = vi.fn();
-    mockDelete.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({}), 200)));
+    mockDelete.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({}), 500)));
 
     renderWithProviders(
-      <ListaSucursalesTabla items={[sucursal]} onRefresh={onRefresh} />
+      <ListaSucursalesTabla items={[sucursal]} />
     );
 
     await user.click(screen.getByLabelText("Acciones de Sucursal Sur"));
@@ -100,7 +99,8 @@ describe("ListaSucursalesTabla", () => {
     const confirmButton = confirmButtons[confirmButtons.length - 1];
 
     await user.click(confirmButton);
+    await user.click(confirmButton);
 
-    await waitFor(() => expect(mockDelete).toHaveBeenCalledTimes(1), { timeout: 2000 });
+    await waitFor(() => expect(mockDelete).toHaveBeenCalledTimes(1), { timeout: 1000 });
   });
 });

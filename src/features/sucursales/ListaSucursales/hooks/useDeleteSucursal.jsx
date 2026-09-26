@@ -22,7 +22,8 @@ export const useDeleteSucursal = (onSuccess) => {
       confirmProps: { color: "red" },
       closeOnConfirm: false,
       onConfirm: async () => {
-        modals.updateModal(modalId, {
+        modals.updateModal({
+          modalId,
           confirmProps: { color: "red", loading: true },
         });
 
