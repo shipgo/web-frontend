@@ -1,15 +1,21 @@
 import { Link } from 'wouter';
 import { Avatar, Group, Menu, Text, UnstyledButton } from '@mantine/core';
-import { IconChevronDown, IconLogout, IconPackage } from '@tabler/icons-react';
+import {
+  IconChevronDown,
+  IconLogout,
+  IconPackage,
+  IconUserCircle,
+} from '@tabler/icons-react';
 
 import PublicLayout from '../../../app/layout/PublicLayout';
 import { useAuth } from '@contexts/auth';
 import { useAuthStore } from '@stores/auth.store';
-import { PORTAL_HOME_PATH } from '@domain/roles';
+import { PORTAL_HOME_PATH, PORTAL_PERFIL_PATH } from '@domain/roles';
 
 // `~` = ruta absoluta desde la raíz: estos links se renderizan dentro del nest
 // `/portal`, donde un `href` sin `~` se resolvería relativo al base.
 const PORTAL_HOME_HREF = `~${PORTAL_HOME_PATH}`;
+const PORTAL_PERFIL_HREF = `~${PORTAL_PERFIL_PATH}`;
 
 /**
  * Layout del portal CUSTOMER (`SHG-FE-026`). Envuelve `PublicLayout` (branding
@@ -49,6 +55,13 @@ const PortalLayout = ({ children }) => {
           leftSection={<IconPackage size={16} />}
         >
           Mis envíos
+        </Menu.Item>
+        <Menu.Item
+          component={Link}
+          href={PORTAL_PERFIL_HREF}
+          leftSection={<IconUserCircle size={16} />}
+        >
+          Mi perfil
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item

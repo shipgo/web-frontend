@@ -26,6 +26,8 @@ export const ADMIN_HOME_PATH = '/';
 export const PORTAL_BASE_PATH = '/portal';
 /** Home del portal CUSTOMER — a donde va un CUSTOMER recién autenticado. */
 export const PORTAL_HOME_PATH = `${PORTAL_BASE_PATH}/envios`;
+/** Pantalla "Mi perfil" del portal CUSTOMER (SHG-FE-102). */
+export const PORTAL_PERFIL_PATH = `${PORTAL_BASE_PATH}/perfil`;
 
 /** `valor canónico -> { label, color (paleta Mantine) }`. */
 export const ROL = {

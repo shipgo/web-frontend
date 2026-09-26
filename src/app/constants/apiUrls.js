@@ -51,6 +51,7 @@ export const API_URLS = {
   // GET /api/register/verify?token=... — público, activa la cuenta.
   REGISTER_VERIFY_URL: '/register/verify',
   // GET /api/customer/me — sólo ROLE_CUSTOMER (SHG-BE-024). CustomerMeDTO.
+  // PUT /api/customer/me — sólo ROLE_CUSTOMER (SHG-BE-074). CustomerMeUpdateReqDTO -> CustomerMeDTO.
   CUSTOMER_ME_URL: '/customer/me',
   // GET /api/envio/mios — sólo ROLE_CUSTOMER, paginado (Page<EnvioDTO>).
   ENVIO_MIOS_URL: '/envio/mios',
