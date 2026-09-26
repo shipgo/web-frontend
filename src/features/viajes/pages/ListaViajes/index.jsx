@@ -90,6 +90,7 @@ const ListaViajes = () => {
             selectedIds={selectedIds}
             onToggle={onToggle}
             onToggleAll={onToggleAll}
+            onCancelSuccess={refetch}
           />
         </ScreenContainer>
       </Card>

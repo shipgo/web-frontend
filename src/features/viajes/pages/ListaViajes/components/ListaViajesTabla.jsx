@@ -1,49 +1,19 @@
 import { Avatar, Badge, Checkbox, Group, Stack, Table, Text, Tooltip } from '@mantine/core';
-import {
-  IconAlertTriangle,
-  IconEdit,
-  IconMapSearch,
-  IconMessageReport,
-  IconRoute,
-  IconTrash,
-  IconUserX,
-} from '@tabler/icons-react';
+import { IconAlertTriangle, IconEdit, IconMapSearch, IconRoute, IconTrash } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useLocation } from 'wouter';
 
 import { timeFromNow, toLocalDate } from '@utils/dates';
-import { estadoBadge, normalizarEstado } from '@domain/estados';
+import { ESTADOS_VIAJE_CON_TRACKING, estadoBadge, normalizarEstado } from '@domain/estados';
 import { RowActionsMenu } from '@components';
+import { useAuthStore } from '@stores/auth.store';
 
-// Fases en las que el viaje todavía se puede editar/cancelar desde acá.
-const ESTADOS_EDITABLES = ['creado', 'planificado', 'en_proceso_de_carga'];
-// Fases "en ruta": tiene sentido monitorear / reportar un incidente.
-const ESTADOS_EN_RUTA = ['en_camino', 'con_problemas'];
-
-const getActionsForRow = (estado, { onEditar } = {}) => {
-  const valor = normalizarEstado(estado);
-  const actions = [{ icon: <IconRoute size={18} />, label: 'Ver hoja de ruta' }];
-
-  if (ESTADOS_EDITABLES.includes(valor)) {
-    actions.push({ icon: <IconEdit size={18} />, label: 'Editar viaje', onClick: onEditar });
-    if (valor === 'en_proceso_de_carga') {
-      actions.push({ icon: <IconUserX size={18} />, label: 'Desvincular chofer' });
-    }
-    actions.push({ icon: <IconTrash size={18} />, label: 'Cancelar viaje', color: 'red', dividerBefore: true });
-  }
-
-  if (ESTADOS_EN_RUTA.includes(valor)) {
-    actions.push(
-      { icon: <IconMapSearch size={18} />, label: 'Monitorear' },
-      { icon: <IconMessageReport size={18} />, label: 'Reportar incidente' },
-    );
-  }
-
-  return actions;
-};
+import { VIAJE_ESTADOS_EDITABLES } from '../../../constants';
+import { ESTADOS_CANCELABLES, puedeCancelar } from '../../DetalleViaje/acciones';
+import { useViajeAcciones } from '../../DetalleViaje/hooks/useViajeAcciones';
 
 const showWarning = (item, fecha) =>
-  ESTADOS_EDITABLES.includes(normalizarEstado(item.estado)) &&
+  ESTADOS_CANCELABLES.includes(normalizarEstado(item.estado)) &&
   !!fecha &&
   dayjs(fecha).isBefore(dayjs());
 
@@ -80,8 +50,138 @@ const recorridosCount = (item) => item.recorridos?.length ?? 0;
 const enviosCount = (item) =>
   item.recorridos?.reduce((total, recorrido) => total + (recorrido.detalleRecorridos?.length ?? 0), 0) ?? 0;
 
-const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) => {
+/**
+ * Una fila de la tabla — componente propio (no un `.map()` inline) porque
+ * necesita llamar al hook `useViajeAcciones` (confirmación + llamada real de
+ * "Cancelar viaje", SHG-FE-096) con el `id` de ESTE viaje; un hook no se puede
+ * invocar condicionalmente ni dentro del callback de `.map()`.
+ */
+const ViajeRow = ({ item, isSelected, onToggle, onCancelSuccess }) => {
   const [, navigate] = useLocation();
+  const user = useAuthStore((state) => state.user);
+  const estado = normalizarEstado(item.estado);
+  const { confirmCancelar } = useViajeAcciones(item.id, { onSuccess: onCancelSuccess });
+
+  const { label: estadoLabel, color: estadoColor, textColor: estadoTextColor } = estadoBadge('viaje', item.estado);
+  const fecha = item.fechaHoraInicioPlanificada;
+  const cantidadRecorridos = recorridosCount(item);
+  const cantidadEnvios = enviosCount(item);
+
+  const actions = [
+    { icon: <IconRoute size={18} />, label: 'Ver hoja de ruta', onClick: () => navigate(`/${item.id}`) },
+  ];
+
+  if (VIAJE_ESTADOS_EDITABLES.includes(estado)) {
+    actions.push({
+      icon: <IconEdit size={18} />,
+      label: 'Editar viaje',
+      onClick: () => navigate(`/${item.id}/editar`),
+    });
+  }
+
+  if (puedeCancelar(user, estado)) {
+    actions.push({
+      icon: <IconTrash size={18} />,
+      label: 'Cancelar viaje',
+      color: 'red',
+      dividerBefore: true,
+      onClick: confirmCancelar,
+    });
+  }
+
+  if (ESTADOS_VIAJE_CON_TRACKING.includes(estado)) {
+    // Ruta absoluta (`~`): `/mapa` no está anidado bajo `/viajes` (ver
+    // `app/routes/index.jsx`). El mapa lee `?viaje=` y preselecciona/centra
+    // ese viaje (genérico: lo reusa también SHG-FE-097 desde Envíos).
+    actions.push({
+      icon: <IconMapSearch size={18} />,
+      label: 'Monitorear',
+      onClick: () => navigate(`~/mapa?viaje=${item.id}`),
+    });
+  }
+
+  return (
+    // `role="button"` en la fila para que "ver detalle" sea alcanzable con
+    // teclado (Enter/Espacio, ver onKeyDown abajo) sin agregar una columna
+    // extra. La fila contiene un `Checkbox` y un `RowActionsMenu`, ambos
+    // focoables por su cuenta (con su propio `stopPropagation`/`tabIndex`),
+    // así que esto es "interactivo anidado dentro de interactivo": un
+    // lector de pantalla puede aplanar el contenido no interactivo de las
+    // celdas al anunciar la fila como botón. Se acepta como fix rápido de
+    // SHG-QA-002 (navegación por teclado funciona, verificado en vivo por
+    // el revisor) — un rediseño con un link/botón "Ver detalles" explícito
+    // por fila, sin el `role="button"` en el `<tr>`, queda para una tarea
+    // SHG-FE de UX si se quiere el patrón ARIA "correcto". Ver PR #75.
+    <Table.Tr
+      onClick={() => navigate(`/${item.id}`)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          navigate(`/${item.id}`);
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label={`Ver detalle del viaje ${item.id}`}
+      style={{ cursor: 'pointer' }}
+      bg={isSelected ? 'var(--mantine-color-blue-light)' : undefined}
+    >
+      <Table.Td onClick={(event) => event.stopPropagation()}>
+        <Checkbox
+          aria-label={`Seleccionar viaje ${item.id}`}
+          checked={isSelected}
+          onChange={() => onToggle(item.id)}
+        />
+      </Table.Td>
+
+      <Table.Td>{item.id}</Table.Td>
+
+      <Table.Td>
+        <Group gap="xs" align="center" wrap="nowrap">
+          <Stack gap="0">
+            <Text size="sm">{toLocalDate(fecha)}</Text>
+            <Text size="xs" fw="bold">{timeFromNow(fecha)}</Text>
+          </Stack>
+          {showWarning(item, fecha) && (
+            <Tooltip withArrow label="Viaje retrasado">
+              <IconAlertTriangle size={20} color="orange" />
+            </Tooltip>
+          )}
+        </Group>
+      </Table.Td>
+
+      <Table.Td>
+        {/* `c={estadoTextColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
+            en `@domain/estados` — sin esto, "En camino"/"Finalizado"
+            no llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
+            `undefined` para el resto de los estados, sin efecto. */}
+        <Badge color={estadoColor} variant="light" radius="md" c={estadoTextColor}>
+          {estadoLabel}
+        </Badge>
+      </Table.Td>
+
+      <Table.Td>
+        <ChoferCell chofer={item.chofer} choferes={item.choferes} />
+      </Table.Td>
+
+      <Table.Td>
+        <Text size="sm" fw={600}>{item.vehiculo?.patente || 'Sin vehículo'}</Text>
+      </Table.Td>
+
+      <Table.Td>
+        <Text size="sm">
+          {cantidadRecorridos} recorrido{cantidadRecorridos === 1 ? '' : 's'} · {cantidadEnvios} envío{cantidadEnvios === 1 ? '' : 's'}
+        </Text>
+      </Table.Td>
+
+      <Table.Td onClick={(event) => event.stopPropagation()}>
+        <RowActionsMenu actions={actions} ariaLabel={`Acciones del viaje ${item.id}`} />
+      </Table.Td>
+    </Table.Tr>
+  );
+};
+
+const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onCancelSuccess }) => {
   const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
   const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
@@ -109,98 +209,15 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) =>
       </Table.Thead>
 
       <Table.Tbody>
-        {items.map((item) => {
-          const { label: estadoLabel, color: estadoColor, textColor: estadoTextColor } = estadoBadge('viaje', item.estado);
-          const fecha = item.fechaHoraInicioPlanificada;
-          const cantidadRecorridos = recorridosCount(item);
-          const cantidadEnvios = enviosCount(item);
-
-          return (
-            // `role="button"` en la fila para que "ver detalle" sea alcanzable con
-            // teclado (Enter/Espacio, ver onKeyDown abajo) sin agregar una columna
-            // extra. La fila contiene un `Checkbox` y un `RowActionsMenu`, ambos
-            // focoables por su cuenta (con su propio `stopPropagation`/`tabIndex`),
-            // así que esto es "interactivo anidado dentro de interactivo": un
-            // lector de pantalla puede aplanar el contenido no interactivo de las
-            // celdas al anunciar la fila como botón. Se acepta como fix rápido de
-            // SHG-QA-002 (navegación por teclado funciona, verificado en vivo por
-            // el revisor) — un rediseño con un link/botón "Ver detalles" explícito
-            // por fila, sin el `role="button"` en el `<tr>`, queda para una tarea
-            // SHG-FE de UX si se quiere el patrón ARIA "correcto". Ver PR #75.
-            <Table.Tr
-              key={item.id}
-              onClick={() => navigate(`/${item.id}`)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  navigate(`/${item.id}`);
-                }
-              }}
-              tabIndex={0}
-              role="button"
-              aria-label={`Ver detalle del viaje ${item.id}`}
-              style={{ cursor: 'pointer' }}
-              bg={selectedIds.has(item.id) ? 'var(--mantine-color-blue-light)' : undefined}
-            >
-              <Table.Td onClick={(event) => event.stopPropagation()}>
-                <Checkbox
-                  aria-label={`Seleccionar viaje ${item.id}`}
-                  checked={selectedIds.has(item.id)}
-                  onChange={() => onToggle(item.id)}
-                />
-              </Table.Td>
-
-              <Table.Td>{item.id}</Table.Td>
-
-              <Table.Td>
-                <Group gap="xs" align="center" wrap="nowrap">
-                  <Stack gap="0">
-                    <Text size="sm">{toLocalDate(fecha)}</Text>
-                    <Text size="xs" fw="bold">{timeFromNow(fecha)}</Text>
-                  </Stack>
-                  {showWarning(item, fecha) && (
-                    <Tooltip withArrow label="Viaje retrasado">
-                      <IconAlertTriangle size={20} color="orange" />
-                    </Tooltip>
-                  )}
-                </Group>
-              </Table.Td>
-
-              <Table.Td>
-                {/* `c={estadoTextColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
-                    en `@domain/estados` — sin esto, "En camino"/"Finalizado"
-                    no llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
-                    `undefined` para el resto de los estados, sin efecto. */}
-                <Badge color={estadoColor} variant="light" radius="md" c={estadoTextColor}>
-                  {estadoLabel}
-                </Badge>
-              </Table.Td>
-
-              <Table.Td>
-                <ChoferCell chofer={item.chofer} choferes={item.choferes} />
-              </Table.Td>
-
-              <Table.Td>
-                <Text size="sm" fw={600}>{item.vehiculo?.patente || 'Sin vehículo'}</Text>
-              </Table.Td>
-
-              <Table.Td>
-                <Text size="sm">
-                  {cantidadRecorridos} recorrido{cantidadRecorridos === 1 ? '' : 's'} · {cantidadEnvios} envío{cantidadEnvios === 1 ? '' : 's'}
-                </Text>
-              </Table.Td>
-
-              <Table.Td onClick={(event) => event.stopPropagation()}>
-                <RowActionsMenu
-                  actions={getActionsForRow(item.estado, {
-                    onEditar: () => navigate(`/${item.id}/editar`),
-                  })}
-                  ariaLabel={`Acciones del viaje ${item.id}`}
-                />
-              </Table.Td>
-            </Table.Tr>
-          );
-        })}
+        {items.map((item) => (
+          <ViajeRow
+            key={item.id}
+            item={item}
+            isSelected={selectedIds.has(item.id)}
+            onToggle={onToggle}
+            onCancelSuccess={onCancelSuccess}
+          />
+        ))}
       </Table.Tbody>
     </Table>
     </Table.ScrollContainer>

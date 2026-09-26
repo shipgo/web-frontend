@@ -167,3 +167,17 @@ export const ESTADOS_TERMINALES = {
  */
 export const esEstadoTerminal = (entidad, valor) =>
   (ESTADOS_TERMINALES[entidad] ?? []).includes(normalizarEstado(valor));
+
+/**
+ * Estados de Viaje en los que hay tracking en vivo con sentido de mostrar
+ * (chofer despachado, con o sin incidente). Usado por:
+ * - `ListaViajesTabla` (SHG-FE-096): visibilidad de "Monitorear" en el menú de fila.
+ * - `mapa/hooks/useViajesEnCurso` (SHG-FE-096): qué viajes trae el mapa en vivo.
+ * - `ListaEnviosTabla` (SHG-FE-097): habilitar "Localizar" según el viaje del envío.
+ *
+ * `con_problemas` no es terminal (`ESTADOS_TERMINALES.viaje`) — el viaje sigue
+ * despachado, sólo que con un incidente reportado — así que también es
+ * "trackeable" aunque no tenga sentido "monitorear" un viaje que todavía no
+ * salió (`creado`/`planificado`/`en_proceso_de_carga`) ni uno ya cerrado.
+ */
+export const ESTADOS_VIAJE_CON_TRACKING = ['en_camino', 'con_problemas'];
