@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Switch, Route, Redirect } from 'wouter';
+import { Switch, Route, Redirect, useLocation } from 'wouter';
 
 import LoginPage from '@features/login';
 
@@ -9,6 +9,7 @@ import ProtectedRoute from '@components/ProtectedRoute';
 import PublicRoute from '@components/PublicRoute';
 import PortalRoute from '@components/PortalRoute';
 import MobileOnlyScreen from '@components/MobileOnlyScreen';
+import NotFoundPage from '@components/NotFoundPage';
 import { useAuth, useIsAuthenticated } from '@contexts/auth';
 import {
   hasAnyRole,
@@ -79,6 +80,34 @@ const hasExplicitColorSchemePreference = () => {
   }
 };
 
+// SHG-FE-100: única fuente de verdad para las secciones protegidas — de acá
+// se generan tanto las `<Route>` del `<Switch>` de `ProtectedRoutes` (más
+// abajo) como los prefijos que usa `CatchAllRoute` para distinguir, sin
+// sesión, un link directo a una ruta protegida real (redirige a
+// `/login?redirect=`, SHG-FE-054) de una ruta inexistente (404 pública). No
+// incluye `/`: tiene su propia `<Route>` sin `ProtectedRoute` acá abajo y su
+// propia `<Route path='/' component={RootRoute}>` en `AppRoutes`.
+const PROTECTED_SECTIONS = [
+  { path: '/mapa', component: MapaPage },
+  { path: '/dashboard', nest: true, component: DashboardRoutes },
+  { path: '/envios', nest: true, component: EnviosRoutes },
+  { path: '/viajes', nest: true, component: ViajesRoutes },
+  { path: '/usuarios', nest: true, component: UsuariosRoutes },
+  // Sucursales/Empresa: endpoints SUPERUSER-only (CONTRACTS.md §3).
+  { path: '/sucursales', nest: true, component: SucursalesRoutes, roles: [ROLE_SUPERUSER] },
+  { path: '/vehiculos', nest: true, component: VehiculosRoutes },
+  // Catálogo de Marca/Modelo (SHG-FE-059, ENDPOINTS.md §11/§12): CRUD
+  // completo SU/AD — no restringido a SUPERUSER como Sucursales. Tipo de
+  // Vehículo queda fuera (backend sólo GET).
+  { path: '/catalogo-vehiculos', nest: true, component: CatalogoVehiculosRoutes },
+  { path: '/mantenimientos', nest: true, component: MantenimientosRoutes },
+];
+
+const isKnownProtectedPath = (pathname) =>
+  PROTECTED_SECTIONS.some(
+    ({ path }) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+
 const ProtectedRoutes = () => {
   const isAuthenticated = useIsAuthenticated();
   const { user } = useAuth();
@@ -98,10 +127,10 @@ const ProtectedRoutes = () => {
 
   // Acceso directo (link compartido) a una ruta protegida sin sesión: manda a
   // `/login` preservando el destino en `?redirect=` (SHG-FE-054) en vez de
-  // perderlo — ver `@utils/redirect`. `ProtectedRoutes` es el fallback que
-  // matchea cualquier ruta no pública (última `<Route>` de `AppRoutes`, sin
-  // `path`), así que acá es donde realmente cae ese caso — la guarda interna
-  // de `ProtectedRoute` (por rol) sólo se monta ya autenticado.
+  // perderlo — ver `@utils/redirect`. `ProtectedRoutes` es a donde delega
+  // `RootRoute` (`/`) y `CatchAllRoute` (cualquier otra ruta reconocida como
+  // protegida, SHG-FE-100) — la guarda interna de `ProtectedRoute` (por rol)
+  // sólo se monta ya autenticado.
   if (!isAuthenticated) {
     const currentPath = `${window.location.pathname}${window.location.search}`;
     return <Redirect to={buildLoginRedirectTo(currentPath)} replace />;
@@ -122,59 +151,46 @@ const ProtectedRoutes = () => {
       <Suspense fallback={<RouteFallback />}>
         <Switch>
           <Route path='/' component={HomePage} />
-          <Route path='/mapa'>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <MapaPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/dashboard' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <DashboardRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/envios' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <EnviosRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/viajes' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <ViajesRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/usuarios' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <UsuariosRoutes />
-            </ProtectedRoute>
-          </Route>
-          {/* Sucursales/Empresa: endpoints SUPERUSER-only (CONTRACTS.md §3). */}
-          <Route path='/sucursales' nest>
-            <ProtectedRoute roles={[ROLE_SUPERUSER]}>
-              <SucursalesRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/vehiculos' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <VehiculosRoutes />
-            </ProtectedRoute>
-          </Route>
-          {/* Catálogo de Marca/Modelo (SHG-FE-059, ENDPOINTS.md §11/§12):
-              CRUD completo SU/AD — no restringido a SUPERUSER como
-              Sucursales. Tipo de Vehículo queda fuera (backend sólo GET). */}
-          <Route path='/catalogo-vehiculos' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <CatalogoVehiculosRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/mantenimientos' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <MantenimientosRoutes />
-            </ProtectedRoute>
+          {PROTECTED_SECTIONS.map(
+            ({ path, nest, component: SectionComponent, roles = ROLES_WEB }) => (
+              <Route key={path} path={path} nest={nest}>
+                <ProtectedRoute roles={roles}>
+                  <SectionComponent />
+                </ProtectedRoute>
+              </Route>
+            ),
+          )}
+          {/* SHG-FE-100: catch-all sin `path` — cualquier ruta autenticada que
+              no matcheó nada arriba (ej. la vieja `/opciones`, o un typo)
+              muestra la 404 dentro del layout de gestión en vez de quedar en
+              blanco. Debe ir última: Wouter renderiza la primera que matchea. */}
+          <Route>
+            <NotFoundPage />
           </Route>
         </Switch>
       </Suspense>
     </Layout>
   );
+};
+
+/**
+ * Fallback final de `AppRoutes` (sin `path`, matchea cualquier ruta no
+ * reconocida arriba). SHG-FE-100: sin sesión, sólo delega en `ProtectedRoutes`
+ * (que redirige a `/login?redirect=`, SHG-FE-054) cuando la ruta es una
+ * protegida real; si es desconocida, muestra la 404 pública directamente —
+ * sin eso, cualquier typo deslogueado terminaba en el login en vez de un 404.
+ * Con sesión, siempre delega en `ProtectedRoutes` (su propio Switch ya
+ * resuelve rutas desconocidas con la 404 de arriba).
+ */
+const CatchAllRoute = () => {
+  const isAuthenticated = useIsAuthenticated();
+  const [location] = useLocation();
+
+  if (!isAuthenticated && !isKnownProtectedPath(location)) {
+    return <NotFoundPage />;
+  }
+
+  return <ProtectedRoutes />;
 };
 
 /**
@@ -203,7 +219,7 @@ const AppRoutes = () => {
   return (
     <Switch>
       {/* Landing pública (SHG-FE-044). Debe matchear ANTES del fallback
-          `<Route component={ProtectedRoutes} />` para poder mostrar la landing
+          `<Route component={CatchAllRoute} />` para poder mostrar la landing
           sin sesión; `RootRoute` delega en `ProtectedRoutes` cuando sí hay
           sesión, así que el comportamiento autenticado no cambia. */}
       <Route path='/' component={RootRoute} />
@@ -281,7 +297,7 @@ const AppRoutes = () => {
           </Suspense>
         </PortalRoute>
       </Route>
-      <Route component={ProtectedRoutes} />
+      <Route component={CatchAllRoute} />
     </Switch>
   );
 };
