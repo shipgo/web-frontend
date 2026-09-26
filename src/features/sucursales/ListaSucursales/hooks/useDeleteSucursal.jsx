@@ -9,7 +9,7 @@ export const useDeleteSucursal = (onSuccess) => {
   const openDeleteModal = (sucursal) => {
     const nombre = sucursal.nombre || "Sin nombre";
 
-    modals.openConfirmModal({
+    const modalId = modals.openConfirmModal({
       title: "Eliminar sucursal",
       centered: true,
       children: (
@@ -20,7 +20,13 @@ export const useDeleteSucursal = (onSuccess) => {
       ),
       labels: { confirm: "Eliminar", cancel: "Cancelar" },
       confirmProps: { color: "red" },
+      closeOnConfirm: false,
       onConfirm: async () => {
+        modals.updateModal({
+          modalId,
+          confirmProps: { color: "red", loading: true },
+        });
+
         try {
           await sucursalApi.delete(sucursal.id);
 
@@ -44,6 +50,8 @@ export const useDeleteSucursal = (onSuccess) => {
             color: "red",
             icon: <IconX />,
           });
+        } finally {
+          modals.close(modalId);
         }
       },
     });
