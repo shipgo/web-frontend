@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useSearch } from "wouter";
 import { Card, Flex, Pagination, Text } from "@mantine/core";
 import { useSet } from "@mantine/hooks";
 
@@ -18,6 +19,19 @@ import { MANTENIMIENTOS_CSV_COLUMNS } from "./listaMantenimientos.csv";
 const PAGE_LIMIT = 10;
 
 const ListaMantenimientos = () => {
+  // "Historial mantenimiento" (SHG-FE-098) llega desde `ListaVehiculosTabla` /
+  // `DetalleVehiculo` como `/mantenimientos?patente=<patente>`. Se lee acá
+  // (una sola vez, al montar) para que el primer fetch salga ya filtrado en
+  // vez de pedir todo y recién después re-pedir con `patente` — evita el
+  // doble fetch que salía de aplicar el filtro en un `useEffect` posterior
+  // en `ListaMantenimientosFiltros`. Limitación conocida: si el query param
+  // cambia sin desmontar/remontar la pantalla (ej: navegar de un vehículo a
+  // otro sin volver a `/mantenimientos`), el filtro no se actualiza solo.
+  const patenteFromUrl = new URLSearchParams(useSearch()).get("patente")?.trim() || "";
+  const initialFilters = patenteFromUrl
+    ? { patente: { label: "patente", values: patenteFromUrl } }
+    : {};
+
   const {
     data,
     isError,
@@ -27,7 +41,7 @@ const ListaMantenimientos = () => {
     setPage,
     setFilters,
     params: { filters, page },
-  } = useGetMantenimientos(PAGE_LIMIT);
+  } = useGetMantenimientos(PAGE_LIMIT, initialFilters);
 
   const { exportar, isExporting } = useCsvExport({
     fetchRows: fetchExportRows,
@@ -63,7 +77,11 @@ const ListaMantenimientos = () => {
         exportDisabled={isLoading || isError}
       />
 
-      <ListaMantenimientosFiltros onFiltersChange={setFilters} disabled={isLoading} />
+      <ListaMantenimientosFiltros
+        onFiltersChange={setFilters}
+        disabled={isLoading}
+        initialPatente={patenteFromUrl}
+      />
 
       <SelectionBanner
         count={selectedIds.size}

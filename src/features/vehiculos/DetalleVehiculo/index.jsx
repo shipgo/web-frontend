@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { Button, Card, Text } from "@mantine/core";
-import { IconEdit } from "@tabler/icons-react";
+import { IconEdit, IconTool } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 
 import PageContainer from "@components/PageContainer";
@@ -54,6 +54,17 @@ const DetalleVehiculo = () => {
         >
           Editar
         </Button>
+        {vehiculo?.patente && (
+          <Button
+            variant="default"
+            leftSection={<IconTool size={18} />}
+            onClick={() =>
+              navigate(`~/mantenimientos?patente=${encodeURIComponent(vehiculo.patente)}`)
+            }
+          >
+            Ver mantenimientos
+          </Button>
+        )}
       </PageBreadcrumbsHeader>
 
       {loading ? (

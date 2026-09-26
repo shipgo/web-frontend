@@ -68,6 +68,33 @@ describe("ListaMantenimientos", () => {
     ).toBeInTheDocument();
   });
 
+  it("inicializa el filtro patente desde la URL con un solo fetch (SHG-FE-098: link desde Vehículos)", async () => {
+    mantenimientoApi.get.mockResolvedValue({
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+    });
+
+    renderWithProviders(<ListaMantenimientos />, { route: "/mantenimientos?patente=AB123CD" });
+
+    await waitFor(() => expect(mantenimientoApi.get).toHaveBeenCalled());
+
+    expect(screen.getByLabelText("Patente")).toHaveValue("AB123CD");
+
+    // Regresión (pedido del revisor en PR #212): el filtro de la URL se
+    // aplicaba en un `useEffect` posterior al primer `useQuery`, así que el
+    // primer fetch salía sin `patente` (`{page:0,size:10}`) y un segundo
+    // fetch inmediatamente después ya la incluía. Se espera más que el
+    // debounce de 500ms de `ListaMantenimientosFiltros` para confirmar que
+    // ese segundo fetch no vuelve a aparecer.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(mantenimientoApi.get).toHaveBeenCalledTimes(1);
+    expect(mantenimientoApi.get).toHaveBeenCalledWith(
+      expect.objectContaining({ patente: "AB123CD", page: 0, size: 10 }),
+    );
+  });
+
   it("manda los filtros con los nombres exactos de MantenimientoFilter (nombre / patente)", async () => {
     mantenimientoApi.get.mockResolvedValue({
       content: [],

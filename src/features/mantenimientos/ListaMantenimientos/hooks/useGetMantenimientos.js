@@ -14,9 +14,13 @@ const EMPTY_RESULTS = [];
  * `MantenimientoFilter` (`nombre`, `patente` — ver `CONTRACTS.md §4`).
  *
  * @param {number} pageLimit - Cantidad de elementos por página.
+ * @param {Object} [initialFilters] - Filtros iniciales ya formateados como
+ *   `{ [param]: { label, values } }` (ej: desde `?patente=` en la URL, ver
+ *   `ListaMantenimientos/index.jsx`). Se aplican en la primera consulta para
+ *   no disparar un segundo fetch cuando el filtro llega por query param.
  */
-export const useGetMantenimientos = (pageLimit = 10) => {
-  const paramsOptions = useParams();
+export const useGetMantenimientos = (pageLimit = 10, initialFilters = {}) => {
+  const paramsOptions = useParams({ page: 1, filters: initialFilters });
 
   const filterParams = mapValues(paramsOptions.params.filters, (filter) => filter.values);
 
