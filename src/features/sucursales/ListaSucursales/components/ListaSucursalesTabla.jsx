@@ -1,9 +1,7 @@
 import { Fragment } from "react";
 import {
   ActionIcon,
-  Badge,
   Checkbox,
-  Group,
   Menu,
   Stack,
   Table,
@@ -13,7 +11,6 @@ import {
   IconDotsVertical,
   IconEdit,
   IconFileDescription,
-  IconMapPin,
   IconTrash,
 } from "@tabler/icons-react";
 import { useLocation } from "wouter";
@@ -41,22 +38,9 @@ const COLUMNS = [
   "Dirección",
   "Provincia",
   "Teléfono",
-  "Estado",
   "Fecha de registro",
   "Acciones",
 ];
-
-const getEstadoColor = (estado) => {
-  const normalizedEstado = estado?.toUpperCase();
-  const colores = {
-    ACTIVA: "green",
-    ACTIVO: "green",
-    INACTIVA: "red",
-    INACTIVO: "red",
-    MANTENIMIENTO: "yellow",
-  };
-  return colores[normalizedEstado] || "gray";
-};
 
 const ListaSucursalesTabla = ({
   items = [],
@@ -137,7 +121,6 @@ const ListaSucursalesTabla = ({
           const telefono = item.prefijo
             ? `${item.prefijo} ${item.telefono || ""}`.trim()
             : item.telefono || "Sin teléfono";
-          const estado = item.estado || item.activo ? "ACTIVA" : "INACTIVA";
           const fechaRegistro =
             item.fechaCreacion || item.createdAt || item.fecha;
 
@@ -173,16 +156,6 @@ const ListaSucursalesTabla = ({
 
               <Table.Td>
                 <Text size="sm">{telefono}</Text>
-              </Table.Td>
-
-              <Table.Td>
-                <Badge
-                  color={getEstadoColor(estado)}
-                  variant="light"
-                  radius="md"
-                >
-                  {estado}
-                </Badge>
               </Table.Td>
 
               <Table.Td>
