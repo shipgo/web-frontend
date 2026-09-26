@@ -102,6 +102,48 @@ describe("ListaUsuariosTabla (SHG-FE-094)", () => {
     expect(screen.queryByText("Desactivar")).not.toBeInTheDocument();
   });
 
+  it("compara id como string vs number (misma persona): no ofrece 'Eliminar'", async () => {
+    // El store puede traer `currentUser.id` como string (ej. viene de un
+    // `useParams()` en otra pantalla) mientras que `usuario.id` en el listado
+    // es number (tal cual lo devuelve la API) — la comparación debe normalizar
+    // ambos a string, no usar `===` estricto.
+    useAuthStore.setState({ user: { id: "1", username: "yo" } });
+    const user = userEvent.setup();
+
+    renderWithProviders(
+      <ListaUsuariosTabla
+        items={[SELF]}
+        selectedIds={new Set()}
+        onToggle={vi.fn()}
+        onToggleAll={vi.fn()}
+        onRefresh={vi.fn()}
+      />
+    );
+
+    await user.click(screen.getByLabelText("Acciones de Yo Mismo"));
+
+    expect(screen.queryByText("Eliminar")).not.toBeInTheDocument();
+  });
+
+  it("con user null / sin id en el store, muestra 'Eliminar' (default: no se asume auto-eliminación)", async () => {
+    useAuthStore.setState({ user: null });
+    const user = userEvent.setup();
+
+    renderWithProviders(
+      <ListaUsuariosTabla
+        items={[SELF]}
+        selectedIds={new Set()}
+        onToggle={vi.fn()}
+        onToggleAll={vi.fn()}
+        onRefresh={vi.fn()}
+      />
+    );
+
+    await user.click(screen.getByLabelText("Acciones de Yo Mismo"));
+
+    expect(await screen.findByText("Eliminar")).toBeInTheDocument();
+  });
+
   it("muestra un badge por cada rol (authority) del usuario", () => {
     renderWithProviders(
       <ListaUsuariosTabla
