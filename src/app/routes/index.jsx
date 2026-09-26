@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Switch, Route, Redirect } from 'wouter';
+import { Switch, Route, Redirect, useLocation } from 'wouter';
 
 import LoginPage from '@features/login';
 
@@ -9,6 +9,7 @@ import ProtectedRoute from '@components/ProtectedRoute';
 import PublicRoute from '@components/PublicRoute';
 import PortalRoute from '@components/PortalRoute';
 import MobileOnlyScreen from '@components/MobileOnlyScreen';
+import NotFoundPage from '@components/NotFoundPage';
 import { useAuth, useIsAuthenticated } from '@contexts/auth';
 import {
   hasAnyRole,
@@ -79,6 +80,29 @@ const hasExplicitColorSchemePreference = () => {
   }
 };
 
+// SHG-FE-100: prefijos de las rutas protegidas registradas en el `<Switch>`
+// de `ProtectedRoutes` (más abajo) — sin contar `/`, que ya tiene su propia
+// `<Route>` dedicada en `AppRoutes`. Se usa en `CatchAllRoute` para distinguir,
+// cuando NO hay sesión, un link directo a una ruta protegida real (redirige a
+// `/login?redirect=`, SHG-FE-054) de una ruta inexistente (404 pública). Si se
+// agrega una nueva sección al Switch de `ProtectedRoutes`, sumar su prefijo acá.
+const PROTECTED_PATH_PREFIXES = [
+  '/mapa',
+  '/dashboard',
+  '/envios',
+  '/viajes',
+  '/usuarios',
+  '/sucursales',
+  '/vehiculos',
+  '/catalogo-vehiculos',
+  '/mantenimientos',
+];
+
+const isKnownProtectedPath = (pathname) =>
+  PROTECTED_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+
 const ProtectedRoutes = () => {
   const isAuthenticated = useIsAuthenticated();
   const { user } = useAuth();
@@ -98,10 +122,10 @@ const ProtectedRoutes = () => {
 
   // Acceso directo (link compartido) a una ruta protegida sin sesión: manda a
   // `/login` preservando el destino en `?redirect=` (SHG-FE-054) en vez de
-  // perderlo — ver `@utils/redirect`. `ProtectedRoutes` es el fallback que
-  // matchea cualquier ruta no pública (última `<Route>` de `AppRoutes`, sin
-  // `path`), así que acá es donde realmente cae ese caso — la guarda interna
-  // de `ProtectedRoute` (por rol) sólo se monta ya autenticado.
+  // perderlo — ver `@utils/redirect`. `ProtectedRoutes` es a donde delega
+  // `RootRoute` (`/`) y `CatchAllRoute` (cualquier otra ruta reconocida como
+  // protegida, SHG-FE-100) — la guarda interna de `ProtectedRoute` (por rol)
+  // sólo se monta ya autenticado.
   if (!isAuthenticated) {
     const currentPath = `${window.location.pathname}${window.location.search}`;
     return <Redirect to={buildLoginRedirectTo(currentPath)} replace />;
@@ -171,10 +195,37 @@ const ProtectedRoutes = () => {
               <MantenimientosRoutes />
             </ProtectedRoute>
           </Route>
+          {/* SHG-FE-100: catch-all sin `path` — cualquier ruta autenticada que
+              no matcheó nada arriba (ej. la vieja `/opciones`, o un typo)
+              muestra la 404 dentro del layout de gestión en vez de quedar en
+              blanco. Debe ir última: Wouter renderiza la primera que matchea. */}
+          <Route>
+            <NotFoundPage />
+          </Route>
         </Switch>
       </Suspense>
     </Layout>
   );
+};
+
+/**
+ * Fallback final de `AppRoutes` (sin `path`, matchea cualquier ruta no
+ * reconocida arriba). SHG-FE-100: sin sesión, sólo delega en `ProtectedRoutes`
+ * (que redirige a `/login?redirect=`, SHG-FE-054) cuando la ruta es una
+ * protegida real; si es desconocida, muestra la 404 pública directamente —
+ * sin eso, cualquier typo deslogueado terminaba en el login en vez de un 404.
+ * Con sesión, siempre delega en `ProtectedRoutes` (su propio Switch ya
+ * resuelve rutas desconocidas con la 404 de arriba).
+ */
+const CatchAllRoute = () => {
+  const isAuthenticated = useIsAuthenticated();
+  const [location] = useLocation();
+
+  if (!isAuthenticated && !isKnownProtectedPath(location)) {
+    return <NotFoundPage />;
+  }
+
+  return <ProtectedRoutes />;
 };
 
 /**
@@ -203,7 +254,7 @@ const AppRoutes = () => {
   return (
     <Switch>
       {/* Landing pública (SHG-FE-044). Debe matchear ANTES del fallback
-          `<Route component={ProtectedRoutes} />` para poder mostrar la landing
+          `<Route component={CatchAllRoute} />` para poder mostrar la landing
           sin sesión; `RootRoute` delega en `ProtectedRoutes` cuando sí hay
           sesión, así que el comportamiento autenticado no cambia. */}
       <Route path='/' component={RootRoute} />
@@ -281,7 +332,7 @@ const AppRoutes = () => {
           </Suspense>
         </PortalRoute>
       </Route>
-      <Route component={ProtectedRoutes} />
+      <Route component={CatchAllRoute} />
     </Switch>
   );
 };
