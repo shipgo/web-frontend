@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { useSearch } from "wouter";
 import { useForm } from "@mantine/form";
 import { useDebouncedCallback } from "@mantine/hooks";
 import { Card, Flex, TextInput } from "@mantine/core";
@@ -24,34 +22,29 @@ const formatValues = (values) =>
       .map(([key, value]) => [key, { label: key, values: value.trim() }]),
   );
 
-const ListaMantenimientosFiltros = ({ disabled, onFiltersChange }) => {
-  // "Historial mantenimiento" (SHG-FE-098) llega desde `ListaVehiculosTabla` /
-  // `DetalleVehiculo` como `/mantenimientos?patente=<patente>`: se inicializa
-  // el filtro desde la URL para que la lista abra ya filtrada.
-  const search = useSearch();
-  const patenteFromUrl = new URLSearchParams(search).get("patente") ?? "";
-
+/**
+ * @param {Object} props
+ * @param {boolean} props.disabled
+ * @param {(filters: Object) => void} props.onFiltersChange
+ * @param {string} [props.initialPatente] - Precarga el input "Patente" (ej:
+ *   `?patente=` al llegar desde "Historial mantenimiento" en Vehículos,
+ *   SHG-FE-098). La lectura de la URL vive en `ListaMantenimientos/index.jsx`
+ *   —la misma pasa como filtro inicial a `useGetMantenimientos`— para que el
+ *   primer fetch salga ya filtrado en vez de disparar un segundo pedido acá.
+ */
+const ListaMantenimientosFiltros = ({ disabled, onFiltersChange, initialPatente = "" }) => {
   const debounceChange = useDebouncedCallback((values) => {
     onFiltersChange(formatValues(values));
   }, 500);
 
   const form = useForm({
     mode: "controlled",
-    initialValues: { ...DEFAULT_VALUES, patente: patenteFromUrl },
+    initialValues: { ...DEFAULT_VALUES, patente: initialPatente },
     enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
       debounceChange(values);
     },
   });
-
-  useEffect(() => {
-    if (patenteFromUrl) {
-      onFiltersChange(formatValues({ ...DEFAULT_VALUES, patente: patenteFromUrl }));
-    }
-    // Sólo al montar: el filtro inicial viene de la URL, los cambios
-    // posteriores del input ya los maneja `onValuesChange` (debounced).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <Card component="search">
