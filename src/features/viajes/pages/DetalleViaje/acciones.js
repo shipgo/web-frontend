@@ -15,7 +15,11 @@ import { VIAJE_ESTADOS_EDITABLES } from '../../constants';
  * - `editar`    -> navega a `EditarViaje` (SU/AD), ya implementado; no es una
  *   transición de estado por lo que no está bloqueado por SHG-FE-012.
  */
-const ESTADOS_CANCELABLES = ['creado', 'planificado', 'en_proceso_de_carga'];
+// Exportado (además de `puedeCancelar`) para que `ListaViajesTabla` (SHG-FE-096)
+// pinte la misma advertencia de "atrasado" que antes calculaba con una lista
+// local propia y desalineada de ésta — única fuente de verdad para evitar que
+// vuelvan a divergir.
+export const ESTADOS_CANCELABLES = ['creado', 'planificado', 'en_proceso_de_carga'];
 
 export const puedeEditar = (user, estado) =>
   isAdminOrSuper(user) && VIAJE_ESTADOS_EDITABLES.includes(estado);
