@@ -42,6 +42,23 @@ export const parseNotificacionData = (notificacion) => {
 };
 
 /**
+ * Intenta extraer resourceType + resourceId de action_url ("shipgo://viaje/123" o "/viaje/123").
+ * Retorna { resourceType, resourceId } o null si no hay match o el ID no es numérico.
+ * Nunca retorna URLs crudas: sólo devuelve valores validados que van a RESOURCE_TO_PATH.
+ * Solo acepta esquemas seguros: shipgo://, http://, https://, o rutas relativas (/).
+ */
+export const parseActionUrl = (actionUrl) => {
+  if (typeof actionUrl !== 'string') return null;
+  // Solo aceptar: shipgo://..., http://..., https://..., o /... (ruta relativa)
+  if (!/(^shipgo:\/\/|^https?:\/\/|^\/)/i.test(actionUrl)) {
+    return null;
+  }
+  const match = actionUrl.match(/([a-zA-Z]+)\/(\d+)\/?$/);
+  if (!match) return null;
+  return { resourceType: match[1], resourceId: match[2] };
+};
+
+/**
  * Ruta del panel a la que navegar al hacer click en una notificación, o `null`
  * si no hay recurso asociado / el tipo no se abre desde la web.
  */
@@ -53,11 +70,11 @@ export const notificacionHref = (notificacion) => {
 
   // Fallback 1: derivar de `action_url` ("shipgo://viaje/123" o "/viaje/123")
   // cuando resourceType o resourceId faltan.
-  if ((!resourceType || resourceId == null) && typeof data.action_url === 'string') {
-    const match = data.action_url.match(/([a-zA-Z]+)\/(\d+)\/?$/);
-    if (match) {
-      resourceType = resourceType || match[1];
-      resourceId = resourceId == null ? match[2] : resourceId;
+  if ((!resourceType || resourceId == null) && data.action_url) {
+    const parsed = parseActionUrl(data.action_url);
+    if (parsed) {
+      resourceType = resourceType || parsed.resourceType;
+      resourceId = resourceId == null ? parsed.resourceId : resourceId;
     }
   }
 
@@ -69,12 +86,12 @@ export const notificacionHref = (notificacion) => {
   // intentar parsear action_url para extraer el destino navegable.
   // Ej: resourceType="recorrido" (no mapeado) + actionUrl="shipgo://viaje/123"
   // → parseamos viaje/123 y lo resolvemos.
-  if (!build && typeof data.action_url === 'string') {
-    const match = data.action_url.match(/([a-zA-Z]+)\/(\d+)\/?$/);
-    if (match) {
-      const altBuild = RESOURCE_TO_PATH[String(match[1]).toLowerCase()];
+  if (!build && data.action_url) {
+    const parsed = parseActionUrl(data.action_url);
+    if (parsed) {
+      const altBuild = RESOURCE_TO_PATH[String(parsed.resourceType).toLowerCase()];
       if (altBuild) {
-        return altBuild(match[2]);
+        return altBuild(parsed.resourceId);
       }
     }
   }
