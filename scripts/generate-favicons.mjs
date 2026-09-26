@@ -1,49 +1,200 @@
 #!/usr/bin/env node
 /**
- * Script to generate favicon PNG files from SVG
- * Generates sizes: 16x16, 32x32, 180x180, 192x192, 512x512
+ * Regenerates the ShipGo web favicon/PWA icon assets from the vector logo
+ * source in `scripts/brand/truck-fast.svg`.
+ *
+ * Logo decision (SHG-FE-092, owner follow-up to SHG-MOB-021): same
+ * "truck-fast" glyph from Material Design Icons / Pictogrammers (Apache
+ * License 2.0) used by app-mobile, white on the brand green `#006b5a` —
+ * NOT the web theme's `#009688` teal.
+ *
+ * The truck's ink is centered by its *real bounding box*, not the 24x24
+ * viewBox (which is not symmetric around the glyph — centering on the
+ * viewBox alone leaves a visibly off-center truck). This mirrors
+ * app-mobile's `scripts/generate-brand-assets.mjs` (`computePathBBox`,
+ * `truckGroup`, `assertNoEdgeAlpha`), reused here with the adaptation that
+ * these PNGs have an opaque (not transparent) `#006b5a` background, so the
+ * edge check below looks for ink color at the border instead of alpha.
+ *
+ * Run with:
+ *
+ *   node scripts/generate-favicons.mjs
  */
 
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import sharp from 'sharp';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
 
-const SVG_INPUT = 'public/favicon.svg';
+const SOURCE_SVG = 'scripts/brand/truck-fast.svg';
 const OUTPUT_DIR = 'public';
 const SIZES = [16, 32, 180, 192, 512];
 
-async function generateFavicons() {
-  try {
-    console.log('Generating favicon PNG files from SVG...');
+const GREEN = '#006b5a'; // owner decision (2026-09-23): same green as mobile, not the web theme's #009688
+const WHITE = '#ffffff';
+const GREEN_RGB = { r: 0x00, g: 0x6b, b: 0x5a };
+const TRUCK_WIDTH_FRACTION = 0.58; // owner's spec: truck ~58% of the canvas width, same as mobile
 
-    for (const size of SIZES) {
-      const outputPath = join(OUTPUT_DIR, `favicon-${size}x${size}.png`);
-      await sharp(SVG_INPUT)
-        .resize(size, size, {
-          fit: 'cover',
-          position: 'center',
-        })
-        .png()
-        .toFile(outputPath);
-      console.log(`✓ Generated ${outputPath}`);
+const TRUCK_PATH = extractFirstPathD(readFileSync(SOURCE_SVG, 'utf8'));
+
+function extractFirstPathD(svgSource) {
+  const match = svgSource.match(/<path[^>]*\sd="([^"]+)"/);
+  if (!match) throw new Error(`No <path d=...> found in ${SOURCE_SVG}`);
+  return match[1];
+}
+
+/**
+ * Tight bounding box of the path's drawn geometry, computed from the
+ * literal endpoints of its (absolute, uppercase-only) commands. Ported
+ * verbatim from app-mobile's `generate-brand-assets.mjs` — see that file
+ * for the full rationale (works for this glyph because it only uses
+ * M/L/H/V/A/Z with absolute coordinates, and both wheels are full circles
+ * whose N/E/S/W points are literal command endpoints).
+ */
+function computePathBBox(d) {
+  const tokens = d.match(/[A-Za-z]|-?\d*\.?\d+(?:e-?\d+)?/g);
+  if (!tokens) throw new Error('Could not tokenize path data');
+  let i = 0;
+  let cx = 0;
+  let cy = 0;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const visit = (x, y) => {
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+  };
+  while (i < tokens.length) {
+    const cmd = tokens[i++];
+    if (cmd === 'M' || cmd === 'L') {
+      cx = parseFloat(tokens[i++]);
+      cy = parseFloat(tokens[i++]);
+      visit(cx, cy);
+    } else if (cmd === 'H') {
+      cx = parseFloat(tokens[i++]);
+      visit(cx, cy);
+    } else if (cmd === 'V') {
+      cy = parseFloat(tokens[i++]);
+      visit(cx, cy);
+    } else if (cmd === 'A') {
+      i += 5; // rx, ry, x-axis-rotation, large-arc-flag, sweep-flag
+      cx = parseFloat(tokens[i++]);
+      cy = parseFloat(tokens[i++]);
+      visit(cx, cy);
+    } else if (cmd === 'Z') {
+      // no-op: closes back to the last M, already visited
+    } else {
+      throw new Error(`Unsupported path command "${cmd}" — bbox may be wrong`);
     }
+  }
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+}
 
-    // Also generate favicon-512x512.png for manifest (duplicate of 512x512)
-    // Generate favicon.ico as a simple copy of 32x32 PNG (browsers fallback to PNG if no true ICO)
-    const ico32Path = join(OUTPUT_DIR, 'favicon-32x32.png');
-    const icoPath = join(OUTPUT_DIR, 'favicon.ico');
-    const pngData = sharp(SVG_INPUT)
-      .resize(32, 32, { fit: 'cover', position: 'center' })
-      .png();
+const TRUCK_BBOX = computePathBBox(TRUCK_PATH);
 
-    await pngData.toFile(icoPath);
-    console.log(`✓ Generated ${icoPath} (PNG fallback)`);
+/** `<g transform=...>` that places the truck, scaled so its ink is
+ * `targetWidth` px wide, with its ink's bbox centered at (cx, cy). */
+function truckGroup({ targetWidth, cx, cy, color }) {
+  const scale = targetWidth / TRUCK_BBOX.width;
+  const inkCx = TRUCK_BBOX.minX + TRUCK_BBOX.width / 2;
+  const inkCy = TRUCK_BBOX.minY + TRUCK_BBOX.height / 2;
+  const tx = cx - inkCx * scale;
+  const ty = cy - inkCy * scale;
+  return `<g transform="translate(${tx},${ty}) scale(${scale})"><path d="${TRUCK_PATH}" fill="${color}"/></g>`;
+}
 
-    console.log('\nAll favicons generated successfully!');
-  } catch (error) {
-    console.error('Error generating favicons:', error);
-    process.exit(1);
+function faviconSvg(size) {
+  const truckWidth = size * TRUCK_WIDTH_FRACTION;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">
+  <!--
+    Source: Material Design Icons (MDI) / Pictogrammers, glyph "truck-fast".
+    License: Apache License 2.0 (https://github.com/Templarian/MaterialDesign/blob/master/LICENSE).
+    Generated by scripts/generate-favicons.mjs from scripts/brand/truck-fast.svg —
+    do not hand-edit, regenerate instead.
+  -->
+  <rect width="${size}" height="${size}" fill="${GREEN}"/>
+  ${truckGroup({ targetWidth: truckWidth, cx: size / 2, cy: size / 2, color: WHITE })}
+</svg>
+`;
+}
+
+/**
+ * Self-check adapted from app-mobile's `assertNoEdgeAlpha`: these PNGs have
+ * an opaque `#006b5a` background (not transparent), so "ink cut off at the
+ * edge" can't be detected via the alpha channel — instead this walks the
+ * outer border and fails if any pixel isn't (approximately) the background
+ * color, i.e. the white truck ink is touching or has been clipped by the
+ * canvas edge.
+ */
+async function assertNoEdgeInk(pngPath, label) {
+  const { data, info } = await sharp(pngPath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  // sharp's PNG decode + `.raw()` is lossless, so there's no compression
+  // noise to tolerate here — any deviation from the flat background color
+  // is real ink. Same threshold mobile's `assertNoEdgeAlpha` uses
+  // (`alpha > 0`, i.e. tolerance 0).
+  const TOLERANCE = 0;
+  const isBackground = (x, y) => {
+    const idx = (y * width + x) * channels;
+    return (
+      Math.abs(data[idx] - GREEN_RGB.r) <= TOLERANCE &&
+      Math.abs(data[idx + 1] - GREEN_RGB.g) <= TOLERANCE &&
+      Math.abs(data[idx + 2] - GREEN_RGB.b) <= TOLERANCE
+    );
+  };
+  for (let x = 0; x < width; x++) {
+    if (!isBackground(x, 0) || !isBackground(x, height - 1)) {
+      throw new Error(
+        `${label}: la tinta del camión llega al borde en x=${x} (fila superior/inferior) — está pegada o recortada, aumentar el margen.`,
+      );
+    }
+  }
+  for (let y = 0; y < height; y++) {
+    if (!isBackground(0, y) || !isBackground(width - 1, y)) {
+      throw new Error(
+        `${label}: la tinta del camión llega al borde en y=${y} (columna izquierda/derecha) — está pegada o recortada, aumentar el margen.`,
+      );
+    }
   }
 }
 
-generateFavicons();
+async function generateFavicons() {
+  console.log('Generating favicon assets from', SOURCE_SVG, '...');
+
+  // Vector favicon: modern browsers use this directly (crisp at any size).
+  const svgPath = join(OUTPUT_DIR, 'favicon.svg');
+  writeFileSync(svgPath, faviconSvg(32));
+  console.log(`✓ Generated ${svgPath}`);
+
+  for (const size of SIZES) {
+    const outputPath = join(OUTPUT_DIR, `favicon-${size}x${size}.png`);
+    await sharp(Buffer.from(faviconSvg(size)))
+      .resize(size, size)
+      .flatten({ background: GREEN })
+      .png()
+      .toFile(outputPath);
+    await assertNoEdgeInk(outputPath, outputPath);
+    console.log(`✓ Generated ${outputPath}`);
+  }
+
+  // favicon.ico: browsers accept a PNG served with the .ico extension as a
+  // fallback for the older <link rel="icon"> convention (no true multi-res
+  // ICO container is generated here — same approach as before this task).
+  const icoPath = join(OUTPUT_DIR, 'favicon.ico');
+  await sharp(Buffer.from(faviconSvg(32)))
+    .resize(32, 32)
+    .flatten({ background: GREEN })
+    .png()
+    .toFile(icoPath);
+  await assertNoEdgeInk(icoPath, icoPath);
+  console.log(`✓ Generated ${icoPath} (PNG fallback)`);
+
+  console.log('\nAll favicons generated successfully!');
+}
+
+generateFavicons().catch((error) => {
+  console.error('Error generating favicons:', error);
+  process.exit(1);
+});
