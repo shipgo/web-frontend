@@ -181,9 +181,22 @@ describe("ListaViajes", () => {
     // resuelve el ítem que va a click-ear en UNA sola query y reusa esa
     // referencia, y usa un nombre *distinto* al confirmar que el menú está
     // abierto antes de una aserción de ausencia.
+    //
+    // `MENU_ITEM_TIMEOUT`: el tema por default de Mantine tiene
+    // `respectReducedMotion: false` (no lo pisamos acá), así que el `Menu`
+    // siempre anima su apertura con un `setTimeout` real (no hay fake timers
+    // en este archivo). Bajo carga (ej. esta suite corriendo en paralelo con
+    // otras) ese timeout puede tardar más que el default de `findByRole`
+    // (1000ms) en dispararse; 3s da margen sin acoplarse a la duración real
+    // de la transición.
+    const MENU_ITEM_TIMEOUT = 3000;
+
     const abrirMenuDelViaje = async (user, id) => {
       await user.click(await screen.findByRole("button", { name: `Acciones del viaje ${id}` }));
     };
+
+    const encontrarMenuItem = (name) =>
+      screen.findByRole("menuitem", { name }, { timeout: MENU_ITEM_TIMEOUT });
 
     it('"Ver hoja de ruta" navega al detalle del viaje', async () => {
       const user = userEvent.setup();
@@ -191,7 +204,7 @@ describe("ListaViajes", () => {
 
       renderWithProviders(<ListaViajes />);
       await abrirMenuDelViaje(user, 42);
-      await user.click(await screen.findByRole("menuitem", { name: "Ver hoja de ruta" }));
+      await user.click(await encontrarMenuItem("Ver hoja de ruta"));
 
       await waitFor(() => expect(window.location.pathname).toBe("/42"));
     });
@@ -202,7 +215,7 @@ describe("ListaViajes", () => {
 
       renderWithProviders(<ListaViajes />);
       await abrirMenuDelViaje(user, 42);
-      await user.click(await screen.findByRole("menuitem", { name: "Editar viaje" }));
+      await user.click(await encontrarMenuItem("Editar viaje"));
 
       await waitFor(() => expect(window.location.pathname).toBe("/42/editar"));
     });
@@ -217,7 +230,7 @@ describe("ListaViajes", () => {
 
       // Confirma que el menú ya montó vía un ítem que SÍ está en este estado
       // (distinto del que se busca ausente, para no repetir el mismo query).
-      expect(await screen.findByRole("menuitem", { name: "Cancelar viaje" })).toBeInTheDocument();
+      expect(await encontrarMenuItem("Cancelar viaje")).toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
     });
 
@@ -230,7 +243,7 @@ describe("ListaViajes", () => {
       await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
 
       await abrirMenuDelViaje(user, 42);
-      await user.click(await screen.findByRole("menuitem", { name: "Cancelar viaje" }));
+      await user.click(await encontrarMenuItem("Cancelar viaje"));
 
       const dialog = await screen.findByRole("dialog");
       await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
@@ -250,14 +263,43 @@ describe("ListaViajes", () => {
       });
 
       renderWithProviders(<ListaViajes />);
+      await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+
       await abrirMenuDelViaje(user, 42);
-      await user.click(await screen.findByRole("menuitem", { name: "Cancelar viaje" }));
+      await user.click(await encontrarMenuItem("Cancelar viaje"));
 
       const dialog = await screen.findByRole("dialog");
       await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
 
       expect(await screen.findByText("No se puede completar la acción")).toBeInTheDocument();
       expect(screen.getByText("El viaje ya está en curso")).toBeInTheDocument();
+      // Un 409 es "no se pudo, todavía no es un estado válido": no hay razón
+      // para revalidar el listado (a diferencia del cancelar exitoso).
+      expect(viajeApi.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('"Cancelar viaje" maneja un 403 del backend igual que el detalle (toast de "Sin permisos", sin refetch)', async () => {
+      // Mismo `handleAccionError` que `DetalleViaje` (SHG-FE-012): un 403 es
+      // "rol sin permiso para la acción", no una transición inválida — toast
+      // puntual de error, no de warning, y tampoco refetch (nada cambió).
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+      viajeApi.cancelar.mockRejectedValue({
+        response: { status: 403, data: { message: "No tiene permisos para cancelar este viaje" } },
+      });
+
+      renderWithProviders(<ListaViajes />);
+      await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+
+      await abrirMenuDelViaje(user, 42);
+      await user.click(await encontrarMenuItem("Cancelar viaje"));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
+
+      expect(await screen.findByText("Sin permisos")).toBeInTheDocument();
+      expect(screen.getByText("No tiene permisos para cancelar este viaje")).toBeInTheDocument();
+      expect(viajeApi.get).toHaveBeenCalledTimes(1);
     });
 
     it('"Monitorear" sólo aparece en estados con tracking (en_camino) y navega a /mapa?viaje=:id', async () => {
@@ -267,7 +309,7 @@ describe("ListaViajes", () => {
 
       renderWithProviders(<ListaViajes />);
       await abrirMenuDelViaje(user, 42);
-      const monitorear = await screen.findByRole("menuitem", { name: "Monitorear" });
+      const monitorear = await encontrarMenuItem("Monitorear");
 
       // En en_camino ya no es cancelable ni editable: no debería quedar
       // ninguna acción sin sentido (ver ESTADOS_CANCELABLES/VIAJE_ESTADOS_EDITABLES).
@@ -288,7 +330,7 @@ describe("ListaViajes", () => {
       renderWithProviders(<ListaViajes />);
       await abrirMenuDelViaje(user, 42);
 
-      expect(await screen.findByRole("menuitem", { name: "Monitorear" })).toBeInTheDocument();
+      expect(await encontrarMenuItem("Monitorear")).toBeInTheDocument();
     });
 
     it('"Monitorear" NO aparece en un viaje planificado (todavía no salió)', async () => {
@@ -300,7 +342,7 @@ describe("ListaViajes", () => {
 
       // Confirma apertura vía "Ver hoja de ruta" (siempre presente) antes de
       // afirmar la ausencia de "Monitorear".
-      expect(await screen.findByRole("menuitem", { name: "Ver hoja de ruta" })).toBeInTheDocument();
+      expect(await encontrarMenuItem("Ver hoja de ruta")).toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Monitorear" })).not.toBeInTheDocument();
     });
 
@@ -312,7 +354,7 @@ describe("ListaViajes", () => {
       renderWithProviders(<ListaViajes />);
       await abrirMenuDelViaje(user, 42);
 
-      expect(await screen.findByRole("menuitem", { name: "Ver hoja de ruta" })).toBeInTheDocument();
+      expect(await encontrarMenuItem("Ver hoja de ruta")).toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Reportar incidente" })).not.toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Desvincular chofer" })).not.toBeInTheDocument();
     });
