@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { modals } from "@mantine/modals";
 import { Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
@@ -7,12 +6,10 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import { sucursalApi } from "../../api/sucursales.api";
 
 export const useDeleteSucursal = (onSuccess) => {
-  const [loading, setLoading] = useState(false);
-
   const openDeleteModal = (sucursal) => {
     const nombre = sucursal.nombre || "Sin nombre";
 
-    modals.openConfirmModal({
+    const modalId = modals.openConfirmModal({
       title: "Eliminar sucursal",
       centered: true,
       children: (
@@ -22,9 +19,13 @@ export const useDeleteSucursal = (onSuccess) => {
         </Text>
       ),
       labels: { confirm: "Eliminar", cancel: "Cancelar" },
-      confirmProps: { color: "red", loading },
+      confirmProps: { color: "red" },
+      closeOnConfirm: false,
       onConfirm: async () => {
-        setLoading(true);
+        modals.updateModal(modalId, {
+          confirmProps: { color: "red", loading: true },
+        });
+
         try {
           await sucursalApi.delete(sucursal.id);
 
@@ -49,7 +50,7 @@ export const useDeleteSucursal = (onSuccess) => {
             icon: <IconX />,
           });
         } finally {
-          setLoading(false);
+          modals.close(modalId);
         }
       },
     });

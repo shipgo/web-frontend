@@ -38,10 +38,20 @@ const renderWithProviders = (ui) =>
     </MantineProvider>
   );
 
-describe("ListaSucursalesTabla delete flow", () => {
+describe("ListaSucursalesTabla", () => {
   beforeEach(() => {
     mockDelete.mockReset();
     mockDelete.mockResolvedValue({});
+  });
+
+  it("does not render Estado column", () => {
+    renderWithProviders(
+      <ListaSucursalesTabla items={[sucursal]} />
+    );
+
+    const headers = screen.getAllByRole("columnheader");
+    const headerTexts = headers.map(h => h.textContent);
+    expect(headerTexts).not.toContain("Estado");
   });
 
   it("calls sucursalApi.delete when the deletion is confirmed", async () => {
@@ -66,5 +76,31 @@ describe("ListaSucursalesTabla delete flow", () => {
 
     await waitFor(() => expect(mockDelete).toHaveBeenCalledWith(3));
     await waitFor(() => expect(onRefresh).toHaveBeenCalled());
+  });
+
+  it("prevents double-click on delete confirmation button", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onRefresh = vi.fn();
+    mockDelete.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({}), 200)));
+
+    renderWithProviders(
+      <ListaSucursalesTabla items={[sucursal]} onRefresh={onRefresh} />
+    );
+
+    await user.click(screen.getByLabelText("Acciones de Sucursal Sur"));
+    await user.click(await screen.findByText("Eliminar"));
+
+    expect(
+      await screen.findByRole("heading", { name: "Eliminar sucursal" })
+    ).toBeInTheDocument();
+
+    const confirmButtons = await screen.findAllByRole("button", {
+      name: "Eliminar",
+    });
+    const confirmButton = confirmButtons[confirmButtons.length - 1];
+
+    await user.click(confirmButton);
+
+    await waitFor(() => expect(mockDelete).toHaveBeenCalledTimes(1), { timeout: 2000 });
   });
 });
