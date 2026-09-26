@@ -80,27 +80,32 @@ const hasExplicitColorSchemePreference = () => {
   }
 };
 
-// SHG-FE-100: prefijos de las rutas protegidas registradas en el `<Switch>`
-// de `ProtectedRoutes` (más abajo) — sin contar `/`, que ya tiene su propia
-// `<Route>` dedicada en `AppRoutes`. Se usa en `CatchAllRoute` para distinguir,
-// cuando NO hay sesión, un link directo a una ruta protegida real (redirige a
-// `/login?redirect=`, SHG-FE-054) de una ruta inexistente (404 pública). Si se
-// agrega una nueva sección al Switch de `ProtectedRoutes`, sumar su prefijo acá.
-const PROTECTED_PATH_PREFIXES = [
-  '/mapa',
-  '/dashboard',
-  '/envios',
-  '/viajes',
-  '/usuarios',
-  '/sucursales',
-  '/vehiculos',
-  '/catalogo-vehiculos',
-  '/mantenimientos',
+// SHG-FE-100: única fuente de verdad para las secciones protegidas — de acá
+// se generan tanto las `<Route>` del `<Switch>` de `ProtectedRoutes` (más
+// abajo) como los prefijos que usa `CatchAllRoute` para distinguir, sin
+// sesión, un link directo a una ruta protegida real (redirige a
+// `/login?redirect=`, SHG-FE-054) de una ruta inexistente (404 pública). No
+// incluye `/`: tiene su propia `<Route>` sin `ProtectedRoute` acá abajo y su
+// propia `<Route path='/' component={RootRoute}>` en `AppRoutes`.
+const PROTECTED_SECTIONS = [
+  { path: '/mapa', component: MapaPage },
+  { path: '/dashboard', nest: true, component: DashboardRoutes },
+  { path: '/envios', nest: true, component: EnviosRoutes },
+  { path: '/viajes', nest: true, component: ViajesRoutes },
+  { path: '/usuarios', nest: true, component: UsuariosRoutes },
+  // Sucursales/Empresa: endpoints SUPERUSER-only (CONTRACTS.md §3).
+  { path: '/sucursales', nest: true, component: SucursalesRoutes, roles: [ROLE_SUPERUSER] },
+  { path: '/vehiculos', nest: true, component: VehiculosRoutes },
+  // Catálogo de Marca/Modelo (SHG-FE-059, ENDPOINTS.md §11/§12): CRUD
+  // completo SU/AD — no restringido a SUPERUSER como Sucursales. Tipo de
+  // Vehículo queda fuera (backend sólo GET).
+  { path: '/catalogo-vehiculos', nest: true, component: CatalogoVehiculosRoutes },
+  { path: '/mantenimientos', nest: true, component: MantenimientosRoutes },
 ];
 
 const isKnownProtectedPath = (pathname) =>
-  PROTECTED_PATH_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  PROTECTED_SECTIONS.some(
+    ({ path }) => pathname === path || pathname.startsWith(`${path}/`),
   );
 
 const ProtectedRoutes = () => {
@@ -146,55 +151,15 @@ const ProtectedRoutes = () => {
       <Suspense fallback={<RouteFallback />}>
         <Switch>
           <Route path='/' component={HomePage} />
-          <Route path='/mapa'>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <MapaPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/dashboard' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <DashboardRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/envios' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <EnviosRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/viajes' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <ViajesRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/usuarios' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <UsuariosRoutes />
-            </ProtectedRoute>
-          </Route>
-          {/* Sucursales/Empresa: endpoints SUPERUSER-only (CONTRACTS.md §3). */}
-          <Route path='/sucursales' nest>
-            <ProtectedRoute roles={[ROLE_SUPERUSER]}>
-              <SucursalesRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/vehiculos' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <VehiculosRoutes />
-            </ProtectedRoute>
-          </Route>
-          {/* Catálogo de Marca/Modelo (SHG-FE-059, ENDPOINTS.md §11/§12):
-              CRUD completo SU/AD — no restringido a SUPERUSER como
-              Sucursales. Tipo de Vehículo queda fuera (backend sólo GET). */}
-          <Route path='/catalogo-vehiculos' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <CatalogoVehiculosRoutes />
-            </ProtectedRoute>
-          </Route>
-          <Route path='/mantenimientos' nest>
-            <ProtectedRoute roles={ROLES_WEB}>
-              <MantenimientosRoutes />
-            </ProtectedRoute>
-          </Route>
+          {PROTECTED_SECTIONS.map(
+            ({ path, nest, component: SectionComponent, roles = ROLES_WEB }) => (
+              <Route key={path} path={path} nest={nest}>
+                <ProtectedRoute roles={roles}>
+                  <SectionComponent />
+                </ProtectedRoute>
+              </Route>
+            ),
+          )}
           {/* SHG-FE-100: catch-all sin `path` — cualquier ruta autenticada que
               no matcheó nada arriba (ej. la vieja `/opciones`, o un typo)
               muestra la 404 dentro del layout de gestión en vez de quedar en
