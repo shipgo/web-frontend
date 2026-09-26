@@ -68,6 +68,23 @@ describe("ListaMantenimientos", () => {
     ).toBeInTheDocument();
   });
 
+  it("inicializa el filtro patente desde la URL (SHG-FE-098: link desde Vehículos)", async () => {
+    mantenimientoApi.get.mockResolvedValue({
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+    });
+
+    renderWithProviders(<ListaMantenimientos />, { route: "/mantenimientos?patente=AB123CD" });
+
+    await waitFor(() => {
+      const lastCall = mantenimientoApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.patente).toBe("AB123CD");
+    });
+
+    expect(screen.getByLabelText("Patente")).toHaveValue("AB123CD");
+  });
+
   it("manda los filtros con los nombres exactos de MantenimientoFilter (nombre / patente)", async () => {
     mantenimientoApi.get.mockResolvedValue({
       content: [],

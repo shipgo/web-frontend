@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useSearch } from "wouter";
 import { useForm } from "@mantine/form";
 import { useDebouncedCallback } from "@mantine/hooks";
 import { Card, Flex, TextInput } from "@mantine/core";
@@ -23,18 +25,33 @@ const formatValues = (values) =>
   );
 
 const ListaMantenimientosFiltros = ({ disabled, onFiltersChange }) => {
+  // "Historial mantenimiento" (SHG-FE-098) llega desde `ListaVehiculosTabla` /
+  // `DetalleVehiculo` como `/mantenimientos?patente=<patente>`: se inicializa
+  // el filtro desde la URL para que la lista abra ya filtrada.
+  const search = useSearch();
+  const patenteFromUrl = new URLSearchParams(search).get("patente") ?? "";
+
   const debounceChange = useDebouncedCallback((values) => {
     onFiltersChange(formatValues(values));
   }, 500);
 
   const form = useForm({
     mode: "controlled",
-    initialValues: DEFAULT_VALUES,
+    initialValues: { ...DEFAULT_VALUES, patente: patenteFromUrl },
     enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
       debounceChange(values);
     },
   });
+
+  useEffect(() => {
+    if (patenteFromUrl) {
+      onFiltersChange(formatValues({ ...DEFAULT_VALUES, patente: patenteFromUrl }));
+    }
+    // Sólo al montar: el filtro inicial viene de la URL, los cambios
+    // posteriores del input ya los maneja `onValuesChange` (debounced).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Card component="search">

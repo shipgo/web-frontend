@@ -16,7 +16,6 @@ import {
   IconFileDescription,
   IconTool,
   IconTrash,
-  IconCar,
 } from "@tabler/icons-react";
 
 import { timeFromNow, toLocalDate } from "@utils/dates";
@@ -35,7 +34,6 @@ const ACTIONS = [
     name: "Opciones",
     items: [
       { icon: <IconEdit size={18} />, label: "Editar", color: "blue" },
-      { icon: <IconCar size={18} />, label: "Asignar chofer", color: "yellow" },
       { icon: <IconTrash size={18} />, label: "Eliminar", color: "red" },
     ],
   },
@@ -72,6 +70,10 @@ const ListaVehiculosTabla = ({
 
   const handleDelete = (vehiculo) => {
     confirmDelete(vehiculo);
+  };
+
+  const handleHistorialMantenimiento = (patente) => {
+    navigate(`~/mantenimientos?patente=${encodeURIComponent(patente)}`);
   };
 
   if (items.length === 0) {
@@ -209,6 +211,8 @@ const ListaVehiculosTabla = ({
                                 handleEdit(item.id);
                               } else if (label === "Ver detalles") {
                                 handleViewDetails(item.id);
+                              } else if (label === "Historial mantenimiento") {
+                                handleHistorialMantenimiento(item.patente);
                               } else if (label === "Eliminar") {
                                 handleDelete(item);
                               }
