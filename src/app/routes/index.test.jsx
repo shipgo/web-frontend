@@ -80,6 +80,38 @@ describe("AppRoutes", () => {
     expect(window.location.search).toBe("?redirect=%2Fenvios%2F123");
   });
 
+  // --- 404 / catch-all (SHG-FE-100) ---
+
+  it("no autenticado en una ruta inexistente ve la 404 pública, sin redirigir a /login", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/opciones" });
+
+    expect(await screen.findByText("Página no encontrada")).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/opciones");
+    expect(screen.queryByText(/^Login/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
+  });
+
+  it("un ADMIN en una ruta inexistente ve la 404 dentro del layout de gestión", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/opciones" });
+
+    expect(await screen.findByText("Página no encontrada")).toBeInTheDocument();
+    expect(screen.getByTestId("layout")).toBeInTheDocument();
+  });
+
+  it("no autenticado en /envios/123 (ruta protegida real) sigue yendo a /login, no a la 404", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/envios/123" });
+
+    expect(await screen.findByText("Login:operator")).toBeInTheDocument();
+    expect(screen.queryByText("Página no encontrada")).not.toBeInTheDocument();
+  });
+
   it("no autenticado en /portal/envios (guarda distinta, PortalRoute) también preserva el destino", async () => {
     setAuth({ user: null, isLoading: false, isAuthenticated: false });
     renderWithProviders(<AppRoutes />, { route: "/portal/envios" });

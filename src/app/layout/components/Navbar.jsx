@@ -14,8 +14,8 @@ import {
   IconExternalLink,
   IconHome,
   IconMoonStars,
-  IconSettings,
   IconSun,
+  IconUser,
 } from "@tabler/icons-react";
 
 import { ADMIN, PAGES } from "../constants/items";
@@ -93,12 +93,17 @@ const AppNavbar = () => {
         </>
       )}
 
+      {/* SHG-FE-100: "Opciones" llevaba a `/opciones`, una ruta inexistente
+          (pantalla en blanco, sin catch-all). El detalle del usuario logueado
+          ya existe en `/usuarios/:id` (`DetalleUsuario`), así que "Mi perfil"
+          apunta ahí directamente en vez de un destino sin implementar. */}
       <NavLink
         mt="auto"
-        to="/opciones"
-        label="Opciones"
+        to={`/usuarios/${user?.id}`}
+        label="Mi perfil"
         component={Link}
-        leftSection={<IconSettings size={18} />}
+        active={location === `/usuarios/${user?.id}`}
+        leftSection={<IconUser size={18} />}
       />
 
       <NavLink

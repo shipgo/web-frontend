@@ -80,6 +80,21 @@ describe("AppNavbar", () => {
     expect(screen.getByText("Viajes")).toBeInTheDocument();
     expect(screen.getByText("Envios")).toBeInTheDocument();
   });
+
+  // SHG-FE-100: "Opciones" llevaba a `/opciones`, una ruta inexistente (pantalla
+  // en blanco). Ahora es "Mi perfil" y abre el detalle del usuario logueado.
+  it("'Mi perfil' abre el detalle del usuario logueado (SHG-FE-100)", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 42, authorities: [{ name: "ROLE_ADMIN" }] },
+    });
+    renderNavbar();
+
+    expect(screen.queryByText("Opciones")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /mi perfil/i })).toHaveAttribute(
+      "href",
+      "/usuarios/42",
+    );
+  });
 });
 
 describe("AppNavbar — toggle de tema (SHG-FE-077)", () => {
