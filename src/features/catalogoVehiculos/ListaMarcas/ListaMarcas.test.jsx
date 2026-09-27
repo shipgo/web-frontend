@@ -105,4 +105,64 @@ describe("ListaMarcas", () => {
       );
     });
   });
+
+  it("respeta los filtros aplicados al exportar CSV", async () => {
+    const user = userEvent.setup();
+    const filteredData = [{ id: 1, nombre: "Mercedes-Benz" }];
+
+    // Primera llamada para cargar la lista
+    mockGet.mockResolvedValueOnce({
+      content: filteredData,
+      totalElements: 1,
+      totalPages: 1,
+    });
+
+    // Segunda llamada para la exportación (con el filtro)
+    mockGet.mockResolvedValueOnce({
+      content: filteredData,
+      totalElements: 1,
+      totalPages: 0,
+    });
+
+    renderWithProviders(<ListaMarcas />);
+
+    // Esperar a que cargue la página
+    await screen.findByText("Mercedes-Benz");
+
+    // Aplicar un filtro digitando en el campo de búsqueda
+    const searchInput = screen.getByPlaceholderText("Ej: Mercedes-Benz");
+    await user.type(searchInput, "Mercedes");
+
+    // Esperar a que se aplique el filtro (debounce)
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nombre: "Mercedes",
+        })
+      );
+    }, { timeout: 2000 });
+
+    // Resetear los mocks para los que vienen
+    mockGet.mockClear();
+    mockGet.mockResolvedValue({
+      content: filteredData,
+      totalElements: 1,
+      totalPages: 0,
+    });
+
+    // Hacer clic en Exportar CSV
+    const exportButton = screen.getByRole("button", { name: /exportar csv/i });
+    await user.click(exportButton);
+
+    // Verificar que marcaApi.get fue llamado con el filtro "nombre"
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nombre: "Mercedes",
+          page: 0,
+          size: 5000,
+        })
+      );
+    });
+  });
 });

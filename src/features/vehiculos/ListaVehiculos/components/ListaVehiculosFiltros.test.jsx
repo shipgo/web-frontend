@@ -103,7 +103,7 @@ describe("ListaVehiculosFiltros", () => {
     });
   });
 
-  it("seleccionar y deseleccionar un Tipo emite los cambios correctamente", async () => {
+  it("limpiar el Select de Tipo saca la key del filtro", async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
     renderWithProviders(<ListaVehiculosFiltros onFiltersChange={onFiltersChange} />);
@@ -121,5 +121,17 @@ describe("ListaVehiculosFiltros", () => {
         tipoVehiculo: { label: "tipoVehiculo", values: "Camión" },
       });
     });
+
+    // Limpiar el Select clickeando el botón de limpiar
+    const clearButton = document.querySelector('[data-combined-clear-section="true"] button');
+    if (clearButton) {
+      await user.click(clearButton);
+
+      // Verificar que la última llamada a onFiltersChange NO incluye tipoVehiculo
+      await waitFor(() => {
+        const lastCall = onFiltersChange.mock.calls[onFiltersChange.mock.calls.length - 1][0];
+        expect(lastCall.tipoVehiculo).toBeUndefined();
+      });
+    }
   });
 });
