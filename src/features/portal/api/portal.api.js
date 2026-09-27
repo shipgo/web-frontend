@@ -22,6 +22,11 @@ import { captchaHeader } from '@config/captcha';
  * @property {string} apellido
  * @property {string} telefono
  * @property {boolean} emailVerificado
+ *
+ * @typedef {Object} CustomerMeUpdateReqDTO
+ * @property {string} nombre     Obligatorio (`@NotEmpty`, mismas reglas que `RegisterReqDTO`).
+ * @property {string} apellido   Obligatorio.
+ * @property {string} telefono   Obligatorio.
  */
 
 export const registroApi = {
@@ -69,6 +74,23 @@ export const portalApi = {
    */
   me: async () => {
     const { data } = await restclient.get(API_URLS.CUSTOMER_ME_URL);
+    return data;
+  },
+
+  /**
+   * `PUT /api/customer/me` — sólo `ROLE_CUSTOMER` (`SHG-BE-074`). Siempre opera
+   * sobre el usuario autenticado (no recibe id). `email`/`emailVerificado` son
+   * de sólo lectura: no forman parte del request y, si vinieran, el backend
+   * los ignora.
+   *
+   * Los tres campos son obligatorios; si falta alguno, `400 ApiFieldError`
+   * (`fields: [{ field, error }]`, `CONTRACTS.md §5`).
+   *
+   * @param {CustomerMeUpdateReqDTO} body
+   * @returns {Promise<CustomerMeDTO>}
+   */
+  updateMe: async (body) => {
+    const { data } = await restclient.put(API_URLS.CUSTOMER_ME_URL, body);
     return data;
   },
 

@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { renderWithProviders } from "../../../test/renderWithProviders";
+import { renderWithProviders } from "../../test/renderWithProviders";
 
 const mockChangePassword = vi.fn();
 vi.mock("@stores/auth.store", () => ({

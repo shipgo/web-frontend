@@ -3,11 +3,13 @@ import { Route, Switch, Redirect } from 'wouter';
 import {
   PORTAL_BASE_PATH,
   PORTAL_HOME_PATH,
+  PORTAL_PERFIL_PATH,
 } from '@domain/roles';
 
 import {
   PortalEnviosPage,
   PortalEnvioDetallePage,
+  MiPerfilPage,
 } from '@features/portal';
 
 /**
@@ -19,11 +21,13 @@ import {
  * `PORTAL_HOME_PATH` para no divergir si cambia el home del portal.
  */
 const ENVIOS_PATH = PORTAL_HOME_PATH.slice(PORTAL_BASE_PATH.length); // '/envios'
+const PERFIL_PATH = PORTAL_PERFIL_PATH.slice(PORTAL_BASE_PATH.length); // '/perfil'
 
 const PortalRoutes = () => (
   <Switch>
     <Route path={ENVIOS_PATH} component={PortalEnviosPage} />
     <Route path={`${ENVIOS_PATH}/:codigo`} component={PortalEnvioDetallePage} />
+    <Route path={PERFIL_PATH} component={MiPerfilPage} />
     <Route>
       {/* `~` = ruta absoluta desde la raíz (ignora el base del nest). */}
       <Redirect to={`~${PORTAL_HOME_PATH}`} replace />
