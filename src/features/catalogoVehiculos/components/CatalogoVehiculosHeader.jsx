@@ -3,6 +3,7 @@ import { IconPlus } from "@tabler/icons-react";
 import { Link, useLocation } from "wouter";
 
 import PageHeader from "@components/PageHeader";
+import ExportCsvButton from "@components/ExportCsvButton";
 
 const TABS = [
   { value: "marcas", label: "Marcas" },
@@ -12,7 +13,7 @@ const TABS = [
 /**
  * Header compartido de `ListaMarcas`/`ListaModelos`: tabs para alternar entre
  * ambos catálogos (mismo router anidado, `/catalogo-vehiculos`) + el
- * `PageHeader` canónico con el botón de alta. Evita duplicar la navegación
+ * `PageHeader` canónico con el botón de alta y exportación. Evita duplicar la navegación
  * entre las dos pantallas de listado — ver nota de alcance en
  * `planning/tasks/SHG-FE-059.md` sobre por qué Marca y Modelo comparten
  * feature en vez de vivir en dos secciones de nav separadas.
@@ -23,6 +24,9 @@ const TABS = [
  * @param {string} props.subtitle
  * @param {string} props.createLabel
  * @param {string} props.createHref - relativo al nest `/catalogo-vehiculos`.
+ * @param {() => void} [props.onExportCsv] - callback para exportar a CSV.
+ * @param {boolean} [props.isExporting] - si está exportando.
+ * @param {boolean} [props.exportDisabled] - si el botón de exportar está deshabilitado.
  */
 const CatalogoVehiculosHeader = ({
   active,
@@ -30,6 +34,9 @@ const CatalogoVehiculosHeader = ({
   subtitle,
   createLabel,
   createHref,
+  onExportCsv,
+  isExporting,
+  exportDisabled,
 }) => {
   const [, navigate] = useLocation();
 
@@ -52,6 +59,13 @@ const CatalogoVehiculosHeader = ({
         <Button to={createHref} component={Link} leftSection={<IconPlus />}>
           {createLabel}
         </Button>
+        {onExportCsv && (
+          <ExportCsvButton
+            onExport={onExportCsv}
+            loading={isExporting}
+            disabled={exportDisabled}
+          />
+        )}
       </PageHeader>
     </Stack>
   );
