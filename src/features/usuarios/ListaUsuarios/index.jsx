@@ -6,7 +6,10 @@ import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
 
+import { usuarioApi } from '@api';
+import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
+import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
 
 import ListaUsuariosHeader from './components/ListaUsuariosHeader';
 import ListaUsuariosFiltros from './components/ListaUsuariosFiltros';
@@ -32,6 +35,24 @@ const ListaUsuarios = () => {
   useEffect(() => {
     selectedIds.clear();
   }, [data.results]);
+
+  const { exportarSeleccionados } = useExportSelectedCsv({
+    columns: USUARIOS_CSV_COLUMNS,
+    entidad: 'usuarios-seleccionados',
+    entidadLabel: 'usuarios',
+  });
+
+  const { confirmBulkDelete } = useBulkDelete({
+    deleteFn: (id) => usuarioApi.delete(id),
+    singular: 'usuario',
+    plural: 'usuarios',
+    getLabel: (item) =>
+      item.nombre && item.apellido ? `${item.nombre} ${item.apellido}` : item.username,
+    onSettled: () => {
+      refetch();
+      selectedIds.clear();
+    },
+  });
 
   const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   const onToggleAll = () => {
@@ -59,6 +80,8 @@ const ListaUsuarios = () => {
         singular="usuario seleccionado"
         plural="usuarios seleccionados"
         onClear={() => selectedIds.clear()}
+        onExport={() => exportarSeleccionados(data.results, selectedIds)}
+        onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
       />
 
       <Card>

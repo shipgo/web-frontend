@@ -7,7 +7,11 @@ import PageContainer from "@components/PageContainer";
 import ScreenContainer from "@components/ScreenContainer";
 import SelectionBanner from "@components/SelectionBanner";
 
+import { useBulkDelete } from "@hooks/useBulkDelete";
 import { useCsvExport } from "@hooks/useCsvExport";
+import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
+
+import { mantenimientoApi } from "../api/mantenimientos.api";
 
 import ListaMantenimientosHeader from "./components/ListaMantenimientosHeader";
 import ListaMantenimientosFiltros from "./components/ListaMantenimientosFiltros";
@@ -56,6 +60,27 @@ const ListaMantenimientos = () => {
     selectedIds.clear();
   }, [data.results]);
 
+  const { exportarSeleccionados } = useExportSelectedCsv({
+    columns: MANTENIMIENTOS_CSV_COLUMNS,
+    entidad: "mantenimientos-seleccionados",
+    entidadLabel: "mantenimientos",
+  });
+
+  const { confirmBulkDelete } = useBulkDelete({
+    deleteFn: (id) => mantenimientoApi.delete(id),
+    singular: "mantenimiento",
+    plural: "mantenimientos",
+    getLabel: (item) => {
+      const patente = item.vehiculo?.patente;
+      const tipo = item.tipoMantenimiento?.nombre;
+      return [tipo, patente].filter(Boolean).join(" · ") || `mantenimiento #${item.id}`;
+    },
+    onSettled: () => {
+      refetchMantenimientos();
+      selectedIds.clear();
+    },
+  });
+
   const onToggle = (id) =>
     selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
 
@@ -88,6 +113,8 @@ const ListaMantenimientos = () => {
         singular="mantenimiento seleccionado"
         plural="mantenimientos seleccionados"
         onClear={() => selectedIds.clear()}
+        onExport={() => exportarSeleccionados(data.results, selectedIds)}
+        onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
       />
 
       <Card>

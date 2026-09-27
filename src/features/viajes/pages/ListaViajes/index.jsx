@@ -6,7 +6,10 @@ import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
 
+import { viajeApi } from '@api';
+import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
+import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
 
 import ListaViajesHeader from './components/ListaViajesHeader';
 import ListaViajesTabla from './components/ListaViajesTabla';
@@ -41,6 +44,23 @@ const ListaViajes = () => {
     selectedIds.clear();
   }, [data.results]);
 
+  const { exportarSeleccionados } = useExportSelectedCsv({
+    columns: VIAJES_CSV_COLUMNS,
+    entidad: 'viajes-seleccionados',
+    entidadLabel: 'viajes',
+  });
+
+  const { confirmBulkDelete } = useBulkDelete({
+    deleteFn: (id) => viajeApi.delete(id),
+    singular: 'viaje',
+    plural: 'viajes',
+    getLabel: (item) => `viaje #${item.id}`,
+    onSettled: () => {
+      refetch();
+      selectedIds.clear();
+    },
+  });
+
   const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   const onToggleAll = () => {
     if (data.results?.every((i) => selectedIds.has(i.id))) {
@@ -67,6 +87,8 @@ const ListaViajes = () => {
         singular="viaje seleccionado"
         plural="viajes seleccionados"
         onClear={() => selectedIds.clear()}
+        onExport={() => exportarSeleccionados(data.results, selectedIds)}
+        onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
       />
 
       <Card>

@@ -6,11 +6,17 @@ import PageContainer from "@components/PageContainer";
 import ScreenContainer from "@components/ScreenContainer";
 import SelectionBanner from "@components/SelectionBanner";
 
+import { useBulkDelete } from "@hooks/useBulkDelete";
+import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
+
+import { sucursalApi } from "../api/sucursales.api";
+
 import ListaSucursalesHeader from "./components/ListaSucursalesHeader";
 import ListaSucursalesFiltros from "./components/ListaSucursalesFiltros";
 import ListaSucursalesTabla from "./components/ListaSucursalesTabla";
 
 import { useGetSucursales } from "./hooks/useGetSucursales";
+import { SUCURSALES_CSV_COLUMNS } from "./listaSucursales.csv";
 
 const PAGE_LIMIT = 10;
 
@@ -30,6 +36,23 @@ const ListaSucursales = () => {
   useEffect(() => {
     selectedIds.clear();
   }, [data.results]);
+
+  const { exportarSeleccionados } = useExportSelectedCsv({
+    columns: SUCURSALES_CSV_COLUMNS,
+    entidad: "sucursales-seleccionadas",
+    entidadLabel: "sucursales",
+  });
+
+  const { confirmBulkDelete } = useBulkDelete({
+    deleteFn: (id) => sucursalApi.delete(id),
+    singular: "sucursal",
+    plural: "sucursales",
+    getLabel: (item) => item.nombre || "Sin nombre",
+    onSettled: () => {
+      refetchSucursales();
+      selectedIds.clear();
+    },
+  });
 
   const onToggle = (id) => (selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id));
   const onToggleAll = () => {
@@ -53,6 +76,8 @@ const ListaSucursales = () => {
         singular="sucursal seleccionada"
         plural="sucursales seleccionadas"
         onClear={() => selectedIds.clear()}
+        onExport={() => exportarSeleccionados(data.results, selectedIds)}
+        onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
       />
 
       <Card>

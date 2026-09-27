@@ -6,7 +6,10 @@ import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
 
+import { envioApi } from '@api';
+import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
+import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
 
 import ListaEnviosHeader from './components/ListaEnviosHeader';
 import ListaEnviosFiltros from './components/ListaEnviosFiltros';
@@ -44,6 +47,23 @@ const ListaEnvios = () => {
     selectedIds.clear();
   }, [data.results]);
 
+  const { exportarSeleccionados } = useExportSelectedCsv({
+    columns: ENVIOS_CSV_COLUMNS,
+    entidad: 'envios-seleccionados',
+    entidadLabel: 'envíos',
+  });
+
+  const { confirmBulkDelete } = useBulkDelete({
+    deleteFn: (id) => envioApi.delete(id),
+    singular: 'envío',
+    plural: 'envíos',
+    getLabel: (item) => item.codigoSeguimiento || `envío #${item.id}`,
+    onSettled: () => {
+      refetch();
+      selectedIds.clear();
+    },
+  });
+
   const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   const onToggleAll = () => {
     if (data.results?.every((i) => selectedIds.has(i.id))) {
@@ -70,6 +90,8 @@ const ListaEnvios = () => {
         singular="envío seleccionado"
         plural="envíos seleccionados"
         onClear={() => selectedIds.clear()}
+        onExport={() => exportarSeleccionados(data.results, selectedIds)}
+        onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
       />
 
       <Card>
