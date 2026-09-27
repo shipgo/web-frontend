@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { notifications } from '@mantine/notifications';
 
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 
@@ -264,5 +265,134 @@ describe('ListaEnvios', () => {
 
     await waitFor(() => expect(envioApi.delete).toHaveBeenCalledWith(1));
     expect(await screen.findByText('Envío eliminado')).toBeInTheDocument();
+  });
+
+  describe('acciones masivas del SelectionBanner (SHG-FE-095)', () => {
+    let createObjectURL;
+
+    beforeEach(() => {
+      // El store de `@mantine/notifications` es un singleton fuera del árbol
+      // de React: un toast de un test anterior de este mismo archivo puede
+      // seguir montado y romper un `findByText` (ej. "multiple elements
+      // found") en el siguiente.
+      notifications.clean();
+      createObjectURL = vi.fn(() => 'blob:fake');
+      vi.stubGlobal('URL', { createObjectURL, revokeObjectURL: vi.fn() });
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    it('"Exportar seleccionados" sólo incluye las filas tildadas, no todo el listado', async () => {
+      envioApi.get.mockResolvedValue({
+        content: [ENVIO_EN_SUCURSAL, ENVIO_ENTREGADO],
+        totalElements: 2,
+        totalPages: 1,
+      });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+
+      await user.click(await screen.findByLabelText('Seleccionar envío SHG-DEV-0001'));
+
+      await user.click(screen.getByRole('button', { name: 'Acciones' }));
+      await user.click(await screen.findByRole('menuitem', { name: 'Exportar seleccionados' }));
+
+      expect(createObjectURL).toHaveBeenCalledTimes(1);
+      const blob = createObjectURL.mock.calls[0][0];
+      const contenido = await blob.text();
+      expect(contenido).toContain('SHG-DEV-0001');
+      expect(contenido).not.toContain('SHG-DEV-0002');
+
+      expect(await screen.findByText('CSV generado')).toBeInTheDocument();
+    });
+
+    it('"Eliminar seleccionados" borra cada envío por separado, reporta el fallo 409 sin abortar el resto, refresca y limpia la selección', async () => {
+      envioApi.get.mockResolvedValue({
+        content: [ENVIO_EN_SUCURSAL, ENVIO_ENTREGADO],
+        totalElements: 2,
+        totalPages: 1,
+      });
+      envioApi.delete.mockImplementation((id) =>
+        id === 1
+          ? Promise.resolve({ codigo: 200 })
+          : Promise.reject({
+              response: {
+                status: 409,
+                data: { message: "El envío 2 está en estado 'entregado' y no se puede eliminar" },
+              },
+            }),
+      );
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+
+      await user.click(await screen.findByLabelText('Seleccionar envío SHG-DEV-0001'));
+      await user.click(await screen.findByLabelText('Seleccionar envío SHG-DEV-0002'));
+
+      expect(await screen.findByText('2 envíos seleccionados')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Acciones' }));
+      await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados' }));
+
+      const dialog = await screen.findByRole('dialog');
+      expect(within(dialog).getByText(/eliminar 2 envíos/)).toBeInTheDocument();
+
+      await waitFor(() => expect(envioApi.get).toHaveBeenCalledTimes(1));
+      await user.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
+
+      await waitFor(() => expect(envioApi.delete).toHaveBeenCalledWith(1));
+      await waitFor(() => expect(envioApi.delete).toHaveBeenCalledWith(2));
+
+      expect(await screen.findByText('Eliminación parcial')).toBeInTheDocument();
+      expect(screen.getByText(/Se eliminaron 1 de 2 envíos/)).toBeInTheDocument();
+      expect(screen.getByText(/está en estado 'entregado'/)).toBeInTheDocument();
+
+      // Refresca el listado (segundo `envioApi.get`) y limpia la selección
+      // (el banner desaparece porque `selectedIds` queda vacío).
+      await waitFor(() => expect(envioApi.get).toHaveBeenCalledTimes(2));
+      expect(screen.queryByText(/envíos seleccionados/)).not.toBeInTheDocument();
+    });
+
+    it('un doble click sobre "Eliminar" con el borrado pendiente no duplica los DELETE', async () => {
+      envioApi.get.mockResolvedValue({
+        content: [ENVIO_EN_SUCURSAL],
+        totalElements: 1,
+        totalPages: 1,
+      });
+
+      let resolveDelete;
+      envioApi.delete.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveDelete = resolve;
+          }),
+      );
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+
+      await user.click(await screen.findByLabelText('Seleccionar envío SHG-DEV-0001'));
+      await user.click(screen.getByRole('button', { name: 'Acciones' }));
+      await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados' }));
+
+      const dialog = await screen.findByRole('dialog');
+      const confirmBtn = within(dialog).getByRole('button', { name: 'Eliminar' });
+
+      // Doble click "de verdad": dos eventos síncronos sin esperar entre
+      // medio a que React re-renderice el botón como `loading` (que recién
+      // ahí quedaría disabled) — es el guard interno de `useBulkDelete` el
+      // que tiene que frenar el segundo, no el `disabled` del botón.
+      fireEvent.click(confirmBtn);
+      fireEvent.click(confirmBtn);
+
+      expect(envioApi.delete).toHaveBeenCalledTimes(1);
+
+      resolveDelete({ codigo: 200 });
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
   });
 });

@@ -6,7 +6,11 @@ import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
 
+import { usuarioApi } from '@api';
+import { useAuthStore } from '@stores/auth.store';
+import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
+import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
 
 import ListaUsuariosHeader from './components/ListaUsuariosHeader';
 import ListaUsuariosFiltros from './components/ListaUsuariosFiltros';
@@ -19,6 +23,16 @@ const ListaUsuarios = () => {
   const { params, setPage, setFilters, refetch, usuariosQuery, fetchExportRows, PAGE_LIMIT } =
     useGetUsuarios();
   const { data = {}, isFetching: isLoading, isError } = usuariosQuery;
+  const currentUser = useAuthStore((state) => state.user);
+
+  // SHG-FE-094 / SHG-FE-095: nunca permitir que el usuario logueado se
+  // auto-elimine (hard delete sin guarda de backend contra auto-borrado) —
+  // mismo criterio que `isSelf` en `ListaUsuariosTabla.jsx`, que ya
+  // deshabilita el checkbox de esa fila. Se repite el filtro acá antes de
+  // `confirmBulkDelete` como defensa en profundidad, no confiar sólo en que
+  // el checkbox nunca se haya podido tildar.
+  const isSelf = (usuario) =>
+    Boolean(currentUser?.id) && String(currentUser.id) === String(usuario.id);
 
   const { exportar, isExporting } = useCsvExport({
     fetchRows: fetchExportRows,
@@ -33,12 +47,32 @@ const ListaUsuarios = () => {
     selectedIds.clear();
   }, [data.results]);
 
+  const { exportarSeleccionados } = useExportSelectedCsv({
+    columns: USUARIOS_CSV_COLUMNS,
+    entidad: 'usuarios-seleccionados',
+    entidadLabel: 'usuarios',
+  });
+
+  const { confirmBulkDelete } = useBulkDelete({
+    deleteFn: (id) => usuarioApi.delete(id),
+    singular: 'usuario',
+    plural: 'usuarios',
+    getLabel: (item) =>
+      item.nombre && item.apellido ? `${item.nombre} ${item.apellido}` : item.username,
+    onSettled: () => {
+      refetch();
+      selectedIds.clear();
+    },
+  });
+
   const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   const onToggleAll = () => {
-    if (data.results?.every((i) => selectedIds.has(i.id))) {
-      data.results.forEach((i) => selectedIds.delete(i.id));
+    // Excluye la propia fila: nunca es seleccionable (ver `isSelf` arriba).
+    const seleccionables = (data.results ?? []).filter((i) => !isSelf(i));
+    if (seleccionables.length > 0 && seleccionables.every((i) => selectedIds.has(i.id))) {
+      seleccionables.forEach((i) => selectedIds.delete(i.id));
     } else {
-      data.results?.forEach((i) => selectedIds.add(i.id));
+      seleccionables.forEach((i) => selectedIds.add(i.id));
     }
   };
 
@@ -59,6 +93,12 @@ const ListaUsuarios = () => {
         singular="usuario seleccionado"
         plural="usuarios seleccionados"
         onClear={() => selectedIds.clear()}
+        onExport={() => exportarSeleccionados(data.results, selectedIds)}
+        onDelete={() =>
+          confirmBulkDelete(
+            (data.results ?? []).filter((item) => selectedIds.has(item.id) && !isSelf(item)),
+          )
+        }
       />
 
       <Card>
