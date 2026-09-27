@@ -9,22 +9,53 @@ import {
 
 import { timeFromNow, toLocalDate } from '@utils/dates';
 import { RowActionsMenu } from '@components';
-import { esEstadoTerminal, estadoBadge } from '@domain/estados';
+import { ESTADOS_VIAJE_CON_TRACKING, esEstadoTerminal, estadoBadge, normalizarEstado } from '@domain/estados';
 
 import { useDeleteEnvio } from '../hooks/useDeleteEnvio';
+import { getViajeAsociado } from '../../../utils';
 
 /** Fecha de alta = `historialEstado` con `estado === 'creado'` (CONTRACTS.md §4 / SHG-BE-004). */
 const getFechaAlta = (envio) =>
   (envio.historialEstado ?? []).find((h) => h.estado === 'creado')?.fechaHoraInicio ?? null;
 
-const getActionsForRow = (envio, { onEditar, onVerDetalles, onEliminar }) => {
+/**
+ * "Localizar" (SHG-FE-097): habilitado sólo si el envío tiene un viaje
+ * asociado (`getViajeAsociado`) y ese viaje está en un estado trackeable
+ * (`ESTADOS_VIAJE_CON_TRACKING`, mismo criterio que "Monitorear" en
+ * `ListaViajesTabla`, SHG-FE-096). Si no, queda deshabilitado con un tooltip
+ * que explica por qué (envío sin viaje vs. viaje todavía no despachado / ya
+ * cerrado).
+ */
+const getLocalizarAction = (envio, onLocalizar) => {
+  const viajeAsociado = getViajeAsociado(envio);
+  const trackeable = !!viajeAsociado && ESTADOS_VIAJE_CON_TRACKING.includes(normalizarEstado(viajeAsociado.estado));
+
+  if (trackeable) {
+    return {
+      icon: <IconMapSearch size={18} />,
+      label: 'Localizar',
+      onClick: () => onLocalizar(viajeAsociado.id),
+    };
+  }
+
+  return {
+    icon: <IconMapSearch size={18} />,
+    label: 'Localizar',
+    disabled: true,
+    tooltip: viajeAsociado
+      ? 'El viaje asociado no está en camino en este momento.'
+      : 'Este envío todavía no fue asignado a un viaje.',
+  };
+};
+
+const getActionsForRow = (envio, { onEditar, onVerDetalles, onEliminar, onLocalizar }) => {
   const terminal = esEstadoTerminal('envio', envio.estado);
 
   return [
     {
       name: 'Detalles',
       items: [
-        { icon: <IconMapSearch size={18} />, label: 'Localizar', disabled: true },
+        getLocalizarAction(envio, onLocalizar),
         { icon: <IconFileDescription size={18} />, label: 'Ver detalles', onClick: onVerDetalles },
       ],
     },
@@ -134,6 +165,12 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRe
                     onVerDetalles: () => navigate(`~/envios/${id}`),
                     onEditar: () => navigate(`~/envios/editar/${id}`),
                     onEliminar: () => confirmDelete(envio),
+                    // Ruta absoluta (`~`): `/mapa` no está anidado bajo
+                    // `/envios` — misma navegación que "Monitorear" en
+                    // `ListaViajesTabla` (SHG-FE-096); el mapa lee `?viaje=`
+                    // y preselecciona/centra ese viaje
+                    // (`useSeleccionarViajeDeQueryParam`).
+                    onLocalizar: (viajeId) => navigate(`~/mapa?viaje=${viajeId}`),
                   })}
                   width={160}
                   ariaLabel={`Acciones de ${codigoSeguimiento}`}

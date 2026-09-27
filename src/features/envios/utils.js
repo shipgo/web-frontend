@@ -102,6 +102,30 @@ export const buildEnvioFormValues = (envio) => {
   };
 };
 
+/**
+ * Viaje asociado a un `EnvioDTO` (SHG-FE-097), vía su recorrido actual.
+ *
+ * El backend no expone un campo directo `envio.viaje` — el vínculo viaja
+ * anidado en `detalleRecorridos[].recorrido.viaje` (`EnvioDTO`/`RecorridoDTO`
+ * reales, `backend/src/main/java/.../dto/{EnvioDTO,RecorridoDTO}.java`).
+ * Mismo campo, mismo shape, tanto en `GET /api/envio/{id}` como en el listado
+ * paginado `GET /api/envio` (es el mismo `EnvioDTO`, sin proyección reducida
+ * para el listado) — verificado contra el DTO real del backend.
+ *
+ * "Recorrido actual" = el último de `detalleRecorridos`, mismo criterio que
+ * ya usa `DetalleEnvio` (`recorridoActual`) para mostrar el viaje/recorrido
+ * vigente del envío.
+ *
+ * @param {Object} envio - `EnvioDTO` del backend.
+ * @returns {Object|null} `ViajeDTO` (con `id`/`estado`) o `null` si el envío
+ *   todavía no fue asignado a ningún viaje.
+ */
+export const getViajeAsociado = (envio) => {
+  const detalleRecorridos = envio?.detalleRecorridos ?? [];
+  const recorridoActual = detalleRecorridos[detalleRecorridos.length - 1]?.recorrido ?? null;
+  return recorridoActual?.viaje ?? null;
+};
+
 export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
   const tipoEntrega = values.tipoEntrega ?? TIPO_ENTREGA_DEFAULT;
 
