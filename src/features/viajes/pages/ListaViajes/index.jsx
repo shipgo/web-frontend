@@ -6,10 +6,13 @@ import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
 
+import { normalizarEstado } from '@domain/estados';
 import { viajeApi } from '@api';
 import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
 import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
+
+import { ESTADOS_CANCELABLES } from '../DetalleViaje/acciones';
 
 import ListaViajesHeader from './components/ListaViajesHeader';
 import ListaViajesTabla from './components/ListaViajesTabla';
@@ -61,6 +64,30 @@ const ListaViajes = () => {
     },
   });
 
+  // `DELETE /api/viaje/{id}` (a diferencia de `PUT /cancelar`) no valida el
+  // estado del lado del backend — borraría en cascada un viaje `en_camino` o
+  // `finalizado` con 200 (pedido de FE-095 en review: bug de backend, ver
+  // `../../../../planning/coordination/backend.md`). El guard tiene que vivir
+  // acá: se filtra por `ESTADOS_CANCELABLES` (misma matriz que `puedeCancelar`
+  // en `DetalleViaje/acciones.js`) ANTES de llamar a `deleteFn`, así el bulk
+  // delete nunca le pega al backend con un viaje no cancelable. El export sí
+  // puede incluir cualquier estado (no se toca `exportarSeleccionados`).
+  const onBulkDeleteViajes = () => {
+    const seleccionados = (data.results ?? []).filter((item) => selectedIds.has(item.id));
+    const cancelables = [];
+    const excluidos = [];
+
+    seleccionados.forEach((item) => {
+      if (ESTADOS_CANCELABLES.includes(normalizarEstado(item.estado))) {
+        cancelables.push(item);
+      } else {
+        excluidos.push({ item, reason: 'no se puede eliminar en su estado actual' });
+      }
+    });
+
+    confirmBulkDelete(cancelables, excluidos);
+  };
+
   const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   const onToggleAll = () => {
     if (data.results?.every((i) => selectedIds.has(i.id))) {
@@ -88,7 +115,7 @@ const ListaViajes = () => {
         plural="viajes seleccionados"
         onClear={() => selectedIds.clear()}
         onExport={() => exportarSeleccionados(data.results, selectedIds)}
-        onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
+        onDelete={onBulkDeleteViajes}
       />
 
       <Card>

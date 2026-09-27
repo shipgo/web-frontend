@@ -41,19 +41,25 @@ const describeFailure = (error) => {
  *   el listado al terminar (`onSettled`), sea éxito total, parcial o fallo
  *   total.
  *
+ * `excluded` (segundo argumento de `confirmBulkDelete`) permite marcar de
+ * antemano ítems que NO deben llegar al backend (ej. un viaje en un estado no
+ * cancelable — el `DELETE` real no valida esto, así que el guard tiene que
+ * vivir acá, no confiar en que el backend responda 409). Cada uno se reporta
+ * junto con los fallos reales, con el motivo indicado, sin invocar `deleteFn`.
+ *
  * @param {Object} opts
  * @param {(id: any) => Promise<void>} opts.deleteFn
  * @param {string} opts.singular  Ej: 'envío'.
  * @param {string} opts.plural    Ej: 'envíos'.
  * @param {(item: any) => string} [opts.getLabel]  Identificador legible por ítem (default `#id`).
  * @param {() => void} [opts.onSettled]  Refetch de la lista + limpiar selección. Se llama siempre.
- * @returns {{ confirmBulkDelete: (items: any[]) => void }}
+ * @returns {{ confirmBulkDelete: (items: any[], excluded?: { item: any, reason: string }[]) => void }}
  */
 export const useBulkDelete = ({ deleteFn, singular, plural, getLabel, onSettled }) => {
   const labelOf = (item) => (getLabel ? getLabel(item) : `#${item?.id ?? item}`);
 
-  const confirmBulkDelete = (items = []) => {
-    const count = items.length;
+  const confirmBulkDelete = (items = [], excluded = []) => {
+    const count = items.length + excluded.length;
     if (count === 0) return;
 
     const noun = count === 1 ? singular : plural;
@@ -87,6 +93,13 @@ export const useBulkDelete = ({ deleteFn, singular, plural, getLabel, onSettled 
             } else {
               fallidos.push({ item: items[index], reason: result.reason });
             }
+          });
+
+          // Los excluidos de antemano nunca llamaron a `deleteFn`: se agregan
+          // directo a `fallidos`, con el `reason` sintetizado en la misma
+          // forma que un error de axios (`describeFailure` ya sabe leerla).
+          excluded.forEach(({ item, reason }) => {
+            fallidos.push({ item, reason: { response: { data: { message: reason } } } });
           });
 
           if (fallidos.length === 0) {

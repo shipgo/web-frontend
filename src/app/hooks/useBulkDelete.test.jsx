@@ -12,7 +12,7 @@ const ITEMS = [
   { id: 2, nombre: 'Dos' },
 ];
 
-const TestComponent = ({ deleteFn, onSettled, items = ITEMS }) => {
+const TestComponent = ({ deleteFn, onSettled, items = ITEMS, excluded = [] }) => {
   const { confirmBulkDelete } = useBulkDelete({
     deleteFn,
     singular: 'elemento',
@@ -21,7 +21,7 @@ const TestComponent = ({ deleteFn, onSettled, items = ITEMS }) => {
     onSettled,
   });
 
-  return <Button onClick={() => confirmBulkDelete(items)}>Eliminar seleccionados</Button>;
+  return <Button onClick={() => confirmBulkDelete(items, excluded)}>Eliminar seleccionados</Button>;
 };
 
 describe('useBulkDelete', () => {
@@ -108,6 +108,37 @@ describe('useBulkDelete', () => {
     expect(await screen.findByText('No se pudo eliminar')).toBeInTheDocument();
     expect(screen.getByText(/No se pudo eliminar ningún elemento/)).toBeInTheDocument();
     expect(screen.queryByText('Eliminación parcial')).not.toBeInTheDocument();
+  });
+
+  it('los ítems excluidos de antemano nunca llaman a deleteFn y se reportan junto a los fallos reales', async () => {
+    const deleteFn = vi.fn().mockResolvedValue({});
+    const onSettled = vi.fn();
+    const user = userEvent.setup();
+    const excluido = { id: 99, nombre: 'Tres' };
+
+    renderWithProviders(
+      <TestComponent
+        deleteFn={deleteFn}
+        onSettled={onSettled}
+        excluded={[{ item: excluido, reason: 'no se puede eliminar en su estado actual' }]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Eliminar seleccionados' }));
+
+    const dialog = await screen.findByRole('dialog');
+    // La cantidad del modal cuenta también los excluidos (3 = 2 + 1).
+    expect(within(dialog).getByText(/eliminar 3 elementos/i)).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
+
+    await waitFor(() => expect(deleteFn).toHaveBeenCalledTimes(2));
+    expect(deleteFn).not.toHaveBeenCalledWith(99);
+
+    expect(await screen.findByText('Eliminación parcial')).toBeInTheDocument();
+    expect(screen.getByText(/Se eliminaron 2 de 3 elementos/)).toBeInTheDocument();
+    expect(screen.getByText(/Tres \(no se puede eliminar en su estado actual\)/)).toBeInTheDocument();
+    await waitFor(() => expect(onSettled).toHaveBeenCalledTimes(1));
   });
 
   it('un doble click en "Eliminar" mientras el borrado está pendiente no duplica los DELETE', async () => {

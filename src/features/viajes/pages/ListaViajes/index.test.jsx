@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { notifications } from "@mantine/notifications";
 
 import { renderWithProviders } from "../../../../test/renderWithProviders";
 
 vi.mock("@api/viaje.api", () => ({
-  viajeApi: { get: vi.fn(), cancelar: vi.fn() },
+  viajeApi: { get: vi.fn(), cancelar: vi.fn(), delete: vi.fn() },
   detalleRecorridoApi: {},
 }));
 
@@ -29,6 +30,10 @@ const VIAJE = {
 describe("ListaViajes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // El store de `@mantine/notifications` es un singleton fuera del árbol de
+    // React: un toast de un test anterior puede seguir montado y romper un
+    // `findByText` (ej. "multiple elements found") en el siguiente.
+    notifications.clean();
     useAuthStore.setState({
       user: new Usuario({ id: 1, username: "admin1", authorities: ["ROLE_ADMIN"] }),
       isAuthenticated: true,
@@ -357,6 +362,71 @@ describe("ListaViajes", () => {
       expect(await encontrarMenuItem("Ver hoja de ruta")).toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Reportar incidente" })).not.toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Desvincular chofer" })).not.toBeInTheDocument();
+    });
+  });
+
+  describe("eliminar seleccionados respeta ESTADOS_CANCELABLES (SHG-FE-095, review)", () => {
+    // `DELETE /api/viaje/{id}` no valida estado del lado del backend (a
+    // diferencia de `PUT /cancelar`, que sí devuelve 409 fuera de
+    // `ESTADOS_CANCELABLES`) — si el front no filtrara antes de llamar a
+    // `deleteFn`, un viaje `en_camino`/`finalizado` se borraría igual con 200.
+    const VIAJE_NO_CANCELABLE = { ...VIAJE, id: 43, estado: "en_camino" };
+
+    it("una selección mixta sólo llama a delete con los viajes cancelables y reporta el resto sin pegarle al backend", async () => {
+      viajeApi.get.mockResolvedValue({
+        content: [VIAJE, VIAJE_NO_CANCELABLE],
+        totalElements: 2,
+        totalPages: 1,
+      });
+      viajeApi.delete.mockResolvedValue({ codigo: 200 });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaViajes />);
+
+      await user.click(await screen.findByLabelText("Seleccionar viaje 42"));
+      await user.click(await screen.findByLabelText("Seleccionar viaje 43"));
+      expect(await screen.findByText("2 viajes seleccionados")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "Acciones" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText(/eliminar 2 viajes/)).toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+
+      await waitFor(() => expect(viajeApi.delete).toHaveBeenCalledWith(42));
+      // Nunca se llama al backend con el viaje no cancelable.
+      expect(viajeApi.delete).not.toHaveBeenCalledWith(43);
+      expect(viajeApi.delete).toHaveBeenCalledTimes(1);
+
+      expect(await screen.findByText("Eliminación parcial")).toBeInTheDocument();
+      expect(screen.getByText(/Se eliminaron 1 de 2 viajes/)).toBeInTheDocument();
+      expect(screen.getByText(/viaje #43.*no se puede eliminar en su estado actual/)).toBeInTheDocument();
+
+      // Refresca y limpia la selección igual que cualquier otro resultado.
+      await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(2));
+      expect(screen.queryByText(/viajes seleccionados/)).not.toBeInTheDocument();
+    });
+
+    it("si todos los seleccionados son no cancelables, no llama a delete ni una vez y reporta el fallo total", async () => {
+      viajeApi.get.mockResolvedValue({
+        content: [VIAJE_NO_CANCELABLE],
+        totalElements: 1,
+        totalPages: 1,
+      });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaViajes />);
+
+      await user.click(await screen.findByLabelText("Seleccionar viaje 43"));
+      await user.click(screen.getByRole("button", { name: "Acciones" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+
+      expect(viajeApi.delete).not.toHaveBeenCalled();
+      expect(await screen.findByText("No se pudo eliminar")).toBeInTheDocument();
     });
   });
 });

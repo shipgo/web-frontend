@@ -144,6 +144,42 @@ describe("ListaUsuariosTabla (SHG-FE-094)", () => {
     expect(await screen.findByText("Eliminar")).toBeInTheDocument();
   });
 
+  it("deshabilita el checkbox de la propia fila (SHG-FE-095: no se puede auto-seleccionar para el bulk delete)", () => {
+    renderWithProviders(
+      <ListaUsuariosTabla
+        items={[SELF, OTRO_MULTI_ROL]}
+        selectedIds={new Set()}
+        onToggle={vi.fn()}
+        onToggleAll={vi.fn()}
+        onRefresh={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole("checkbox", { name: "No podés seleccionar tu propio usuario" })
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("checkbox", { name: "Seleccionar usuario otra" })
+    ).not.toBeDisabled();
+  });
+
+  it('"Seleccionar todos" (cabecera) queda tildado si sólo faltan seleccionar filas no seleccionables (la propia)', () => {
+    // Si el cálculo de "todos seleccionados" no excluyera la propia fila, este
+    // checkbox nunca llegaría a `checked` con una sola fila ajena en la
+    // página — se quedaría indeterminado para siempre.
+    renderWithProviders(
+      <ListaUsuariosTabla
+        items={[SELF, OTRO_MULTI_ROL]}
+        selectedIds={new Set([OTRO_MULTI_ROL.id])}
+        onToggle={vi.fn()}
+        onToggleAll={vi.fn()}
+        onRefresh={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("checkbox", { name: "Seleccionar todos los usuarios" })).toBeChecked();
+  });
+
   it("muestra un badge por cada rol (authority) del usuario", () => {
     renderWithProviders(
       <ListaUsuariosTabla

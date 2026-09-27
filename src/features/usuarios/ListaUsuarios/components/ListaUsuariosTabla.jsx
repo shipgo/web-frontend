@@ -38,14 +38,19 @@ const ListaUsuariosTabla = ({
   const handleEdit = (userId) => navigate(`~/usuarios/${userId}/editar`);
   const handleViewDetails = (userId) => navigate(`~/usuarios/${userId}`);
 
+  // SHG-FE-094 / SHG-FE-095: nunca ofrecer "Eliminar" (ni individual ni
+  // masivo) sobre el propio usuario logueado — hard delete sin guarda de
+  // backend contra auto-borrado, la decisión de alcance fue resolverlo sólo
+  // en el frontend. Se usa también para deshabilitar el checkbox de la
+  // propia fila (bulk delete de SelectionBanner).
+  const isSelf = (usuario) =>
+    Boolean(currentUser?.id) && String(currentUser.id) === String(usuario.id);
+
   const getActions = (usuario) => {
-    // SHG-FE-094: nunca ofrecer "Eliminar" sobre el propio usuario logueado
-    // (hard delete sin guarda de backend contra auto-borrado — la decisión de
-    // alcance fue resolverlo sólo en el frontend). "Desactivar" se quitó del
-    // menú: no tenía `onClick` ni soporte de backend (`enabled` no existe en
-    // `UserDTO`), y activar/desactivar usuarios quedó fuera de alcance.
-    const isSelf =
-      Boolean(currentUser?.id) && String(currentUser.id) === String(usuario.id);
+    // "Desactivar" se quitó del menú: no tenía `onClick` ni soporte de
+    // backend (`enabled` no existe en `UserDTO`), y activar/desactivar
+    // usuarios quedó fuera de alcance.
+    const self = isSelf(usuario);
 
     const actions = [
       { icon: <IconEye size={18} />, label: "Ver detalles", onClick: () => handleViewDetails(usuario.id) },
@@ -53,7 +58,7 @@ const ListaUsuariosTabla = ({
       { icon: <IconKey size={18} />, label: "Resetear contraseña", color: "orange", onClick: () => confirmReset(usuario) },
     ];
 
-    if (!isSelf) {
+    if (!self) {
       actions.push({
         icon: <IconTrash size={18} />,
         label: "Eliminar",
@@ -66,8 +71,12 @@ const ListaUsuariosTabla = ({
     return actions;
   };
 
-  const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
-  const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
+  // "Seleccionar todos" ignora la propia fila (no seleccionable): si no se
+  // excluyera acá, el checkbox de cabecera nunca llegaría a `checked` con el
+  // resto de la página ya tildada (la propia fila jamás entra a `selectedIds`).
+  const selectableItems = items.filter((i) => !isSelf(i));
+  const allSelected = selectableItems.length > 0 && selectableItems.every((i) => selectedIds.has(i.id));
+  const indeterminate = !allSelected && selectableItems.some((i) => selectedIds.has(i.id));
 
   return (
     <Table.ScrollContainer minWidth={760}>
@@ -75,7 +84,12 @@ const ListaUsuariosTabla = ({
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={40}>
-            <Checkbox checked={allSelected} indeterminate={indeterminate} onChange={onToggleAll} />
+            <Checkbox
+              aria-label="Seleccionar todos los usuarios"
+              checked={allSelected}
+              indeterminate={indeterminate}
+              onChange={onToggleAll}
+            />
           </Table.Th>
           <Table.Th>Usuario</Table.Th>
           <Table.Th>Email</Table.Th>
@@ -97,6 +111,7 @@ const ListaUsuariosTabla = ({
           const sucursal = item.sucursal?.nombre || "Sin sucursal";
           const fechaRegistro = item.fechaCreacion || item.createdAt || item.fecha;
           const authorities = item.authorities || [];
+          const self = isSelf(item);
 
           return (
             <Table.Tr
@@ -104,7 +119,16 @@ const ListaUsuariosTabla = ({
               bg={selectedIds.has(item.id) ? "var(--mantine-color-blue-light)" : undefined}
             >
               <Table.Td>
-                <Checkbox checked={selectedIds.has(item.id)} onChange={() => onToggle(item.id)} />
+                <Checkbox
+                  aria-label={
+                    self
+                      ? "No podés seleccionar tu propio usuario"
+                      : `Seleccionar usuario ${item.username}`
+                  }
+                  checked={selectedIds.has(item.id)}
+                  disabled={self}
+                  onChange={() => onToggle(item.id)}
+                />
               </Table.Td>
 
               <Table.Td>
