@@ -3,11 +3,14 @@ import { Card, Flex, Pagination, Text } from "@mantine/core";
 import PageContainer from "@components/PageContainer";
 import ScreenContainer from "@components/ScreenContainer";
 
+import { useCsvExport } from "@hooks/useCsvExport";
+
 import CatalogoVehiculosHeader from "../components/CatalogoVehiculosHeader";
 import ListaModelosFiltros from "./components/ListaModelosFiltros";
 import ListaModelosTabla from "./components/ListaModelosTabla";
 
 import { useGetModelos } from "./hooks/useGetModelos";
+import { MODELOS_CSV_COLUMNS } from "./listaModelos.csv";
 
 const PAGE_LIMIT = 10;
 
@@ -17,10 +20,18 @@ const ListaModelos = () => {
     isError,
     isLoading,
     refetchModelos,
+    fetchExportRows,
     setPage,
     setFilters,
     params: { filters, page },
   } = useGetModelos(PAGE_LIMIT);
+
+  const { exportar, isExporting } = useCsvExport({
+    fetchRows: fetchExportRows,
+    columns: MODELOS_CSV_COLUMNS,
+    entidad: "modelos",
+    entidadLabel: "modelos",
+  });
 
   const showPagination = data.total > PAGE_LIMIT;
 
@@ -32,6 +43,9 @@ const ListaModelos = () => {
         subtitle="Listado de modelos de vehículo registrados"
         createLabel="Crear modelo"
         createHref="/modelos/crear"
+        onExportCsv={exportar}
+        isExporting={isExporting}
+        exportDisabled={isLoading || isError}
       />
 
       <ListaModelosFiltros onFiltersChange={setFilters} disabled={isLoading} />

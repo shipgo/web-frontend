@@ -15,10 +15,25 @@ const EMPTY_RESULTS = [];
 export const useGetMarcas = (pageLimit = 10) => {
   const paramsOptions = useParams();
 
+  const filterParams = mapValues(paramsOptions.params.filters, (filter) => filter.values);
+
   const normalizedParams = {
     page: (paramsOptions.params.page || 1) - 1, // 0-indexed
     size: pageLimit,
-    ...mapValues(paramsOptions.params.filters, (filter) => filter.values),
+    ...filterParams,
+  };
+
+  /**
+   * Trae hasta `limit` marcas con los filtros actuales (para exportar a CSV).
+   * @param {number} limit
+   * @returns {Promise<{ rows: any[], total: number }>}
+   */
+  const fetchExportRows = async (limit) => {
+    const response = await marcaApi.get({ ...filterParams, page: 0, size: limit });
+    return {
+      rows: response?.content ?? EMPTY_RESULTS,
+      total: response?.totalElements ?? 0,
+    };
   };
 
   const {
@@ -42,6 +57,7 @@ export const useGetMarcas = (pageLimit = 10) => {
     isError,
     isLoading,
     refetchMarcas,
+    fetchExportRows,
     ...paramsOptions,
   };
 };

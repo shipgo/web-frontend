@@ -3,11 +3,14 @@ import { Card, Flex, Pagination, Text } from "@mantine/core";
 import PageContainer from "@components/PageContainer";
 import ScreenContainer from "@components/ScreenContainer";
 
+import { useCsvExport } from "@hooks/useCsvExport";
+
 import CatalogoVehiculosHeader from "../components/CatalogoVehiculosHeader";
 import ListaMarcasFiltros from "./components/ListaMarcasFiltros";
 import ListaMarcasTabla from "./components/ListaMarcasTabla";
 
 import { useGetMarcas } from "./hooks/useGetMarcas";
+import { MARCAS_CSV_COLUMNS } from "./listaMarcas.csv";
 
 const PAGE_LIMIT = 10;
 
@@ -17,10 +20,18 @@ const ListaMarcas = () => {
     isError,
     isLoading,
     refetchMarcas,
+    fetchExportRows,
     setPage,
     setFilters,
     params: { filters, page },
   } = useGetMarcas(PAGE_LIMIT);
+
+  const { exportar, isExporting } = useCsvExport({
+    fetchRows: fetchExportRows,
+    columns: MARCAS_CSV_COLUMNS,
+    entidad: "marcas",
+    entidadLabel: "marcas",
+  });
 
   const showPagination = data.total > PAGE_LIMIT;
 
@@ -32,6 +43,9 @@ const ListaMarcas = () => {
         subtitle="Listado de marcas de vehículo registradas"
         createLabel="Crear marca"
         createHref="/marcas/crear"
+        onExportCsv={exportar}
+        isExporting={isExporting}
+        exportDisabled={isLoading || isError}
       />
 
       <ListaMarcasFiltros onFiltersChange={setFilters} disabled={isLoading} />
