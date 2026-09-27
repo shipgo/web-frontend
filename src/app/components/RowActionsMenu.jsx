@@ -1,13 +1,38 @@
 import { Fragment } from "react";
-import { ActionIcon, Menu } from "@mantine/core";
+import { ActionIcon, Menu, Tooltip } from "@mantine/core";
 import { IconDotsVertical } from "@tabler/icons-react";
 
 /**
  * actions: Array of items or groups
  *
- * Flat item:   { label, icon, color?, disabled?, dividerBefore? }
- * Group:       { name, items: [{ label, icon, color?, disabled? }] }
+ * Flat item:   { label, icon, color?, disabled?, dividerBefore?, tooltip? }
+ * Group:       { name, items: [{ label, icon, color?, disabled?, tooltip? }] }
+ *
+ * `tooltip` (SHG-FE-097): mensaje mostrado sólo mientras `disabled` es
+ * `true` — explica por qué la acción no está disponible (p. ej. "Localizar"
+ * en Envíos, sin viaje trackeable). Se ignora si `disabled` es falsy.
  */
+const MenuItemEntry = ({ label, icon, color, disabled, onClick, tooltip }) => {
+  const item = (
+    <Menu.Item color={color} leftSection={icon} disabled={disabled} onClick={onClick}>
+      {label}
+    </Menu.Item>
+  );
+
+  if (!disabled || !tooltip) return item;
+
+  // Un `Menu.Item` deshabilitado es un `<button disabled>` real: el navegador
+  // no dispara eventos de puntero sobre él, así que un `Tooltip` puesto
+  // directo ahí nunca vería el hover. Se envuelve en un `<span>` (patrón
+  // estándar de Mantine para tooltips en elementos deshabilitados) que sí
+  // recibe el hover y dispara el tooltip.
+  return (
+    <Tooltip label={tooltip} position="left" withArrow multiline maw={220}>
+      <span>{item}</span>
+    </Tooltip>
+  );
+};
+
 const RowActionsMenu = ({ actions = [], width = "max-content", ariaLabel = "Más acciones" }) => (
   <Menu
     shadow="md"
@@ -28,16 +53,8 @@ const RowActionsMenu = ({ actions = [], width = "max-content", ariaLabel = "Más
             <Fragment key={entry.name}>
               {index > 0 && <Menu.Divider />}
               <Menu.Label>{entry.name}</Menu.Label>
-              {entry.items.map(({ label, icon, color, disabled, onClick }) => (
-                <Menu.Item
-                  key={label}
-                  color={color}
-                  leftSection={icon}
-                  disabled={disabled}
-                  onClick={onClick}
-                >
-                  {label}
-                </Menu.Item>
+              {entry.items.map((item) => (
+                <MenuItemEntry key={item.label} {...item} />
               ))}
             </Fragment>
           );
@@ -46,14 +63,7 @@ const RowActionsMenu = ({ actions = [], width = "max-content", ariaLabel = "Más
         return (
           <Fragment key={entry.label}>
             {entry.dividerBefore && <Menu.Divider />}
-            <Menu.Item
-              color={entry.color}
-              leftSection={entry.icon}
-              disabled={entry.disabled}
-              onClick={entry.onClick}
-            >
-              {entry.label}
-            </Menu.Item>
+            <MenuItemEntry {...entry} />
           </Fragment>
         );
       })}

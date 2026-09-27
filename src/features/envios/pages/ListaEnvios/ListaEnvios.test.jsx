@@ -244,6 +244,102 @@ describe('ListaEnvios', () => {
     });
   });
 
+  it('no existe el botón "Importar" (SHG-FE-097: no tenía onClick)', async () => {
+    envioApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    renderWithProviders(<ListaEnvios />);
+
+    await waitFor(() => expect(envioApi.get).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: 'Importar' })).not.toBeInTheDocument();
+  });
+
+  describe('"Localizar" (SHG-FE-097)', () => {
+    // `MENU_ITEM_TIMEOUT`: mismo motivo que en `ListaViajes` (SHG-FE-096) — el
+    // `Menu` de Mantine anima su apertura con un `setTimeout` real, que bajo
+    // carga (suite corriendo en paralelo) puede tardar más que el default de
+    // `findByRole` (1000ms).
+    const MENU_ITEM_TIMEOUT = 3000;
+
+    const abrirMenuDelEnvio = async (user, codigoSeguimiento) => {
+      await user.click(await screen.findByRole('button', { name: `Acciones de ${codigoSeguimiento}` }));
+    };
+
+    const encontrarMenuItem = (name) =>
+      screen.findByRole('menuitem', { name }, { timeout: MENU_ITEM_TIMEOUT });
+
+    it('navega a /mapa?viaje=:id cuando el envío tiene un viaje en_camino', async () => {
+      const envioConViajeEnCamino = {
+        ...ENVIO_EN_SUCURSAL,
+        detalleRecorridos: [
+          { id: 1, recorrido: { id: 10, estado: 'en_camino', viaje: { id: 99, estado: 'en_camino' } } },
+        ],
+      };
+      envioApi.get.mockResolvedValue({ content: [envioConViajeEnCamino], totalElements: 1, totalPages: 1 });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+      await abrirMenuDelEnvio(user, 'SHG-DEV-0001');
+
+      const localizar = await encontrarMenuItem('Localizar');
+      expect(localizar).not.toHaveAttribute('data-disabled');
+
+      await user.click(localizar);
+
+      await waitFor(() => expect(window.location.pathname).toBe('/mapa'));
+      expect(window.location.search).toBe('?viaje=99');
+    });
+
+    it('también habilita "Localizar" cuando el viaje está con_problemas (sigue trackeable)', async () => {
+      const envioConViajeConProblemas = {
+        ...ENVIO_EN_SUCURSAL,
+        detalleRecorridos: [
+          { id: 1, recorrido: { id: 10, estado: 'en_camino', viaje: { id: 7, estado: 'con_problemas' } } },
+        ],
+      };
+      envioApi.get.mockResolvedValue({ content: [envioConViajeConProblemas], totalElements: 1, totalPages: 1 });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+      await abrirMenuDelEnvio(user, 'SHG-DEV-0001');
+
+      expect(await encontrarMenuItem('Localizar')).not.toHaveAttribute('data-disabled');
+    });
+
+    it('está deshabilitado con tooltip cuando el envío no tiene ningún viaje asociado', async () => {
+      envioApi.get.mockResolvedValue({ content: [ENVIO_EN_SUCURSAL], totalElements: 1, totalPages: 1 });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+      await abrirMenuDelEnvio(user, 'SHG-DEV-0001');
+
+      const localizar = await encontrarMenuItem('Localizar');
+      expect(localizar).toHaveAttribute('data-disabled');
+
+      await user.hover(localizar);
+      expect(await screen.findByText('Este envío todavía no fue asignado a un viaje.')).toBeInTheDocument();
+    });
+
+    it('está deshabilitado con tooltip cuando el viaje asociado todavía no salió (planificado)', async () => {
+      const envioConViajePlanificado = {
+        ...ENVIO_EN_SUCURSAL,
+        detalleRecorridos: [
+          { id: 1, recorrido: { id: 10, estado: 'planificado', viaje: { id: 5, estado: 'planificado' } } },
+        ],
+      };
+      envioApi.get.mockResolvedValue({ content: [envioConViajePlanificado], totalElements: 1, totalPages: 1 });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+      await abrirMenuDelEnvio(user, 'SHG-DEV-0001');
+
+      const localizar = await encontrarMenuItem('Localizar');
+      expect(localizar).toHaveAttribute('data-disabled');
+
+      await user.hover(localizar);
+      expect(await screen.findByText('El viaje asociado no está en camino en este momento.')).toBeInTheDocument();
+    });
+  });
+
   it('refetches the list when deleting an envío succeeds', async () => {
     envioApi.get.mockResolvedValue({
       content: [ENVIO_EN_SUCURSAL],
