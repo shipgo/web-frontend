@@ -12,11 +12,11 @@ vi.mock("@api/vehiculo.api", () => ({
     update: vi.fn(),
     delete: vi.fn(),
   },
-  marcaApi: { getAll: vi.fn() },
-  modeloApi: { getAll: vi.fn() },
-  tipoVehiculoApi: { getAll: vi.fn() },
-  combustibleApi: { getAll: vi.fn() },
-  tipoRuedaApi: { getAll: vi.fn() },
+  marcaApi: { getAll: vi.fn().mockResolvedValue([]) },
+  modeloApi: { getAll: vi.fn().mockResolvedValue([]) },
+  tipoVehiculoApi: { getAll: vi.fn().mockResolvedValue([]) },
+  combustibleApi: { getAll: vi.fn().mockResolvedValue([]) },
+  tipoRuedaApi: { getAll: vi.fn().mockResolvedValue([]) },
 }));
 
 import { vehiculoApi } from "@api/vehiculo.api";

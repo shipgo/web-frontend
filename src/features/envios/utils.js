@@ -103,7 +103,23 @@ export const buildEnvioFormValues = (envio) => {
 };
 
 /**
- * Viaje asociado a un `EnvioDTO` (SHG-FE-097), vía su recorrido actual.
+ * Recorrido actual de un `EnvioDTO` (SHG-FE-097/SHG-FE-103): el último de
+ * `detalleRecorridos`, mismo criterio que usa `DetalleEnvio` para mostrar el
+ * recorrido/viaje vigente del envío (badge de estado del recorrido, destino
+ * del tramo actual, etc).
+ *
+ * @param {Object} envio - `EnvioDTO` del backend.
+ * @returns {Object|null} `RecorridoDTO` o `null` si el envío todavía no tiene
+ *   ningún recorrido asignado.
+ */
+export const getRecorridoActual = (envio) => {
+  const detalleRecorridos = envio?.detalleRecorridos ?? [];
+  return detalleRecorridos[detalleRecorridos.length - 1]?.recorrido ?? null;
+};
+
+/**
+ * Viaje asociado a un `EnvioDTO` (SHG-FE-097), vía su recorrido actual
+ * (`getRecorridoActual`).
  *
  * El backend no expone un campo directo `envio.viaje` — el vínculo viaja
  * anidado en `detalleRecorridos[].recorrido.viaje` (`EnvioDTO`/`RecorridoDTO`
@@ -112,19 +128,11 @@ export const buildEnvioFormValues = (envio) => {
  * paginado `GET /api/envio` (es el mismo `EnvioDTO`, sin proyección reducida
  * para el listado) — verificado contra el DTO real del backend.
  *
- * "Recorrido actual" = el último de `detalleRecorridos`, mismo criterio que
- * ya usa `DetalleEnvio` (`recorridoActual`) para mostrar el viaje/recorrido
- * vigente del envío.
- *
  * @param {Object} envio - `EnvioDTO` del backend.
  * @returns {Object|null} `ViajeDTO` (con `id`/`estado`) o `null` si el envío
  *   todavía no fue asignado a ningún viaje.
  */
-export const getViajeAsociado = (envio) => {
-  const detalleRecorridos = envio?.detalleRecorridos ?? [];
-  const recorridoActual = detalleRecorridos[detalleRecorridos.length - 1]?.recorrido ?? null;
-  return recorridoActual?.viaje ?? null;
-};
+export const getViajeAsociado = (envio) => getRecorridoActual(envio)?.viaje ?? null;
 
 export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
   const tipoEntrega = values.tipoEntrega ?? TIPO_ENTREGA_DEFAULT;
