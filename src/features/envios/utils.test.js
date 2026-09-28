@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { buildEnvioFormValues, buildEnvioReqDTO, formatDestinoEnvio } from "./utils";
+import {
+  buildEnvioFormValues,
+  buildEnvioReqDTO,
+  formatDestinoEnvio,
+  getRecorridoActual,
+  getViajeAsociado,
+} from "./utils";
 
 describe("buildEnvioReqDTO", () => {
   const baseValues = {
@@ -301,5 +307,46 @@ describe("formatDestinoEnvio (SHG-FE-085)", () => {
     };
 
     expect(formatDestinoEnvio(envio)).toBe("San Martín 50");
+  });
+});
+
+describe("getRecorridoActual (SHG-FE-097/SHG-FE-103)", () => {
+  it("devuelve el último recorrido de detalleRecorridos", () => {
+    const recorridoViejo = { id: 1, estado: "FINALIZADO" };
+    const recorridoActual = { id: 2, estado: "EN_CURSO" };
+    const envio = {
+      detalleRecorridos: [{ recorrido: recorridoViejo }, { recorrido: recorridoActual }],
+    };
+
+    expect(getRecorridoActual(envio)).toBe(recorridoActual);
+  });
+
+  it("devuelve null si el envío no tiene detalleRecorridos", () => {
+    expect(getRecorridoActual({ detalleRecorridos: [] })).toBeNull();
+    expect(getRecorridoActual({})).toBeNull();
+    expect(getRecorridoActual(null)).toBeNull();
+    expect(getRecorridoActual(undefined)).toBeNull();
+  });
+});
+
+describe("getViajeAsociado (SHG-FE-097)", () => {
+  it("devuelve el viaje del recorrido actual (getRecorridoActual)", () => {
+    const viaje = { id: 10, estado: "EN_CURSO" };
+    const envio = {
+      detalleRecorridos: [{ recorrido: { id: 1, viaje: null } }, { recorrido: { id: 2, viaje } }],
+    };
+
+    expect(getViajeAsociado(envio)).toBe(viaje);
+  });
+
+  it("devuelve null si el recorrido actual no tiene viaje asignado", () => {
+    const envio = { detalleRecorridos: [{ recorrido: { id: 1, viaje: null } }] };
+
+    expect(getViajeAsociado(envio)).toBeNull();
+  });
+
+  it("devuelve null si el envío no tiene ningún recorrido", () => {
+    expect(getViajeAsociado({ detalleRecorridos: [] })).toBeNull();
+    expect(getViajeAsociado({})).toBeNull();
   });
 });

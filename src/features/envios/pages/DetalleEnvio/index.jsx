@@ -45,6 +45,7 @@ import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
 import { useAuthStore } from "@stores/auth.store";
 
 import { TIPO_ENTREGA } from "../../constants";
+import { getRecorridoActual, getViajeAsociado } from "../../utils";
 import { puedeAccionarEntrega, puedeConfirmarRetiro } from "./acciones";
 import { useEnvioAcciones } from "./hooks/useEnvioAcciones";
 
@@ -136,9 +137,8 @@ const DetalleEnvio = () => {
     (a, b) => new Date(fechaHistorial(a)) - new Date(fechaHistorial(b)),
   );
 
-  const detalleRecorridos = envio?.detalleRecorridos ?? [];
-  const recorridoActual = detalleRecorridos[detalleRecorridos.length - 1]?.recorrido ?? null;
-  const viajeAsociado = recorridoActual?.viaje ?? null;
+  const recorridoActual = getRecorridoActual(envio);
+  const viajeAsociado = getViajeAsociado(envio);
   const recorridoEstadoInfo = recorridoActual ? estadoBadge("recorrido", recorridoActual.estado) : null;
 
   return (
