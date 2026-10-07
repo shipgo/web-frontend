@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+import {
+  emailRequerido,
+  nombreRequerido,
+  prefijoRequerido,
+  telefonoRequerido,
+  textoOpcional,
+} from '@domain/validation';
 import { TIPO_ENTREGA, TIPO_ENTREGA_DEFAULT } from '@features/envios/constants';
 
 /**
@@ -44,20 +51,20 @@ export const PAQUETE_INITIAL_VALUES = {
 
 export const CREAR_ENVIO_SCHEMA = z
   .object({
-    nombre: z.string().trim().min(1, 'El nombre es requerido'),
-    apellido: z.string().trim().min(1, 'El apellido es requerido'),
-    emailRemitente: z.email('Email inválido'),
-    emailReceptor: z.email('Email inválido'),
-    prefijo: z.string().trim().min(1, 'El prefijo es requerido'),
-    telefono: z.string().trim().min(1, 'El teléfono es requerido'),
+    nombre: nombreRequerido('El nombre es requerido'),
+    apellido: nombreRequerido('El apellido es requerido'),
+    emailRemitente: emailRequerido('El email del remitente es requerido'),
+    emailReceptor: emailRequerido('El email del receptor es requerido'),
+    prefijo: prefijoRequerido(),
+    telefono: telefonoRequerido(),
     tipoEntrega: z
       .enum([TIPO_ENTREGA.DOMICILIO, TIPO_ENTREGA.SUCURSAL])
       .default(TIPO_ENTREGA_DEFAULT),
     sucursalEntregaID: z.string().optional(),
-    nombreCalle: z.string().optional(),
-    numeroCalle: z.string().optional(),
-    piso: z.string().optional(),
-    departamento: z.string().optional(),
+    nombreCalle: textoOpcional().optional(),
+    numeroCalle: textoOpcional().optional(),
+    piso: textoOpcional().optional(),
+    departamento: textoOpcional().optional(),
     provinciaID: z.string().optional(),
     localidadID: z.string().optional(),
     coordenadas: z.object({ lat: z.number(), lng: z.number() }).nullable().optional(),

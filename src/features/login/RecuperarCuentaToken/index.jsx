@@ -142,7 +142,7 @@ const RecuperarCuentaToken = () => {
       title="Creá una nueva contraseña"
       subtitle="Elegí una contraseña que no hayas usado antes."
     >
-      <Stack gap="lg" component="form" onSubmit={form.onSubmit(handleSubmit)}>
+      <Stack gap="lg" component="form" onSubmit={form.onSubmit(handleSubmit)} noValidate>
         {errorMsg ? (
           <Alert color="red" title="No se pudo cambiar la contraseña">
             {errorMsg}

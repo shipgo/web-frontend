@@ -39,7 +39,11 @@ restclient.interceptors.response.use(
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url.includes(API_URLS.LOGIN_URL) &&
-      !originalRequest.url.includes(API_URLS.REFRESH_TOKEN_URL)
+      !originalRequest.url.includes(API_URLS.REFRESH_TOKEN_URL) &&
+      // `POST /changePassword` con la contraseña actual incorrecta responde 401
+      // hoy (pasa a 400 `password_incorrecta` con SHG-BE-083): no es una sesión
+      // vencida, así que no hay que refrescar ni reintentar (SHG-FE-107).
+      originalRequest.url !== API_URLS.CHANGE_PASSWORD_URL
     ) {
       if (isRefreshing) {
         // Si ya hay un refresh en progreso, agregar a la cola

@@ -235,7 +235,7 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
   }, [isSuper, user?.sucursal?.id]);
 
   return (
-    <form onSubmit={form.onSubmit(onSubmit)}>
+    <form onSubmit={form.onSubmit(onSubmit)} noValidate>
       <Stack>
         {/* Información Personal */}
         <Card pos="relative">

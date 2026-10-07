@@ -46,3 +46,35 @@ describe('restclient — 401 con refresh fallido (SHG-FE-104)', () => {
     expect(window.location.href).toBe('/login');
   });
 });
+
+describe('restclient — 401 de changePassword (SHG-FE-107)', () => {
+  let calls;
+
+  beforeEach(() => {
+    calls = [];
+    restclient.defaults.adapter = (config) => {
+      calls.push(config.url);
+      return rejectWith401(config);
+    };
+  });
+
+  afterEach(() => {
+    restclient.defaults.adapter = originalAdapter;
+    Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+  });
+
+  it('no dispara el refresh ni redirige a /login: rechaza el 401 original', async () => {
+    setPath('/portal/perfil');
+    await expect(
+      restclient.post('/changePassword', { oldPassword: 'x', newPassword: 'y' }),
+    ).rejects.toMatchObject({ response: { status: 401 } });
+    expect(calls).toEqual(['/changePassword']);
+    expect(window.location.href).toBe('/portal/perfil');
+  });
+
+  it('un 401 de otro endpoint sí intenta el refresh', async () => {
+    setPath('/portal/perfil');
+    await expect(restclient.get('/envios/1')).rejects.toBeTruthy();
+    expect(calls).toContain('/refresh');
+  });
+});

@@ -57,4 +57,40 @@ describe("RecuperarCuenta", () => {
     expect(await screen.findByText("No se pudo enviar")).toBeInTheDocument();
     expect(screen.queryByText("Revisá tu correo")).not.toBeInTheDocument();
   });
+
+  const enviar = async (user) => {
+    renderWithProviders(<RecuperarCuenta />);
+    await user.type(screen.getByLabelText("Email"), "nadie@example.com");
+    await user.click(screen.getByRole("button", { name: "Enviar enlace" }));
+  };
+
+  it.each([
+    ["404", { status: 404, data: { message: "Usuario no encontrado" } }],
+    ["400 'no existe'", { status: 400, data: { message: "El usuario no existe" } }],
+  ])("email inexistente (%s): muestra el mismo mensaje neutro que un éxito", async (_n, response) => {
+    const user = userEvent.setup();
+    mockVerifyEmail.mockRejectedValue({ response });
+    await enviar(user);
+
+    expect(await screen.findByText("Revisá tu correo")).toBeInTheDocument();
+    expect(screen.getByText(/Si el email está registrado, te enviamos un enlace/)).toBeInTheDocument();
+    expect(screen.queryByText("No se pudo enviar")).not.toBeInTheDocument();
+  });
+
+  it("un 429 (rate limit) NO se oculta como éxito", async () => {
+    const user = userEvent.setup();
+    mockVerifyEmail.mockRejectedValue({ response: { status: 429, data: { message: "Demasiados intentos" } } });
+    await enviar(user);
+
+    expect(await screen.findByText("No se pudo enviar")).toBeInTheDocument();
+    expect(screen.getByText("Demasiados intentos")).toBeInTheDocument();
+  });
+
+  it("un error de red (sin response) NO se oculta como éxito", async () => {
+    const user = userEvent.setup();
+    mockVerifyEmail.mockRejectedValue(new Error("Network Error"));
+    await enviar(user);
+
+    expect(await screen.findByText("No se pudo enviar")).toBeInTheDocument();
+  });
 });

@@ -5,7 +5,7 @@ import { SUCURSAL_SCHEMA, SUCURSAL_INITIAL_VALUES } from "./schema";
 const VALID_SUCURSAL = {
   nombre: "Sucursal Norte",
   email: "norte@shipgo.com",
-  prefijo: "+54",
+  prefijo: "351",
   telefono: "3511234567",
   nombreCalle: "Av. Colón",
   numeroCalle: "1234",

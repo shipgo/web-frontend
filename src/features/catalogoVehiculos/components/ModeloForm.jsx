@@ -104,7 +104,7 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
         loaderProps={{ type: "bars" }}
       />
 
-      <form onSubmit={form.onSubmit(onSubmit, handleInvalid)}>
+      <form onSubmit={form.onSubmit(onSubmit, handleInvalid)} noValidate>
         <Card>
           <Stack gap="md">
             <Group gap="0.75rem">
@@ -137,6 +137,9 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
                 leftSection={<IconCalendar size={18} />}
                 min={1900}
                 max={currentYear + 1}
+                // Sin clamp silencioso: un año fuera de rango se muestra como error
+                // inline ("El año debe ser mayor a 1900", etc.) en vez de corregirse solo.
+                clampBehavior="none"
                 required
                 {...form.getInputProps("anio")}
               />

@@ -115,7 +115,7 @@ const RegistroPage = () => {
         </Text>
       </Stack>
 
-      <Card withBorder padding="lg" component="form" onSubmit={handleSubmit}>
+      <Card withBorder padding="lg" component="form" onSubmit={handleSubmit} noValidate>
         <Stack gap="md">
           <Group grow align="flex-start">
             <TextInput

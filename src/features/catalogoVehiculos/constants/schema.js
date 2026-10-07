@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { nombreRequerido } from "@domain/validation";
+
 /**
  * Validación de `MarcaForm` / `ModeloForm` (crear/editar) con Zod +
  * `schemaResolver` nativo de `@mantine/form`, alineado al patrón canónico de
@@ -23,7 +25,7 @@ const numberField = (schema) =>
   );
 
 export const MARCA_SCHEMA = z.object({
-  nombre: z.string().trim().min(1, "Debes ingresar el nombre"),
+  nombre: nombreRequerido("Debes ingresar el nombre"),
 });
 
 export const MARCA_INITIAL_VALUES = {
@@ -37,7 +39,7 @@ export const MARCA_INITIAL_VALUES = {
  * automotriz) igual que `anioCompra` en `vehiculos/constants/schema.js`.
  */
 export const MODELO_SCHEMA = z.object({
-  nombre: z.string().trim().min(1, "Debes ingresar el nombre"),
+  nombre: nombreRequerido("Debes ingresar el nombre"),
   marcaID: requiredSelect("Debes seleccionar una marca"),
   anio: numberField(
     z
