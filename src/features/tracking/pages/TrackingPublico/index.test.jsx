@@ -124,4 +124,60 @@ describe('TrackingPublicoPage', () => {
       expect(mockTrack).toHaveBeenCalledWith('7K2M9QX4TP', expect.any(String)),
     );
   });
+
+  it('SHG-FE-112: una búsqueda inválida después de un resultado oculta el resultado anterior', async () => {
+    const user = userEvent.setup();
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/código de seguimiento/i);
+    await user.clear(input);
+    await user.type(input, 'ab');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+
+    await waitFor(() =>
+      expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId('mapa-ubicacion')).not.toBeInTheDocument();
+  });
+
+  it('SHG-FE-112: tras una búsqueda inválida, una válida vuelve a mostrar el resultado', async () => {
+    const user = userEvent.setup();
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/código de seguimiento/i);
+    await user.clear(input);
+    await user.type(input, 'ab');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+    await waitFor(() =>
+      expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument(),
+    );
+
+    await user.clear(input);
+    await user.type(input, '7K2M9QX4TP');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+  });
+
+  it('SHG-FE-112: un código inexistente (404) después de un resultado no deja el anterior', async () => {
+    const user = userEvent.setup();
+    mockTrack.mockImplementation((codigo) =>
+      codigo === '7K2M9QX4TP'
+        ? Promise.resolve(DTO_OK)
+        : Promise.reject({ response: { status: 404 } }),
+    );
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/código de seguimiento/i);
+    await user.clear(input);
+    await user.type(input, 'ZZZZZZZZZZ');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+
+    expect(await screen.findByText(/no encontramos/i)).toBeInTheDocument();
+    expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument();
+  });
 });

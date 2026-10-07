@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLocation, useParams, Link } from 'wouter';
 import {
   Alert,
@@ -37,7 +38,12 @@ const TrackingPublicoPage = () => {
     { enabled: codigoValido, captchaToken: captcha.token },
   );
 
+  // Una búsqueda inválida (formato) no navega: sin esto el resultado de la
+  // búsqueda anterior quedaría visible debajo del error (SHG-FE-112).
+  const [busquedaInvalida, setBusquedaInvalida] = useState(false);
+
   const handleSubmit = (codigo) => {
+    setBusquedaInvalida(false);
     setLocation(`/tracking/${codigo}`);
   };
 
@@ -65,6 +71,7 @@ const TrackingPublicoPage = () => {
           <TrackingSearchForm
             initialValue={codigoNormalizado}
             onSubmit={handleSubmit}
+            onInvalid={() => setBusquedaInvalida(true)}
             loading={consultando}
             disabled={!captcha.token}
           />
@@ -83,17 +90,17 @@ const TrackingPublicoPage = () => {
         </Alert>
       ) : null}
 
-      {consultando ? (
+      {consultando && !busquedaInvalida ? (
         <Center py="xl">
           <Loader />
         </Center>
       ) : null}
 
-      {codigoValido && !consultando && errorKind ? (
+      {codigoValido && !busquedaInvalida && !consultando && errorKind ? (
         <TrackingErrorAlert kind={errorKind} onRetry={handleRetry} />
       ) : null}
 
-      {data ? <TrackingResultado data={data} /> : null}
+      {data && !busquedaInvalida ? <TrackingResultado data={data} /> : null}
 
       <Text size="sm" c="dimmed" ta="center">
         ¿Sos cliente y querés ver todos tus envíos?{' '}
