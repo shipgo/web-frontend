@@ -39,6 +39,7 @@ import {
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import ScreenContainer from "@components/ScreenContainer";
+import { isNotFoundError } from "@utils/httpErrors";
 import { envioApi } from "@api";
 import { BUTTON_ACTION_TEXT_COLOR, esEstadoTerminal, estadoBadge, estadoLabel } from "@domain/estados";
 import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
@@ -86,6 +87,7 @@ const DetalleEnvio = () => {
   const [envio, setEnvio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   const loadEnvio = useCallback(async () => {
     if (!id) return;
@@ -93,11 +95,17 @@ const DetalleEnvio = () => {
     try {
       setLoading(true);
       setError(false);
+      setNotFound(false);
       const data = await envioApi.getById(id);
       setEnvio(data);
     } catch (err) {
-      console.error("Error cargando envío:", err);
-      setError(true);
+      if (isNotFoundError(err)) {
+        setEnvio(null);
+        setNotFound(true);
+      } else {
+        console.error("Error cargando envío:", err);
+        setError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -143,8 +151,15 @@ const DetalleEnvio = () => {
 
   return (
     <PageContainer>
+      {notFound && !loading && <PageBreadcrumbsHeader entidad="Envíos" accion="Detalle de envío" />}
       <ScreenContainer
         onLoading={{ show: loading, description: 'Cargando envío...' }}
+        onNotFound={{
+          show: notFound && !loading,
+          recurso: 'Envío',
+          listaHref: '~/envios',
+          listaLabel: 'Volver a envíos',
+        }}
         onError={{
           show: error && !loading,
           title: 'No se pudo cargar el envío',
@@ -152,7 +167,7 @@ const DetalleEnvio = () => {
           onClick: loadEnvio,
         }}
         onEmptyData={{
-          show: !loading && !error && !envio,
+          show: !loading && !error && !notFound && !envio,
           title: 'Envío no encontrado',
           description: 'No encontramos información para este envío.',
         }}

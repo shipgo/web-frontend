@@ -117,6 +117,21 @@ describe('DetalleViaje', () => {
     expect(screen.getByTestId('mapa-viaje')).toBeInTheDocument();
   });
 
+  it('un 404 muestra "Viaje no encontrado" con link al listado, sin Reintentar ni reintentos automáticos (SHG-FE-104)', async () => {
+    viajeApi.getById.mockRejectedValue(
+      Object.assign(new Error('Not found'), { response: { status: 404 } }),
+    );
+
+    renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+      route: '/viajes/999',
+    });
+
+    expect(await screen.findByText('Viaje no encontrado')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /volver a viajes/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /reintentar/i })).not.toBeInTheDocument();
+    expect(viajeApi.getById).toHaveBeenCalledTimes(1);
+  });
+
   it('muestra un error si falla la carga del viaje', async () => {
     viajeApi.getById.mockRejectedValue(new Error('boom'));
 

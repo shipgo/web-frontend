@@ -254,6 +254,22 @@ describe("DetalleEnvio", () => {
   });
 
   describe("estados de carga/error/vacío (SHG-QA-003)", () => {
+    it("un 404 muestra 'Envío no encontrado' con link al listado, sin Reintentar ni segundo GET (SHG-FE-104)", async () => {
+      const error = new Error("Not found");
+      error.response = { status: 404 };
+      envioApi.getById.mockRejectedValueOnce(error);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/999",
+      });
+
+      expect(await screen.findByText("Envío no encontrado")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /volver a envíos/i })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /reintentar/i })).not.toBeInTheDocument();
+      expect(screen.queryByText("No se pudo cargar el envío")).not.toBeInTheDocument();
+      expect(envioApi.getById).toHaveBeenCalledTimes(1);
+    });
+
     it("muestra el estado de error cuando envioApi.getById rechaza, y reintentar hace una nueva llamada", async () => {
       const user = userEvent.setup();
       const error = new Error("Network error");

@@ -5,6 +5,9 @@ import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import RecursoNoEncontrado from "@components/RecursoNoEncontrado";
+import { isNotFoundError } from "@utils/httpErrors";
 import { mantenimientoApi } from "../api/mantenimientos.api";
 
 import EditarMantenimientoForm from "./components/EditarMantenimientoForm";
@@ -19,6 +22,7 @@ const EditarMantenimiento = () => {
   const [, navigate] = useLocation();
 
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [mantenimiento, setMantenimiento] = useState(null);
 
   useEffect(() => {
@@ -26,6 +30,7 @@ const EditarMantenimiento = () => {
 
     let cancelled = false;
     setLoading(true);
+    setNotFound(false);
 
     mantenimientoApi
       .getById(id)
@@ -33,6 +38,10 @@ const EditarMantenimiento = () => {
         if (!cancelled) setMantenimiento(data);
       })
       .catch((error) => {
+        if (isNotFoundError(error)) {
+          if (!cancelled) setNotFound(true);
+          return;
+        }
         console.error("Error cargando mantenimiento:", error);
         notifications.show({
           title: "Error",
@@ -50,6 +59,15 @@ const EditarMantenimiento = () => {
       cancelled = true;
     };
   }, [id, navigate]);
+
+  if (notFound) {
+    return (
+      <PageContainer>
+        <PageBreadcrumbsHeader entidad="Mantenimientos" accion="Editar mantenimiento" />
+        <RecursoNoEncontrado recurso="Mantenimiento" listaHref="~/mantenimientos" listaLabel="Volver a mantenimientos" />
+      </PageContainer>
+    );
+  }
 
   if (loading || !mantenimiento) {
     return (

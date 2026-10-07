@@ -6,6 +6,8 @@ import { notifications } from "@mantine/notifications";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import RecursoNoEncontrado from "@components/RecursoNoEncontrado";
+import { isNotFoundError } from "@utils/httpErrors";
 import { vehiculoApi } from "@api";
 
 import VehiculoPerfil from "../components/VehiculoPerfil";
@@ -16,14 +18,20 @@ const DetalleVehiculo = () => {
 
   const [vehiculo, setVehiculo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     const loadVehiculo = async () => {
       try {
         setLoading(true);
+        setNotFound(false);
         const data = await vehiculoApi.getById(id);
         setVehiculo(data);
       } catch (error) {
+        if (isNotFoundError(error)) {
+          setNotFound(true);
+          return;
+        }
         console.error("Error cargando vehículo:", error);
         notifications.show({
           title: "Error",
@@ -40,6 +48,15 @@ const DetalleVehiculo = () => {
       loadVehiculo();
     }
   }, [id, navigate]);
+
+  if (notFound) {
+    return (
+      <PageContainer>
+        <PageBreadcrumbsHeader entidad="Vehículos" accion="Detalle de vehículo" />
+        <RecursoNoEncontrado recurso="Vehículo" listaHref="~/vehiculos" listaLabel="Volver a vehículos" />
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>

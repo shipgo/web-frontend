@@ -7,6 +7,8 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import RecursoNoEncontrado from "@components/RecursoNoEncontrado";
+import { isNotFoundError } from "@utils/httpErrors";
 import { applyApiError } from "@domain/apiError";
 import { vehiculoApi } from "@api";
 
@@ -24,6 +26,7 @@ const EditarVehiculo = () => {
 
   const [loading, setLoading] = useState(false);
   const [loadingVehiculo, setLoadingVehiculo] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   const form = useVehiculoForm({
     mode: "controlled",
@@ -36,6 +39,7 @@ const EditarVehiculo = () => {
     const loadVehiculo = async () => {
       try {
         setLoadingVehiculo(true);
+        setNotFound(false);
         const vehiculoData = await vehiculoApi.getById(id);
 
         form.setValues({
@@ -53,6 +57,10 @@ const EditarVehiculo = () => {
         });
         form.resetDirty();
       } catch (error) {
+        if (isNotFoundError(error)) {
+          setNotFound(true);
+          return;
+        }
         console.error("Error cargando vehículo:", error);
         notifications.show({
           title: "Error",
@@ -129,7 +137,9 @@ const EditarVehiculo = () => {
         }
       />
 
-      {loadingVehiculo ? (
+      {notFound ? (
+        <RecursoNoEncontrado recurso="Vehículo" listaHref="~/vehiculos" listaLabel="Volver a vehículos" />
+      ) : loadingVehiculo ? (
         <Card>
           <Text c="dimmed">Cargando vehículo...</Text>
         </Card>
