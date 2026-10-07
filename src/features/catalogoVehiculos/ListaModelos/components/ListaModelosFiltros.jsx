@@ -16,7 +16,7 @@ const formatValues = (values) =>
       .map(([key, value]) => [key, { label: key, values: value }])
   );
 
-const ListaModelosFiltros = ({ disabled, onFiltersChange }) => {
+const ListaModelosFiltros = ({ onFiltersChange }) => {
   const lastValuesRef = useRef(DEFAULT_VALUES);
   const [marcas, setMarcas] = useState([]);
 
@@ -36,7 +36,6 @@ const ListaModelosFiltros = ({ disabled, onFiltersChange }) => {
   const form = useForm({
     mode: "controlled",
     initialValues: DEFAULT_VALUES,
-    enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
       lastValuesRef.current = values;
       debounceChange(values);

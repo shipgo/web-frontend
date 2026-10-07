@@ -203,10 +203,6 @@ describe('ListaEnvios', () => {
     renderWithProviders(<ListaEnvios />);
 
     await waitFor(() => expect(envioApi.get).toHaveBeenCalledTimes(1));
-    // Esperar a que termine el fetch inicial: mientras `isFetching` es `true`
-    // los inputs del filtro están `disabled` (`enhanceGetInputProps`), así que
-    // tipear antes de esto no queda registrado.
-    await waitFor(() => expect(screen.getByLabelText('Buscar envío')).not.toBeDisabled());
 
     await user.type(screen.getByLabelText('Buscar envío'), 'García');
     await user.type(screen.getByLabelText('Destino'), 'Av. Colón');
@@ -221,6 +217,33 @@ describe('ListaEnvios', () => {
       },
       { timeout: 2000 },
     );
+  });
+
+  it('tipear durante un fetch en curso conserva el valor y el foco ("Diego Ruiz" de corrido)', async () => {
+    // El fetch inicial queda colgado: el input NO debe deshabilitarse ni perder el foco.
+    let resolveInicial;
+    envioApi.get.mockImplementationOnce(() => new Promise((resolve) => { resolveInicial = resolve; }));
+    envioApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaEnvios />);
+
+    await waitFor(() => expect(envioApi.get).toHaveBeenCalledTimes(1));
+    const input = screen.getByLabelText('Buscar envío');
+    expect(input).not.toBeDisabled();
+
+    await user.type(input, 'Diego');
+    resolveInicial({ content: [], totalElements: 0, totalPages: 0 });
+    await user.type(input, ' Ruiz');
+
+    expect(screen.getByLabelText('Buscar envío')).toHaveValue('Diego Ruiz');
+    expect(screen.getByLabelText('Buscar envío')).toHaveFocus();
+
+    await waitFor(
+      () => expect(envioApi.get.mock.calls.at(-1)[0].search).toBe('Diego Ruiz'),
+      { timeout: 2000 },
+    );
+    expect(screen.getByLabelText('Buscar envío')).toHaveValue('Diego Ruiz');
   });
 
   it('el quick-filter "En camino" no deja residuos de un texto tipeado antes', async () => {

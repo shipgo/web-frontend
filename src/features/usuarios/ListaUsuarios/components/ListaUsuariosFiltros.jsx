@@ -41,7 +41,6 @@ const ListaUsuariosFiltros = ({ disabled, onFiltersChange }) => {
   const form = useForm({
     mode: 'controlled',
     initialValues: DEFAULT_VALUES,
-    enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
       if (isQuickFilterChange.current) {
         isQuickFilterChange.current = false;
