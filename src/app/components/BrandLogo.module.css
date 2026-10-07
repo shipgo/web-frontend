@@ -1,0 +1,19 @@
+.logo {
+  /* Los navegadores omiten los fondos al imprimir; el logo es un fondo
+     enmascarado, así que sin esto no saldría en papel/PDF. */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Modo de alto contraste: el UA fuerza `background-color` (a `Canvas`, igual
+   que el fondo) y el logo enmascarado quedaría invisible. Se opta por
+   `CanvasText` (color de texto del sistema) en vez de conservar el color de
+   marca: respeta la paleta que eligió el usuario y garantiza contraste con
+   `Canvas` en cualquier esquema. `forced-color-adjust: none` es necesario para
+   que el UA no pise ese `background-color`. */
+@media (forced-colors: active) {
+  .logo {
+    forced-color-adjust: none;
+    background-color: CanvasText !important;
+  }
+}

@@ -1,6 +1,7 @@
 import { Box } from '@mantine/core';
 
 import logo from '/src/assets/logoipsum-custom-logo.svg';
+import classes from './BrandLogo.module.css';
 
 // Relación de aspecto del viewBox del SVG (102.43 x 42.55).
 const LOGO_ASPECT_RATIO = 102.43 / 42.5537;
@@ -24,6 +25,7 @@ const BrandLogo = ({ h = 32, alt = 'ShipGo', style, ...props }) => (
   <Box
     role="img"
     aria-label={alt}
+    className={classes.logo}
     h={h}
     {...props}
     style={{

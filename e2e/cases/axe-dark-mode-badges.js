@@ -247,26 +247,45 @@ const collectConfirmedPassingDimmedPlaceholder = (results) => {
  * #004d40 fijo daba ~1.6:1.
  */
 const assertLogoContrast = async (page, routeLabel) => {
-  const { ratio, fg, bg } = await page.evaluate(() => {
-    const parse = (c) => c.match(/[\d.]+/g).map(Number);
+  const result = await page.evaluate(() => {
+    // Sólo `rgb()`/`rgba()` (sintaxis con comas o espacios); cualquier otro
+    // formato (`color(srgb ...)`, `oklch()`, `transparent`...) devuelve null.
+    const parse = (c) => {
+      const m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:\s*[,/]\s*([\d.]+%?))?\s*\)$/.exec(c.trim());
+      if (!m) return null;
+      const alpha = m[4] === undefined ? 1 : m[4].endsWith("%") ? parseFloat(m[4]) / 100 : Number(m[4]);
+      return [Number(m[1]), Number(m[2]), Number(m[3]), alpha];
+    };
     const lum = ([r, g, b]) => {
       const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
       return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
     };
     const logo = document.querySelector('[role="img"][aria-label^="ShipGo"]');
-    if (!logo) return { ratio: null };
-    const fgRgb = parse(getComputedStyle(logo).backgroundColor);
+    if (!logo) return { error: 'no se encontró el logo (role=img, aria-label="ShipGo…")' };
+    const cs = getComputedStyle(logo);
+    // Sin máscara cargada el logo no se vería aunque el color "mida" bien.
+    const mask = cs.maskImage || cs.webkitMaskImage;
+    if (!mask || mask === "none") return { error: `el logo no tiene mask-image computado (${mask || "vacío"})` };
+    const rect = logo.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      return { error: `el logo mide ${rect.width}x${rect.height} (invisible)` };
+    }
+    const fgRgb = parse(cs.backgroundColor);
+    if (!fgRgb) return { error: `background-color del logo no es rgb()/rgba(): "${cs.backgroundColor}"` };
+    if (fgRgb[3] !== 1) return { error: `background-color del logo no es opaco: "${cs.backgroundColor}"` };
     let el = logo.parentElement;
-    let bgRgb = [255, 255, 255];
+    let bgRgb = null;
     while (el) {
-      const c = parse(getComputedStyle(el).backgroundColor);
-      // `rgb(...)` (3 valores) o `rgba(..., 1)` = opaco; `rgba(0,0,0,0)` = transparente.
-      if (c.length === 3 || c[3] === 1) {
+      const raw = getComputedStyle(el).backgroundColor;
+      const c = parse(raw);
+      if (!c) return { error: `background-color de un ancestro no es rgb()/rgba(): "${raw}"` };
+      if (c[3] === 1) {
         bgRgb = c;
         break;
       }
       el = el.parentElement;
     }
+    if (!bgRgb) return { error: "ningún ancestro del logo tiene fondo opaco" };
     const [a, b] = [lum(fgRgb), lum(bgRgb)];
     return {
       ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
@@ -274,7 +293,8 @@ const assertLogoContrast = async (page, routeLabel) => {
       bg: bgRgb.slice(0, 3).join(","),
     };
   });
-  if (ratio == null) throw new Error(`[${routeLabel}] no se encontró el logo (role=img, aria-label="ShipGo…").`);
+  if (result.error) throw new Error(`[${routeLabel}] ${result.error}.`);
+  const { ratio, fg, bg } = result;
   if (ratio < 3) {
     throw new Error(`[${routeLabel}] contraste del logo ${ratio.toFixed(2)}:1 < 3:1 (fg rgb(${fg}) sobre rgb(${bg})).`);
   }
