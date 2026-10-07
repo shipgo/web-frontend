@@ -197,8 +197,12 @@ export const useAuthStore = create((set, get) => ({
   // `X-Captcha-Token` — el backend lo exige vía `TurnstileLoginFilter` antes de
   // intentar autenticar (400 `captcha_invalid` si falta/es inválido/venció).
   login: async (credentials) => {
+    // OJO: no se prende `isLoading` acá. `AuthProvider` reemplaza TODA la app por
+    // un loader mientras `isLoading` es true, lo que desmontaba `/login` y le
+    // hacía perder el usuario tipeado tras un login fallido (SHG-FE-107). La
+    // pantalla de login ya tiene su propio overlay de carga.
     try {
-      set({ isLoading: true, connectionError: null });
+      set({ connectionError: null });
 
       const body = `username=${credentials.username}&password=${credentials.password}`;
       await restclient.post(API_URLS.LOGIN_URL, body, {
@@ -215,8 +219,6 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       console.error("Login error:", error);
       throw error;
-    } finally {
-      set({ isLoading: false });
     }
   },
 

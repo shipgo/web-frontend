@@ -26,11 +26,18 @@ import {
 } from "../constants/schema";
 
 /**
+ * "El email no existe": hoy el backend lo informa con un 404 (`NotFoundException`);
+ * con SHG-BE-083 (CONTRACTS.md §13) responde el mismo 200 neutro exista o no. El
+ * front trata ambos como éxito para no revelar si el email está registrado. Red,
+ * 5xx, 429 y captcha NO entran acá: esos se siguen mostrando.
+ */
+const isEmailInexistente = (error) => error?.response?.status === 404;
+
+/**
  * Paso 1 de "olvidé mi contraseña" (`/recuperar-cuenta`).
  *
  * Envía el email a `POST /api/user/resetPassword` (vía `verifyEmail` del store).
- * El backend siempre responde 200 aunque el email no exista (no filtra si hay
- * cuenta), así que el mensaje de éxito es deliberadamente genérico.
+ * El mensaje de éxito es deliberadamente neutro: no revela si el email existe.
  */
 const RecuperarCuenta = () => {
   const verifyEmail = useAuthStore((state) => state.verifyEmail);
@@ -52,6 +59,10 @@ const RecuperarCuenta = () => {
       await verifyEmail(userEmail.trim(), captcha.token);
       setEnviado(true);
     } catch (error) {
+      if (isEmailInexistente(error)) {
+        setEnviado(true);
+        return;
+      }
       // Captcha faltante/inválido/vencido (SHG-BE-032): re-emitimos el
       // challenge, el token es de un solo uso.
       if (isCaptchaApiError(error)) {
@@ -71,8 +82,8 @@ const RecuperarCuenta = () => {
     return (
       <AuthCardShell title="Revisá tu correo">
         <Alert color="green" icon={<IconCheck size={18} />} title="Pedido enviado">
-          Si el email ingresado corresponde a una cuenta, te enviamos un enlace
-          para restablecer la contraseña. Revisá también la carpeta de spam.
+          Si el email está registrado, te enviamos un enlace para restablecer la
+          contraseña. Revisá también la carpeta de spam.
         </Alert>
         <Anchor component={Link} href="/login">
           <Group gap={6}>

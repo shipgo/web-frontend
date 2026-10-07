@@ -172,7 +172,7 @@ const SucursalForm = ({
         loaderProps={{ type: "bars" }}
       />
 
-      <form onSubmit={form.onSubmit(onSubmit, handleInvalid)}>
+      <form onSubmit={form.onSubmit(onSubmit, handleInvalid)} noValidate>
         <Stack gap="lg">
           {/* Información de la Sucursal */}
           <Card>
@@ -193,7 +193,7 @@ const SucursalForm = ({
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <TextInput
                   label="Prefijo"
-                  placeholder="Ej: +54"
+                  placeholder="Ej: 351"
                   leftSection={<IconPhone size={18} />}
                   required
                   {...form.getInputProps("prefijo")}

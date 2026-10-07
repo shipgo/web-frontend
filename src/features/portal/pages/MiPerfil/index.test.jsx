@@ -148,4 +148,24 @@ describe('MiPerfilPage', () => {
     expect(await screen.findByText('El teléfono es requerido')).toBeInTheDocument();
     expect(mockGetUserInfo).not.toHaveBeenCalled();
   });
+
+  it('teléfono no numérico y nombre de 300 caracteres → errores inline, sin llamar al PUT (SHG-FE-107)', async () => {
+    const user = userEvent.setup();
+    mockUseMiPerfil.mockReturnValue({ ...base, data: CUSTOMER_ME });
+    const { container } = renderWithProviders(<MiPerfilPage />);
+
+    const tel = screen.getByLabelText(exactLabel('Tel[eé]fono'));
+    await user.clear(tel);
+    await user.type(tel, 'abc');
+    const nombre = screen.getByLabelText(exactLabel('Nombre'));
+    await user.clear(nombre);
+    await user.click(nombre);
+    await user.paste('a'.repeat(300));
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(await screen.findByText('El teléfono sólo puede tener números')).toBeInTheDocument();
+    expect(screen.getByText('No puede superar los 100 caracteres')).toBeInTheDocument();
+    expect(container.querySelector('form')).toHaveAttribute('novalidate');
+    expect(mockUpdateMe).not.toHaveBeenCalled();
+  });
 });

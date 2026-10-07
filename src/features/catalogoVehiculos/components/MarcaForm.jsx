@@ -52,7 +52,7 @@ const MarcaForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
 
   return (
     <Box pos="relative">
-      <form onSubmit={form.onSubmit(onSubmit, handleInvalid)}>
+      <form onSubmit={form.onSubmit(onSubmit, handleInvalid)} noValidate>
         <Card>
           <Stack gap="md">
             <Group gap="0.75rem">

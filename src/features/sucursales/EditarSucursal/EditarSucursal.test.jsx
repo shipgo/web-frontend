@@ -60,7 +60,7 @@ describe("EditarSucursal", () => {
       id: 7,
       nombre: "Sucursal Norte",
       email: "norte@shipgo.com",
-      prefijo: "+54",
+      prefijo: "351",
       telefono: "3511234567",
       puntoEntrega: {
         id: 10,
@@ -82,7 +82,7 @@ describe("EditarSucursal", () => {
 
     expect(await screen.findByDisplayValue("Sucursal Norte")).toBeInTheDocument();
     expect(screen.getByDisplayValue("norte@shipgo.com")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("+54")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("351")).toBeInTheDocument();
     expect(screen.getByDisplayValue("3511234567")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Av. Colón")).toBeInTheDocument();
     expect(screen.getByDisplayValue("1234")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("EditarSucursal", () => {
     expect(mockUpdate).toHaveBeenCalledWith("7", {
       nombre: "Sucursal Norte",
       email: "norte@shipgo.com",
-      prefijo: "+54",
+      prefijo: "351",
       telefono: "3511234567",
       puntoEntrega: {
         numeroCalle: "1234",

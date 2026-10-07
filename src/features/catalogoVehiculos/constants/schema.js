@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { nombreRequerido } from "@domain/validation";
+
 /**
  * Validación de `MarcaForm` / `ModeloForm` (crear/editar) con Zod +
  * `schemaResolver` nativo de `@mantine/form`, alineado al patrón canónico de
@@ -23,7 +25,7 @@ const numberField = (schema) =>
   );
 
 export const MARCA_SCHEMA = z.object({
-  nombre: z.string().trim().min(1, "Debes ingresar el nombre"),
+  nombre: nombreRequerido("Debes ingresar el nombre"),
 });
 
 export const MARCA_INITIAL_VALUES = {
@@ -37,14 +39,14 @@ export const MARCA_INITIAL_VALUES = {
  * automotriz) igual que `anioCompra` en `vehiculos/constants/schema.js`.
  */
 export const MODELO_SCHEMA = z.object({
-  nombre: z.string().trim().min(1, "Debes ingresar el nombre"),
+  nombre: nombreRequerido("Debes ingresar el nombre"),
   marcaID: requiredSelect("Debes seleccionar una marca"),
   anio: numberField(
     z
       .number({ error: "Debes ingresar el año" })
       .int("El año debe ser un número entero")
-      .gte(1900, "El año debe ser mayor a 1900")
-      .lte(currentYear + 1, `El año no puede ser mayor a ${currentYear + 1}`),
+      .gte(1900, "El año debe ser mayor o igual a 1900")
+      .lte(currentYear + 1, `El año debe ser menor o igual a ${currentYear + 1}`),
   ),
 });
 

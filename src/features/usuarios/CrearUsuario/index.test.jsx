@@ -56,7 +56,7 @@ const fillMinimalForm = async (user) => {
   await selectOption(user, "Sexo", "Masculino");
 
   await user.type(screen.getByLabelText(exactLabel("email")), "juan@example.com");
-  await user.type(screen.getByLabelText(exactLabel("prefijo")), "+54");
+  await user.type(screen.getByLabelText(exactLabel("prefijo")), "11");
   await user.type(screen.getByLabelText(exactLabel("tel[eé]fono")), "1122334455");
 
   await user.type(
@@ -173,5 +173,34 @@ describe("CrearUsuario", () => {
     expect(
       await screen.findByText("El email ya está en uso.")
     ).toBeInTheDocument();
+  });
+
+  it("enviar vacío muestra errores inline en español, sin tooltip nativo ni POST (SHG-FE-107)", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CrearUsuario />);
+    await waitFor(() => expect(authorityApi.getAll).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole("button", { name: /crear usuario/i }));
+
+    expect(
+      await screen.findByText("El campo username no puede estar vacío")
+    ).toBeInTheDocument();
+    expect(screen.getByText("El campo email no puede estar vacío")).toBeInTheDocument();
+    expect(container.querySelector("form")).toHaveAttribute("novalidate");
+    expect(usuarioApi.save).not.toHaveBeenCalled();
+  });
+
+  it("prefijo y teléfono no numéricos → error inline (SHG-FE-107)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CrearUsuario />);
+    await waitFor(() => expect(authorityApi.getAll).toHaveBeenCalledTimes(1));
+
+    await user.type(screen.getByLabelText(exactLabel("prefijo")), "abc");
+    await user.type(screen.getByLabelText(exactLabel("tel[eé]fono")), "12x");
+    await user.click(screen.getByRole("button", { name: /crear usuario/i }));
+
+    expect(await screen.findByText("El prefijo sólo puede tener números")).toBeInTheDocument();
+    expect(screen.getByText("El teléfono sólo puede tener números")).toBeInTheDocument();
+    expect(usuarioApi.save).not.toHaveBeenCalled();
   });
 });

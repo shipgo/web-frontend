@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+import {
+  PASSWORD_MIN,
+  emailRequerido,
+  nombreRequerido,
+  telefonoRequerido,
+} from '@domain/validation';
+
 /**
  * Validación del registro público de CUSTOMER, alineada a `RegisterReqDTO` del
  * backend (`SHG-BE-002`): `email`, `password` (min 8), `nombre`, `apellido`,
@@ -10,13 +17,13 @@ import { z } from 'zod';
  * registrado) que se mapea a error de campo con `applyApiError`.
  */
 
-export const PASSWORD_MIN = 8;
+export { PASSWORD_MIN };
 
 export const REGISTRO_SCHEMA = z.object({
-  nombre: z.string().trim().min(1, 'El nombre es requerido'),
-  apellido: z.string().trim().min(1, 'El apellido es requerido'),
-  email: z.email('Email inválido'),
-  telefono: z.string().trim().min(1, 'El teléfono es requerido'),
+  nombre: nombreRequerido('El nombre es requerido'),
+  apellido: nombreRequerido('El apellido es requerido'),
+  email: emailRequerido(),
+  telefono: telefonoRequerido(),
   password: z
     .string()
     .min(PASSWORD_MIN, `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres`),

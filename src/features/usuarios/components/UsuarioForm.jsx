@@ -235,7 +235,7 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
   }, [isSuper, user?.sucursal?.id]);
 
   return (
-    <form onSubmit={form.onSubmit(onSubmit)}>
+    <form onSubmit={form.onSubmit(onSubmit)} noValidate>
       <Stack>
         {/* Información Personal */}
         <Card pos="relative">
@@ -325,7 +325,7 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <TextInput
                 label="Prefijo"
-                placeholder="Ej: +54"
+                placeholder="Ej: 351"
                 required
                 {...form.getInputProps("prefijo")}
               />

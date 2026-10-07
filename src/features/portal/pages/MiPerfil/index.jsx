@@ -126,7 +126,7 @@ const MiPerfilPage = () => {
           }}
         >
           {data && (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <Stack gap="md">
                 <Group justify="space-between" align="center">
                   <TextInput

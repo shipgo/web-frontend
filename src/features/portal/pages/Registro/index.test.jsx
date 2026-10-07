@@ -92,4 +92,32 @@ describe("RegistroPage — captcha (SHG-FE-043)", () => {
       await screen.findByText(/no pudimos verificar la seguridad del formulario/i),
     ).toBeInTheDocument();
   });
+
+  it("enviar vacío muestra errores inline en español, sin tooltip nativo ni llamar a la API (SHG-FE-107)", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<RegistroPage />);
+
+    await user.click(screen.getByRole("button", { name: /crear cuenta/i }));
+
+    expect(await screen.findByText("El nombre es requerido")).toBeInTheDocument();
+    expect(screen.getByText("El apellido es requerido")).toBeInTheDocument();
+    expect(screen.getByText("El email es requerido")).toBeInTheDocument();
+    expect(screen.getByText("El teléfono es requerido")).toBeInTheDocument();
+    expect(container.querySelector("form")).toHaveAttribute("novalidate");
+    expect(mockRegister).not.toHaveBeenCalled();
+  });
+
+  it("teléfono no numérico → error inline y no llama a la API (SHG-FE-107)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<RegistroPage />);
+
+    await fillForm(user);
+    const tel = screen.getByLabelText(exactLabel("Tel[eé]fono"));
+    await user.clear(tel);
+    await user.type(tel, "12x");
+    await user.click(screen.getByRole("button", { name: /crear cuenta/i }));
+
+    expect(await screen.findByText("El teléfono sólo puede tener números")).toBeInTheDocument();
+    expect(mockRegister).not.toHaveBeenCalled();
+  });
 });

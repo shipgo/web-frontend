@@ -61,7 +61,7 @@ const EditarUsuario = () => {
           nombre: userData.nombre || "",
           apellido: userData.apellido || "",
           fechaNacimiento,
-          prefijo: userData.prefijo || "+54",
+          prefijo: userData.prefijo || "",
           telefono: userData.telefono || "",
           nombreCalle: userData.nombreCalle || "",
           numeroCalle: userData.numeroCalle || "",

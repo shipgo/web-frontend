@@ -128,6 +128,20 @@ describe('restclient — timeouts y errores de conexión (SHG-FE-110)', () => {
     expect(window.location.href).toBe('/envios/1');
   });
 
+  it('changePassword con contraseña incorrecta (401 de hoy): un refresh OK, UN reintento y termina rechazando el 401 sin loop ni redirect (SHG-FE-107)', async () => {
+    setPath('/portal/perfil');
+    const calls = [];
+    restclient.defaults.adapter = (config) => {
+      calls.push(config.url);
+      return config.url.includes('/refresh') ? okResponse(config) : rejectWith401(config);
+    };
+    await expect(
+      restclient.post('/changePassword', { oldPassword: 'x', newPassword: 'y' }),
+    ).rejects.toMatchObject({ response: { status: 401 } });
+    expect(calls).toEqual(['/changePassword', '/refresh', '/changePassword']);
+    expect(window.location.href).toBe('/portal/perfil');
+  });
+
   it.each([401, 403])(
     '401 con refresh que responde %i en ruta protegida: sí redirige a /login',
     async (status) => {
