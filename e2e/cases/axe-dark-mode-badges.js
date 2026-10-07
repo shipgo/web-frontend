@@ -238,8 +238,73 @@ const collectConfirmedPassingDimmedPlaceholder = (results) => {
   };
 };
 
+/**
+ * SHG-FE-109: el logo "shipgo" (`BrandLogo`, `role="img"`) se pinta con
+ * `background-color` sobre una máscara SVG, así que axe-core `color-contrast`
+ * NO lo evalúa (no es texto). Se mide a mano acá: contraste WCAG entre el
+ * `background-color` computado del logo y el del primer ancestro con fondo
+ * opaco — exige ≥3:1 (elemento gráfico, WCAG 1.4.11). Antes del fix el
+ * #004d40 fijo daba ~1.6:1.
+ */
+const assertLogoContrast = async (page, routeLabel) => {
+  const result = await page.evaluate(() => {
+    // Sólo `rgb()`/`rgba()` (sintaxis con comas o espacios); cualquier otro
+    // formato (`color(srgb ...)`, `oklch()`, `transparent`...) devuelve null.
+    const parse = (c) => {
+      const m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:\s*[,/]\s*([\d.]+%?))?\s*\)$/.exec(c.trim());
+      if (!m) return null;
+      const alpha = m[4] === undefined ? 1 : m[4].endsWith("%") ? parseFloat(m[4]) / 100 : Number(m[4]);
+      return [Number(m[1]), Number(m[2]), Number(m[3]), alpha];
+    };
+    const lum = ([r, g, b]) => {
+      const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    const logo = document.querySelector('[role="img"][aria-label^="ShipGo"]');
+    if (!logo) return { error: 'no se encontró el logo (role=img, aria-label="ShipGo…")' };
+    const cs = getComputedStyle(logo);
+    // Sin máscara cargada el logo no se vería aunque el color "mida" bien.
+    const mask = cs.maskImage || cs.webkitMaskImage;
+    if (!mask || mask === "none") return { error: `el logo no tiene mask-image computado (${mask || "vacío"})` };
+    const rect = logo.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      return { error: `el logo mide ${rect.width}x${rect.height} (invisible)` };
+    }
+    const fgRgb = parse(cs.backgroundColor);
+    if (!fgRgb) return { error: `background-color del logo no es rgb()/rgba(): "${cs.backgroundColor}"` };
+    if (fgRgb[3] !== 1) return { error: `background-color del logo no es opaco: "${cs.backgroundColor}"` };
+    let el = logo.parentElement;
+    let bgRgb = null;
+    while (el) {
+      const raw = getComputedStyle(el).backgroundColor;
+      const c = parse(raw);
+      if (!c) return { error: `background-color de un ancestro no es rgb()/rgba(): "${raw}"` };
+      if (c[3] === 1) {
+        bgRgb = c;
+        break;
+      }
+      el = el.parentElement;
+    }
+    if (!bgRgb) return { error: "ningún ancestro del logo tiene fondo opaco" };
+    const [a, b] = [lum(fgRgb), lum(bgRgb)];
+    return {
+      ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+      fg: fgRgb.slice(0, 3).join(","),
+      bg: bgRgb.slice(0, 3).join(","),
+    };
+  });
+  if (result.error) throw new Error(`[${routeLabel}] ${result.error}.`);
+  const { ratio, fg, bg } = result;
+  if (ratio < 3) {
+    throw new Error(`[${routeLabel}] contraste del logo ${ratio.toFixed(2)}:1 < 3:1 (fg rgb(${fg}) sobre rgb(${bg})).`);
+  }
+  return ratio;
+};
+
 const auditCurrentPage = async ({ page, logger, caseName, routeLabel }) => {
   await assertDarkModeActive(page);
+  const logoRatio = await assertLogoContrast(page, routeLabel);
+  logger.log(`[${caseName}]   ✔ ${routeLabel}: logo ${logoRatio.toFixed(2)}:1 (≥3:1)`);
   await logger.step(page, caseName, `${routeLabel}-render`);
   const results = await runAxe(page);
 
@@ -442,6 +507,16 @@ export async function run({ browser, logger }) {
         await record({ page, logger, caseName: name, routeLabel: "mapa-detalle-dark" });
       }
     }
+
+    // --- SHG-FE-109: logo en PublicLayout (/tracking, mismo layout que
+    // registro/verificar/portal) en dark mode. El Navbar del shell ya queda
+    // cubierto por todas las rutas de arriba (`auditCurrentPage`).
+    await page.goto(`${config.webBaseUrl}/tracking`);
+    await page.getByRole("img", { name: "ShipGo" }).first().waitFor({ timeout: 15_000 });
+    await waitForRouteSettled(page);
+    await assertDarkModeActive(page);
+    const publicRatio = await assertLogoContrast(page, "tracking-publico-dark");
+    logger.log(`[${name}]   ✔ tracking-publico-dark: logo ${publicRatio.toFixed(2)}:1 (≥3:1)`);
   } finally {
     await context.close();
   }

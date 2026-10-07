@@ -24,7 +24,7 @@ describe('PublicLayout', () => {
     );
 
     expect(screen.getByText('contenido publico')).toBeInTheDocument();
-    expect(screen.getByAltText('ShipGo')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'ShipGo' })).toBeInTheDocument();
     expect(screen.getByText(/seguimiento de envíos/i)).toBeInTheDocument();
   });
 

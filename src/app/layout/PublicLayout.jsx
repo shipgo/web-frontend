@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
-import { AppShell, Anchor, Box, Group, Image, Text } from '@mantine/core';
+import { AppShell, Anchor, Box, Group, Text } from '@mantine/core';
 
-import logo from '/src/assets/logoipsum-custom-logo.svg';
+import BrandLogo from '@components/BrandLogo';
 import { useAuth } from '@contexts/auth';
 import { landingPathFor } from '@domain/roles';
 
@@ -40,7 +40,7 @@ const PublicLayout = ({
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Anchor component={Link} href={resolvedHomeHref} aria-label="ShipGo — inicio">
-            <Image src={logo} h={32} w="auto" fit="contain" alt="ShipGo" />
+            <BrandLogo h={32} alt="ShipGo" />
           </Anchor>
           {headerRight}
         </Group>

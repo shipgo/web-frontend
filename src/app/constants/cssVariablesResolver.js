@@ -135,6 +135,7 @@ export const cssVariablesResolver = (theme) => {
       "--shg-button-text-red": "#a51818",
       "--shg-button-text-primary": `var(--mantine-color-${theme.primaryColor}-9)`,
       "--shg-badge-text-primary": `var(--mantine-color-${theme.primaryColor}-9)`,
+      "--shg-brand-logo": `var(--mantine-color-${theme.primaryColor}-9)`,
     },
     dark: {
       ...result.dark,
@@ -147,6 +148,18 @@ export const cssVariablesResolver = (theme) => {
       "--shg-button-text-red": "var(--mantine-color-red-4)",
       "--shg-button-text-primary": `var(--mantine-color-${theme.primaryColor}-2)`,
       "--shg-badge-text-primary": `var(--mantine-color-${theme.primaryColor}-2)`,
+      // SHG-FE-109: logo de marca (`BrandLogo`) — primary-2 (#80cbc4) da
+      // 8.3:1 sobre dark-7 (#242424); el #004d40 fijo daba 1.6:1.
+      "--shg-brand-logo": `var(--mantine-color-${theme.primaryColor}-2)`,
+      // SHG-FE-109: `--mantine-color-error` en dark pasa de red-8 a red-5.
+      // El motivo fue el placeholder de un input con error (red-8 #e03131 =
+      // 3.01:1 sobre el input dark-6 #2e2e2e; 3.44:1 sobre el body dark-7
+      // #242424), pero el cambio es GLOBAL en oscuro: afecta a todo lo que
+      // usa ese token — borde y texto del input con error, mensaje de error,
+      // asterisco de requerido, borde de Checkbox/Radio con error y chevron
+      // de Combobox. red-5 (#ff6b6b) da 4.89:1 sobre el input y 5.59:1 sobre
+      // el body.
+      "--mantine-color-error": "var(--mantine-color-red-5)",
     },
   };
 };
