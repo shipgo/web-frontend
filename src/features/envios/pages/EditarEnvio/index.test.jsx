@@ -248,6 +248,88 @@ describe("EditarEnvio", () => {
     expect(envioApi.getById).toHaveBeenCalledTimes(1);
   });
 
+  describe("envío en ruta (SHG-FE-113, CONTRACTS.md §16.4)", () => {
+    beforeEach(() => {
+      envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "en_camino" });
+    });
+
+    it("explica la restricción y bloquea destino y paquetes, dejando editables los datos de contacto", async () => {
+      renderEditarEnvio();
+
+      expect(await screen.findByTestId("aviso-envio-en-ruta")).toHaveTextContent(
+        /sólo podés cambiar los datos de contacto/i,
+      );
+
+      expect(screen.getByLabelText(/^calle/i)).toBeDisabled();
+      expect(screen.getByLabelText(/^número/i)).toBeDisabled();
+      expect(screen.getByRole("combobox", { name: /buscar dirección/i })).toBeDisabled();
+      expect(screen.getAllByLabelText(/^provincia/i).find((el) => el.tagName === "INPUT")).toBeDisabled();
+      expect(screen.queryByRole("button", { name: /añadir paquete/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /quitar paquete/i })).not.toBeInTheDocument();
+
+      expect(screen.getByLabelText(/^nombre/i)).toBeEnabled();
+      expect(screen.getByLabelText(/apellido/i)).toBeEnabled();
+      expect(screen.getByLabelText(/^teléfono/i)).toBeEnabled();
+      expect(screen.getByLabelText(/email del remitente/i)).toBeEnabled();
+      expect(screen.getByLabelText(/email del receptor/i)).toBeEnabled();
+    });
+
+    it("el payload lleva el contacto nuevo y el destino/bultos originales", async () => {
+      const user = userEvent.setup();
+      renderEditarEnvio();
+
+      const nombre = await screen.findByLabelText(/^nombre/i);
+      await waitFor(() => expect(nombre).toHaveValue("Juan"));
+      await user.clear(nombre);
+      await user.type(nombre, "Pedro");
+      await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+      await waitFor(() => expect(envioApi.update).toHaveBeenCalledTimes(1));
+      const payload = envioApi.update.mock.calls[0][1];
+      expect(payload.nombre).toBe("Pedro");
+      expect(payload.destino).toEqual(
+        expect.objectContaining({
+          id: 3,
+          nombreCalle: "Av. Colón",
+          numeroCalle: "1234",
+          localidad: { id: 5 },
+          latitud: -31.4,
+          longitud: -64.18,
+        }),
+      );
+      expect(payload.detalleEnvios).toEqual([
+        expect.objectContaining({ id: 11, categoria: { id: 1 }, descripcion: "Sobre", peso: 0.5 }),
+      ]);
+    });
+
+    it("un 409 del backend se muestra dentro del form", async () => {
+      const user = userEvent.setup();
+      envioApi.update.mockRejectedValue({
+        response: {
+          status: 409,
+          data: { statusCode: 409, message: "No se puede modificar el destino de un envío en ruta." },
+        },
+      });
+      renderEditarEnvio();
+
+      await waitFor(() => expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan"));
+      await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+      expect(await screen.findByTestId("error-conflicto")).toHaveTextContent(
+        "No se puede modificar el destino de un envío en ruta.",
+      );
+    });
+  });
+
+  it("fuera de ruta (creado) destino y paquetes siguen editables y no hay aviso", async () => {
+    renderEditarEnvio();
+
+    await waitFor(() => expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan"));
+    expect(screen.queryByTestId("aviso-envio-en-ruta")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^calle/i)).toBeEnabled();
+    expect(screen.getByRole("button", { name: /añadir paquete/i })).toBeInTheDocument();
+  });
+
   it("no permite editar un envío en estado terminal (entregado/rechazado)", async () => {
     envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
 

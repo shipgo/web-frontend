@@ -1,8 +1,9 @@
 import { DonutChart } from '@mantine/charts';
-import { Group, Stack, Text } from '@mantine/core';
+import { Stack } from '@mantine/core';
 import { IconPackage } from '@tabler/icons-react';
 
 import ChartCard from './ChartCard';
+import DonutLegend from './DonutLegend';
 import {
   getCategoriaTotal,
   isDonutVacio,
@@ -41,18 +42,7 @@ const CategoriaDonut = ({ series, periodoLabel, isLoading, isError, onRetry }) =
           thickness={24}
           mx="auto"
         />
-        <Group gap="sm" justify="center" wrap="wrap">
-          {data.map((item) => (
-            <Stack key={item.name} gap={2} align="center">
-              <Text size="xs" c="dimmed">
-                {item.name}
-              </Text>
-              <Text size="sm" fw={700}>
-                {item.value}
-              </Text>
-            </Stack>
-          ))}
-        </Group>
+        <DonutLegend data={data} gap="sm" />
       </Stack>
     </ChartCard>
   );

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Stack } from "@mantine/core";
+import { Alert, Stack } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { schemaResolver } from "@mantine/form";
-import { IconCheck, IconX } from "@tabler/icons-react";
+import { IconCheck, IconInfoCircle, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
@@ -18,7 +18,20 @@ import { CREAR_ENVIO_SCHEMA } from "../../CrearEnvios/constants/schema";
 import SeccionOrigen from "../../CrearEnvios/components/SeccionOrigen";
 import SeccionCarga from "../../CrearEnvios/components/SeccionCarga";
 import Footer from "../../CrearEnvios/components/Footer";
-import { buildEnvioFormValues, buildEnvioReqDTO } from "../../../utils";
+import { buildEnvioFormValues, buildEnvioReqDTO, esEnvioEnRuta } from "../../../utils";
+
+const pickDestinoYBultos = (v) => ({
+  tipoEntrega: v.tipoEntrega,
+  sucursalEntregaID: v.sucursalEntregaID,
+  nombreCalle: v.nombreCalle,
+  numeroCalle: v.numeroCalle,
+  piso: v.piso,
+  departamento: v.departamento,
+  provinciaID: v.provinciaID,
+  localidadID: v.localidadID,
+  coordenadas: v.coordenadas,
+  detalleEnvios: v.detalleEnvios,
+});
 
 /**
  * Form de edición de envío. Comparte con `CrearEnvios` el `EnvioFormProvider`,
@@ -36,6 +49,10 @@ import { buildEnvioFormValues, buildEnvioReqDTO } from "../../../utils";
 const EditarEnvioForm = ({ id, envio, categorias }) => {
   const [, navigate] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorConflicto, setErrorConflicto] = useState(null);
+  // `CONTRACTS.md §16.4` (`SHG-FE-113`): con el envío en ruta sólo se editan los
+  // datos de contacto; destino y bultos quedan bloqueados.
+  const enRuta = esEnvioEnRuta(envio.estado);
 
   const form = useEnvioForm({
     mode: "controlled",
@@ -45,8 +62,14 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
 
   const handleSubmit = form.onSubmit(async (values) => {
     setIsSubmitting(true);
+    setErrorConflicto(null);
     try {
-      const payload = buildEnvioReqDTO(values, {
+      // En ruta, destino y bultos se mandan tal como vinieron del backend: aunque
+      // el form los hubiera tocado, el payload no lleva cambios en ellos.
+      const valuesAEnviar = enRuta
+        ? { ...values, ...pickDestinoYBultos(buildEnvioFormValues(envio)) }
+        : values;
+      const payload = buildEnvioReqDTO(valuesAEnviar, {
         id: envio.destino?.id ?? null,
       });
 
@@ -66,6 +89,9 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
       const message = applyApiError(form, error, {
         fallbackMessage: "No se pudo actualizar el envío",
       });
+      // 409 (p. ej. estado terminal o edición no permitida en ruta, §16.4):
+      // el mensaje del backend queda visible también dentro del form.
+      if (error?.response?.status === 409) setErrorConflicto(message);
 
       notifications.show({
         title: "Error",
@@ -88,8 +114,26 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
 
       <EnvioFormProvider form={form}>
         <Stack>
-          <SeccionOrigen />
-          <SeccionCarga categorias={categorias} />
+          {errorConflicto && (
+            <Alert color="red" variant="light" icon={<IconX size={18} />} data-testid="error-conflicto">
+              {errorConflicto}
+            </Alert>
+          )}
+          {enRuta && (
+            <Alert
+              color="blue"
+              variant="light"
+              icon={<IconInfoCircle size={18} />}
+              title="Envío en ruta"
+              data-testid="aviso-envio-en-ruta"
+            >
+              Este envío ya está en ruta: por ahora sólo podés cambiar los datos de contacto
+              (nombre, apellido, teléfono y emails). El destino y los paquetes no se pueden
+              modificar.
+            </Alert>
+          )}
+          <SeccionOrigen destinoBloqueado={enRuta} />
+          <SeccionCarga categorias={categorias} bloqueada={enRuta} />
         </Stack>
         <Footer
           onSubmit={handleSubmit}

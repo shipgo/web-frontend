@@ -96,6 +96,41 @@ describe("DetalleEnvio", () => {
     expect(screen.getByText("ABC123XYZ", { exact: false })).toBeInTheDocument();
   });
 
+  it("rechazado: muestra fecha (DD/MM/YYYY 24 h) y motivo del rechazo (SHG-FE-113)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      estado: "rechazado",
+      historialEstado: [
+        ...EXISTING_ENVIO.historialEstado,
+        { id: 4, estado: "rechazado", fechaHoraInicio: "2026-09-03T14:30:00", motivo: "Receptor ausente" },
+      ],
+    });
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    const alerta = await screen.findByTestId("alerta-rechazo");
+    expect(within(alerta).getByText(/03\/09\/2026 14:30/)).toBeInTheDocument();
+    expect(within(alerta).getByText(/Receptor ausente/)).toBeInTheDocument();
+  });
+
+  it("rechazado sin motivo en el historial: no lo inventa, dice 'no registrado' (SHG-FE-113)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      estado: "rechazado",
+      historialEstado: [{ id: 4, estado: "rechazado", fechaHoraInicio: "2026-09-03T14:30:00" }],
+    });
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    const alerta = await screen.findByTestId("alerta-rechazo");
+    expect(within(alerta).getByText(/Motivo: no registrado/)).toBeInTheDocument();
+    expect(within(alerta).getByText(/03\/09\/2026 14:30/)).toBeInTheDocument();
+  });
+
+  it("no muestra la alerta de rechazo si el envío no está rechazado", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+    await screen.findByText("Juan García");
+    expect(screen.queryByTestId("alerta-rechazo")).not.toBeInTheDocument();
+  });
+
   it("renders the estado badge via @domain/estados", async () => {
     renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
       route: "/envios/9",
