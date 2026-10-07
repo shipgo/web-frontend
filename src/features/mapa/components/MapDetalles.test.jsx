@@ -49,7 +49,9 @@ describe('MapDetalles', () => {
     setSelectedViajeId = vi.fn();
     mockUseSelectedViaje.mockReset().mockReturnValue({ selectedViajeId: 7, setSelectedViajeId });
     mockUseViajesConUbicacion.mockReset().mockReturnValue({
-      viajes: [{ id: 7, currentLocation: [-64.15, -31.45] }],
+      viajes: [
+        { id: 7, currentLocation: [-64.15, -31.45], ultimaActualizacion: new Date().toISOString() },
+      ],
       isLoading: false,
     });
     mockUseGetRoute.mockReset().mockReturnValue({
@@ -86,6 +88,25 @@ describe('MapDetalles', () => {
     renderWithProviders(<MapDetalles />);
 
     expect(screen.queryByText('Sin datos de ruta')).not.toBeInTheDocument();
+  });
+
+  it('muestra el mismo estado en vivo que la lista (SHG-FE-113): sin señal no dice "En camino" ni usa la ETA de ruta', () => {
+    mockUseViajesConUbicacion.mockReturnValue({
+      viajes: [{ id: 7, currentLocation: null, ultimaActualizacion: null }],
+      isLoading: false,
+    });
+    mockUseGetRoute.mockReturnValue({
+      viaje: { ...VIAJE, fechaHoraFinPlanificada: '2026-01-20T15:00:00' },
+      paradas: PARADAS,
+      progreso: { paradasEntregadas: 1, paradasTotales: 2, enviosPendientes: 3 },
+      route: { legDurations: [600, 900] },
+    });
+
+    renderWithProviders(<MapDetalles />);
+
+    expect(screen.getByText('Sin señal')).toBeInTheDocument();
+    expect(screen.queryByText('En camino')).not.toBeInTheDocument();
+    expect(screen.getByText('20/01/2026 15:00 (planificada)')).toBeInTheDocument();
   });
 
   it('cuando todas las paradas están entregadas no calcula una ETA con la hora actual', () => {

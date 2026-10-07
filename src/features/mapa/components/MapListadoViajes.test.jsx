@@ -42,6 +42,24 @@ describe('MapListadoViajes', () => {
     });
   });
 
+  it('muestra estado y llegada con la misma derivación que el panel (SHG-FE-113)', () => {
+    mockUseViajesConUbicacion.mockReturnValue({
+      viajes: [
+        viajeBase({
+          fechaHoraFinPlanificada: '2026-01-20T15:00:00',
+          ultimaActualizacion: null,
+          currentLocation: null,
+        }),
+      ],
+      isLoading: false,
+    });
+
+    renderWithProviders(<MapListadoViajes />);
+
+    expect(screen.getByText('Sin señal')).toBeInTheDocument();
+    expect(screen.getByText(/Llegada estimada: 20\/01\/2026 15:00/)).toBeInTheDocument();
+  });
+
   it('renderiza los viajes reales devueltos por el hook (sin VIAJES_MOCK)', () => {
     mockUseViajesConUbicacion.mockReturnValue({
       viajes: [
