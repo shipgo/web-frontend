@@ -48,7 +48,7 @@ const ListaMarcas = () => {
         exportDisabled={isLoading || isError}
       />
 
-      <ListaMarcasFiltros onFiltersChange={setFilters} disabled={isLoading} />
+      <ListaMarcasFiltros onFiltersChange={setFilters} />
 
       <Card>
         <ScreenContainer

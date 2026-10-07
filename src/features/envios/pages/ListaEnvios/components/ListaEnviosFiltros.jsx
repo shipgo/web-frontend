@@ -3,7 +3,7 @@ import { useState, useRef } from 'react';
 import { useForm } from '@mantine/form';
 import { useDebouncedCallback } from '@mantine/hooks';
 import { DatePickerInput } from '@mantine/dates';
-import { Card, Chip, Flex, MultiSelect, TextInput } from '@mantine/core';
+import { Card, Chip, Flex, Loader, MultiSelect, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 
 import dayjs from 'dayjs';
@@ -11,6 +11,9 @@ import dayjs from 'dayjs';
 import { estadoOptions } from '@domain/estados';
 
 const ESTADO_OPTIONS = estadoOptions('envio');
+
+// Los pills no hacen wrap: el multiselect mantiene el alto del resto de la fila.
+const MULTISELECT_STYLES = { pillsList: { flexWrap: 'nowrap', overflow: 'hidden' } };
 
 const DEFAULT_VALUES = { search: '', destino: '', estado: [], date: [null, null] };
 
@@ -69,7 +72,6 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
   const form = useForm({
     mode: 'controlled',
     initialValues: DEFAULT_VALUES,
-    enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
       if (isQuickFilterChange.current) {
         isQuickFilterChange.current = false;
@@ -98,13 +100,13 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
 
   return (
     <Card component="search">
-      <Flex mb="md" gap="md">
+      <Flex mb="md" gap="md" align="flex-start">
         <TextInput
           {...form.getInputProps('search')}
           flex={1}
           label="Buscar envío"
           placeholder="Nombre, apellido o código de seguimiento..."
-          rightSection={<IconSearch size={18} />}
+          rightSection={disabled ? <Loader size={16} /> : <IconSearch size={18} />}
         />
 
         <TextInput
@@ -131,6 +133,8 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
           placeholder="Seleccioná..."
           data={ESTADO_OPTIONS}
           clearable
+          maxDropdownHeight={320}
+          styles={MULTISELECT_STYLES}
         />
       </Flex>
 
