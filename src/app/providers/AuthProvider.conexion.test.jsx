@@ -149,7 +149,7 @@ describe('AuthProvider — API caída en el bootstrap (SHG-FE-110)', () => {
   it('SHG-FE-116: si el whoami falla (red/5xx) no hay usuario → ni se decide "sin empresa" ni se renderiza la app (onboarding incluido)', async () => {
     restclient.defaults.adapter = (config) =>
       config.url === '/refresh' ? ok(config, { access_token: 't' }) : failWith(503)(config);
-    renderAt('/');
+    renderAt('/usuarios');
     await act(() => vi.advanceTimersByTimeAsync(0));
 
     expect(screen.getByText(TITULO)).toBeInTheDocument();
