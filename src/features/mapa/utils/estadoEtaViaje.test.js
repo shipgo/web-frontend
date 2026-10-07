@@ -44,12 +44,6 @@ describe('getEstadoEtaViaje', () => {
     expect(r.etaFuente).toBe('planificada');
   });
 
-  it('lista y panel dan el mismo resultado con los mismos insumos', () => {
-    conReloj();
-    const viaje = { fechaHoraFinPlanificada: PLAN_VIEJA };
-    expect(getEstadoEtaViaje(viaje, VIEJA)).toEqual(getEstadoEtaViaje(viaje, VIEJA));
-  });
-
   it('sin ninguna fecha: eta null', () => {
     conReloj();
     const r = getEstadoEtaViaje({}, RECIENTE);

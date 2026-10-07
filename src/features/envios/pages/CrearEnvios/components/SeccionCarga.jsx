@@ -87,15 +87,15 @@ const SeccionCarga = ({ categorias = [], bloqueada = false }) => {
                   <Table.Td>{paquete.descripcion || "-"}</Table.Td>
                   <Table.Td>
                     {!bloqueada && (
-                    <ActionIcon
-                      size="lg"
-                      color="red"
-                      variant="subtle"
-                      onClick={() => handleRemovePaquete(index)}
-                      aria-label={`Quitar paquete ${index + 1}`}
-                    >
-                      <IconTrash size={20} />
-                    </ActionIcon>
+                      <ActionIcon
+                        size="lg"
+                        color="red"
+                        variant="subtle"
+                        onClick={() => handleRemovePaquete(index)}
+                        aria-label={`Quitar paquete ${index + 1}`}
+                      >
+                        <IconTrash size={20} />
+                      </ActionIcon>
                     )}
                   </Table.Td>
                 </Table.Tr>

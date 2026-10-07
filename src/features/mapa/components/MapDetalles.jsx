@@ -34,6 +34,8 @@ import { useViajesConUbicacion } from '../hooks/useViajesConUbicacion';
 import { getEstadoEtaViaje } from '../utils/estadoEtaViaje';
 import { direccionDeRecorrido } from '../utils/recorridos';
 
+const ETA_SUFIJO = { planificada: ' (planificada)', ruta: ' (según ruta)' };
+
 const InfoRow = ({ icon, label, children, action }) => (
   <Group gap={8} wrap="nowrap" align="flex-start">
     <ThemeIcon variant="light" color="gray" size="sm" radius="xl" mt={1}>
@@ -188,7 +190,7 @@ const MapDetalles = () => {
 
         <InfoRow icon={<IconClock size={14} />} label="ETA">
           {eta
-            ? `${formatFechaHora(eta)}${etaFuente === 'planificada' ? ' (planificada)' : ''}`
+            ? `${formatFechaHora(eta)}${ETA_SUFIJO[etaFuente] ?? ''}`
             : 'Sin datos de ruta'}
         </InfoRow>
 

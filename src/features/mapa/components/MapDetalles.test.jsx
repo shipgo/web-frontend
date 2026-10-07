@@ -88,6 +88,8 @@ describe('MapDetalles', () => {
     renderWithProviders(<MapDetalles />);
 
     expect(screen.queryByText('Sin datos de ruta')).not.toBeInTheDocument();
+    // Con señal y ruta, la ETA rotula su fuente (SHG-FE-113).
+    expect(screen.getByText(/\(según ruta\)$/)).toBeInTheDocument();
   });
 
   it('muestra el mismo estado en vivo que la lista (SHG-FE-113): sin señal no dice "En camino" ni usa la ETA de ruta', () => {
