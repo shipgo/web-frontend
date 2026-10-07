@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { restclient } from "@config/restclient";
+import { BOOTSTRAP_TIMEOUT_MS } from "@constants/timeouts";
+import { classifyConnectionError } from "@utils/connectionError";
 import { API_URLS } from "@constants/apiUrls";
 import { captchaHeader } from "@config/captcha";
 import { usuarioApi } from "@api/usuario.api";
@@ -98,12 +100,18 @@ export const useAuthStore = create((set, get) => ({
   user: null,
   isLoading: false,
   isAuthenticated: false,
+  // SHG-FE-110: `'network'` (timeout / sin respuesta) o `'server'` (5xx) si el
+  // bootstrap no pudo hablar con la API; `null` en cualquier otro caso. NO es
+  // "no autenticado": no se sabe si la sesión es válida.
+  connectionError: null,
 
   // Inicializar usuario al cargar la app
   initUser: async () => {
     try {
-      set({ isLoading: true });
-      const response = await restclient.get(API_URLS.REFRESH_TOKEN_URL);
+      set({ isLoading: true, connectionError: null });
+      const response = await restclient.get(API_URLS.REFRESH_TOKEN_URL, {
+        timeout: BOOTSTRAP_TIMEOUT_MS,
+      });
 
       if (response.data?.access_token) {
         await get().getUserInfo();
@@ -112,7 +120,11 @@ export const useAuthStore = create((set, get) => ({
       return false;
     } catch (error) {
       console.error("Error initializing user:", error);
-      set({ user: null, isAuthenticated: false });
+      set({
+        user: null,
+        isAuthenticated: false,
+        connectionError: classifyConnectionError(error),
+      });
       return false;
     } finally {
       set({ isLoading: false });
