@@ -25,13 +25,16 @@ import {
   IconX,
 } from '@tabler/icons-react';
 
-import { esEstadoTerminal, estadoBadge } from '@domain/estados';
+import { esEstadoTerminal } from '@domain/estados';
 import { digitosWhatsapp as calcularDigitosWhatsapp, formatFechaHora, formatTelefono } from '@domain/format';
 
 import { useSelectedViaje } from '../contexts/selectedViaje';
 import { useGetRoute } from '../hooks/useGetRoute';
 import { useViajesConUbicacion } from '../hooks/useViajesConUbicacion';
+import { getEstadoEtaViaje } from '../utils/estadoEtaViaje';
 import { direccionDeRecorrido } from '../utils/recorridos';
+
+const ETA_SUFIJO = { planificada: ' (planificada)', ruta: ' (según ruta)' };
 
 const InfoRow = ({ icon, label, children, action }) => (
   <Group gap={8} wrap="nowrap" align="flex-start">
@@ -98,7 +101,15 @@ const MapDetalles = () => {
   const restanteSegundos = proximaParada && route?.legDurations
     ? route.legDurations.slice(paradasEntregadas).reduce((sum, d) => sum + d, 0)
     : null;
-  const eta = restanteSegundos != null ? new Date(Date.now() + restanteSegundos * 1000) : null;
+  const etaRuta = restanteSegundos != null ? new Date(Date.now() + restanteSegundos * 1000) : null;
+
+  // Estado y ETA: misma derivación que la tarjeta de la lista (`SHG-FE-113`).
+  // Con la ruta sin datos se muestra la llegada planificada, no "Sin datos".
+  const { estado: estadoInfo, eta, etaFuente } = getEstadoEtaViaje(
+    { fechaHoraFinPlanificada: viaje.fechaHoraFinPlanificada ?? seleccionado.fechaHoraFinPlanificada },
+    seleccionado.ultimaActualizacion,
+    { etaRuta },
+  );
 
   const chofer = viaje.chofer;
   const choferNombre =
@@ -106,8 +117,6 @@ const MapDetalles = () => {
   const telefono = chofer?.telefono ? formatTelefono(chofer) : null;
 
   const digitosWhatsapp = calcularDigitosWhatsapp(chofer?.prefijo, chofer?.telefono);
-
-  const estadoInfo = estadoBadge('viaje', viaje.estado);
 
   return (
     <Card
@@ -126,11 +135,8 @@ const MapDetalles = () => {
             <Text size="sm" fw={700}>
               {viaje.vehiculo?.patente ?? `Viaje #${selectedViajeId}`}
             </Text>
-            {/* `c={estadoInfo.textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
-                en `@domain/estados` — sin esto, "En camino"/"Finalizado" no
-                llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
-                `undefined` para el resto de los estados, sin efecto. */}
-            <Badge variant="light" color={estadoInfo.color} size="sm" mt={4} c={estadoInfo.textColor}>
+            {/* Estado en vivo (A tiempo / Demorado / Sin señal), igual que en la lista. */}
+            <Badge variant="light" color={estadoInfo.color} size="sm" mt={4}>
               {estadoInfo.label}
             </Badge>
           </Box>
@@ -183,7 +189,9 @@ const MapDetalles = () => {
         </InfoRow>
 
         <InfoRow icon={<IconClock size={14} />} label="ETA">
-          {eta ? formatFechaHora(eta) : 'Sin datos de ruta'}
+          {eta
+            ? `${formatFechaHora(eta)}${ETA_SUFIJO[etaFuente] ?? ''}`
+            : 'Sin datos de ruta'}
         </InfoRow>
 
         <InfoRow icon={<IconMapPin size={14} />} label="Próxima parada">

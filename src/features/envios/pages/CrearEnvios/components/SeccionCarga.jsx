@@ -20,7 +20,7 @@ import AgregarPaqueteModal from "./AgregarPaqueteModal";
 const getCategoriaLabel = (categorias, categoriaID) =>
   categorias.find((c) => c.value === String(categoriaID))?.label ?? "-";
 
-const SeccionCarga = ({ categorias = [] }) => {
+const SeccionCarga = ({ categorias = [], bloqueada = false }) => {
   const form = useEnvioFormContext();
   const paquetes = form.values.detalleEnvios;
 
@@ -47,7 +47,9 @@ const SeccionCarga = ({ categorias = [] }) => {
               </Title>
             </Box>
           </Group>
-          <AgregarPaqueteModal categorias={categorias} onAdd={handleAddPaquete} />
+          {!bloqueada && (
+            <AgregarPaqueteModal categorias={categorias} onAdd={handleAddPaquete} />
+          )}
         </Group>
 
         {form.errors.detalleEnvios && (
@@ -84,15 +86,17 @@ const SeccionCarga = ({ categorias = [] }) => {
                   </Table.Td>
                   <Table.Td>{paquete.descripcion || "-"}</Table.Td>
                   <Table.Td>
-                    <ActionIcon
-                      size="lg"
-                      color="red"
-                      variant="subtle"
-                      onClick={() => handleRemovePaquete(index)}
-                      aria-label={`Quitar paquete ${index + 1}`}
-                    >
-                      <IconTrash size={20} />
-                    </ActionIcon>
+                    {!bloqueada && (
+                      <ActionIcon
+                        size="lg"
+                        color="red"
+                        variant="subtle"
+                        onClick={() => handleRemovePaquete(index)}
+                        aria-label={`Quitar paquete ${index + 1}`}
+                      >
+                        <IconTrash size={20} />
+                      </ActionIcon>
+                    )}
                   </Table.Td>
                 </Table.Tr>
               ))}

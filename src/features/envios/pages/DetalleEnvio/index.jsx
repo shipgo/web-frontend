@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   ActionIcon,
+  Alert,
   Anchor,
   Badge,
   Box,
@@ -19,6 +20,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import {
+  IconAlertTriangle,
   IconBan,
   IconBuilding,
   IconBuildingStore,
@@ -41,7 +43,7 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import ScreenContainer from "@components/ScreenContainer";
 import { isNotFoundError } from "@utils/httpErrors";
 import { envioApi } from "@api";
-import { BUTTON_ACTION_TEXT_COLOR, esEstadoTerminal, estadoBadge, estadoLabel } from "@domain/estados";
+import { BUTTON_ACTION_TEXT_COLOR, esEstadoTerminal, estadoBadge, estadoLabel, normalizarEstado } from "@domain/estados";
 import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
 import { useAuthStore } from "@stores/auth.store";
 
@@ -144,6 +146,14 @@ const DetalleEnvio = () => {
   const historial = [...(envio?.historialEstado ?? [])].sort(
     (a, b) => new Date(fechaHistorial(a)) - new Date(fechaHistorial(b)),
   );
+
+  // Rechazo (SHG-FE-113): fecha y motivo salen del último evento `rechazado` del
+  // historial. `HistorialEstadoDTO.motivo` existe pero el backend hoy no lo carga
+  // al marcar el fallo de entrega (ver bitácora), por eso el motivo es opcional.
+  const esRechazado = normalizarEstado(envio?.estado) === "rechazado";
+  const eventoRechazo = esRechazado
+    ? [...historial].reverse().find((h) => normalizarEstado(h.estado) === "rechazado") ?? null
+    : null;
 
   const recorridoActual = getRecorridoActual(envio);
   const viajeAsociado = getViajeAsociado(envio);
@@ -262,6 +272,24 @@ const DetalleEnvio = () => {
           </Button>
         )}
       </PageBreadcrumbsHeader>
+
+      {esRechazado && (
+        <Alert
+          color="red"
+          variant="light"
+          icon={<IconAlertTriangle size={18} />}
+          title="Envío rechazado"
+          data-testid="alerta-rechazo"
+        >
+          <Stack gap={2}>
+            <Text size="sm">
+              Fecha del rechazo:{" "}
+              {eventoRechazo ? formatFechaHora(fechaHistorial(eventoRechazo)) : "no registrada"}
+            </Text>
+            <Text size="sm">Motivo: {eventoRechazo?.motivo || "no registrado"}</Text>
+          </Stack>
+        </Alert>
+      )}
 
       <Card withBorder shadow="sm">
         <Stack gap="md">

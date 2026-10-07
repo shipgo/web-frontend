@@ -1,3 +1,4 @@
+import { normalizarEstado } from "@domain/estados";
 import { formatDireccion } from "@domain/format";
 
 import { TIPO_ENTREGA, TIPO_ENTREGA_DEFAULT } from "./constants";
@@ -178,3 +179,13 @@ export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
     },
   };
 };
+
+/**
+ * Envío "en ruta" (`en_vehiculo` / `en_camino`): `CONTRACTS.md §16.4` — sólo se
+ * editan los datos de contacto (nombre, apellido, teléfono, emails); destino y
+ * bultos no (`SHG-FE-113`; el backend lo impone con `SHG-BE-082`).
+ */
+export const ESTADOS_ENVIO_EN_RUTA = ["en_vehiculo", "en_camino"];
+
+export const esEnvioEnRuta = (estado) =>
+  ESTADOS_ENVIO_EN_RUTA.includes(normalizarEstado(estado));

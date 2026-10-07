@@ -4,14 +4,14 @@ import { IconBrandWhatsapp } from '@tabler/icons-react';
 
 import { digitosWhatsapp, formatFechaHora } from '@domain/format';
 import { useSelectedViaje } from '../contexts/selectedViaje';
-import { getEstadoVisualViaje } from '../utils/estadoVisual';
+import { getEstadoEtaViaje } from '../utils/estadoEtaViaje';
 
 const MapListadoViajesItem = ({ viaje, isLast }) => {
   const { hovered, ref } = useHover();
   const { selectedViajeId, setSelectedViajeId } = useSelectedViaje();
 
   const isSelected = selectedViajeId === viaje.id;
-  const estado = getEstadoVisualViaje(viaje, viaje.ultimaActualizacion);
+  const { estado, eta, etaFuente } = getEstadoEtaViaje(viaje, viaje.ultimaActualizacion);
   const chofer = viaje.chofer;
 
   const handleWhatsApp = (e) => {
@@ -66,7 +66,8 @@ const MapListadoViajesItem = ({ viaje, isLast }) => {
 
         <Group gap="xs" mt={4}>
           <Text size="xs" c="dimmed">
-            Llegada estimada: {formatFechaHora(viaje.fechaHoraFinPlanificada)}
+            Llegada estimada: {eta ? formatFechaHora(eta) : '—'}
+            {etaFuente === 'planificada' ? ' (planificada)' : ''}
           </Text>
         </Group>
       </Box>

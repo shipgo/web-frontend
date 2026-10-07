@@ -65,7 +65,13 @@ const parseStreetAddress = (line) => {
   return { nombreCalle: value, numeroCalle: "" };
 };
 
-const SeccionOrigen = () => {
+/**
+ * @param {Object} props
+ * @param {boolean} [props.destinoBloqueado] - envío en ruta (`SHG-FE-113`,
+ *   `CONTRACTS.md §16.4`): sólo se editan los datos de contacto; método de
+ *   entrega, destino y marcador del mapa quedan de sólo lectura.
+ */
+const SeccionOrigen = ({ destinoBloqueado = false }) => {
   const form = useEnvioFormContext();
   const tipoEntrega = form.values.tipoEntrega ?? TIPO_ENTREGA.DOMICILIO;
   const esRetiroEnSucursal = tipoEntrega === TIPO_ENTREGA.SUCURSAL;
@@ -254,6 +260,7 @@ const SeccionOrigen = () => {
               fullWidth
               aria-label="Método de entrega"
               value={tipoEntrega}
+              disabled={destinoBloqueado}
               onChange={(value) => form.setFieldValue("tipoEntrega", value)}
               data={TIPO_ENTREGA_OPTIONS}
             />
@@ -326,7 +333,7 @@ const SeccionOrigen = () => {
                   data={sucursalesOptions}
                   searchable
                   required
-                  disabled={loadingSucursales}
+                  disabled={loadingSucursales || destinoBloqueado}
                   rightSection={
                     loadingSucursales ? (
                       <Loader size="xs" />
@@ -359,6 +366,7 @@ const SeccionOrigen = () => {
               <>
                 <Grid.Col span={12}>
                   <Autocomplete
+                    disabled={destinoBloqueado}
                     label="Buscar dirección"
                     description="Completa automáticamente la calle, localidad y ubicación en el mapa"
                     error={form.errors.coordenadas}
@@ -377,6 +385,7 @@ const SeccionOrigen = () => {
                     key={form.key("nombreCalle")}
                     {...form.getInputProps("nombreCalle")}
                     required
+                    disabled={destinoBloqueado}
                     label="Calle"
                     placeholder="Ej: Av. Colón"
                   />
@@ -385,6 +394,7 @@ const SeccionOrigen = () => {
                   <TextInput
                     key={form.key("numeroCalle")}
                     {...form.getInputProps("numeroCalle")}
+                    disabled={destinoBloqueado}
                     label="Número"
                     placeholder="Ej: 1234"
                   />
@@ -393,6 +403,7 @@ const SeccionOrigen = () => {
                   <TextInput
                     key={form.key("piso")}
                     {...form.getInputProps("piso")}
+                    disabled={destinoBloqueado}
                     label="Piso"
                     placeholder="Ej: 4"
                   />
@@ -401,12 +412,14 @@ const SeccionOrigen = () => {
                   <TextInput
                     key={form.key("departamento")}
                     {...form.getInputProps("departamento")}
+                    disabled={destinoBloqueado}
                     label="Departamento"
                     placeholder="Ej: B"
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
                   <Select
+                    disabled={destinoBloqueado}
                     label="Provincia"
                     placeholder="Seleccioná una provincia"
                     data={provincias}
@@ -433,7 +446,7 @@ const SeccionOrigen = () => {
                     }
                     data={localidades}
                     searchable
-                    disabled={!form.values.provinciaID}
+                    disabled={!form.values.provinciaID || destinoBloqueado}
                   />
                 </Grid.Col>
               </>
@@ -465,21 +478,21 @@ const SeccionOrigen = () => {
                 key={`mapa-${mapCenter.lat}-${mapCenter.lng}`}
                 initialCenter={mapCenter}
                 initialZoom={15}
-                onClick={handleMapClick}
+                onClick={destinoBloqueado ? undefined : handleMapClick}
                 h="100%"
               >
                 {form.values.coordenadas && (
                   <Marker
                     longitude={form.values.coordenadas.lng}
                     latitude={form.values.coordenadas.lat}
-                    draggable
+                    draggable={!destinoBloqueado}
                     onDragEnd={handleMarkerDragEnd}
                     color="red"
                   />
                 )}
               </MapCard>
             </ScreenContainer>
-            {!form.values.coordenadas && (
+            {!form.values.coordenadas && !destinoBloqueado && (
               <Text
                 pos="absolute"
                 bottom={10}
@@ -497,7 +510,7 @@ const SeccionOrigen = () => {
                 Hacé click en el mapa para ubicar el envío
               </Text>
             )}
-            {geocodedCoords && (
+            {geocodedCoords && !destinoBloqueado && (
               <Tooltip label="Reiniciar posición del marcador" position="left">
                 <ActionIcon
                   pos="absolute"
