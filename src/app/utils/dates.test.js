@@ -49,17 +49,17 @@ describe('relativos', () => {
   afterEach(() => vi.useRealTimers());
 
   it('un envío creado ahora dice "hace instantes", no "en 3 horas"', () => {
-    expect(timeFromNow('2026-10-07T18:41:29.900')).toBe('a few seconds ago');
+    expect(timeFromNow('2026-10-07T18:41:29.900')).toBe('hace unos segundos');
     expect(formatDesdeAhora('2026-10-07T18:41:29.900')).toBe('hace unos segundos');
   });
 
   it('una hora pasada no queda en el futuro y una futura sí', () => {
-    expect(timeFromNow('2026-10-07T16:41:30.000')).toBe('2 hours ago');
-    expect(timeFromNow('2026-10-07T20:41:30.000')).toBe('in 2 hours');
+    expect(timeFromNow('2026-10-07T16:41:30.000')).toBe('hace 2 horas');
+    expect(timeFromNow('2026-10-07T20:41:30.000')).toBe('en 2 horas');
   });
 
   it('a las 23:30 ART el relativo se calcula contra la hora local, no contra UTC', () => {
     vi.setSystemTime(new Date('2026-10-08T02:31:00.000Z')); // 23:31 ART
-    expect(timeFromNow(TARDE)).toBe('a minute ago');
+    expect(timeFromNow(TARDE)).toBe('hace un minuto');
   });
 });

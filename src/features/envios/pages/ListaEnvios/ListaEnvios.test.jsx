@@ -91,8 +91,8 @@ describe('ListaEnvios', () => {
 
       await screen.findByText('SHG-DEV-0001');
       expect(screen.getByText('07/10/2026')).toBeInTheDocument();
-      expect(screen.getByText('a few seconds ago')).toBeInTheDocument();
-      expect(screen.queryByText(/^in /)).not.toBeInTheDocument();
+      expect(screen.getByText('hace unos segundos')).toBeInTheDocument();
+      expect(screen.queryByText(/^en \d+ horas/)).not.toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
