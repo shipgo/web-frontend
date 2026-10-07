@@ -185,6 +185,27 @@ describe('DetalleViaje', () => {
       expect(await screen.findByText('Viaje cancelado')).toBeInTheDocument();
     });
 
+    it('doble click en "Cancelar viaje" manda un solo PUT /cancelar (SHG-FE-106)', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+      let resolver;
+      viajeApi.cancelar.mockImplementation(() => new Promise((resolve) => { resolver = resolve; }));
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+      const dialog = await screen.findByRole('dialog');
+      const boton = within(dialog).getByRole('button', { name: 'Cancelar viaje' });
+      await user.dblClick(boton);
+
+      expect(viajeApi.cancelar).toHaveBeenCalledTimes(1);
+      resolver({ ...VIAJE_PLANIFICADO, estado: 'cancelado' });
+      expect(await screen.findByText('Viaje cancelado')).toBeInTheDocument();
+      expect(viajeApi.cancelar).toHaveBeenCalledTimes(1);
+    });
+
     it('cancela un viaje sin motivo (opcional)', async () => {
       const user = userEvent.setup();
       viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);

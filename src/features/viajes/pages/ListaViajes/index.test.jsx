@@ -391,7 +391,9 @@ describe("ListaViajes", () => {
       await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
 
       const dialog = await screen.findByRole("dialog");
-      expect(within(dialog).getByText(/eliminar 2 viajes/)).toBeInTheDocument();
+      // SHG-FE-106: informa qué no se va a eliminar antes de confirmar.
+      expect(within(dialog).getByText(/Se eliminarán 1 viaje\./)).toBeInTheDocument();
+      expect(within(dialog).getByText(/1 viaje no se puede eliminar por su estado: viaje #43/)).toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
 
       await waitFor(() => expect(viajeApi.delete).toHaveBeenCalledWith(42));
@@ -408,7 +410,7 @@ describe("ListaViajes", () => {
       expect(screen.queryByText(/viajes seleccionados/)).not.toBeInTheDocument();
     });
 
-    it("si todos los seleccionados son no cancelables, no llama a delete ni una vez y reporta el fallo total", async () => {
+    it("si todos los seleccionados son no cancelables, avisa en el diálogo (sin botón de eliminar) y no llama a delete", async () => {
       viajeApi.get.mockResolvedValue({
         content: [VIAJE_NO_CANCELABLE],
         totalElements: 1,
@@ -423,10 +425,11 @@ describe("ListaViajes", () => {
       await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
 
       const dialog = await screen.findByRole("dialog");
-      await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+      expect(within(dialog).getByText(/no se puede eliminar por su estado actual/)).toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Entendido" }));
 
       expect(viajeApi.delete).not.toHaveBeenCalled();
-      expect(await screen.findByText("No se pudo eliminar")).toBeInTheDocument();
     });
   });
 });

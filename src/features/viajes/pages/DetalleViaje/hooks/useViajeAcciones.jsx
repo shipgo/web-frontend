@@ -90,7 +90,8 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
   };
 
   const ejecutarCancelar = async (motivo) => {
-    modals.closeAll();
+    // El modal queda abierto (con el botón en loading) hasta que la request
+    // termina, y recién ahí se cierra (éxito o error).
     try {
       await viajeApi.cancelar(id, { motivo: motivo?.trim() || undefined });
       notifications.show({
@@ -99,8 +100,10 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
         color: 'green',
         icon: <IconCheck />,
       });
+      modals.closeAll();
       onSuccess?.();
     } catch (error) {
+      modals.closeAll();
       handleAccionError(error, 'cancelar el viaje');
     }
   };

@@ -127,8 +127,9 @@ describe('useBulkDelete', () => {
     await user.click(screen.getByRole('button', { name: 'Eliminar seleccionados' }));
 
     const dialog = await screen.findByRole('dialog');
-    // La cantidad del modal cuenta también los excluidos (3 = 2 + 1).
-    expect(within(dialog).getByText(/eliminar 3 elementos/i)).toBeInTheDocument();
+    // SHG-FE-106: el diálogo separa eliminables (2) de no eliminables (1) ANTES de confirmar.
+    expect(within(dialog).getByText(/Se eliminarán 2 elementos\./)).toBeInTheDocument();
+    expect(within(dialog).getByText(/1 elemento no se puede eliminar por su estado/)).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
 
