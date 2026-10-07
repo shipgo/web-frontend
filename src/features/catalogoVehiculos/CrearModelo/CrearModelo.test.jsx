@@ -66,4 +66,26 @@ describe("CrearModelo", () => {
       anio: 2020,
     });
   });
+
+  it.each([
+    ["1800", "El año debe ser mayor o igual a 1900"],
+    [String(new Date().getFullYear() + 5), `El año debe ser menor o igual a ${new Date().getFullYear() + 1}`],
+  ])("año fuera de rango (%s): error inline, sin clamp silencioso y sin guardar (SHG-FE-107)", async (anio, mensaje) => {
+    const user = userEvent.setup();
+    renderWithProviders(<CrearModelo />);
+    await waitFor(() => expect(mockGetAllMarcas).toHaveBeenCalled());
+
+    await user.type(screen.getByLabelText(/^Nombre/), "Sprinter");
+    await user.click(screen.getByRole("combobox", { name: /^Marca/ }));
+    await user.click(await screen.findByText("Mercedes-Benz"));
+
+    const anioInput = screen.getByLabelText(/^Año/);
+    await user.clear(anioInput);
+    await user.type(anioInput, anio);
+    await user.click(screen.getByRole("button", { name: /crear modelo/i }));
+
+    expect((await screen.findAllByText(mensaje)).length).toBeGreaterThan(0);
+    expect(anioInput).toHaveValue(anio);
+    expect(mockSave).not.toHaveBeenCalled();
+  });
 });

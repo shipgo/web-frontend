@@ -27,7 +27,7 @@ export const MANTENIMIENTO_SCHEMA = z.object({
       (value) => value != null && dayjs(value).isValid(),
       'Seleccioná una fecha y hora válida',
     ),
-  descripcion: textoOpcional(1000).optional(),
+  descripcion: textoOpcional(255).optional(),
 });
 
 export const INITIAL_VALUES = {

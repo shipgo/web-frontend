@@ -45,8 +45,8 @@ export const MODELO_SCHEMA = z.object({
     z
       .number({ error: "Debes ingresar el año" })
       .int("El año debe ser un número entero")
-      .gte(1900, "El año debe ser mayor a 1900")
-      .lte(currentYear + 1, `El año no puede ser mayor a ${currentYear + 1}`),
+      .gte(1900, "El año debe ser mayor o igual a 1900")
+      .lte(currentYear + 1, `El año debe ser menor o igual a ${currentYear + 1}`),
   ),
 });
 

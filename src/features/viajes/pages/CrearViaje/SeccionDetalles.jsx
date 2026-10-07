@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { IconAlertTriangle, IconInfoCircle } from "@tabler/icons-react";
 
 import { DateTimePicker } from "@mantine/dates";
@@ -21,7 +22,14 @@ import { useFormContext } from "./contexts/EnviosFormContext";
 
 const SeccionDetalles = () => {
   const { user } = useAuth();
-  const { getInputProps } = useFormContext();
+  const { getInputProps, values } = useFormContext();
+
+  // Validación inline (SHG-FE-106): la llegada tiene que ser posterior a la
+  // salida apenas se cargan las dos, sin esperar al submit.
+  const inicio = values.fechaHoraInicioPlanificada;
+  const fin = values.fechaHoraFinPlanificada;
+  const fechasInvertidas = Boolean(inicio && fin && !dayjs(fin).isAfter(dayjs(inicio)));
+  const llegadaProps = getInputProps("fechaHoraFinPlanificada");
   const { isSuperUser, activeSucursal } = useOperatingContext();
 
   const sucursalPropia = user?.sucursal ?? null;
@@ -74,7 +82,12 @@ const SeccionDetalles = () => {
             placeholder="Seleccioná una fecha"
             valueFormat="DD/MM/YYYY HH:mm"
             dropdownType="modal"
-            {...getInputProps("fechaHoraFinPlanificada")}
+            {...llegadaProps}
+            error={
+              fechasInvertidas
+                ? "La llegada planificada debe ser posterior a la salida planificada"
+                : llegadaProps.error
+            }
           />
 
           <TextInput

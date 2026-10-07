@@ -64,12 +64,11 @@ describe("RecuperarCuenta", () => {
     await user.click(screen.getByRole("button", { name: "Enviar enlace" }));
   };
 
-  it.each([
-    ["404", { status: 404, data: { message: "Usuario no encontrado" } }],
-    ["400 'no existe'", { status: 400, data: { message: "El usuario no existe" } }],
-  ])("email inexistente (%s): muestra el mismo mensaje neutro que un éxito", async (_n, response) => {
+  it("email inexistente (404): muestra el mismo mensaje neutro que un éxito", async () => {
     const user = userEvent.setup();
-    mockVerifyEmail.mockRejectedValue({ response });
+    mockVerifyEmail.mockRejectedValue({
+      response: { status: 404, data: { message: "Usuario no encontrado" } },
+    });
     await enviar(user);
 
     expect(await screen.findByText("Revisá tu correo")).toBeInTheDocument();

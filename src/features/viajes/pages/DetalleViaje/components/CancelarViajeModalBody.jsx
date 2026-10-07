@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button, Group, Stack, Text, Textarea } from '@mantine/core';
 
@@ -9,6 +9,22 @@ import { Button, Group, Stack, Text, Textarea } from '@mantine/core';
  */
 const CancelarViajeModalBody = ({ id, onCancelar, onVolver }) => {
   const [motivo, setMotivo] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  // El ref cierra la ventana entre el primer click y el re-render con `disabled`:
+  // un doble click rápido no debe mandar dos `PUT /cancelar`.
+  const submittedRef = useRef(false);
+
+  const handleCancelar = async () => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    setSubmitting(true);
+    try {
+      await onCancelar(motivo);
+    } finally {
+      submittedRef.current = false;
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Stack gap="sm">
@@ -24,10 +40,10 @@ const CancelarViajeModalBody = ({ id, onCancelar, onVolver }) => {
         onChange={(event) => setMotivo(event.currentTarget.value)}
       />
       <Group justify="flex-end">
-        <Button variant="default" onClick={onVolver}>
+        <Button variant="default" onClick={onVolver} disabled={submitting}>
           Volver
         </Button>
-        <Button color="red" onClick={() => onCancelar(motivo)}>
+        <Button color="red" onClick={handleCancelar} loading={submitting}>
           Cancelar viaje
         </Button>
       </Group>

@@ -26,20 +26,12 @@ import {
 } from "../constants/schema";
 
 /**
- * "El email no existe": hoy el backend lo informa con un 404 (o un 400 cuyo
- * mensaje dice que no existe/no se encontró el usuario); con SHG-BE-083
- * (CONTRACTS.md §13) responde el mismo 200 neutro exista o no. El front trata
- * ambos como éxito para no revelar si el email está registrado. Red, 5xx, 429 y
- * captcha NO entran acá: esos se siguen mostrando.
+ * "El email no existe": hoy el backend lo informa con un 404 (`NotFoundException`);
+ * con SHG-BE-083 (CONTRACTS.md §13) responde el mismo 200 neutro exista o no. El
+ * front trata ambos como éxito para no revelar si el email está registrado. Red,
+ * 5xx, 429 y captcha NO entran acá: esos se siguen mostrando.
  */
-const isEmailInexistente = (error) => {
-  const status = error?.response?.status;
-  if (status === 404) return true;
-  if (status !== 400) return false;
-  const data = error?.response?.data;
-  const message = typeof data === "string" ? data : data?.message ?? "";
-  return /no existe|no se encontr|inexistente|not found/i.test(message);
-};
+const isEmailInexistente = (error) => error?.response?.status === 404;
 
 /**
  * Paso 1 de "olvidé mi contraseña" (`/recuperar-cuenta`).

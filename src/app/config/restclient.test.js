@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { restclient } from './restclient';
+import { AxiosError } from 'axios';
+
+import { CSV_MAX_ROWS } from '@utils/csv';
+import { usuarioApi } from '@api/usuario.api';
+import {
+  DEFAULT_TIMEOUT_MS,
+  EXPORT_TIMEOUT_MS,
+  UPLOAD_TIMEOUT_MS,
+  restclient,
+} from './restclient';
 
 const originalAdapter = restclient.defaults.adapter;
 const originalLocation = window.location;
@@ -47,34 +56,99 @@ describe('restclient — 401 con refresh fallido (SHG-FE-104)', () => {
   });
 });
 
-describe('restclient — 401 de changePassword (SHG-FE-107)', () => {
-  let calls;
-
-  beforeEach(() => {
-    calls = [];
-    restclient.defaults.adapter = (config) => {
-      calls.push(config.url);
-      return rejectWith401(config);
-    };
-  });
-
+describe('restclient — timeouts y errores de conexión (SHG-FE-110)', () => {
   afterEach(() => {
     restclient.defaults.adapter = originalAdapter;
     Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
   });
 
-  it('no dispara el refresh ni redirige a /login: rechaza el 401 original', async () => {
+  const okResponse = (config) =>
+    Promise.resolve({ data: {}, status: 200, statusText: 'OK', headers: {}, config });
+
+  const captureTimeout = () => {
+    const seen = [];
+    restclient.defaults.adapter = (config) => {
+      seen.push(config.timeout);
+      return okResponse(config);
+    };
+    return seen;
+  };
+
+  const httpError = (status) => (config) =>
+    Promise.reject(
+      new AxiosError('err', AxiosError.ERR_BAD_RESPONSE, config, null, {
+        status,
+        data: {},
+        config,
+        headers: {},
+        statusText: '',
+      }),
+    );
+
+  // La request original da 401; el refresh falla con `refreshFailure`.
+  const withRefreshFailure = (refreshFailure) => {
+    restclient.defaults.adapter = (config) =>
+      config.url.includes('/refresh') ? refreshFailure(config) : rejectWith401(config);
+  };
+
+  it('una request normal usa el timeout por defecto', async () => {
+    const seen = captureTimeout();
+    await restclient.get('/envios');
+    expect(seen).toEqual([DEFAULT_TIMEOUT_MS]);
+  });
+
+  it('params.size >= CSV_MAX_ROWS usa el timeout de export (60 s)', async () => {
+    const seen = captureTimeout();
+    await restclient.get('/envios', { params: { size: CSV_MAX_ROWS } });
+    await restclient.get('/envios', { params: { size: CSV_MAX_ROWS - 1 } });
+    expect(seen).toEqual([EXPORT_TIMEOUT_MS, DEFAULT_TIMEOUT_MS]);
+  });
+
+  it('un timeout explícito de la request se respeta', async () => {
+    const seen = captureTimeout();
+    await restclient.get('/envios', { timeout: 0 });
+    await restclient.get('/envios', { timeout: 5000, params: { size: CSV_MAX_ROWS } });
+    expect(seen).toEqual([0, 5000]);
+  });
+
+  it('el upload de foto de perfil usa UPLOAD_TIMEOUT_MS', async () => {
+    const seen = captureTimeout();
+    await usuarioApi.uploadProfileFile(new File(['x'], 'foto.png', { type: 'image/png' }));
+    expect(seen).toEqual([UPLOAD_TIMEOUT_MS]);
+  });
+
+  it.each([
+    ['timeout', (config) => Promise.reject(new AxiosError('t', AxiosError.ECONNABORTED, config))],
+    ['error de red', (config) => Promise.reject(new AxiosError('n', AxiosError.ERR_NETWORK, config))],
+    ['5xx', httpError(503)],
+  ])('401 con refresh que falla por %s en ruta protegida: NO redirige a /login y rechaza', async (_, failure) => {
+    setPath('/envios/1');
+    withRefreshFailure(failure);
+    await expect(restclient.get('/envios/1')).rejects.toBeTruthy();
+    expect(window.location.href).toBe('/envios/1');
+  });
+
+  it('changePassword con contraseña incorrecta (401 de hoy): un refresh OK, UN reintento y termina rechazando el 401 sin loop ni redirect (SHG-FE-107)', async () => {
     setPath('/portal/perfil');
+    const calls = [];
+    restclient.defaults.adapter = (config) => {
+      calls.push(config.url);
+      return config.url.includes('/refresh') ? okResponse(config) : rejectWith401(config);
+    };
     await expect(
       restclient.post('/changePassword', { oldPassword: 'x', newPassword: 'y' }),
     ).rejects.toMatchObject({ response: { status: 401 } });
-    expect(calls).toEqual(['/changePassword']);
+    expect(calls).toEqual(['/changePassword', '/refresh', '/changePassword']);
     expect(window.location.href).toBe('/portal/perfil');
   });
 
-  it('un 401 de otro endpoint sí intenta el refresh', async () => {
-    setPath('/portal/perfil');
-    await expect(restclient.get('/envios/1')).rejects.toBeTruthy();
-    expect(calls).toContain('/refresh');
-  });
+  it.each([401, 403])(
+    '401 con refresh que responde %i en ruta protegida: sí redirige a /login',
+    async (status) => {
+      setPath('/envios/1');
+      withRefreshFailure(httpError(status));
+      await expect(restclient.get('/envios/1')).rejects.toBeTruthy();
+      expect(window.location.href).toBe('/login');
+    },
+  );
 });

@@ -46,10 +46,13 @@ export const textoOpcional = (max = TEXTO_MAX) =>
 export const nombreRequerido = (requiredMsg) =>
   textoRequerido(requiredMsg, NOMBRE_MAX);
 
+// Sin `.trim()` a propósito: `schemaResolver` sólo usa los issues, no el valor
+// transformado, y varios forms mandan el valor crudo. Si se recortara al validar,
+// "351 " pasaría la regla y viajaría con el espacio. Así se rechaza con el
+// mensaje de "sólo números".
 const digitos = (requiredMsg, label, min, max) =>
   z
     .string()
-    .trim()
     .min(1, requiredMsg)
     .regex(SOLO_DIGITOS, `${label} sólo puede tener números`)
     .min(min, `${label} debe tener al menos ${min} dígitos`)

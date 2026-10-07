@@ -1,5 +1,5 @@
 import { modals } from '@mantine/modals';
-import { Text } from '@mantine/core';
+import { Button, Group, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
 
@@ -62,16 +62,50 @@ export const useBulkDelete = ({ deleteFn, singular, plural, getLabel, onSettled 
     const count = items.length + excluded.length;
     if (count === 0) return;
 
-    const noun = count === 1 ? singular : plural;
+    const nounOf = (n) => (n === 1 ? singular : plural);
     let isRunning = false;
+
+    // Texto independiente del género del sustantivo (sin artículos ni
+    // adjetivos concordados): lo usan envíos, sucursales, vehículos, etc.
+    const motivos = [...new Set(excluded.map(({ reason }) => reason))];
+    const detalleExcluidos =
+      motivos.length === 1
+        ? `${excluded.map(({ item }) => labelOf(item)).join(', ')}: ${motivos[0]}`
+        : excluded.map(({ item, reason }) => `${labelOf(item)} (${reason})`).join('; ');
+
+    // Si no queda nada eliminable, no hay nada que confirmar: se informa y listo.
+    if (items.length === 0) {
+      modals.open({
+        title: 'No se puede eliminar',
+        centered: true,
+        children: (
+          <Stack gap="sm">
+            <Text size="sm">
+              No se puede eliminar nada de lo seleccionado ({excluded.length} {nounOf(excluded.length)}).{' '}
+              {detalleExcluidos}.
+            </Text>
+            <Group justify="flex-end">
+              <Button variant="default" onClick={() => modals.closeAll()}>
+                Entendido
+              </Button>
+            </Group>
+          </Stack>
+        ),
+      });
+      return;
+    }
 
     const modalId = modals.openConfirmModal({
       title: 'Eliminar seleccionados',
       centered: true,
       children: (
-        <Text size="sm">
-          ¿Estás seguro de que deseas eliminar {count} {noun}? Esta acción no se puede deshacer.
-        </Text>
+        <Stack gap="xs">
+          <Text size="sm">
+            {excluded.length === 0
+              ? `¿Estás seguro de que querés eliminar ${items.length} ${nounOf(items.length)}? Esta acción no se puede deshacer.`
+              : `Se eliminarán ${items.length} ${nounOf(items.length)}. Quedan afuera ${excluded.length} ${nounOf(excluded.length)} (${detalleExcluidos}). Esta acción no se puede deshacer.`}
+          </Text>
+        </Stack>
       ),
       labels: { confirm: 'Eliminar', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },

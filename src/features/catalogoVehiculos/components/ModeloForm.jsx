@@ -138,7 +138,7 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
                 min={1900}
                 max={currentYear + 1}
                 // Sin clamp silencioso: un año fuera de rango se muestra como error
-                // inline ("El año debe ser mayor a 1900", etc.) en vez de corregirse solo.
+                // inline ("El año debe ser mayor o igual a 1900", etc.) en vez de corregirse solo.
                 clampBehavior="none"
                 required
                 {...form.getInputProps("anio")}

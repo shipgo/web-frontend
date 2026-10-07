@@ -29,6 +29,7 @@ import Footer from "./Footer";
 import {
   buildEnviosIncluidosFromRecorridos,
   extraerEnviosDeRecorridos,
+  getChoferesDeViaje,
 } from "./utils";
 
 const EditarViaje = () => {
@@ -67,7 +68,7 @@ const EditarViaje = () => {
       if (viaje) {
         form.setValues({
           vehiculo: viaje.vehiculo ?? null,
-          choferes: viaje.choferes || [],
+          choferes: getChoferesDeViaje(viaje),
           fechaHoraInicioPlanificada: viaje.fechaHoraInicioPlanificada
             ? new Date(viaje.fechaHoraInicioPlanificada)
             : null,
@@ -222,7 +223,7 @@ const EditarViaje = () => {
                 <SeccionRecursos
                   viajeIdExcluido={id ? Number(id) : undefined}
                   vehiculoActual={viajeOriginal?.vehiculo}
-                  choferesActuales={viajeOriginal?.choferes}
+                  choferesActuales={getChoferesDeViaje(viajeOriginal)}
                 />
                 <SeccionResumen />
                 <Footer

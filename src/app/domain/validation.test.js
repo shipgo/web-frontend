@@ -36,6 +36,14 @@ describe('telefonoRequerido / prefijoRequerido (regla compartida SHG-FE-107)', (
     expect(firstMessage(tel, value)).toBe(message);
   });
 
+  it.each(['351 ', ' 351', '35 1'])('prefijo con espacios %j se rechaza (no se normaliza al validar)', (v) => {
+    expect(firstMessage(pref, v)).toBe('El prefijo sólo puede tener números');
+  });
+
+  it.each(['4111111 ', ' 4111111'])('teléfono con espacios %j se rechaza', (v) => {
+    expect(firstMessage(tel, v)).toBe('El teléfono sólo puede tener números');
+  });
+
   it.each(['1234567', '3511234567', '1'.repeat(TELEFONO_MAX)])('teléfono válido %s', (v) => {
     expect(firstMessage(tel, v)).toBeNull();
   });

@@ -16,14 +16,24 @@ const Footer = () => {
   const [, navigate] = useLocation();
   const form = useFormContext();
   const {
-    values: { vehiculo },
+    values: { vehiculo, choferes, enviosIncluidos, fechaHoraInicioPlanificada, fechaHoraFinPlanificada },
   } = form;
 
   const { totalPackages, totalStops } = useEnviosStats();
   const { mutate, isPending } = useCrearViaje();
 
   const handleCancel = () => {
-    if (!form.isDirty()) {
+    // `isDirty()` no detecta bien el `Map` de envíos: se chequea el contenido
+    // del form además (SHG-FE-106).
+    const tieneCambios =
+      form.isDirty() ||
+      (enviosIncluidos?.size ?? 0) > 0 ||
+      Boolean(vehiculo) ||
+      (choferes?.length ?? 0) > 0 ||
+      Boolean(fechaHoraInicioPlanificada) ||
+      Boolean(fechaHoraFinPlanificada);
+
+    if (!tieneCambios) {
       navigate("~/viajes");
       return;
     }

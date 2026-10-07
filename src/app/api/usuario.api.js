@@ -1,4 +1,5 @@
 import { restclient } from '@config/restclient';
+import { UPLOAD_TIMEOUT_MS } from '@constants/timeouts';
 import { API_URLS } from '@constants/apiUrls';
 import { createCrudApi, createReadOnlyApi } from './base.api';
 
@@ -115,6 +116,7 @@ export const usuarioApi = {
     formData.append('file', file);
     const response = await restclient.post(API_URLS.FILES_URL, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: UPLOAD_TIMEOUT_MS,
     });
     return response.data;
   },

@@ -89,6 +89,22 @@ describe("CambiarPasswordCard", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("otro error sin mensaje (ej. 500): mensaje genérico, no el de contraseña incorrecta", async () => {
+    const user = userEvent.setup();
+    mockChangePassword.mockRejectedValue({ response: { status: 500, data: {} } });
+    renderWithProviders(<CambiarPasswordCard />);
+
+    await user.type(screen.getByLabelText("Contraseña actual"), "claveVieja1");
+    await user.type(screen.getByLabelText("Nueva contraseña"), "claveNueva2");
+    await user.type(screen.getByLabelText("Repetí la contraseña"), "claveNueva2");
+    await user.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
+
+    expect(
+      (await screen.findAllByText("No se pudo cambiar la contraseña. Intentá nuevamente.")).length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText("La contraseña actual es incorrecta")).not.toBeInTheDocument();
+  });
+
   it("otro error del backend muestra su mensaje", async () => {
     const user = userEvent.setup();
     mockChangePassword.mockRejectedValue({
