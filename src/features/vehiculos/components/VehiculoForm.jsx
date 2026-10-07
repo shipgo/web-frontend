@@ -192,9 +192,15 @@ const VehiculoForm = () => {
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
             <TextInput
               label="Patente"
-              placeholder="Ej: ABC123"
+              placeholder="Ej: AB123CD"
               required
               {...form.getInputProps("patente")}
+              onChange={(event) =>
+                form.setFieldValue(
+                  "patente",
+                  event.currentTarget.value.toUpperCase(),
+                )
+              }
             />
             <Select
               label="Tipo de Vehículo"

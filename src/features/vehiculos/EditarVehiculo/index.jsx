@@ -14,11 +14,16 @@ import { vehiculoApi } from "@api";
 
 import VehiculoForm from "../components/VehiculoForm";
 import Footer from "../components/Footer";
+import { notificarFormularioInvalido } from "../components/notificarFormularioInvalido";
 import {
   VehiculoFormProvider,
   useVehiculoForm,
 } from "../context/VehiculoFormContext";
-import { VEHICULO_INITIAL_VALUES, VEHICULO_SCHEMA } from "../constants/schema";
+import {
+  VEHICULO_INITIAL_VALUES,
+  VEHICULO_SCHEMA,
+  normalizarPatente,
+} from "../constants/schema";
 
 const EditarVehiculo = () => {
   const { id } = useParams();
@@ -88,7 +93,7 @@ const EditarVehiculo = () => {
       // `CrearVehiculo`. El `estado` del vehículo NO se manda: lo maneja el
       // backend (asignación a viaje / service), no hay setter en la API.
       const vehiculoData = {
-        patente: values.patente,
+        patente: normalizarPatente(values.patente),
         tipoVehiculoID: parseInt(values.tipoVehiculoID),
         modeloID: parseInt(values.modeloID),
         combustibleID: parseInt(values.combustibleID),
@@ -123,7 +128,7 @@ const EditarVehiculo = () => {
     } finally {
       setLoading(false);
     }
-  });
+  }, notificarFormularioInvalido);
 
   return (
     <PageContainer>

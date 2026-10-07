@@ -18,7 +18,6 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 
-import { timeFromNow, toLocalDate } from "@utils/dates";
 import { estadoBadge } from "@domain/estados";
 import { useDeleteVehiculo } from "../hooks/useDeleteVehiculo";
 
@@ -46,7 +45,7 @@ const COLUMNS = [
   "Tipo",
   "Sucursal",
   "Estado",
-  "Fecha de registro",
+  "Año de compra",
   "Acciones",
 ];
 
@@ -128,14 +127,26 @@ const ListaVehiculosTabla = ({
           const { label: estadoLabel, color: estadoColor } = item.estado
             ? estadoBadge("vehiculo", item.estado)
             : { label: "Sin estado", color: "gray" };
-          const fechaRegistro = item.anioCompra;
+          const anioCompra = item.anioCompra;
 
           return (
             <Table.Tr
               key={item.id}
               bg={selectedIds.has(item.id) ? "var(--mantine-color-blue-light)" : undefined}
+              onClick={() => handleViewDetails(item.id)}
+              onKeyDown={(event) => {
+                if (event.target !== event.currentTarget) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleViewDetails(item.id);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label={`Ver detalle del vehículo ${patente}`}
+              style={{ cursor: "pointer" }}
             >
-              <Table.Td>
+              <Table.Td onClick={(event) => event.stopPropagation()}>
                 <Checkbox checked={selectedIds.has(item.id)} onChange={() => onToggle(item.id)} />
               </Table.Td>
 
@@ -171,21 +182,16 @@ const ListaVehiculosTabla = ({
               </Table.Td>
 
               <Table.Td>
-                {fechaRegistro ? (
-                  <Stack gap="0">
-                    <Text size="sm">{toLocalDate(fechaRegistro)}</Text>
-                    <Text size="xs" fw="bold">
-                      {timeFromNow(fechaRegistro)}
-                    </Text>
-                  </Stack>
+                {anioCompra ? (
+                  <Text size="sm">{anioCompra}</Text>
                 ) : (
                   <Text size="sm" c="dimmed">
-                    Sin fecha
+                    Sin dato
                   </Text>
                 )}
               </Table.Td>
 
-              <Table.Td>
+              <Table.Td onClick={(event) => event.stopPropagation()}>
                 <Menu shadow="md" width={200}>
                   <Menu.Target>
                     <ActionIcon
