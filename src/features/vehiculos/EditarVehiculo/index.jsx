@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { Card, Text } from "@mantine/core";
-import { notificarFormularioInvalido } from "../components/notificarFormularioInvalido";
 import { schemaResolver } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
@@ -13,6 +12,7 @@ import { vehiculoApi } from "@api";
 
 import VehiculoForm from "../components/VehiculoForm";
 import Footer from "../components/Footer";
+import { notificarFormularioInvalido } from "../components/notificarFormularioInvalido";
 import {
   VehiculoFormProvider,
   useVehiculoForm,

@@ -214,8 +214,8 @@ describe("CrearVehiculo", () => {
     await waitFor(() => {
       expect(
         // Error inline + toast "Revisá el formulario" con el mismo mensaje.
-        screen.getAllByText(/una moto debe tener exactamente 2 ruedas/i).length
-      ).toBeGreaterThanOrEqual(1);
+        screen.getAllByText(/una moto debe tener exactamente 2 ruedas/i),
+      ).toHaveLength(2);
       expect(screen.getByText("Revisá el formulario")).toBeInTheDocument();
     });
 

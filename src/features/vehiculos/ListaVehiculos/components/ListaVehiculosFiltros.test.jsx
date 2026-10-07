@@ -135,20 +135,47 @@ describe("ListaVehiculosFiltros", () => {
     }
   });
 
-  it("los quick filters salen del catálogo real de tipos y emiten ese tipo", async () => {
+  it("muestra chips de familia sólo si el catálogo tiene un tipo que los contiene", async () => {
+    mockGetTiposVehiculo.mockResolvedValue([
+      { id: 1, nombre: "Camión de carga" },
+      { id: 2, nombre: "Trafic 9 plazas" },
+      { id: 3, nombre: "MOTO urbana" },
+    ]);
+    renderWithProviders(<ListaVehiculosFiltros onFiltersChange={vi.fn()} />);
+
+    expect(await screen.findByRole("checkbox", { name: "Camiones" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Trafic" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Motos" })).toBeInTheDocument();
+  });
+
+  it("el chip emite el término de la familia en tipoVehiculo", async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
     renderWithProviders(<ListaVehiculosFiltros onFiltersChange={onFiltersChange} />);
 
-    const chip = await screen.findByRole("checkbox", { name: "Camioneta" });
-    expect(screen.queryByRole("checkbox", { name: "Camionetas" })).not.toBeInTheDocument();
-    await user.click(chip);
+    await user.click(await screen.findByRole("checkbox", { name: "Camiones" }));
 
     await waitFor(() => {
       expect(onFiltersChange).toHaveBeenCalledWith({
-        tipoVehiculo: { label: "tipoVehiculo", values: "Camioneta" },
+        tipoVehiculo: { label: "tipoVehiculo", values: "Camión" },
       });
     });
+  });
+
+  it("catálogo sin Moto: no hay chip Motos", async () => {
+    mockGetTiposVehiculo.mockResolvedValue([{ id: 1, nombre: "Camión" }]);
+    renderWithProviders(<ListaVehiculosFiltros onFiltersChange={vi.fn()} />);
+
+    await screen.findByRole("checkbox", { name: "Camiones" });
+    expect(screen.queryByRole("checkbox", { name: "Motos" })).not.toBeInTheDocument();
+  });
+
+  it("catálogo vacío: no hay chips", async () => {
+    mockGetTiposVehiculo.mockResolvedValue([]);
+    renderWithProviders(<ListaVehiculosFiltros onFiltersChange={vi.fn()} />);
+
+    await waitFor(() => expect(mockGetTiposVehiculo).toHaveBeenCalled());
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
   it("el placeholder de patente coincide con el del formulario", async () => {

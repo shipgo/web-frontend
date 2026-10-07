@@ -134,6 +134,16 @@ const ListaVehiculosTabla = ({
               key={item.id}
               bg={selectedIds.has(item.id) ? "var(--mantine-color-blue-light)" : undefined}
               onClick={() => handleViewDetails(item.id)}
+              onKeyDown={(event) => {
+                if (event.target !== event.currentTarget) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleViewDetails(item.id);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label={`Ver detalle del vehículo ${patente}`}
               style={{ cursor: "pointer" }}
             >
               <Table.Td onClick={(event) => event.stopPropagation()}>

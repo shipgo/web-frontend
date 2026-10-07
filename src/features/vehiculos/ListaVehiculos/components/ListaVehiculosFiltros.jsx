@@ -7,14 +7,23 @@ import { IconSearch } from "@tabler/icons-react";
 
 import { tipoVehiculoApi, combustibleApi } from "@api/vehiculo.api";
 
-// Cantidad máxima de chips de acceso rápido: salen del catálogo real de tipos
-// (`GET /api/tipoVehiculo/all`), así nunca apuntan a un tipo inexistente.
-const MAX_QUICK_FILTERS = 4;
+// Chips de acceso rápido por "familia" de tipo. `termino` es lo que se manda en
+// `tipoVehiculo` (el backend filtra con `contains` insensible a mayúsculas sobre
+// `tipoVehiculo.nombre`). Un chip sólo se muestra si algún tipo del catálogo real
+// (`GET /api/tipoVehiculo/all`) contiene su término, así nunca da 0 resultados
+// por apuntar a un tipo inexistente.
+const QUICK_FILTER_CANDIDATES = [
+  { label: "Camiones", termino: "Camión" },
+  { label: "Trafic", termino: "Trafic" },
+  { label: "Motos", termino: "Moto" },
+];
 
 const buildQuickFilters = (tipos) =>
-  tipos.slice(0, MAX_QUICK_FILTERS).map(({ value }) => ({
-    label: value,
-    getFilters: () => ({ patente: "", modelo: "", tipoVehiculo: value, combustible: "" }),
+  QUICK_FILTER_CANDIDATES.filter(({ termino }) =>
+    tipos.some(({ value }) => value.toLowerCase().includes(termino.toLowerCase())),
+  ).map(({ label, termino }) => ({
+    label,
+    getFilters: () => ({ patente: "", modelo: "", tipoVehiculo: termino, combustible: "" }),
   }));
 
 const DEFAULT_VALUES = { patente: "", modelo: "", tipoVehiculo: "", combustible: "" };

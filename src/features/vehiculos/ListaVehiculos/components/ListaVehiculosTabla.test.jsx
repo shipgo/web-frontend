@@ -86,4 +86,18 @@ describe("ListaVehiculosTabla", () => {
     await user.click(screen.getByText("AB123CD"));
     expect(mockNavigate).toHaveBeenCalledWith("~/vehiculos/1");
   });
+
+  it("la fila es accesible por teclado: Enter y Espacio navegan al detalle", async () => {
+    const user = userEvent.setup();
+    renderTabla();
+
+    const fila = screen.getByRole("button", { name: "Ver detalle del vehículo AB123CD" });
+    fila.focus();
+    await user.keyboard("{Enter}");
+    expect(mockNavigate).toHaveBeenCalledWith("~/vehiculos/1");
+
+    mockNavigate.mockClear();
+    await user.keyboard(" ");
+    expect(mockNavigate).toHaveBeenCalledWith("~/vehiculos/1");
+  });
 });

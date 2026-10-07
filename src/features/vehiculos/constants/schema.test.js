@@ -43,7 +43,7 @@ describe("VEHICULO_SCHEMA", () => {
   });
 
   it("rechaza patentes con formato inválido con mensaje en español", () => {
-    for (const patente of ["A1", "1234567", "ABCD12", "AB1234C", "ABC12", "AB123CDE"]) {
+    for (const patente of ["A1", "1234567", "ABCD12", "AB1234C", "ABC12", "AB123CDE", "A123BCD"]) {
       const result = VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, patente });
       expect(result.success).toBe(false);
       expect(result.error.issues[0].path).toEqual(["patente"]);
