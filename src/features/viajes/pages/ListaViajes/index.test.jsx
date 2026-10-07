@@ -393,7 +393,7 @@ describe("ListaViajes", () => {
       const dialog = await screen.findByRole("dialog");
       // SHG-FE-106: informa qué no se va a eliminar antes de confirmar.
       expect(within(dialog).getByText(/Se eliminarán 1 viaje\./)).toBeInTheDocument();
-      expect(within(dialog).getByText(/1 viaje no se puede eliminar por su estado: viaje #43/)).toBeInTheDocument();
+      expect(within(dialog).getByText(/Quedan afuera 1 viaje \(viaje #43: no se puede eliminar en su estado actual\)/)).toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
 
       await waitFor(() => expect(viajeApi.delete).toHaveBeenCalledWith(42));
@@ -403,7 +403,8 @@ describe("ListaViajes", () => {
 
       expect(await screen.findByText("Eliminación parcial")).toBeInTheDocument();
       expect(screen.getByText(/Se eliminaron 1 de 2 viajes/)).toBeInTheDocument();
-      expect(screen.getByText(/viaje #43.*no se puede eliminar en su estado actual/)).toBeInTheDocument();
+      // El motivo también sigue en el diálogo mientras se anima el cierre.
+      expect(screen.getAllByText(/viaje #43.*no se puede eliminar en su estado actual/).length).toBeGreaterThan(0);
 
       // Refresca y limpia la selección igual que cualquier otro resultado.
       await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(2));
@@ -425,7 +426,7 @@ describe("ListaViajes", () => {
       await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
 
       const dialog = await screen.findByRole("dialog");
-      expect(within(dialog).getByText(/no se puede eliminar por su estado actual/)).toBeInTheDocument();
+      expect(within(dialog).getByText(/viaje #43: no se puede eliminar en su estado actual/)).toBeInTheDocument();
       expect(within(dialog).queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Entendido" }));
 

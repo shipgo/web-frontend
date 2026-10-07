@@ -65,6 +65,14 @@ export const useBulkDelete = ({ deleteFn, singular, plural, getLabel, onSettled 
     const nounOf = (n) => (n === 1 ? singular : plural);
     let isRunning = false;
 
+    // Texto independiente del género del sustantivo (sin artículos ni
+    // adjetivos concordados): lo usan envíos, sucursales, vehículos, etc.
+    const motivos = [...new Set(excluded.map(({ reason }) => reason))];
+    const detalleExcluidos =
+      motivos.length === 1
+        ? `${excluded.map(({ item }) => labelOf(item)).join(', ')}: ${motivos[0]}`
+        : excluded.map(({ item, reason }) => `${labelOf(item)} (${reason})`).join('; ');
+
     // Si no queda nada eliminable, no hay nada que confirmar: se informa y listo.
     if (items.length === 0) {
       modals.open({
@@ -73,9 +81,8 @@ export const useBulkDelete = ({ deleteFn, singular, plural, getLabel, onSettled 
         children: (
           <Stack gap="sm">
             <Text size="sm">
-              {excluded.length === 1
-                ? `El ${singular} seleccionado no se puede eliminar por su estado actual.`
-                : `Ninguno de los ${excluded.length} ${plural} seleccionados se puede eliminar por su estado actual.`}
+              No se puede eliminar nada de lo seleccionado ({excluded.length} {nounOf(excluded.length)}).{' '}
+              {detalleExcluidos}.
             </Text>
             <Group justify="flex-end">
               <Button variant="default" onClick={() => modals.closeAll()}>
@@ -96,7 +103,7 @@ export const useBulkDelete = ({ deleteFn, singular, plural, getLabel, onSettled 
           <Text size="sm">
             {excluded.length === 0
               ? `¿Estás seguro de que querés eliminar ${items.length} ${nounOf(items.length)}? Esta acción no se puede deshacer.`
-              : `Se eliminarán ${items.length} ${nounOf(items.length)}. ${excluded.length} ${nounOf(excluded.length)} no se ${excluded.length === 1 ? 'puede eliminar' : 'pueden eliminar'} por su estado: ${excluded.map(({ item }) => labelOf(item)).join(', ')}. Esta acción no se puede deshacer.`}
+              : `Se eliminarán ${items.length} ${nounOf(items.length)}. Quedan afuera ${excluded.length} ${nounOf(excluded.length)} (${detalleExcluidos}). Esta acción no se puede deshacer.`}
           </Text>
         </Stack>
       ),

@@ -61,7 +61,10 @@ const handleAccionError = (error, accionLabel) => {
  */
 export const useViajeAcciones = (id, { onSuccess } = {}) => {
   const confirmFinalizar = () => {
-    modals.openConfirmModal({
+    // Guard contra doble click (mismo patrón que `useBulkDelete`): cierra
+    // sobre esta apertura del modal y descarta `onConfirm` repetidos.
+    let isRunning = false;
+    const modalId = modals.openConfirmModal({
       title: 'Finalizar viaje',
       centered: true,
       children: (
@@ -72,7 +75,11 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
       ),
       labels: { confirm: 'Sí, finalizar', cancel: 'Volver' },
       confirmProps: { color: 'green' },
+      closeOnConfirm: false,
       onConfirm: async () => {
+        if (isRunning) return;
+        isRunning = true;
+        modals.updateModal({ modalId, confirmProps: { color: 'green', loading: true } });
         try {
           await viajeApi.finalizar(id);
           notifications.show({
@@ -84,6 +91,8 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
           onSuccess?.();
         } catch (error) {
           handleAccionError(error, 'finalizar el viaje');
+        } finally {
+          modals.close(modalId);
         }
       },
     });
