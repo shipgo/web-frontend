@@ -14,7 +14,7 @@ const formatValues = (values) =>
       .map(([key, value]) => [key, { label: key, values: value }])
   );
 
-const ListaSucursalesFiltros = ({ disabled, onFiltersChange }) => {
+const ListaSucursalesFiltros = ({ onFiltersChange }) => {
   const lastValuesRef = useRef(DEFAULT_VALUES);
 
   const debounceChange = useDebouncedCallback((values) => {
@@ -24,7 +24,6 @@ const ListaSucursalesFiltros = ({ disabled, onFiltersChange }) => {
   const form = useForm({
     mode: "controlled",
     initialValues: DEFAULT_VALUES,
-    enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
       lastValuesRef.current = values;
       debounceChange(values);

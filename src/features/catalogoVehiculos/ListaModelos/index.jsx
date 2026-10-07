@@ -48,7 +48,7 @@ const ListaModelos = () => {
         exportDisabled={isLoading || isError}
       />
 
-      <ListaModelosFiltros onFiltersChange={setFilters} disabled={isLoading} />
+      <ListaModelosFiltros onFiltersChange={setFilters} />
 
       <Card>
         <ScreenContainer

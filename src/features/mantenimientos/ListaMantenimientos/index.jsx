@@ -104,7 +104,6 @@ const ListaMantenimientos = () => {
 
       <ListaMantenimientosFiltros
         onFiltersChange={setFilters}
-        disabled={isLoading}
         initialPatente={patenteFromUrl}
       />
 

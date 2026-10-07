@@ -69,7 +69,7 @@ const ListaSucursales = () => {
     <PageContainer>
       <ListaSucursalesHeader />
 
-      <ListaSucursalesFiltros onFiltersChange={setFilters} disabled={isLoading} />
+      <ListaSucursalesFiltros onFiltersChange={setFilters} />
 
       <SelectionBanner
         count={selectedIds.size}

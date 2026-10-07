@@ -94,7 +94,6 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
   const form = useForm({
     mode: "controlled",
     initialValues: DEFAULT_VALUES,
-    enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
       const isQuick = isQuickFilterChange.current;
       isQuickFilterChange.current = false;
@@ -139,7 +138,7 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
 
   return (
     <Card component="search">
-      <Flex mb="md" gap="md">
+      <Flex mb="md" gap="md" align="flex-start">
         <TextInput
           {...form.getInputProps("search")}
           flex={1}
@@ -164,6 +163,8 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
           placeholder="Seleccioná..."
           data={ESTADO_OPTIONS}
           clearable
+          maxDropdownHeight={320}
+          styles={{ pillsList: { flexWrap: "nowrap", overflow: "hidden" } }}
         />
       </Flex>
 

@@ -24,7 +24,6 @@ const formatValues = (values) =>
 
 /**
  * @param {Object} props
- * @param {boolean} props.disabled
  * @param {(filters: Object) => void} props.onFiltersChange
  * @param {string} [props.initialPatente] - Precarga el input "Patente" (ej:
  *   `?patente=` al llegar desde "Historial mantenimiento" en Vehículos,
@@ -32,7 +31,7 @@ const formatValues = (values) =>
  *   —la misma pasa como filtro inicial a `useGetMantenimientos`— para que el
  *   primer fetch salga ya filtrado en vez de disparar un segundo pedido acá.
  */
-const ListaMantenimientosFiltros = ({ disabled, onFiltersChange, initialPatente = "" }) => {
+const ListaMantenimientosFiltros = ({ onFiltersChange, initialPatente = "" }) => {
   const debounceChange = useDebouncedCallback((values) => {
     onFiltersChange(formatValues(values));
   }, 500);
@@ -40,7 +39,6 @@ const ListaMantenimientosFiltros = ({ disabled, onFiltersChange, initialPatente 
   const form = useForm({
     mode: "controlled",
     initialValues: { ...DEFAULT_VALUES, patente: initialPatente },
-    enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
       debounceChange(values);
     },
