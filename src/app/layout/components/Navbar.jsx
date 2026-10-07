@@ -2,13 +2,12 @@ import { Link, useLocation } from "wouter";
 
 import {
   AppShellNavbar,
-  Image,
   NavLink,
   Text,
   UnstyledButton,
 } from "@mantine/core";
 
-import logo from "/src/assets/logoipsum-custom-logo.svg";
+import BrandLogo from "@components/BrandLogo";
 import {
   IconBook,
   IconExternalLink,
@@ -38,7 +37,7 @@ const AppNavbar = () => {
           queda sin nombre accesible — axe-core `image-alt` + `link-name`,
           crítico/serio en las 9 rutas auditadas (SHG-FE-041). */}
       <UnstyledButton to="/" component={Link} p="md" display="flex">
-        <Image src={logo} alt="ShipGo — inicio" h={37} w="auto" fit="contain" mx="auto" />
+        <BrandLogo h={37} alt="ShipGo — inicio" mx="auto" />
       </UnstyledButton>
 
       <NavLink

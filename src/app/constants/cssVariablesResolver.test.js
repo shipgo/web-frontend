@@ -33,9 +33,18 @@ describe("cssVariablesResolver — tokens de contraste de badges/botones de esta
     "--shg-button-text-red",
     "--shg-button-text-primary",
     "--shg-badge-text-primary",
+    "--shg-brand-logo",
   ];
 
-  it("define los 7 tokens en la rama light y en la rama dark", () => {
+  // SHG-FE-109: logo de marca legible en oscuro (primary-2, 8.3:1 sobre
+  // #242424) y error (placeholder de input con error) más claro en oscuro.
+  it("--shg-brand-logo usa primary-9 en light y primary-2 en dark; el error en dark es red-5", () => {
+    expect(result.light["--shg-brand-logo"]).toBe(`var(--mantine-color-${fullTheme.primaryColor}-9)`);
+    expect(result.dark["--shg-brand-logo"]).toBe(`var(--mantine-color-${fullTheme.primaryColor}-2)`);
+    expect(result.dark["--mantine-color-error"]).toBe("var(--mantine-color-red-5)");
+  });
+
+  it("define los 8 tokens en la rama light y en la rama dark", () => {
     for (const token of TOKENS) {
       expect(result.light[token], `light.${token}`).toBeTruthy();
       expect(result.dark[token], `dark.${token}`).toBeTruthy();

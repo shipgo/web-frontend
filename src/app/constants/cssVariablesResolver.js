@@ -135,6 +135,7 @@ export const cssVariablesResolver = (theme) => {
       "--shg-button-text-red": "#a51818",
       "--shg-button-text-primary": `var(--mantine-color-${theme.primaryColor}-9)`,
       "--shg-badge-text-primary": `var(--mantine-color-${theme.primaryColor}-9)`,
+      "--shg-brand-logo": `var(--mantine-color-${theme.primaryColor}-9)`,
     },
     dark: {
       ...result.dark,
@@ -147,6 +148,13 @@ export const cssVariablesResolver = (theme) => {
       "--shg-button-text-red": "var(--mantine-color-red-4)",
       "--shg-button-text-primary": `var(--mantine-color-${theme.primaryColor}-2)`,
       "--shg-badge-text-primary": `var(--mantine-color-${theme.primaryColor}-2)`,
+      // SHG-FE-109: logo de marca (`BrandLogo`) — primary-2 (#80cbc4) da
+      // 8.3:1 sobre dark-7 (#242424); el #004d40 fijo daba 1.6:1.
+      "--shg-brand-logo": `var(--mantine-color-${theme.primaryColor}-2)`,
+      // SHG-FE-109: el placeholder de un input con error usa
+      // `--mantine-color-error` (red-8 #e03131 en dark = 3.0:1 sobre el
+      // fondo del input dark-6). red-5 (#ff6b6b) da 4.9:1 (input) y 5.6:1 (body).
+      "--mantine-color-error": "var(--mantine-color-red-5)",
     },
   };
 };
