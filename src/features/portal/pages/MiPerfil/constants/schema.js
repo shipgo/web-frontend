@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { nombreRequerido, telefonoRequerido } from '@domain/validation';
+
 /**
  * Validación del form de edición de "Mi perfil" (`PUT /api/customer/me`,
  * `SHG-BE-074`). Mismas reglas que `RegisterReqDTO` para estos tres campos
@@ -11,9 +13,9 @@ import { z } from 'zod';
  * patrón que `REGISTRO_SCHEMA`.
  */
 export const MI_PERFIL_SCHEMA = z.object({
-  nombre: z.string().trim().min(1, 'El nombre es requerido'),
-  apellido: z.string().trim().min(1, 'El apellido es requerido'),
-  telefono: z.string().trim().min(1, 'El teléfono es requerido'),
+  nombre: nombreRequerido('El nombre es requerido'),
+  apellido: nombreRequerido('El apellido es requerido'),
+  telefono: telefonoRequerido(),
 });
 
 export const MI_PERFIL_INITIAL_VALUES = {

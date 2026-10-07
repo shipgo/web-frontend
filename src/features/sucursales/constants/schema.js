@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+import {
+  nombreRequerido,
+  prefijoRequerido,
+  telefonoRequerido,
+  textoOpcional,
+  textoRequerido,
+} from "@domain/validation";
+
 /**
  * Validación de `SucursalForm` (crear/editar) con Zod + `schemaResolver` nativo de
  * `@mantine/form`, alineado al patrón canónico de `CrearEnvios`/`CrearViaje`.
@@ -16,18 +24,16 @@ import { z } from "zod";
  * informa un valor.
  */
 export const SUCURSAL_SCHEMA = z.object({
-  nombre: z.string().trim().min(1, "Debes ingresar el nombre"),
-  email: z
-    .string()
-    .trim()
+  nombre: nombreRequerido("Debes ingresar el nombre"),
+  email: textoOpcional()
     .refine(
       (value) => value === "" || /^\S+@\S+\.\S+$/.test(value),
       "El email no es válido"
     ),
-  prefijo: z.string().trim().min(1, "Debes ingresar el prefijo"),
-  telefono: z.string().trim().min(1, "Debes ingresar el teléfono"),
-  nombreCalle: z.string().trim().min(1, "Debes ingresar la calle"),
-  numeroCalle: z.string().trim().min(1, "Debes ingresar el número"),
+  prefijo: prefijoRequerido("Debes ingresar el prefijo"),
+  telefono: telefonoRequerido("Debes ingresar el teléfono"),
+  nombreCalle: textoRequerido("Debes ingresar la calle"),
+  numeroCalle: textoRequerido("Debes ingresar el número"),
   provinciaID: z
     .string()
     .min(1, "Debes seleccionar una provincia")

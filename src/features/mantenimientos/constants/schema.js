@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import dayjs from 'dayjs';
 
+import { nombreRequerido, textoOpcional } from '@domain/validation';
+
 /**
  * Alineado a `MantenimientoReqDTO` (backend, `dto/request/MantenimientoReqDTO.java`):
  * `nombreMecanico` (NotEmpty), `apellidoMecanico` (NotEmpty), `descripcion` (opcional),
@@ -15,8 +17,8 @@ import dayjs from 'dayjs';
  * `buildMantenimientoReqDTO` los pasa a `number`.
  */
 export const MANTENIMIENTO_SCHEMA = z.object({
-  nombreMecanico: z.string().trim().min(1, 'Ingresá el nombre del mecánico'),
-  apellidoMecanico: z.string().trim().min(1, 'Ingresá el apellido del mecánico'),
+  nombreMecanico: nombreRequerido('Ingresá el nombre del mecánico'),
+  apellidoMecanico: nombreRequerido('Ingresá el apellido del mecánico'),
   vehiculoID: z.string().min(1, 'Seleccioná un vehículo'),
   tipoMantenimientoID: z.string().min(1, 'Seleccioná un tipo de mantenimiento'),
   fechaHoraMantenimiento: z
@@ -25,7 +27,7 @@ export const MANTENIMIENTO_SCHEMA = z.object({
       (value) => value != null && dayjs(value).isValid(),
       'Seleccioná una fecha y hora válida',
     ),
-  descripcion: z.string().optional(),
+  descripcion: textoOpcional(255).optional(),
 });
 
 export const INITIAL_VALUES = {

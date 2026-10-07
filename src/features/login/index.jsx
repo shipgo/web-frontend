@@ -180,6 +180,7 @@ const LoginPage = ({ variant = "operator" }) => {
             gap="lg"
             my="auto"
             component="form"
+            noValidate
             justify="center"
             onSubmit={form.onSubmit((values) => handleFormSubmit(values))}
           >

@@ -16,9 +16,20 @@ import {
 import { IconCheck, IconLock, IconX } from "@tabler/icons-react";
 
 import { applyApiError } from "@domain/apiError";
+import { PASSWORD_MIN } from "@domain/validation";
 import { useAuthStore } from "@stores/auth.store";
 
-const PASSWORD_MIN = 8;
+const PASSWORD_INCORRECTA_MESSAGE = "La contraseña actual es incorrecta";
+
+/**
+ * Contraseña actual incorrecta. Caso definitivo (SHG-BE-083, CONTRACTS.md §13):
+ * `400` + `code: "password_incorrecta"`. El `401` es un fallback TRANSITORIO del
+ * backend de hoy: se ELIMINA cuando se mergee SHG-BE-083, porque ahí un `401`
+ * pasa a significar token vencido y no contraseña incorrecta.
+ */
+const isPasswordIncorrecta = (error) =>
+  error?.response?.data?.code === "password_incorrecta" ||
+  error?.response?.status === 401;
 
 /**
  * Cambio de contraseña del PROPIO usuario logueado (`POST /api/changePassword`,
@@ -79,10 +90,15 @@ const CambiarPasswordCard = () => {
       });
     } catch (error) {
       console.error("Error cambiando contraseña:", error);
-      const message = applyApiError(form, error, {
-        fallbackMessage:
-          "No se pudo cambiar la contraseña. Verificá tu contraseña actual.",
-      });
+      let message;
+      if (isPasswordIncorrecta(error)) {
+        message = PASSWORD_INCORRECTA_MESSAGE;
+        form.setFieldError("oldPassword", message);
+      } else {
+        message = applyApiError(form, error, {
+          fallbackMessage: "No se pudo cambiar la contraseña. Intentá nuevamente.",
+        });
+      }
       notifications.show({
         title: "Error",
         message,
@@ -94,7 +110,7 @@ const CambiarPasswordCard = () => {
   };
 
   return (
-    <Card component="form" onSubmit={form.onSubmit(handleSubmit)}>
+    <Card component="form" onSubmit={form.onSubmit(handleSubmit)} noValidate>
       <Stack gap="md">
         <Group gap="0.75rem">
           <IconLock size={20} stroke={1.5} />

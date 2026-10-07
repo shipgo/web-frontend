@@ -143,7 +143,7 @@ const MantenimientoForm = ({
         loaderProps={{ type: "bars" }}
       />
 
-      <form onSubmit={form.onSubmit(onSubmit)}>
+      <form onSubmit={form.onSubmit(onSubmit)} noValidate>
         <Stack gap="lg">
           {/* Información del Mecánico */}
           <Card>

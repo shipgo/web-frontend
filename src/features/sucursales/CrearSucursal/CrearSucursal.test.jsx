@@ -50,7 +50,7 @@ describe("CrearSucursal", () => {
     await waitFor(() => expect(mockGetAllProvincias).toHaveBeenCalled());
 
     await user.type(screen.getByLabelText(/^Nombre/), "Sucursal Norte");
-    await user.type(screen.getByLabelText(/^Prefijo/), "+54");
+    await user.type(screen.getByLabelText(/^Prefijo/), "351");
     await user.type(screen.getByLabelText(/^Teléfono/), "3511234567");
     await user.type(screen.getByLabelText(/^Email/), "norte@shipgo.com");
     await user.type(screen.getByLabelText(/^Calle/), "Av. Colón");
@@ -71,7 +71,7 @@ describe("CrearSucursal", () => {
     expect(mockSave).toHaveBeenCalledWith({
       nombre: "Sucursal Norte",
       email: "norte@shipgo.com",
-      prefijo: "+54",
+      prefijo: "351",
       telefono: "3511234567",
       puntoEntrega: {
         numeroCalle: "1234",
@@ -89,7 +89,7 @@ describe("CrearSucursal", () => {
     await waitFor(() => expect(mockGetAllProvincias).toHaveBeenCalled());
 
     await user.type(screen.getByLabelText(/^Nombre/), "Sucursal Norte");
-    await user.type(screen.getByLabelText(/^Prefijo/), "+54");
+    await user.type(screen.getByLabelText(/^Prefijo/), "351");
     await user.type(screen.getByLabelText(/^Teléfono/), "3511234567");
     await user.type(screen.getByLabelText(/^Calle/), "Av. Colón");
     await user.type(screen.getByLabelText(/^Número/), "1234");
@@ -127,7 +127,7 @@ describe("CrearSucursal", () => {
     await waitFor(() => expect(mockGetAllProvincias).toHaveBeenCalled());
 
     await user.type(screen.getByLabelText(/^Nombre/), "Sucursal Norte");
-    await user.type(screen.getByLabelText(/^Prefijo/), "+54");
+    await user.type(screen.getByLabelText(/^Prefijo/), "351");
     await user.type(screen.getByLabelText(/^Teléfono/), "3511234567");
     await user.type(screen.getByLabelText(/^Calle/), "Av. Colón");
     await user.type(screen.getByLabelText(/^Número/), "1234");
@@ -144,5 +144,24 @@ describe("CrearSucursal", () => {
     expect(
       await screen.findByText("no puede estar vacío")
     ).toBeInTheDocument();
+  });
+
+  it("enviar vacío o con teléfono/prefijo no numérico muestra errores inline (SHG-FE-107)", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CrearSucursal />);
+    await waitFor(() => expect(mockGetAllProvincias).toHaveBeenCalled());
+
+    await user.click(screen.getByRole("button", { name: /crear sucursal/i }));
+    expect(await screen.findByText("Debes ingresar el nombre")).toBeInTheDocument();
+    expect(screen.getByText("Debes ingresar el prefijo")).toBeInTheDocument();
+    expect(screen.getByText("Debes ingresar el teléfono")).toBeInTheDocument();
+    expect(container.querySelector("form")).toHaveAttribute("novalidate");
+
+    await user.type(screen.getByLabelText(/^Prefijo/), "abc");
+    await user.type(screen.getByLabelText(/^Teléfono/), "12x");
+    await user.click(screen.getByRole("button", { name: /crear sucursal/i }));
+    expect(await screen.findByText("El prefijo sólo puede tener números")).toBeInTheDocument();
+    expect(screen.getByText("El teléfono sólo puede tener números")).toBeInTheDocument();
+    expect(mockSave).not.toHaveBeenCalled();
   });
 });

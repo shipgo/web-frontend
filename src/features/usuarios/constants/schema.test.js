@@ -20,7 +20,7 @@ const VALID = {
   nombre: "Juan",
   apellido: "Pérez",
   fechaNacimiento: "2000-09-15",
-  prefijo: "+54",
+  prefijo: "11",
   telefono: "1122334455",
   nombreCalle: "Av. Siempreviva",
   numeroCalle: "742",

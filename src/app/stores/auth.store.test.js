@@ -288,3 +288,26 @@ describe("auth.store · logout y updateToken (SHG-FE-112)", () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 });
+
+describe("auth.store · login (SHG-FE-107)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetStore();
+  });
+
+  it("no prende isLoading (AuthProvider desmontaría /login y se perdería el usuario tipeado)", async () => {
+    const seen = [];
+    const unsubscribe = useAuthStore.subscribe((state) => seen.push(state.isLoading));
+    const err = new Error("Unauthorized");
+    err.response = { status: 401, data: {} };
+    restclient.post.mockRejectedValueOnce(err);
+
+    await expect(
+      useAuthStore.getState().login({ username: "juan", password: "mala" }),
+    ).rejects.toBe(err);
+    unsubscribe();
+
+    expect(seen).not.toContain(true);
+    expect(useAuthStore.getState().isLoading).toBe(false);
+  });
+});
