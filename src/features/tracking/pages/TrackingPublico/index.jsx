@@ -40,7 +40,14 @@ const TrackingPublicoPage = () => {
 
   // Una búsqueda inválida (formato) no navega: sin esto el resultado de la
   // búsqueda anterior quedaría visible debajo del error (SHG-FE-112).
+  // No es un estado que sólo limpie el submit: se resetea cuando cambia el código
+  // de la ruta (botón "atrás", links a otro /tracking/XXX).
   const [busquedaInvalida, setBusquedaInvalida] = useState(false);
+  const [codigoPrevio, setCodigoPrevio] = useState(codigoParam);
+  if (codigoPrevio !== codigoParam) {
+    setCodigoPrevio(codigoParam);
+    setBusquedaInvalida(false);
+  }
 
   const handleSubmit = (codigo) => {
     setBusquedaInvalida(false);

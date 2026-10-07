@@ -103,7 +103,10 @@ const PortalEnviosPage = () => {
   const [, navigate] = useLocation();
   const [page, setPage] = useState(1);
   // Breakpoint `sm` de Mantine (48em): por debajo, cards en lugar de tabla.
-  const isMobile = useMediaQuery('(max-width: 47.99em)');
+  const isMobile = useMediaQuery('(max-width: 47.99em)', undefined, {
+    // Sin esto el primer render en un celular muestra la tabla y salta a cards.
+    getInitialValueInEffect: false,
+  });
   const { envios, totalPages, totalElements, isLoading, isError, isFetching, refetch } =
     useMisEnvios(page);
 

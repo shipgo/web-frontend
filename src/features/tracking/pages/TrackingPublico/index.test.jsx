@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route } from 'wouter';
+import { navigate } from 'wouter/use-browser-location';
 
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 
@@ -179,5 +180,30 @@ describe('TrackingPublicoPage', () => {
 
     expect(await screen.findByText(/no encontramos/i)).toBeInTheDocument();
     expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument();
+  });
+
+  it('SHG-FE-112: tras una búsqueda inválida, cambiar de código por la ruta (sin submit) muestra el nuevo resultado', async () => {
+    const user = userEvent.setup();
+    mockTrack.mockImplementation((codigo) =>
+      Promise.resolve(
+        codigo === '7K2M9QX4TP'
+          ? DTO_OK
+          : { ...DTO_OK, codigoSeguimiento: codigo, destino: { localidad: 'Salta', provincia: 'Salta' } },
+      ),
+    );
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/código de seguimiento/i);
+    await user.clear(input);
+    await user.type(input, 'ab');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+    await waitFor(() =>
+      expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument(),
+    );
+
+    // Navegación externa al formulario (link / botón "atrás").
+    act(() => navigate('/tracking/9Z8Y7X6W5V'));
+    expect(await screen.findByText('Salta, Salta')).toBeInTheDocument();
   });
 });

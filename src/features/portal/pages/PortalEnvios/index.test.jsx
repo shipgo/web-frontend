@@ -9,9 +9,10 @@ vi.mock("./hooks/useMisEnvios", () => ({
   useMisEnvios: () => mockUseMisEnvios(),
 }));
 
+const mockNavigate = vi.fn();
 vi.mock("wouter", async (importOriginal) => ({
   ...(await importOriginal()),
-  useLocation: () => ["/portal/envios", vi.fn()],
+  useLocation: () => ["/portal/envios", mockNavigate],
 }));
 
 import PortalEnviosPage from "./index";
@@ -26,7 +27,10 @@ const base = {
 };
 
 describe("PortalEnviosPage", () => {
-  beforeEach(() => mockUseMisEnvios.mockReset());
+  beforeEach(() => {
+    mockUseMisEnvios.mockReset();
+    mockNavigate.mockReset();
+  });
 
   it("muestra el estado vacío", () => {
     mockUseMisEnvios.mockReturnValue({ ...base });
@@ -121,7 +125,7 @@ describe("PortalEnviosPage", () => {
       expect(within(cards).getByText(/San Salvador de Jujuy, Jujuy/)).toBeInTheDocument();
     });
 
-    it("sólo la card con código es navegable (botón)", () => {
+    it("la card con código navega con Enter, Espacio y click; la card sin código no navega", () => {
       mockMobile(true);
       mockUseMisEnvios.mockReturnValue({
         ...base,
@@ -132,8 +136,24 @@ describe("PortalEnviosPage", () => {
 
       const botones = screen.getAllByRole("button", { name: /ver detalle/i });
       expect(botones).toHaveLength(1);
+      const destino = "~/portal/envios/SEED000001";
+
       fireEvent.keyDown(botones[0], { key: "Enter" });
+      expect(mockNavigate).toHaveBeenLastCalledWith(destino);
+      mockNavigate.mockClear();
+      fireEvent.keyDown(botones[0], { key: " " });
+      expect(mockNavigate).toHaveBeenLastCalledWith(destino);
+      mockNavigate.mockClear();
+      fireEvent.keyDown(botones[0], { key: "a" });
+      expect(mockNavigate).not.toHaveBeenCalled();
       fireEvent.click(botones[0]);
+      expect(mockNavigate).toHaveBeenLastCalledWith(destino);
+
+      mockNavigate.mockClear();
+      const sinCodigo = screen.getByText("Creado").closest("[class*=Paper]");
+      fireEvent.click(sinCodigo);
+      fireEvent.keyDown(sinCodigo, { key: "Enter" });
+      expect(mockNavigate).not.toHaveBeenCalled();
     });
 
     it("en escritorio sigue siendo la tabla", () => {
