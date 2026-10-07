@@ -76,9 +76,33 @@ const numberField = (schema) =>
     schema,
   );
 
+/**
+ * Patente argentina (CONTRATOS §16.6): formato Mercosur `AA123BB` o formato
+ * viejo `ABC123`, siempre en mayúsculas. La unicidad por empresa la valida el
+ * backend (SHG-BE-085).
+ */
+export const PATENTE_REGEX = /^([A-Z]{2}\d{3}[A-Z]{2}|[A-Z]{3}\d{3})$/;
+
+/** Normaliza lo tipeado: sin espacios ni guiones, en mayúsculas. */
+export const normalizarPatente = (valor) =>
+  String(valor ?? "")
+    .replace(/[\s-]/g, "")
+    .toUpperCase();
+
 export const VEHICULO_SCHEMA = z
   .object({
-    patente: z.string().trim().min(1, "El campo patente no puede estar vacío"),
+    patente: z
+      .string()
+      .transform(normalizarPatente)
+      .pipe(
+        z
+          .string()
+          .min(1, "El campo patente no puede estar vacío")
+          .regex(
+            PATENTE_REGEX,
+            "Ingresá una patente válida (formato AA123BB o ABC123)",
+          ),
+      ),
     tipoVehiculoID: requiredSelect("Debe seleccionar un tipo de vehículo"),
     marcaID: requiredSelect("Debe seleccionar una marca"),
     modeloID: requiredSelect("Debe seleccionar un modelo"),

@@ -75,7 +75,7 @@ describe("ListaVehiculosFiltros", () => {
     });
 
     await user.click(tipoSelect);
-    await user.click(screen.getByText("Camión"));
+    await user.click((await screen.findAllByText("Camión")).at(-1));
 
     await waitFor(() => {
       expect(onFiltersChange).toHaveBeenCalledWith({
@@ -94,7 +94,7 @@ describe("ListaVehiculosFiltros", () => {
     });
 
     await user.click(combustibleSelect);
-    await user.click(screen.getByText("Diésel"));
+    await user.click((await screen.findAllByText("Diésel")).at(-1));
 
     await waitFor(() => {
       expect(onFiltersChange).toHaveBeenCalledWith({
@@ -114,7 +114,7 @@ describe("ListaVehiculosFiltros", () => {
 
     // Seleccionar un tipo
     await user.click(tipoSelect);
-    await user.click(screen.getByText("Camión"));
+    await user.click((await screen.findAllByText("Camión")).at(-1));
 
     await waitFor(() => {
       expect(onFiltersChange).toHaveBeenCalledWith({
@@ -133,5 +133,26 @@ describe("ListaVehiculosFiltros", () => {
         expect(lastCall.tipoVehiculo).toBeUndefined();
       });
     }
+  });
+
+  it("los quick filters salen del catálogo real de tipos y emiten ese tipo", async () => {
+    const user = userEvent.setup();
+    const onFiltersChange = vi.fn();
+    renderWithProviders(<ListaVehiculosFiltros onFiltersChange={onFiltersChange} />);
+
+    const chip = await screen.findByRole("checkbox", { name: "Camioneta" });
+    expect(screen.queryByRole("checkbox", { name: "Camionetas" })).not.toBeInTheDocument();
+    await user.click(chip);
+
+    await waitFor(() => {
+      expect(onFiltersChange).toHaveBeenCalledWith({
+        tipoVehiculo: { label: "tipoVehiculo", values: "Camioneta" },
+      });
+    });
+  });
+
+  it("el placeholder de patente coincide con el del formulario", async () => {
+    renderWithProviders(<ListaVehiculosFiltros onFiltersChange={vi.fn()} />);
+    expect(await screen.findByPlaceholderText("Ej: AB123CD")).toBeInTheDocument();
   });
 });

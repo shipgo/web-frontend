@@ -7,16 +7,15 @@ import { IconSearch } from "@tabler/icons-react";
 
 import { tipoVehiculoApi, combustibleApi } from "@api/vehiculo.api";
 
-const QUICK_FILTERS = [
-  {
-    label: "Camiones",
-    getFilters: () => ({ patente: "", modelo: "", tipoVehiculo: "Camión", combustible: "" }),
-  },
-  {
-    label: "Camionetas",
-    getFilters: () => ({ patente: "", modelo: "", tipoVehiculo: "Camioneta", combustible: "" }),
-  },
-];
+// Cantidad máxima de chips de acceso rápido: salen del catálogo real de tipos
+// (`GET /api/tipoVehiculo/all`), así nunca apuntan a un tipo inexistente.
+const MAX_QUICK_FILTERS = 4;
+
+const buildQuickFilters = (tipos) =>
+  tipos.slice(0, MAX_QUICK_FILTERS).map(({ value }) => ({
+    label: value,
+    getFilters: () => ({ patente: "", modelo: "", tipoVehiculo: value, combustible: "" }),
+  }));
 
 const DEFAULT_VALUES = { patente: "", modelo: "", tipoVehiculo: "", combustible: "" };
 
@@ -32,6 +31,7 @@ const ListaVehiculosFiltros = ({ disabled, onFiltersChange }) => {
   const [tiposVehiculo, setTiposVehiculo] = useState([]);
   const [combustibles, setCombustibles] = useState([]);
   const [catalogsLoading, setCatalogsLoading] = useState(true);
+  const quickFilters = buildQuickFilters(tiposVehiculo);
   const lastValuesRef = useRef(DEFAULT_VALUES);
   const isQuickFilterChange = useRef(false);
 
@@ -103,7 +103,7 @@ const ListaVehiculosFiltros = ({ disabled, onFiltersChange }) => {
     const next = isDeselecting ? null : label;
     setSelectedQuickFilter(next);
     isQuickFilterChange.current = true;
-    form.setValues(next ? QUICK_FILTERS.find((f) => f.label === label).getFilters() : DEFAULT_VALUES);
+    form.setValues(next ? quickFilters.find((f) => f.label === label).getFilters() : DEFAULT_VALUES);
   };
 
   return (
@@ -147,7 +147,7 @@ const ListaVehiculosFiltros = ({ disabled, onFiltersChange }) => {
       </Flex>
 
       <Flex gap="xs">
-        {QUICK_FILTERS.map(({ label }) => (
+        {quickFilters.map(({ label }) => (
           <Chip
             key={label}
             disabled={disabled}

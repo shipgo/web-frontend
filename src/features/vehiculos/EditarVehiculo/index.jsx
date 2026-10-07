@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { Card, Text } from "@mantine/core";
+import { notificarFormularioInvalido } from "../components/notificarFormularioInvalido";
 import { schemaResolver } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
@@ -16,7 +17,11 @@ import {
   VehiculoFormProvider,
   useVehiculoForm,
 } from "../context/VehiculoFormContext";
-import { VEHICULO_INITIAL_VALUES, VEHICULO_SCHEMA } from "../constants/schema";
+import {
+  VEHICULO_INITIAL_VALUES,
+  VEHICULO_SCHEMA,
+  normalizarPatente,
+} from "../constants/schema";
 
 const EditarVehiculo = () => {
   const { id } = useParams();
@@ -80,7 +85,7 @@ const EditarVehiculo = () => {
       // `CrearVehiculo`. El `estado` del vehículo NO se manda: lo maneja el
       // backend (asignación a viaje / service), no hay setter en la API.
       const vehiculoData = {
-        patente: values.patente,
+        patente: normalizarPatente(values.patente),
         tipoVehiculoID: parseInt(values.tipoVehiculoID),
         modeloID: parseInt(values.modeloID),
         combustibleID: parseInt(values.combustibleID),
@@ -115,7 +120,7 @@ const EditarVehiculo = () => {
     } finally {
       setLoading(false);
     }
-  });
+  }, notificarFormularioInvalido);
 
   return (
     <PageContainer>

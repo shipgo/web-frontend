@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { notificarFormularioInvalido } from "../components/notificarFormularioInvalido";
 import { schemaResolver } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
@@ -15,7 +16,11 @@ import {
   VehiculoFormProvider,
   useVehiculoForm,
 } from "../context/VehiculoFormContext";
-import { VEHICULO_INITIAL_VALUES, VEHICULO_SCHEMA } from "../constants/schema";
+import {
+  VEHICULO_INITIAL_VALUES,
+  VEHICULO_SCHEMA,
+  normalizarPatente,
+} from "../constants/schema";
 
 const CrearVehiculo = () => {
   const [, navigate] = useLocation();
@@ -35,7 +40,7 @@ const CrearVehiculo = () => {
       // enteros (Long/Integer server-side), `pesoMaximo` / `consumoPromedio`
       // como Double. Los `Select` guardan strings y los `NumberInput` numbers.
       const vehiculoData = {
-        patente: values.patente,
+        patente: normalizarPatente(values.patente),
         tipoVehiculoID: parseInt(values.tipoVehiculoID),
         modeloID: parseInt(values.modeloID),
         combustibleID: parseInt(values.combustibleID),
@@ -70,7 +75,7 @@ const CrearVehiculo = () => {
     } finally {
       setLoading(false);
     }
-  });
+  }, notificarFormularioInvalido);
 
   return (
     <PageContainer>

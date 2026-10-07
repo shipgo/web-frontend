@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   VEHICULO_SCHEMA,
+  normalizarPatente,
   resetCategoriaPorTipoVehiculoId,
   setCategoriaPorTipoVehiculoId,
 } from "./schema";
@@ -32,6 +33,22 @@ describe("VEHICULO_SCHEMA", () => {
     const result = VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, patente: "" });
     expect(result.success).toBe(false);
     expect(result.error.issues[0].path).toEqual(["patente"]);
+  });
+
+  it("acepta patentes AA123BB y ABC123, y normaliza minúsculas/espacios/guiones", () => {
+    for (const patente of ["AB123CD", "ABC123", "ab123cd", " abc 123 ", "AB-123-CD"]) {
+      expect(VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, patente }).success).toBe(true);
+    }
+    expect(normalizarPatente(" ab-123 cd ")).toBe("AB123CD");
+  });
+
+  it("rechaza patentes con formato inválido con mensaje en español", () => {
+    for (const patente of ["A1", "1234567", "ABCD12", "AB1234C", "ABC12", "AB123CDE"]) {
+      const result = VEHICULO_SCHEMA.safeParse({ ...VALID_VEHICULO, patente });
+      expect(result.success).toBe(false);
+      expect(result.error.issues[0].path).toEqual(["patente"]);
+      expect(result.error.issues[0].message).toMatch(/patente válida/);
+    }
   });
 
   it("rechaza selects sin elegir (null o cadena vacía)", () => {

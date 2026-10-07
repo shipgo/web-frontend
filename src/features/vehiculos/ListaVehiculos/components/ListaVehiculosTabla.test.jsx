@@ -61,4 +61,29 @@ describe("ListaVehiculosTabla", () => {
 
     expect(mockNavigate).toHaveBeenCalledWith("~/mantenimientos?patente=AB123CD");
   });
+
+  it("muestra el año de compra, no una fecha 1969", () => {
+    renderTabla();
+
+    expect(screen.getByText("2020")).toBeInTheDocument();
+    expect(screen.queryByText(/1969/)).not.toBeInTheDocument();
+  });
+
+  it("muestra el nombre de la sucursal del DTO y el fallback si falta", () => {
+    renderTabla({ items: [VEHICULO, { ...VEHICULO, id: 2, patente: "ABC123", sucursal: null }] });
+
+    expect(screen.getByText("Sucursal Centro")).toBeInTheDocument();
+    expect(screen.getByText("Sin sucursal")).toBeInTheDocument();
+  });
+
+  it("click en la fila navega al detalle; el checkbox no", async () => {
+    const user = userEvent.setup();
+    renderTabla();
+
+    await user.click(screen.getAllByRole("checkbox")[1]);
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    await user.click(screen.getByText("AB123CD"));
+    expect(mockNavigate).toHaveBeenCalledWith("~/vehiculos/1");
+  });
 });
