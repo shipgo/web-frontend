@@ -64,6 +64,14 @@ const VerificarCuentaPage = () => {
           El enlace de verificación no es válido. Revisá que hayas copiado la URL
           completa del email.
         </Alert>
+        <Group justify="center">
+          <Anchor component={Link} href="/registro">
+            Volver al registro
+          </Anchor>
+          <Anchor component={Link} href="/login">
+            Iniciar sesión
+          </Anchor>
+        </Group>
       </Stack>
     );
   }

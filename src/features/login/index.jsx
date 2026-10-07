@@ -242,7 +242,8 @@ const LoginPage = ({ variant = "operator" }) => {
               <Anchor href="https://shipgo.gitbook.io/manual" target="_blank">
                 Necesito ayuda
               </Anchor>
-              <Divider orientation="vertical" />
+              {/* A 390 px los links envuelven en dos filas y el divisor quedaba huérfano (SHG-FE-112). */}
+              <Divider orientation="vertical" visibleFrom="sm" />
               <Anchor href="/registro">Crear una cuenta</Anchor>
             </Group>
           </Stack>

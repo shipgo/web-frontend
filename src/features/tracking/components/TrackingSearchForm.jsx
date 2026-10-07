@@ -11,6 +11,7 @@ import { codigoEsValido, CODIGO_INVALIDO_MSG, normalizarCodigo } from '../utils'
  * @param {Object} props
  * @param {string} [props.initialValue='']
  * @param {(codigo: string) => void} props.onSubmit  Recibe el código YA normalizado.
+ * @param {() => void} [props.onInvalid]  Se llama cuando el envío falla la validación local (el resultado anterior ya no corresponde).
  * @param {boolean} [props.loading=false]
  * @param {boolean} [props.autoFocus=true]
  * @param {boolean} [props.disabled=false]  Bloquea el submit (p. ej. sin token de captcha aún, SHG-FE-043).
@@ -18,6 +19,7 @@ import { codigoEsValido, CODIGO_INVALIDO_MSG, normalizarCodigo } from '../utils'
 const TrackingSearchForm = ({
   initialValue = '',
   onSubmit,
+  onInvalid,
   loading = false,
   autoFocus = true,
   disabled = false,
@@ -35,7 +37,7 @@ const TrackingSearchForm = ({
   };
 
   return (
-    <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
+    <form onSubmit={form.onSubmit(handleSubmit, () => onInvalid?.())} noValidate>
       <Stack gap="xs">
         <TextInput
           label="Código de seguimiento"
