@@ -64,6 +64,7 @@ describe("DetalleVehiculo", () => {
     expect(await screen.findByText("Vehículo no encontrado")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /volver a vehículos/i })).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockGetById).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("No se pudo cargar la información del vehículo")).not.toBeInTheDocument();
   });
 

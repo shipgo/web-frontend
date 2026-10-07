@@ -132,6 +132,20 @@ describe('DetalleViaje', () => {
     expect(viajeApi.getById).toHaveBeenCalledTimes(1);
   });
 
+  it('un 500 conserva "No se pudo cargar el viaje" con Reintentar, no el estado no-encontrado (SHG-FE-104)', async () => {
+    viajeApi.getById.mockRejectedValue(
+      Object.assign(new Error('boom'), { response: { status: 500 } }),
+    );
+
+    renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+      route: '/viajes/42',
+    });
+
+    expect(await screen.findByText('No se pudo cargar el viaje')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+    expect(screen.queryByText('Viaje no encontrado')).not.toBeInTheDocument();
+  });
+
   it('muestra un error si falla la carga del viaje', async () => {
     viajeApi.getById.mockRejectedValue(new Error('boom'));
 
