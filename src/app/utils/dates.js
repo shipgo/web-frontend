@@ -1,7 +1,6 @@
 import dayjs from "dayjs";
 
-import relativeTime from "dayjs/plugin/relativeTime";
-dayjs.extend(relativeTime);
+import { formatDesdeAhora } from "@domain/format";
 
 const LOCAL_DATE_FORMAT = "DD/MM/YYYY";
 const LOCAL_DATE_TIME_FORMAT = "DD/MM/YYYY HH:mm";
@@ -20,6 +19,7 @@ export const toLocalDateTime = (date, format = LOCAL_DATE_TIME_FORMAT) => {
 
 export const timeFromNow = (date) => {
   const dateToFormat = dayjs(date);
-  if (dateToFormat.isValid()) return dateToFormat.fromNow();
+  // Relativo en español: misma fuente (locale `es` por llamada) que `formatDesdeAhora`.
+  if (dateToFormat.isValid()) return formatDesdeAhora(date);
   return "-";
 };

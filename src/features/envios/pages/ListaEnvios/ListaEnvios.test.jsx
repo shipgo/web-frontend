@@ -72,6 +72,32 @@ describe('ListaEnvios', () => {
     await waitFor(() => expect(envioApi.get).toHaveBeenCalled());
   });
 
+  it('un envío creado ahora dice "hace unos segundos" y la fecha de alta local, no "en 3 horas" (SHG-FE-111)', async () => {
+    // Sólo se mockea Date (no los timers): react-query/waitFor siguen andando.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-08T02:31:00.000Z')); // 23:31 ART
+    try {
+      envioApi.get.mockResolvedValue({
+        content: [
+          {
+            ...ENVIO_EN_SUCURSAL,
+            historialEstado: [{ estado: 'creado', fechaHoraInicio: '2026-10-07T23:30:45.123' }],
+          },
+        ],
+        totalElements: 1,
+        totalPages: 1,
+      });
+      renderWithProviders(<ListaEnvios />);
+
+      await screen.findByText('SHG-DEV-0001');
+      expect(screen.getByText('07/10/2026')).toBeInTheDocument();
+      expect(screen.getByText('hace unos segundos')).toBeInTheDocument();
+      expect(screen.queryByText(/^en \d+ horas/)).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('nunca muestra palabraEntrega (secreto remitente↔destinatario↔chofer), aunque el backend la mande por error (SHG-FE-058)', async () => {
     envioApi.get.mockResolvedValue({
       content: [{ ...ENVIO_ENTREGADO, palabraEntrega: 'AB23K9', dniReceptor: '30111222' }],

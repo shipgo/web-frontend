@@ -125,6 +125,21 @@ describe("DetalleEnvio", () => {
     expect(within(alerta).getByText(/03\/09\/2026 14:30/)).toBeInTheDocument();
   });
 
+  it("historial: muestra 23:30 y el cruce de medianoche como hora local, sin correr horas (SHG-FE-111)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      historialEstado: [
+        { id: 2, estado: "en_sucursal", fechaHoraInicio: "2026-10-08T00:10:00.000" },
+        { id: 1, estado: "creado", fechaHoraInicio: "2026-10-07T23:30:15.123" },
+      ],
+    });
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    await screen.findByText("Juan García");
+    const fechas = screen.getAllByText(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/).map((n) => n.textContent);
+    expect(fechas).toEqual(["07/10/2026 23:30", "08/10/2026 00:10"]);
+  });
+
   it("no muestra la alerta de rechazo si el envío no está rechazado", async () => {
     renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
     await screen.findByText("Juan García");
