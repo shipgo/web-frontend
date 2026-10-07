@@ -18,6 +18,7 @@ import { useAuth } from "@contexts/auth";
 import { useAuthStore } from "@stores/auth.store";
 import { NotificacionesBell } from "@features/notificaciones";
 import { OperatingSucursalSelector } from "@components";
+import { necesitaOnboardingEmpresa } from "@domain/empresa";
 
 import NavigationSpotlight from "./NavigationSpotlight";
 
@@ -46,10 +47,14 @@ const AppHeader = () => {
     ? user.getInitials()
     : fullName.substring(0, 2).toUpperCase();
   const role = user.authorities?.[0]?.name || user.role || "Usuario";
+  // SHG-FE-116: sin empresa no hay nada que buscar ni notificaciones: queda el
+  // menú del usuario (con "Cerrar sesión").
+  const sinEmpresa = necesitaOnboardingEmpresa(user);
 
   return (
     <AppShellHeader component={Flex} justify="center">
       <Flex flex={1} maw={1440} px="xl" py="xs">
+        {!sinEmpresa && (
         <Group>
           <Button
             w={400}
@@ -70,11 +75,12 @@ const AppHeader = () => {
           </Button>
           <OperatingSucursalSelector />
         </Group>
+        )}
 
-        <NavigationSpotlight />
+        {!sinEmpresa && <NavigationSpotlight />}
 
         <Group ml="auto">
-          <NotificacionesBell />
+          {!sinEmpresa && <NotificacionesBell />}
 
           <Menu position="bottom-end" withArrow width={175}>
             <Menu.Target>

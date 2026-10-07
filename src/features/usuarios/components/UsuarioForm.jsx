@@ -412,11 +412,14 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
               {isSuper ? (
                 <Select
                   label="Sucursal"
-                  placeholder="Seleccione (opcional)"
+                  placeholder="Seleccioná una sucursal"
                   data={sucursales}
                   searchable
                   filter={filterIgnoreAccents}
-                  clearable
+                  // SHG-FE-116: al crear, el SUPERUSER debe elegir sucursal
+                  // (`POST /api/user` exige `sucursalID`, SHG-BE-078).
+                  required={!isEdit}
+                  clearable={isEdit}
                   {...form.getInputProps("sucursalID")}
                 />
               ) : (

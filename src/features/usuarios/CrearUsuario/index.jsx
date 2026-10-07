@@ -6,7 +6,9 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { useAuth } from "@contexts/auth";
 import { applyApiError } from "@domain/apiError";
+import { ROLE_SUPERUSER, hasRole } from "@domain/roles";
 import { usuarioApi } from "@api";
 import UsuarioForm from "../components/UsuarioForm";
 import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA } from "../constants/schema";
@@ -16,10 +18,22 @@ const CrearUsuario = () => {
   const [, navigate] = useLocation();
 
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const isSuper = hasRole(user, ROLE_SUPERUSER);
 
+  // SHG-FE-116: un SUPERUSER debe elegir la sucursal del usuario que crea
+  // (`POST /api/user` exige `sucursalID`). Un ADMIN no elige: el form la fuerza
+  // a la suya y el backend la ignora igual.
+  const validateSchema = schemaResolver(USUARIO_SCHEMA, { sync: true });
   const form = useForm({
     initialValues: USUARIO_INITIAL_VALUES,
-    validate: schemaResolver(USUARIO_SCHEMA, { sync: true }),
+    validate: (values) => {
+      const errors = validateSchema(values);
+      if (isSuper && !values.sucursalID) {
+        return { ...errors, sucursalID: "Debes seleccionar una sucursal" };
+      }
+      return errors;
+    },
   });
 
   const handleSubmit = useCallback(

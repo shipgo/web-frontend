@@ -3,6 +3,7 @@ import { API_URLS } from "@constants/apiUrls";
 import { isProtectedPath } from "@utils/protectedPaths";
 import { isConnectionError } from "@utils/connectionError";
 import { CSV_MAX_ROWS } from "@utils/csv";
+import { EMPRESA_REQUERIDA_EVENT, esEmpresaRequerida } from "@domain/empresa";
 
 import {
   DEFAULT_TIMEOUT_MS,
@@ -100,6 +101,14 @@ restclient.interceptors.response.use(
 
         return Promise.reject(refreshError);
       }
+    }
+
+    // SHG-FE-116: un SUPERUSER sin empresa recibe `409 empresa_requerida` en
+    // los endpoints que la necesitan. Se avisa (ProtectedRoutes re-lee la
+    // sesión y lo lleva al onboarding); el error igual se rechaza para que la
+    // pantalla muestre el mensaje del backend.
+    if (esEmpresaRequerida(error) && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(EMPRESA_REQUERIDA_EVENT));
     }
 
     // Para otros errores, simplemente rechazar

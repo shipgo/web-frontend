@@ -67,6 +67,10 @@ const OperatingContextProvider = ({ children }) => {
   const { user } = useAuth();
   const isSuperUser = Boolean(user) && hasRole(user, ROLE_SUPERUSER);
   const userId = user?.id ?? null;
+  // SHG-FE-116: un SUPERUSER sin empresa (sin sucursal) está en el onboarding:
+  // no hay catálogo ni empresa que pedir (devolverían vacío / 404). Al crear la
+  // empresa, `setUser` le da sucursal y las queries se habilitan solas.
+  const tieneEmpresa = isSuperUser && Boolean(user?.sucursal);
 
   const [activeSucursalId, setActiveSucursalIdState] = useState(() =>
     isSuperUser ? readStoredSucursalId(userId) : null,
@@ -93,7 +97,7 @@ const OperatingContextProvider = ({ children }) => {
   const sucursalesQuery = useQuery({
     queryKey: ["operating-context", "sucursales"],
     queryFn: () => sucursalApi.getAll(),
-    enabled: isSuperUser,
+    enabled: tieneEmpresa,
     staleTime: STALE_TIME,
   });
 
@@ -102,7 +106,7 @@ const OperatingContextProvider = ({ children }) => {
   const empresaQuery = useQuery({
     queryKey: ["operating-context", "empresa"],
     queryFn: () => empresaApi.getMia(),
-    enabled: isSuperUser,
+    enabled: tieneEmpresa,
     staleTime: STALE_TIME,
     retry: false,
   });
