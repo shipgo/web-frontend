@@ -6,6 +6,7 @@ import { MantineProvider } from '@mantine/core';
 import { restclient } from '@config/restclient';
 import { BOOTSTRAP_TIMEOUT_MS, BOOTSTRAP_TOTAL_TIMEOUT_MS } from '@constants/timeouts';
 import { useAuthStore } from '@stores/auth.store';
+import { necesitaOnboardingEmpresa } from '@domain/empresa';
 
 const mockSetLocation = vi.fn();
 vi.mock('wouter', () => ({
@@ -143,6 +144,18 @@ describe('AuthProvider — API caída en el bootstrap (SHG-FE-110)', () => {
     await act(() => vi.advanceTimersByTimeAsync(0));
     expect(screen.getByText(TITULO)).toBeInTheDocument();
     expect(mockSetLocation).not.toHaveBeenCalled();
+  });
+
+  it('SHG-FE-116: si el whoami falla (red/5xx) no hay usuario → ni se decide "sin empresa" ni se renderiza la app (onboarding incluido)', async () => {
+    restclient.defaults.adapter = (config) =>
+      config.url === '/refresh' ? ok(config, { access_token: 't' }) : failWith(503)(config);
+    renderAt('/');
+    await act(() => vi.advanceTimersByTimeAsync(0));
+
+    expect(screen.getByText(TITULO)).toBeInTheDocument();
+    expect(screen.queryByText('contenido')).not.toBeInTheDocument();
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(necesitaOnboardingEmpresa(useAuthStore.getState().user)).toBe(false);
   });
 
   it('refresh OK pero whoami colgado: pantalla a los ~12 s (tope total), no 25 s', async () => {

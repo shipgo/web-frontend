@@ -6,7 +6,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
-import { useAuth } from "@contexts/auth";
+import { useAuthStore } from "@stores/auth.store";
 import { applyApiError } from "@domain/apiError";
 import { ROLE_SUPERUSER, hasRole } from "@domain/roles";
 import { usuarioApi } from "@api";
@@ -18,7 +18,7 @@ const CrearUsuario = () => {
   const [, navigate] = useLocation();
 
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const isSuper = hasRole(user, ROLE_SUPERUSER);
 
   // SHG-FE-116: un SUPERUSER debe elegir la sucursal del usuario que crea

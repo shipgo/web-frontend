@@ -66,10 +66,22 @@ describe("AppNavbar", () => {
   });
 
   it("un SUPERUSER ve también Sucursales", () => {
-    mockUseAuth.mockReturnValue({ user: { authorities: [{ name: "ROLE_SUPERUSER" }] } });
+    mockUseAuth.mockReturnValue({ user: { authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: { id: 1 } } });
     renderNavbar();
 
     expect(screen.getByText("Sucursales")).toBeInTheDocument();
+  });
+
+  it("un SUPERUSER sin empresa (SHG-FE-116) sólo ve 'Configurá tu empresa', sin secciones de gestión", () => {
+    mockUseAuth.mockReturnValue({
+      user: { authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: null },
+    });
+    renderNavbar();
+
+    expect(screen.getByText("Configurá tu empresa")).toBeInTheDocument();
+    for (const label of ["Home", "Mapa", "Envios", "Viajes", "Usuarios", "Sucursales", "Mi perfil"]) {
+      expect(screen.queryByText(label)).not.toBeInTheDocument();
+    }
   });
 
   it("siempre muestra Dashboard/Viajes/Envios para roles web", () => {

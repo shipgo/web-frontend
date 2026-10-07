@@ -203,4 +203,84 @@ describe("CrearUsuario", () => {
     expect(screen.getByText("El teléfono sólo puede tener números")).toBeInTheDocument();
     expect(usuarioApi.save).not.toHaveBeenCalled();
   });
+
+  describe("SUPERUSER: sucursal obligatoria (SHG-FE-116)", () => {
+    beforeEach(() => {
+      useAuthStore.setState({
+        user: new Usuario({
+          id: 2,
+          username: "super",
+          authorities: ["ROLE_SUPERUSER"],
+          sucursal: { id: 7, nombre: "Sucursal Centro" },
+        }),
+        isAuthenticated: true,
+      });
+      sucursalApi.getAll.mockResolvedValue([
+        { id: 7, nombre: "Sucursal Centro" },
+        { id: 8, nombre: "Sucursal Norte" },
+      ]);
+    });
+
+    it("el campo Sucursal ya no dice '(opcional)' y es requerido", async () => {
+      renderWithProviders(<CrearUsuario />);
+      await waitFor(() => expect(sucursalApi.getAll).toHaveBeenCalled());
+
+      const combo = await screen.findByRole("combobox", { name: /^Sucursal/i });
+      expect(combo).toBeRequired();
+      expect(combo).toHaveAttribute("placeholder", "Seleccioná una sucursal");
+      expect(screen.queryByPlaceholderText(/opcional/i)).not.toBeInTheDocument();
+    });
+
+    it("sin elegir sucursal no se envía y marca el error en el campo", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CrearUsuario />);
+      await waitFor(() => expect(sucursalApi.getAll).toHaveBeenCalled());
+
+      await fillMinimalForm(user);
+      await user.click(screen.getByRole("button", { name: /crear usuario/i }));
+
+      expect(
+        await screen.findByText("Debes seleccionar una sucursal")
+      ).toBeInTheDocument();
+      expect(usuarioApi.save).not.toHaveBeenCalled();
+    });
+
+    it("eligiendo la sucursal, el POST lleva su sucursalID", async () => {
+      const user = userEvent.setup();
+      usuarioApi.save.mockResolvedValue({ id: 99 });
+      renderWithProviders(<CrearUsuario />);
+      await waitFor(() => expect(sucursalApi.getAll).toHaveBeenCalled());
+
+      await fillMinimalForm(user);
+      await selectOption(user, "Sucursal", "Sucursal Norte");
+      await user.click(screen.getByRole("button", { name: /crear usuario/i }));
+
+      await waitFor(() => expect(usuarioApi.save).toHaveBeenCalledTimes(1));
+      expect(usuarioApi.save.mock.calls[0][0].sucursalID).toBe(8);
+    });
+
+    it("un 409 empresa_requerida muestra el mensaje del backend, no uno genérico", async () => {
+      const user = userEvent.setup();
+      usuarioApi.save.mockRejectedValue({
+        response: {
+          status: 409,
+          data: {
+            statusCode: 409,
+            message: "Primero tenés que crear tu empresa",
+            code: "empresa_requerida",
+          },
+        },
+      });
+      renderWithProviders(<CrearUsuario />);
+      await waitFor(() => expect(sucursalApi.getAll).toHaveBeenCalled());
+
+      await fillMinimalForm(user);
+      await selectOption(user, "Sucursal", "Sucursal Norte");
+      await user.click(screen.getByRole("button", { name: /crear usuario/i }));
+
+      expect(
+        await screen.findByText("Primero tenés que crear tu empresa")
+      ).toBeInTheDocument();
+    });
+  });
 });

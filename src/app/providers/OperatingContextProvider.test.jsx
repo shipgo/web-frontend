@@ -66,7 +66,7 @@ describe("OperatingContextProvider (SHG-FE-052)", () => {
   });
 
   it("SUPERUSER sin selección previa: default 'todas' (null) y trae el catálogo", async () => {
-    mockUser = { id: 1, authorities: [{ name: "ROLE_SUPERUSER" }] };
+    mockUser = { id: 1, authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: { id: 1, nombre: "Centro" } };
     renderProbe();
 
     expect(screen.getByTestId("is-superuser")).toHaveTextContent("true");
@@ -77,8 +77,18 @@ describe("OperatingContextProvider (SHG-FE-052)", () => {
     );
   });
 
+  it("SUPERUSER sin empresa (sin sucursal, SHG-FE-116): no pide sucursales ni empresa al backend", async () => {
+    mockUser = { id: 9, authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: null };
+    renderProbe();
+
+    expect(screen.getByTestId("is-superuser")).toHaveTextContent("true");
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(sucursalApi.getAll).not.toHaveBeenCalled();
+    expect(empresaApi.getMia).not.toHaveBeenCalled();
+  });
+
   it("elegir una sucursal persiste en localStorage namespaced por usuario", async () => {
-    mockUser = { id: 1, authorities: [{ name: "ROLE_SUPERUSER" }] };
+    mockUser = { id: 1, authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: { id: 1, nombre: "Centro" } };
     const user = userEvent.setup();
     renderProbe();
 
@@ -91,7 +101,7 @@ describe("OperatingContextProvider (SHG-FE-052)", () => {
   });
 
   it("volver a 'todas' limpia la persistencia", async () => {
-    mockUser = { id: 1, authorities: [{ name: "ROLE_SUPERUSER" }] };
+    mockUser = { id: 1, authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: { id: 1, nombre: "Centro" } };
     const user = userEvent.setup();
     renderProbe();
 
@@ -105,7 +115,7 @@ describe("OperatingContextProvider (SHG-FE-052)", () => {
   });
 
   it("la selección persiste entre recargas (releída de localStorage al montar)", async () => {
-    mockUser = { id: 1, authorities: [{ name: "ROLE_SUPERUSER" }] };
+    mockUser = { id: 1, authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: { id: 1, nombre: "Centro" } };
     window.localStorage.setItem("shipgo:operatingSucursal:1", "2");
 
     renderProbe();

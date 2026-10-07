@@ -47,6 +47,9 @@ vi.mock("@features/login/RecuperarCuenta", () => ({
 vi.mock("@features/login/RecuperarCuentaToken", () => ({
   default: () => <div>RecuperarCuentaToken</div>,
 }));
+vi.mock("@features/onboarding", () => ({
+  OnboardingEmpresa: () => <div>Configurá tu empresa</div>,
+}));
 vi.mock("@features/home", () => ({ default: () => <div>Home</div> }));
 vi.mock("@features/mapa", () => ({ default: () => <div>Mapa</div> }));
 vi.mock("@features/mantenimientos", () => ({
@@ -63,6 +66,8 @@ vi.mock("./catalogoVehiculos.routes", () => ({
 }));
 
 import AppRoutes from "./index";
+import { useAuthStore } from "@stores/auth.store";
+import { EMPRESA_REQUERIDA_EVENT } from "@domain/empresa";
 
 const setAuth = (auth) => mockUseAuth.mockReturnValue(auth);
 
@@ -228,7 +233,7 @@ describe("AppRoutes", () => {
 
   it("SUPERUSER accede a /sucursales", async () => {
     setAuth({
-      user: { authorities: [{ name: "ROLE_SUPERUSER" }] },
+      user: { authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: { id: 1 } },
       isLoading: false,
       isAuthenticated: true,
     });
@@ -434,5 +439,87 @@ describe("AppRoutes", () => {
         expect(window.localStorage.getItem(COLOR_SCHEME_KEY)).toBe("auto");
       });
     });
+  });
+});
+
+describe("AppRoutes — onboarding de empresa (SHG-FE-116)", () => {
+  beforeEach(() => {
+    mockUseAuth.mockReset();
+  });
+
+  const superUser = (sucursal) => ({
+    authorities: [{ name: "ROLE_SUPERUSER" }],
+    sucursal,
+  });
+
+  it("SUPERUSER sin empresa ve el onboarding al entrar a /, dentro del layout (para poder cerrar sesión)", async () => {
+    setAuth({ user: superUser(null), isLoading: false, isAuthenticated: true });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(await screen.findByText("Configurá tu empresa")).toBeInTheDocument();
+    expect(screen.getByTestId("layout")).toBeInTheDocument();
+    expect(screen.queryByText("Home")).not.toBeInTheDocument();
+  });
+
+  it("SUPERUSER sin empresa en cualquier sección (ej. /usuarios, /sucursales) ve el onboarding, sin redirecciones", async () => {
+    setAuth({ user: superUser(null), isLoading: false, isAuthenticated: true });
+    renderWithProviders(<AppRoutes />, { route: "/usuarios" });
+
+    expect(await screen.findByText("Configurá tu empresa")).toBeInTheDocument();
+    expect(screen.queryByText("Usuarios")).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe("/usuarios");
+  });
+
+  it("SUPERUSER con empresa nunca ve el onboarding", async () => {
+    setAuth({
+      user: superUser({ id: 1, empresa: { id: 1 } }),
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("Configurá tu empresa")).not.toBeInTheDocument();
+  });
+
+  it("ADMIN no ve el onboarding (aunque no tuviera sucursal)", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }], sucursal: null },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("Configurá tu empresa")).not.toBeInTheDocument();
+  });
+
+  it("mientras la sesión carga (sin usuario todavía) no se muestra el onboarding", async () => {
+    setAuth({ user: null, isLoading: true, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(screen.queryByText("Configurá tu empresa")).not.toBeInTheDocument();
+    expect(screen.queryByText("Home")).not.toBeInTheDocument();
+  });
+
+  it("un 409 empresa_requerida (evento de restclient) re-lee la sesión para que la guarda decida", async () => {
+    const getUserInfo = vi.fn().mockResolvedValue(null);
+    const original = useAuthStore.getState().getUserInfo;
+    useAuthStore.setState({ getUserInfo });
+    try {
+      setAuth({
+        user: superUser({ id: 1 }),
+        isLoading: false,
+        isAuthenticated: true,
+      });
+      renderWithProviders(<AppRoutes />, { route: "/" });
+      await screen.findByText("Home");
+
+      window.dispatchEvent(new CustomEvent(EMPRESA_REQUERIDA_EVENT));
+
+      expect(getUserInfo).toHaveBeenCalledTimes(1);
+    } finally {
+      useAuthStore.setState({ getUserInfo: original });
+    }
   });
 });
