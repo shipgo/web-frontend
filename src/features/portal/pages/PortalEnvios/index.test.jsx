@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { screen, within, fireEvent } from "@testing-library/react";
 
 import { renderWithProviders } from "../../../../test/renderWithProviders";
 
@@ -78,5 +78,71 @@ describe("PortalEnviosPage", () => {
     const row = screen.getByText("Creado").closest("tr");
     expect(row).toBeInTheDocument();
     expect(row).not.toHaveAttribute("style", expect.stringContaining("cursor"));
+  });
+
+  describe("a 390 px (SHG-FE-112)", () => {
+    const originalMatchMedia = window.matchMedia;
+    const mockMobile = (matches) => {
+      window.matchMedia = (query) => ({
+        matches,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      });
+    };
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia;
+    });
+
+    const envioLargo = {
+      id: 1,
+      codigoSeguimiento: "SEED000001",
+      estado: "asignado",
+      historialEstado: [{ estado: "creado", fechaHoraInicio: "2026-01-05T09:00:00" }],
+      destino: {
+        localidad: { nombre: "San Salvador de Jujuy", provincia: { nombre: "Jujuy" } },
+      },
+    };
+
+    it("renderiza cards (sin tabla) con código, estado, fecha y destino completos", () => {
+      mockMobile(true);
+      mockUseMisEnvios.mockReturnValue({ ...base, totalElements: 1, envios: [envioLargo] });
+      renderWithProviders(<PortalEnviosPage />);
+
+      expect(screen.queryByRole("table")).not.toBeInTheDocument();
+      const cards = screen.getByTestId("portal-envios-cards");
+      expect(within(cards).getByText("SEED000001")).toBeInTheDocument();
+      expect(within(cards).getByText(/asign/i)).toBeInTheDocument();
+      expect(within(cards).getByText(/05\/01\/2026/)).toBeInTheDocument();
+      expect(within(cards).getByText(/San Salvador de Jujuy, Jujuy/)).toBeInTheDocument();
+    });
+
+    it("sólo la card con código es navegable (botón)", () => {
+      mockMobile(true);
+      mockUseMisEnvios.mockReturnValue({
+        ...base,
+        totalElements: 2,
+        envios: [envioLargo, { id: 9, estado: "creado", codigoSeguimiento: null, historialEstado: [] }],
+      });
+      renderWithProviders(<PortalEnviosPage />);
+
+      const botones = screen.getAllByRole("button", { name: /ver detalle/i });
+      expect(botones).toHaveLength(1);
+      fireEvent.keyDown(botones[0], { key: "Enter" });
+      fireEvent.click(botones[0]);
+    });
+
+    it("en escritorio sigue siendo la tabla", () => {
+      mockMobile(false);
+      mockUseMisEnvios.mockReturnValue({ ...base, totalElements: 1, envios: [envioLargo] });
+      renderWithProviders(<PortalEnviosPage />);
+
+      expect(screen.getByRole("table")).toBeInTheDocument();
+      expect(screen.queryByTestId("portal-envios-cards")).not.toBeInTheDocument();
+    });
   });
 });
