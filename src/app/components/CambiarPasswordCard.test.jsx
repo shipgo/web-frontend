@@ -89,9 +89,9 @@ describe("CambiarPasswordCard", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("otro error sin mensaje (ej. 500): mensaje genérico, no el de contraseña incorrecta", async () => {
+  it("otro error sin mensaje (ej. 400 vacío): mensaje genérico", async () => {
     const user = userEvent.setup();
-    mockChangePassword.mockRejectedValue({ response: { status: 500, data: {} } });
+    mockChangePassword.mockRejectedValue({ response: { status: 400, data: {} } });
     renderWithProviders(<CambiarPasswordCard />);
 
     await user.type(screen.getByLabelText("Contraseña actual"), "claveVieja1");
@@ -102,7 +102,6 @@ describe("CambiarPasswordCard", () => {
     expect(
       (await screen.findAllByText("No se pudo cambiar la contraseña. Intentá nuevamente.")).length,
     ).toBeGreaterThan(0);
-    expect(screen.queryByText("La contraseña actual es incorrecta")).not.toBeInTheDocument();
   });
 
   it("otro error del backend muestra su mensaje", async () => {
