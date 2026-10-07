@@ -9,5 +9,8 @@
 // El stream SSE de tracking usa `EventSource` (no pasa por acá) y no tiene timeout.
 export const DEFAULT_TIMEOUT_MS = 15_000;
 export const BOOTSTRAP_TIMEOUT_MS = 10_000;
+// Tope TOTAL del bootstrap (`refresh` + `whoami` [+ `customer/me`]): sin esto el
+// peor caso era 10 + 15 (+ 15) s. Pasado el tope, `initUser` corta con error de red.
+export const BOOTSTRAP_TOTAL_TIMEOUT_MS = 12_000;
 export const EXPORT_TIMEOUT_MS = 60_000;
 export const UPLOAD_TIMEOUT_MS = 60_000;

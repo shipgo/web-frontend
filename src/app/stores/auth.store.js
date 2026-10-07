@@ -1,6 +1,10 @@
 import { create } from "zustand";
+import { AxiosError } from "axios";
 import { restclient } from "@config/restclient";
-import { BOOTSTRAP_TIMEOUT_MS } from "@constants/timeouts";
+import {
+  BOOTSTRAP_TIMEOUT_MS,
+  BOOTSTRAP_TOTAL_TIMEOUT_MS,
+} from "@constants/timeouts";
 import { classifyConnectionError } from "@utils/connectionError";
 import { API_URLS } from "@constants/apiUrls";
 import { captchaHeader } from "@config/captcha";
@@ -107,17 +111,35 @@ export const useAuthStore = create((set, get) => ({
 
   // Inicializar usuario al cargar la app
   initUser: async () => {
+    let totalTimer;
     try {
       set({ isLoading: true, connectionError: null });
-      const response = await restclient.get(API_URLS.REFRESH_TOKEN_URL, {
-        timeout: BOOTSTRAP_TIMEOUT_MS,
+
+      const bootstrap = async () => {
+        const response = await restclient.get(API_URLS.REFRESH_TOKEN_URL, {
+          timeout: BOOTSTRAP_TIMEOUT_MS,
+        });
+
+        if (response.data?.access_token) {
+          await get().getUserInfo();
+          return true;
+        }
+        return false;
+      };
+
+      // Tope total del bootstrap (SHG-FE-110): envuelve refresh + whoami (+ el
+      // fallback customer/me) sin alterar su lógica.
+      const deadline = new Promise((_, reject) => {
+        totalTimer = setTimeout(
+          () =>
+            reject(
+              new AxiosError("timeout", AxiosError.ECONNABORTED, undefined),
+            ),
+          BOOTSTRAP_TOTAL_TIMEOUT_MS,
+        );
       });
 
-      if (response.data?.access_token) {
-        await get().getUserInfo();
-        return true;
-      }
-      return false;
+      return await Promise.race([bootstrap(), deadline]);
     } catch (error) {
       console.error("Error initializing user:", error);
       set({
@@ -127,6 +149,7 @@ export const useAuthStore = create((set, get) => ({
       });
       return false;
     } finally {
+      clearTimeout(totalTimer);
       set({ isLoading: false });
     }
   },
@@ -175,7 +198,7 @@ export const useAuthStore = create((set, get) => ({
   // intentar autenticar (400 `captcha_invalid` si falta/es inválido/venció).
   login: async (credentials) => {
     try {
-      set({ isLoading: true });
+      set({ isLoading: true, connectionError: null });
 
       const body = `username=${credentials.username}&password=${credentials.password}`;
       await restclient.post(API_URLS.LOGIN_URL, body, {
@@ -186,6 +209,8 @@ export const useAuthStore = create((set, get) => ({
       });
 
       await get().getUserInfo();
+      // Hay sesión: un `connectionError` viejo del bootstrap ya no aplica.
+      set({ connectionError: null });
       return true;
     } catch (error) {
       console.error("Login error:", error);
@@ -300,6 +325,10 @@ export const useAuthStore = create((set, get) => ({
 
   // Actualizar usuario en el store
   setUser: (user) => {
-    set({ user: user ? new Usuario(user) : null, isAuthenticated: !!user });
+    set({
+      user: user ? new Usuario(user) : null,
+      isAuthenticated: !!user,
+      ...(user ? { connectionError: null } : {}),
+    });
   },
 }));

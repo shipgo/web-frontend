@@ -113,8 +113,12 @@ restclient.interceptors.request.use(
     // Aquí podrías agregar headers adicionales si fuera necesario
     // Por ejemplo, un CSRF token si tu backend lo requiere
 
-    // Export CSV (SHG-FE-110): página de `CSV_MAX_ROWS` filas → timeout largo,
-    // salvo que la request ya fije uno propio.
+    // Export CSV (SHG-FE-110): página de `CSV_MAX_ROWS` filas → timeout largo.
+    // Heurística y límites: se detecta por `params.size >= CSV_MAX_ROWS`, así que
+    // CUALQUIER listado pedido con `size >= 5000` recibe 60 s; y como "timeout no
+    // fijado" se detecta comparando con el default, un `timeout` explícito igual a
+    // 15000 se trata como no fijado (se amplía). Cualquier otro valor explícito
+    // se respeta.
     if (
       config.timeout === DEFAULT_TIMEOUT_MS &&
       Number(config.params?.size) >= CSV_MAX_ROWS

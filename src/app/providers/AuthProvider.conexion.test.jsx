@@ -4,7 +4,7 @@ import { AxiosError } from 'axios';
 import { MantineProvider } from '@mantine/core';
 
 import { restclient } from '@config/restclient';
-import { BOOTSTRAP_TIMEOUT_MS } from '@constants/timeouts';
+import { BOOTSTRAP_TIMEOUT_MS, BOOTSTRAP_TOTAL_TIMEOUT_MS } from '@constants/timeouts';
 import { useAuthStore } from '@stores/auth.store';
 
 const mockSetLocation = vi.fn();
@@ -134,5 +134,74 @@ describe('AuthProvider — API caída en el bootstrap (SHG-FE-110)', () => {
     expect(screen.getByText('contenido')).toBeInTheDocument();
     expect(screen.queryByText(TITULO)).not.toBeInTheDocument();
     expect(mockSetLocation).not.toHaveBeenCalled();
+  });
+
+  it('refresh OK pero whoami 5xx: pantalla de conexión, no /login', async () => {
+    restclient.defaults.adapter = (config) =>
+      config.url === '/refresh' ? ok(config, { access_token: 't' }) : failWith(502)(config);
+    renderAt('/envios');
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(screen.getByText(TITULO)).toBeInTheDocument();
+    expect(mockSetLocation).not.toHaveBeenCalled();
+  });
+
+  it('refresh OK pero whoami colgado: pantalla a los ~12 s (tope total), no 25 s', async () => {
+    restclient.defaults.adapter = (config) =>
+      config.url === '/refresh' ? ok(config, { access_token: 't' }) : new Promise(() => {});
+    renderAt('/envios');
+    await act(() => vi.advanceTimersByTimeAsync(BOOTSTRAP_TOTAL_TIMEOUT_MS - 500));
+    expect(screen.queryByText(TITULO)).not.toBeInTheDocument();
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    expect(screen.getByText(TITULO)).toBeInTheDocument();
+  });
+
+  it('whoami 403 y customer/me colgado: pantalla a los ~12 s; el fallback se sigue usando', async () => {
+    const calls = [];
+    restclient.defaults.adapter = (config) => {
+      calls.push(config.url);
+      if (config.url === '/refresh') return ok(config, { access_token: 't' });
+      if (config.url === '/whoami') return failWith(403)(config);
+      return new Promise(() => {});
+    };
+    renderAt('/portal');
+    await act(() => vi.advanceTimersByTimeAsync(BOOTSTRAP_TOTAL_TIMEOUT_MS + 500));
+    expect(calls).toEqual(['/refresh', '/whoami', '/customer/me']);
+    expect(screen.getByText(TITULO)).toBeInTheDocument();
+  });
+
+  it('connectionError viejo + login posterior: no muestra la pantalla estando autenticado ni saltea el redirect desde /login', async () => {
+    // 1) /login con el backend caído: la página pública se renderiza y queda connectionError.
+    restclient.defaults.adapter = hangingAdapter;
+    renderAt('/login');
+    await act(() => vi.advanceTimersByTimeAsync(BOOTSTRAP_TIMEOUT_MS + 500));
+    expect(screen.getByText('contenido')).toBeInTheDocument();
+    expect(useAuthStore.getState().connectionError).toBe('network');
+
+    // 2) Vuelve el backend y la persona se loguea.
+    restclient.defaults.adapter = (config) => ok(config, USER);
+    await act(async () => {
+      await useAuthStore.getState().login({ username: 'admin', password: 'x' });
+    });
+    expect(useAuthStore.getState().connectionError).toBeNull();
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+
+    // 3) El provider NO bloquea con la pantalla de conexión y sí redirige desde /login.
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(screen.queryByText(TITULO)).not.toBeInTheDocument();
+    expect(screen.getByText('contenido')).toBeInTheDocument();
+    expect(mockSetLocation).toHaveBeenCalled();
+  });
+
+  it('nunca muestra la pantalla a un usuario autenticado aunque quede un connectionError', async () => {
+    restclient.defaults.adapter = hangingAdapter;
+    renderAt('/envios');
+    await act(() => vi.advanceTimersByTimeAsync(BOOTSTRAP_TIMEOUT_MS + 500));
+    expect(screen.getByText(TITULO)).toBeInTheDocument();
+
+    act(() => {
+      useAuthStore.setState({ user: USER, isAuthenticated: true, connectionError: 'network' });
+    });
+    expect(screen.queryByText(TITULO)).not.toBeInTheDocument();
+    expect(screen.getByText('contenido')).toBeInTheDocument();
   });
 });

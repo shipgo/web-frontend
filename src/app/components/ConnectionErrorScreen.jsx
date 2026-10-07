@@ -18,7 +18,9 @@ const ConnectionErrorScreen = ({ kind = 'network', onRetry }) => (
         <IconPlugConnectedX size={50} color="var(--mantine-color-dimmed)" />
       </EmptyState.Indicator>
       <EmptyState.Title>No pudimos conectar con el servidor</EmptyState.Title>
-      <EmptyState.Description>{DESCRIPCIONES[kind] ?? DESCRIPCIONES.network}</EmptyState.Description>
+      <EmptyState.Description role="alert">
+        {DESCRIPCIONES[kind] ?? DESCRIPCIONES.network}
+      </EmptyState.Description>
       <EmptyState.Actions>
         <Button onClick={onRetry}>Reintentar</Button>
       </EmptyState.Actions>

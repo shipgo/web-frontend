@@ -33,7 +33,7 @@ const AuthProvider = ({ children }) => {
     if (isInitialized && !isLoading) {
       const currentPath = window.location.pathname;
 
-      if (connectionError) {
+      if (connectionError && !isAuthenticated) {
         // Sin conexión con la API no sabemos si hay sesión: no mandar a /login.
       } else if (!isAuthenticated && isProtectedPath(currentPath)) {
         setLocation("/login");
@@ -59,7 +59,11 @@ const AuthProvider = ({ children }) => {
   // sabemos si la sesión es válida, así que tampoco vamos a /login). Las rutas
   // públicas (landing, /tracking, /login, registro, 404) NO se bloquean: no
   // necesitan sesión y se renderizan como "no autenticado".
-  if (connectionError && isProtectedPath(window.location.pathname)) {
+  if (
+    connectionError &&
+    !isAuthenticated &&
+    isProtectedPath(window.location.pathname)
+  ) {
     return <ConnectionErrorScreen kind={connectionError} onRetry={initialize} />;
   }
 
