@@ -64,12 +64,12 @@ const ListaViajes = () => {
     },
   });
 
-  // `DELETE /api/viaje/{id}` (a diferencia de `PUT /cancelar`) no valida el
-  // estado del lado del backend — borraría en cascada un viaje `en_camino` o
-  // `finalizado` con 200 (pedido de FE-095 en review: bug de backend, ver
-  // `../../../../planning/coordination/backend.md`). El guard tiene que vivir
-  // acá: se filtra por `ESTADOS_CANCELABLES` (misma matriz que `puedeCancelar`
-  // en `DetalleViaje/acciones.js`) ANTES de llamar a `deleteFn`, así el bulk
+  // `DELETE /api/viaje/{id}` sólo admite creado / planificado /
+  // en_proceso_de_carga (409 fuera de eso, SHG-BE-075). Igual se separan acá,
+  // ANTES de confirmar (SHG-FE-106), para que el diálogo diga qué no se va a
+  // eliminar en vez de prometer N y fallar después. Se filtra por
+  // `ESTADOS_CANCELABLES` (misma matriz que `puedeCancelar` en
+  // `DetalleViaje/acciones.js`) ANTES de llamar a `deleteFn`, así el bulk
   // delete nunca le pega al backend con un viaje no cancelable. El export sí
   // puede incluir cualquier estado (no se toca `exportarSeleccionados`).
   const onBulkDeleteViajes = () => {

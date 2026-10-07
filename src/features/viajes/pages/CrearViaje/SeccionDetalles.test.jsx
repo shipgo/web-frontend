@@ -119,3 +119,35 @@ describe("SeccionDetalles — SHG-FE-090 (un clic abre el otro DateTimePicker au
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 });
+
+describe("SeccionDetalles — SHG-FE-106 (validación inline de fechas)", () => {
+  it("muestra error en la llegada cuando es anterior a la salida, sin esperar al submit", () => {
+    mockUser = { sucursal: { nombre: "Sucursal Centro" } };
+    renderSeccionDetalles(
+      { isSuperUser: false, activeSucursal: null },
+      {
+        fechaHoraInicioPlanificada: new Date(2026, 7, 2, 10, 0),
+        fechaHoraFinPlanificada: new Date(2026, 7, 1, 10, 0),
+      },
+    );
+
+    expect(
+      screen.getByText(/la llegada planificada debe ser posterior a la salida/i),
+    ).toBeInTheDocument();
+  });
+
+  it("no muestra error si la llegada es posterior a la salida", () => {
+    mockUser = { sucursal: { nombre: "Sucursal Centro" } };
+    renderSeccionDetalles(
+      { isSuperUser: false, activeSucursal: null },
+      {
+        fechaHoraInicioPlanificada: new Date(2026, 7, 1, 10, 0),
+        fechaHoraFinPlanificada: new Date(2026, 7, 1, 18, 0),
+      },
+    );
+
+    expect(
+      screen.queryByText(/la llegada planificada debe ser posterior/i),
+    ).not.toBeInTheDocument();
+  });
+});

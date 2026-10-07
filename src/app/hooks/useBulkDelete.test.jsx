@@ -127,8 +127,11 @@ describe('useBulkDelete', () => {
     await user.click(screen.getByRole('button', { name: 'Eliminar seleccionados' }));
 
     const dialog = await screen.findByRole('dialog');
-    // La cantidad del modal cuenta también los excluidos (3 = 2 + 1).
-    expect(within(dialog).getByText(/eliminar 3 elementos/i)).toBeInTheDocument();
+    // SHG-FE-106: el diálogo separa eliminables (2) de no eliminables (1) ANTES de confirmar.
+    expect(within(dialog).getByText(/Se eliminarán 2 elementos\./)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/Quedan afuera 1 elemento \(Tres: no se puede eliminar en su estado actual\)/),
+    ).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
 
@@ -164,5 +167,31 @@ describe('useBulkDelete', () => {
     resolvers.forEach((resolve) => resolve({}));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(await screen.findByText('Eliminados')).toBeInTheDocument();
+  });
+
+  it('con un sustantivo femenino el texto no usa artículos ni adjetivos concordados', async () => {
+    const user = userEvent.setup();
+    const Fem = ({ items, excluded }) => {
+      const { confirmBulkDelete } = useBulkDelete({
+        deleteFn: vi.fn().mockResolvedValue({}),
+        singular: 'sucursal',
+        plural: 'sucursales',
+        getLabel: (item) => item.nombre,
+      });
+      return <Button onClick={() => confirmBulkDelete(items, excluded)}>Abrir</Button>;
+    };
+    const excluded = [{ item: { id: 9, nombre: 'Norte' }, reason: 'tiene usuarios activos' }];
+
+    const { unmount } = renderWithProviders(<Fem items={[]} excluded={excluded} />);
+    await user.click(screen.getByRole('button', { name: 'Abrir' }));
+    let dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('No se puede eliminar nada de lo seleccionado (1 sucursal). Norte: tiene usuarios activos.');
+    expect(dialog.textContent).not.toMatch(/\bEl sucursal|Ninguno/);
+    unmount();
+
+    renderWithProviders(<Fem items={[{ id: 1, nombre: 'Centro' }]} excluded={excluded} />);
+    await user.click(screen.getByRole('button', { name: 'Abrir' }));
+    dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Se eliminarán 1 sucursal. Quedan afuera 1 sucursal (Norte: tiene usuarios activos).');
   });
 });

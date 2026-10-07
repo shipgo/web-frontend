@@ -252,6 +252,31 @@ describe("EditarViaje", () => {
     });
   });
 
+  it("precarga el chofer cuando la API devuelve `chofer` singular (SHG-FE-106) y deja guardar sin tocar nada", async () => {
+    const user = userEvent.setup();
+    const { choferes, ...sinLista } = EXISTING_VIAJE;
+    void choferes;
+    viajeApi.getById.mockResolvedValue({
+      ...sinLista,
+      chofer: { id: 10, nombre: "Juan", apellido: "Perez" },
+    });
+
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Juan Perez").length).toBeGreaterThan(0);
+    });
+
+    await user.click(screen.getByRole("button", { name: /guardar/i }));
+
+    await waitFor(() => expect(viajeApi.update).toHaveBeenCalledTimes(1));
+    expect(viajeApi.update.mock.calls[0][1].viaje.choferesID).toEqual([10]);
+    expect(screen.queryByText(/seleccioná al menos un chofer/i)).not.toBeInTheDocument();
+  });
+
   it("submits the edited vehículo/choferes/fechas while keeping the existing envíos grouping, without sending fechas reales", async () => {
     const user = userEvent.setup();
     renderWithProviders(

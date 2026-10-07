@@ -88,3 +88,13 @@ export const extraerEnviosDeRecorridos = (recorridos = []) => {
   });
   return Array.from(vistos.values());
 };
+
+/**
+ * Choferes del `ViajeDTO`, tolerando los dos shapes (SHG-FE-106): `choferes`
+ * (lista, CONTRACTS §15) y `chofer` (singular, alias deprecado que la API
+ * devuelve mientras hay un solo chofer). Siempre devuelve un array.
+ */
+export const getChoferesDeViaje = (viaje) => {
+  if (Array.isArray(viaje?.choferes) && viaje.choferes.length > 0) return viaje.choferes;
+  return viaje?.chofer ? [viaje.chofer] : [];
+};
