@@ -2,6 +2,8 @@ import { cloneElement } from 'react';
 import { IconFilesOff, IconAlertTriangle } from '@tabler/icons-react';
 import { Loader, EmptyState, Button, Card } from '@mantine/core';
 
+import RecursoNoEncontrado from './RecursoNoEncontrado';
+
 const Wrapper = ({ children, className, styleProps }) => (
   <EmptyState
     mih='17rem'
@@ -20,6 +22,7 @@ const Wrapper = ({ children, className, styleProps }) => (
 const ScreenContainer = ({
   children,
   onError,
+  onNotFound,
   onLoading,
   onEmptyData,
   onEmptyFiltersData,
@@ -37,6 +40,11 @@ const ScreenContainer = ({
         </Wrapper>
       )
     );
+  }
+
+  // 404 (SHG-FE-104): antes que `onError` — no ofrece "Reintentar".
+  if (onNotFound?.show) {
+    return <RecursoNoEncontrado className={className} styleProps={styleProps} {...onNotFound} />;
   }
 
   if (onError?.show) {

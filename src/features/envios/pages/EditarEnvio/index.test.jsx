@@ -233,6 +233,21 @@ describe("EditarEnvio", () => {
     );
   });
 
+  it("un 404 muestra 'Envío no encontrado' con breadcrumb y link al listado, sin Reintentar ni segundo GET (SHG-FE-104)", async () => {
+    envioApi.getById.mockRejectedValue(
+      Object.assign(new Error("Not found"), { response: { status: 404 } }),
+    );
+
+    renderEditarEnvio();
+
+    expect(await screen.findByText("Envío no encontrado")).toBeInTheDocument();
+    expect(screen.getByText("Editar envío")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /volver a envíos/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /reintentar/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("No se pudo cargar el envío")).not.toBeInTheDocument();
+    expect(envioApi.getById).toHaveBeenCalledTimes(1);
+  });
+
   it("no permite editar un envío en estado terminal (entregado/rechazado)", async () => {
     envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
 

@@ -5,7 +5,9 @@ import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import ScreenContainer from "@components/ScreenContainer";
+import { isNotFoundError } from "@utils/httpErrors";
 import { envioApi, categoriaApi } from "@api";
 import { esEstadoTerminal } from "@domain/estados";
 
@@ -24,6 +26,7 @@ const EditarEnvio = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const [envio, setEnvio] = useState(null);
   const [categorias, setCategorias] = useState([]);
 
@@ -33,6 +36,7 @@ const EditarEnvio = () => {
     let cancelled = false;
     setLoading(true);
     setError(false);
+    setNotFound(false);
 
     envioApi
       .getById(id)
@@ -40,8 +44,14 @@ const EditarEnvio = () => {
         if (!cancelled) setEnvio(data);
       })
       .catch((err) => {
-        console.error("Error cargando envío:", err);
-        if (!cancelled) setError(true);
+        if (cancelled) return;
+        if (isNotFoundError(err)) {
+          setEnvio(null);
+          setNotFound(true);
+        } else {
+          console.error("Error cargando envío:", err);
+          setError(true);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -77,8 +87,15 @@ const EditarEnvio = () => {
 
   return (
     <PageContainer>
+      {notFound && !loading && <PageBreadcrumbsHeader entidad="Envíos" accion="Editar envío" />}
       <ScreenContainer
         onLoading={{ show: loading, description: 'Cargando envío...' }}
+        onNotFound={{
+          show: notFound && !loading,
+          recurso: 'Envío',
+          listaHref: '~/envios',
+          listaLabel: 'Volver a envíos',
+        }}
         onError={{
           show: error && !loading,
           title: 'No se pudo cargar el envío',
@@ -86,7 +103,7 @@ const EditarEnvio = () => {
           onClick: loadEnvio,
         }}
         onEmptyData={{
-          show: !loading && !error && !envio,
+          show: !loading && !error && !notFound && !envio,
           title: 'Envío no encontrado',
           description: 'No encontramos información para este envío.',
         }}

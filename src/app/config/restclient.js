@@ -1,5 +1,6 @@
 import Axios from "axios";
 import { API_URLS } from "@constants/apiUrls";
+import { isProtectedPath } from "@utils/protectedPaths";
 
 export const restclient = Axios.create({
   withCredentials: true, // Envía cookies automáticamente
@@ -71,27 +72,10 @@ restclient.interceptors.response.use(
         processQueue(refreshError);
         isRefreshing = false;
 
-        // Redirigir a login solo si no estamos ya en una ruta pública
-        // Rutas públicas (SHG-FE-023 / SHG-FE-025 / SHG-FE-026 / SHG-FE-044):
-        // login, flujo de recuperación de cuenta, tracking guest, registro
-        // CUSTOMER y la landing (`/`, exacta). `/recuperar-cuenta/:token`,
-        // `/tracking/:codigo` y `/registro/verificar` caen acá por el
-        // `startsWith`. `/portal/ingresar` es la única excepción pública dentro
-        // de `/portal` (entrada dedicada del customer) — el resto de `/portal`
-        // NO es público.
-        const publicRoutes = [
-          "/login",
-          "/recuperar-cuenta",
-          "/tracking",
-          "/registro",
-          "/portal/ingresar",
-        ];
-        const currentPath = window.location.pathname;
-        const isPublicRoute =
-          currentPath === "/" ||
-          publicRoutes.some((route) => currentPath.startsWith(route));
-
-        if (!isPublicRoute) {
+        // Redirigir a login sólo si la ruta actual EXIGE sesión (SHG-FE-104):
+        // una ruta pública o desconocida (→ 404 pública) se queda donde está.
+        // Ver `@utils/protectedPaths`.
+        if (isProtectedPath(window.location.pathname)) {
           window.location.href = "/login";
         }
 

@@ -20,6 +20,7 @@ import {
   ROLES_WEB,
 } from '@domain/roles';
 import { buildLoginRedirectTo } from '@utils/redirect';
+import { SECTION_PATHS } from '@utils/protectedPaths';
 import { Center, Loader, useMantineColorScheme } from '@mantine/core';
 
 const RecuperarCuentaPage = lazy(() => import('@features/login/RecuperarCuenta'));
@@ -88,19 +89,19 @@ const hasExplicitColorSchemePreference = () => {
 // incluye `/`: tiene su propia `<Route>` sin `ProtectedRoute` acá abajo y su
 // propia `<Route path='/' component={RootRoute}>` en `AppRoutes`.
 const PROTECTED_SECTIONS = [
-  { path: '/mapa', component: MapaPage },
-  { path: '/dashboard', nest: true, component: DashboardRoutes },
-  { path: '/envios', nest: true, component: EnviosRoutes },
-  { path: '/viajes', nest: true, component: ViajesRoutes },
-  { path: '/usuarios', nest: true, component: UsuariosRoutes },
+  { path: SECTION_PATHS.mapa, component: MapaPage },
+  { path: SECTION_PATHS.dashboard, nest: true, component: DashboardRoutes },
+  { path: SECTION_PATHS.envios, nest: true, component: EnviosRoutes },
+  { path: SECTION_PATHS.viajes, nest: true, component: ViajesRoutes },
+  { path: SECTION_PATHS.usuarios, nest: true, component: UsuariosRoutes },
   // Sucursales/Empresa: endpoints SUPERUSER-only (CONTRACTS.md §3).
-  { path: '/sucursales', nest: true, component: SucursalesRoutes, roles: [ROLE_SUPERUSER] },
-  { path: '/vehiculos', nest: true, component: VehiculosRoutes },
+  { path: SECTION_PATHS.sucursales, nest: true, component: SucursalesRoutes, roles: [ROLE_SUPERUSER] },
+  { path: SECTION_PATHS.vehiculos, nest: true, component: VehiculosRoutes },
   // Catálogo de Marca/Modelo (SHG-FE-059, ENDPOINTS.md §11/§12): CRUD
   // completo SU/AD — no restringido a SUPERUSER como Sucursales. Tipo de
   // Vehículo queda fuera (backend sólo GET).
-  { path: '/catalogo-vehiculos', nest: true, component: CatalogoVehiculosRoutes },
-  { path: '/mantenimientos', nest: true, component: MantenimientosRoutes },
+  { path: SECTION_PATHS.catalogoVehiculos, nest: true, component: CatalogoVehiculosRoutes },
+  { path: SECTION_PATHS.mantenimientos, nest: true, component: MantenimientosRoutes },
 ];
 
 const isKnownProtectedPath = (pathname) =>

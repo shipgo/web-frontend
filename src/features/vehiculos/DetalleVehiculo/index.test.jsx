@@ -54,6 +54,20 @@ describe("DetalleVehiculo", () => {
     expect(mockNavigate).toHaveBeenCalledWith("~/mantenimientos?patente=AB123CD");
   });
 
+  it("un 404 muestra 'Vehículo no encontrado' con link al listado, sin toast ni redirección (SHG-FE-104)", async () => {
+    mockGetById.mockRejectedValue(
+      Object.assign(new Error("Not found"), { response: { status: 404 } }),
+    );
+
+    renderDetalle();
+
+    expect(await screen.findByText("Vehículo no encontrado")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /volver a vehículos/i })).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockGetById).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("No se pudo cargar la información del vehículo")).not.toBeInTheDocument();
+  });
+
   it('no muestra "Ver mantenimientos" mientras no hay patente disponible', async () => {
     mockGetById.mockResolvedValue({ id: 1, patente: "" });
 

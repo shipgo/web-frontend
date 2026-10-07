@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import ScreenContainer from "@components/ScreenContainer";
+import { isNotFoundError } from "@utils/httpErrors";
 
 import { estadoBadge, normalizarEstado } from "@domain/estados";
 import { applyApiError } from "@domain/apiError";
@@ -37,6 +38,7 @@ const EditarViaje = () => {
   const [loading, setLoading] = useState(false);
   const [loadingViaje, setLoadingViaje] = useState(true);
   const [errorViaje, setErrorViaje] = useState(false);
+  const [viajeNoEncontrado, setViajeNoEncontrado] = useState(false);
   const [viajeOriginal, setViajeOriginal] = useState(null);
 
   const form = useForm({ initialValues: INITIAL_VALUES, validate });
@@ -58,6 +60,7 @@ const EditarViaje = () => {
     try {
       setLoadingViaje(true);
       setErrorViaje(false);
+      setViajeNoEncontrado(false);
       const viaje = await viajeApi.getById(id);
 
       setViajeOriginal(viaje);
@@ -76,8 +79,13 @@ const EditarViaje = () => {
         form.resetDirty();
       }
     } catch (err) {
-      console.error("Error cargando viaje:", err);
-      setErrorViaje(true);
+      if (isNotFoundError(err)) {
+        setViajeOriginal(null);
+        setViajeNoEncontrado(true);
+      } else {
+        console.error("Error cargando viaje:", err);
+        setErrorViaje(true);
+      }
     } finally {
       setLoadingViaje(false);
     }
@@ -148,6 +156,12 @@ const EditarViaje = () => {
 
       <ScreenContainer
         onLoading={{ show: loadingViaje, description: 'Cargando viaje...' }}
+        onNotFound={{
+          show: viajeNoEncontrado && !loadingViaje,
+          recurso: 'Viaje',
+          listaHref: '~/viajes',
+          listaLabel: 'Volver a viajes',
+        }}
         onError={{
           show: errorViaje && !loadingViaje,
           title: 'No se pudo cargar el viaje',
@@ -155,7 +169,7 @@ const EditarViaje = () => {
           onClick: loadViaje,
         }}
         onEmptyData={{
-          show: !loadingViaje && !errorViaje && !viajeOriginal,
+          show: !loadingViaje && !errorViaje && !viajeNoEncontrado && !viajeOriginal,
           title: 'Viaje no encontrado',
           description: 'No encontramos información para este viaje.',
         }}

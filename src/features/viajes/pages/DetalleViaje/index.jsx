@@ -4,6 +4,7 @@ import { useLocation, useParams } from 'wouter';
 import PageContainer from '@components/PageContainer';
 import PageBreadcrumbsHeader from '@components/PageBreadcrumbsHeader';
 import ScreenContainer from '@components/ScreenContainer';
+import { isNotFoundError } from '@utils/httpErrors';
 
 import DetalleViajeHeader from './components/DetalleViajeHeader';
 import HistorialTimeline from './components/HistorialTimeline';
@@ -16,7 +17,8 @@ const DetalleViaje = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const { viajeQuery, ubicacionQuery, historialQuery } = useViajeDetalle(id);
-  const { data: viaje, isLoading, isError, refetch } = viajeQuery;
+  const { data: viaje, isLoading, isError, error, refetch } = viajeQuery;
+  const notFound = isError && isNotFoundError(error);
   const { confirmFinalizar, confirmCancelar } = useViajeAcciones(id, { onSuccess: refetch });
 
   return (
@@ -26,8 +28,14 @@ const DetalleViaje = () => {
       <Card>
         <ScreenContainer
           onLoading={{ show: isLoading, description: 'Cargando viaje...' }}
+          onNotFound={{
+            show: notFound,
+            recurso: 'Viaje',
+            listaHref: '~/viajes',
+            listaLabel: 'Volver a viajes',
+          }}
           onError={{
-            show: isError,
+            show: isError && !notFound,
             title: 'No se pudo cargar el viaje',
             description: 'Ocurrió un error al obtener la información del viaje.',
             onClick: refetch,
