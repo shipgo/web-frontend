@@ -107,7 +107,7 @@ describe("UsuarioForm — roles y sucursal (CONTRACTS.md §3)", () => {
     expect(sucursalApi.getAll).not.toHaveBeenCalled();
 
     const listbox = await openRolesListbox(user);
-    expect(listbox.getByText("Administrador")).toBeInTheDocument();
+    expect(listbox.queryByText("Administrador")).not.toBeInTheDocument();
     expect(listbox.getByText("Chofer")).toBeInTheDocument();
     expect(listbox.getByText("Carga")).toBeInTheDocument();
     expect(listbox.queryByText("Superusuario")).not.toBeInTheDocument();
@@ -142,6 +142,27 @@ describe("UsuarioForm — roles y sucursal (CONTRACTS.md §3)", () => {
 
     const sucursalInput = screen.getByRole("combobox", { name: /^sucursal/i });
     expect(sucursalInput).not.toBeDisabled();
+  });
+
+  it("SHG-FE-121: ADMIN editando a un ADMIN ve el rol actual, el campo está bloqueado y el valor no cambia", async () => {
+    useAuthStore.setState({
+      user: new Usuario({ id: 1, username: "admin1", authorities: ["ROLE_ADMIN"], sucursal: { id: 7, nombre: "Sucursal Centro" } }),
+      isAuthenticated: true,
+    });
+    let formRef;
+    const Harness = () => {
+      const form = useForm({ initialValues: { authorities: ["ROLE_ADMIN"], sucursalID: "7" } });
+      formRef = form;
+      return <UsuarioForm form={form} onSubmit={vi.fn()} loading={false} onCancel={vi.fn()} isEdit />;
+    };
+
+    renderWithProviders(<Harness />);
+
+    await waitFor(() => expect(authorityApi.getAll).toHaveBeenCalled());
+    expect(await screen.findByText("Administrador")).toBeInTheDocument();
+    expect(screen.getByText(/sólo un superusuario puede cambiar este rol/i)).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /^roles/i })).toBeDisabled();
+    expect(formRef.values.authorities).toEqual(["ROLE_ADMIN"]);
   });
 
   it("SUPERUSER editando (SHG-FE-116): Sucursal es obligatoria y no se puede limpiar", async () => {

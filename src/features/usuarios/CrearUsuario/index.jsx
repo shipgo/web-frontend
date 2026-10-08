@@ -71,6 +71,7 @@ const CrearUsuario = () => {
         console.error("Error creando usuario:", error);
 
         const message = applyApiError(form, error, {
+          backendForbiddenMessage: true,
           fallbackMessage: "No se pudo crear el usuario",
         });
 

@@ -1,6 +1,7 @@
 import { modals } from '@mantine/modals';
 import { Button, Group, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { parseApiError } from '@domain/apiError';
 import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
 
 /**
@@ -11,11 +12,16 @@ import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
  */
 const describeFailure = (error) => {
   const status = error?.response?.status;
-  const backendMessage = error?.response?.data?.message;
+  const fallbackMessage =
+    status === 409
+      ? 'no está en un estado que permite eliminarlo'
+      : status === 404
+        ? 'ya no existe'
+        : 'no se pudo eliminar';
 
-  if (status === 409) return backendMessage || 'no está en un estado que permite eliminarlo';
-  if (status === 404) return backendMessage || 'ya no existe';
-  return backendMessage || 'no se pudo eliminar';
+  // `parseApiError` (@domain/apiError) unifica el parseo; el 403 de negocio
+  // (ej. rol no permitido) conserva el mensaje del backend.
+  return parseApiError(error, { backendForbiddenMessage: true, fallbackMessage }).message;
 };
 
 /**

@@ -148,6 +148,7 @@ const EditarUsuario = () => {
         console.error("Error actualizando usuario:", error);
 
         const message = applyApiError(form, error, {
+          backendForbiddenMessage: true,
           fallbackMessage: "No se pudo actualizar el usuario",
         });
 

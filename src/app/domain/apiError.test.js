@@ -189,6 +189,22 @@ describe('parseApiError — 403', () => {
   });
 });
 
+describe('parseApiError — 403 con backendForbiddenMessage', () => {
+  it('muestra el message del backend', () => {
+    const err = axiosError(403, { statusCode: 403, message: 'Sólo un SUPERUSER puede asignar ROLE_ADMIN' });
+    expect(parseApiError(err, { backendForbiddenMessage: true }).message).toBe(
+      'Sólo un SUPERUSER puede asignar ROLE_ADMIN',
+    );
+  });
+
+  it('sin message cae al texto fijo', () => {
+    const err = axiosError(403, { statusCode: 403 });
+    expect(parseApiError(err, { backendForbiddenMessage: true }).message).toBe(
+      'No tenés permisos para esta acción.',
+    );
+  });
+});
+
 describe('parseApiError — 5xx', () => {
   it('500 del GlobalExceptionHandler: mensaje genérico, sin exponer el interno', () => {
     const err = axiosError(500, {
