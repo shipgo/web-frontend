@@ -59,6 +59,12 @@ describe("DetalleVehiculo", () => {
     expect(
       await screen.findByText("En mantenimiento hasta el 31/12/2099 18:30"),
     ).toBeInTheDocument();
+    expect(mockGetMantenimientos).toHaveBeenCalledWith({
+      patente: "AB123CD",
+      page: 0,
+      size: 50,
+      sort: "fechaHoraMantenimiento:desc",
+    });
   });
 
   it('"Ver mantenimientos" navega al historial filtrado por patente (SHG-FE-098)', async () => {

@@ -56,7 +56,12 @@ const DetalleVehiculo = () => {
     if (!vehiculo?.patente) return undefined;
     let cancelled = false;
     mantenimientoApi
-      .get({ patente: vehiculo.patente, page: 0, size: 50 })
+      .get({
+        patente: vehiculo.patente,
+        page: 0,
+        size: 50,
+        sort: "fechaHoraMantenimiento:desc",
+      })
       .then((page) => {
         if (!cancelled) {
           setMantenimiento(

@@ -86,4 +86,24 @@ describe("EditarMantenimientoForm (SHG-FE-115)", () => {
     expect(await screen.findByText(message)).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
+
+  it("muestra en el campo Hasta el 400 por fechaHoraFin", async () => {
+    const error = "El campo fecha y hora de fin debe ser posterior al inicio del mantenimiento.";
+    mockUpdate.mockRejectedValue({
+      response: {
+        status: 400,
+        data: { statusCode: 400, message: "Validación", fields: [{ field: "fechaHoraFin", error }] },
+      },
+    });
+    const user = userEvent.setup();
+    renderForm();
+
+    await screen.findByDisplayValue("Ana");
+    await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    // Error inline del campo (Mantine lo renderiza con id "...-error"), no sólo el toast.
+    const inline = await screen.findByText(error, { selector: '[id$="-error"]' });
+    expect(inline).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
 });
