@@ -47,7 +47,7 @@ describe("NavigationSpotlight", () => {
     const user = userEvent.setup();
     renderSpotlight(adminUser);
 
-    await user.click(screen.getByText("Envios"));
+    await user.click(screen.getByText("Envíos"));
 
     await waitFor(() => expect(window.location.pathname).toBe("/envios"));
     expect(mockBuscar).not.toHaveBeenCalled();
@@ -74,7 +74,7 @@ describe("NavigationSpotlight", () => {
 
     expect(screen.getByText("Inicio")).toBeInTheDocument();
     expect(screen.getByText("Mapa")).toBeInTheDocument();
-    expect(screen.queryByText("Envios")).not.toBeInTheDocument();
+    expect(screen.queryByText("Envíos")).not.toBeInTheDocument();
     expect(screen.queryByText("Usuarios")).not.toBeInTheDocument();
 
     await user.type(screen.getByPlaceholderText(SEARCH_PLACEHOLDER), "SEED000001");

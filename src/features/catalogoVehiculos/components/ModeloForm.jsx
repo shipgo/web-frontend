@@ -82,7 +82,7 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
     }
 
     modals.openConfirmModal({
-      title: "Cancelar",
+      title: "Cambios sin guardar",
       children: (
         <Text size="sm">
           Tenés cambios sin guardar. ¿Seguro que querés salir?

@@ -22,7 +22,7 @@ export const useDeleteUsuario = (onSuccess) => {
         centered: true,
         children: (
           <Text size="sm">
-            ¿Está seguro que desea eliminar al usuario{" "}
+            ¿Estás seguro de que querés eliminar al usuario{" "}
             <strong>{fullName}</strong>?
             <br />
             Esta acción no se puede deshacer.

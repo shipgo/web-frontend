@@ -29,7 +29,7 @@ const CancelarViajeModalBody = ({ id, onCancelar, onVolver }) => {
   return (
     <Stack gap="sm">
       <Text size="sm">
-        ¿Estás seguro de que deseas cancelar el viaje <strong>#{id}</strong>? Esta acción no se puede
+        ¿Estás seguro de que querés cancelar el viaje <strong>#{id}</strong>? Esta acción no se puede
         deshacer.
       </Text>
       <Textarea

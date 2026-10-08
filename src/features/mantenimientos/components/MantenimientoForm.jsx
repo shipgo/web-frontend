@@ -115,9 +115,14 @@ const MantenimientoForm = ({
         setVehiculos(
           vehiculosRes.map((v) => ({
             value: v.id.toString(),
-            label: `${v.patente} - ${v.marca?.nombre || v.marca || ""} ${
-              v.modelo?.nombre || v.modelo || ""
-            }`.trim(),
+            label: [
+              v.patente,
+              [v.marca?.nombre || v.marca, v.modelo?.nombre || v.modelo]
+                .filter(Boolean)
+                .join(" "),
+            ]
+              .filter(Boolean)
+              .join(" - "),
           }))
         );
       } catch (error) {
@@ -156,7 +161,7 @@ const MantenimientoForm = ({
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <TextInput
                   label="Nombre del Mecánico"
-                  placeholder="Ingresa el nombre"
+                  placeholder="Ingresá el nombre"
                   leftSection={<IconUser size={18} />}
                   required
                   {...form.getInputProps("nombreMecanico")}
@@ -164,7 +169,7 @@ const MantenimientoForm = ({
 
                 <TextInput
                   label="Apellido del Mecánico"
-                  placeholder="Ingresa el apellido"
+                  placeholder="Ingresá el apellido"
                   leftSection={<IconUser size={18} />}
                   required
                   {...form.getInputProps("apellidoMecanico")}
@@ -184,7 +189,7 @@ const MantenimientoForm = ({
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <Select
                   label="Vehículo"
-                  placeholder="Selecciona un vehículo"
+                  placeholder="Seleccioná un vehículo"
                   data={vehiculos}
                   searchable
                   filter={filterIgnoreAccents}
@@ -196,7 +201,7 @@ const MantenimientoForm = ({
 
                 <Select
                   label="Tipo de Mantenimiento"
-                  placeholder="Selecciona el tipo"
+                  placeholder="Seleccioná el tipo"
                   data={tiposMantenimiento}
                   searchable
                   filter={filterIgnoreAccents}
@@ -208,7 +213,7 @@ const MantenimientoForm = ({
 
               <DateTimePicker
                 label="Fecha y Hora del Mantenimiento"
-                placeholder="Selecciona la fecha"
+                placeholder="Seleccioná la fecha"
                 leftSection={<IconCalendar size={18} />}
                 valueFormat="DD/MM/YYYY HH:mm"
                 minDate={isEdit ? undefined : new Date()}

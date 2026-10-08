@@ -13,11 +13,12 @@ vi.mock("@contexts/auth", () => ({
 import AppNavbar from "./Navbar";
 
 // AppShellNavbar requires an AppShell ancestor to read layout context from.
-const renderNavbar = () =>
+const renderNavbar = (options) =>
   renderWithProviders(
     <AppShell navbar={{ width: 260 }}>
       <AppNavbar />
-    </AppShell>
+    </AppShell>,
+    options,
   );
 
 // Clave interna que usa el `localStorageColorSchemeManager` de Mantine para
@@ -79,7 +80,7 @@ describe("AppNavbar", () => {
     renderNavbar();
 
     expect(screen.getByText("Configurá tu empresa")).toBeInTheDocument();
-    for (const label of ["Home", "Mapa", "Envios", "Viajes", "Usuarios", "Sucursales", "Mi perfil"]) {
+    for (const label of ["Home", "Mapa", "Envíos", "Viajes", "Usuarios", "Sucursales", "Mi perfil"]) {
       expect(screen.queryByText(label)).not.toBeInTheDocument();
     }
   });
@@ -90,7 +91,7 @@ describe("AppNavbar", () => {
 
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Viajes")).toBeInTheDocument();
-    expect(screen.getByText("Envios")).toBeInTheDocument();
+    expect(screen.getByText("Envíos")).toBeInTheDocument();
   });
 
   // SHG-FE-100: "Opciones" llevaba a `/opciones`, una ruta inexistente (pantalla
@@ -106,6 +107,20 @@ describe("AppNavbar", () => {
       "href",
       "/usuarios/42",
     );
+  });
+
+  it("en el perfil propio sólo 'Mi perfil' queda activo; en /usuarios, sólo 'Usuarios'", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 42, authorities: [{ name: "ROLE_ADMIN" }] },
+    });
+    const { unmount } = renderNavbar({ route: "/usuarios/42" });
+    expect(screen.getByRole("link", { name: /mi perfil/i })).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("link", { name: /usuarios/i })).not.toHaveAttribute("data-active");
+    unmount();
+
+    renderNavbar({ route: "/usuarios" });
+    expect(screen.getByRole("link", { name: /usuarios/i })).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("link", { name: /mi perfil/i })).not.toHaveAttribute("data-active");
   });
 });
 
@@ -123,20 +138,20 @@ describe("AppNavbar — toggle de tema (SHG-FE-077)", () => {
     window.localStorage.removeItem(MANTINE_COLOR_SCHEME_STORAGE_KEY);
   });
 
-  it("con el SO en modo oscuro y sin preferencia guardada, muestra 'Modo oscuro' desde el primer render", () => {
+  it("con el SO en modo oscuro y sin preferencia guardada, muestra 'Modo claro' desde el primer render", () => {
     mockMatchMediaPrefersDark(true);
-    renderNavbarWithAutoScheme();
-
-    expect(screen.getByText("Modo oscuro")).toBeInTheDocument();
-    expect(screen.queryByText("Modo claro")).not.toBeInTheDocument();
-  });
-
-  it("con el SO en modo claro y sin preferencia guardada, muestra 'Modo claro' desde el primer render", () => {
-    mockMatchMediaPrefersDark(false);
     renderNavbarWithAutoScheme();
 
     expect(screen.getByText("Modo claro")).toBeInTheDocument();
     expect(screen.queryByText("Modo oscuro")).not.toBeInTheDocument();
+  });
+
+  it("con el SO en modo claro y sin preferencia guardada, muestra 'Modo oscuro' desde el primer render", () => {
+    mockMatchMediaPrefersDark(false);
+    renderNavbarWithAutoScheme();
+
+    expect(screen.getByText("Modo oscuro")).toBeInTheDocument();
+    expect(screen.queryByText("Modo claro")).not.toBeInTheDocument();
   });
 
   it("un solo click alterna el tema y actualiza la etiqueta en el mismo click (arrancando en 'auto'/oscuro)", async () => {
@@ -144,12 +159,12 @@ describe("AppNavbar — toggle de tema (SHG-FE-077)", () => {
     mockMatchMediaPrefersDark(true);
     renderNavbarWithAutoScheme();
 
-    expect(screen.getByText("Modo oscuro")).toBeInTheDocument();
-
-    await user.click(screen.getByText("Modo oscuro"));
-
     expect(screen.getByText("Modo claro")).toBeInTheDocument();
-    expect(screen.queryByText("Modo oscuro")).not.toBeInTheDocument();
+
+    await user.click(screen.getByText("Modo claro"));
+
+    expect(screen.getByText("Modo oscuro")).toBeInTheDocument();
+    expect(screen.queryByText("Modo claro")).not.toBeInTheDocument();
   });
 
   it("respeta una preferencia explícita guardada de una sesión previa y alterna en un solo click", async () => {
@@ -159,10 +174,10 @@ describe("AppNavbar — toggle de tema (SHG-FE-077)", () => {
     window.localStorage.setItem(MANTINE_COLOR_SCHEME_STORAGE_KEY, "dark");
     renderNavbarWithAutoScheme();
 
-    expect(screen.getByText("Modo oscuro")).toBeInTheDocument();
-
-    await user.click(screen.getByText("Modo oscuro"));
-
     expect(screen.getByText("Modo claro")).toBeInTheDocument();
+
+    await user.click(screen.getByText("Modo claro"));
+
+    expect(screen.getByText("Modo oscuro")).toBeInTheDocument();
   });
 });

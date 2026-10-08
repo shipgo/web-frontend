@@ -18,7 +18,7 @@ export const useDeleteModelo = (onSuccess) => {
       centered: true,
       children: (
         <Text size="sm">
-          ¿Estás seguro de que deseas eliminar el modelo <strong>{nombre}</strong>?
+          ¿Estás seguro de que querés eliminar el modelo <strong>{nombre}</strong>?
           Esta acción no se puede deshacer.
         </Text>
       ),

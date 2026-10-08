@@ -1,7 +1,6 @@
 import { useLocation } from "wouter";
 import { Badge, Button, Card, Stack, Text } from "@mantine/core";
 
-import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { estadoBadge } from "@domain/estados";
 
@@ -20,7 +19,7 @@ const EnvioNoEditable = ({ estado }) => {
   const { label, color, textColor } = estadoBadge("envio", estado);
 
   return (
-    <PageContainer>
+    <Stack>
       <PageBreadcrumbsHeader
         entidad="Envíos"
         accion="Editar envío"
@@ -43,7 +42,7 @@ const EnvioNoEditable = ({ estado }) => {
           <Button onClick={() => navigate("~/envios")}>Volver a Envíos</Button>
         </Stack>
       </Card>
-    </PageContainer>
+    </Stack>
   );
 };
 

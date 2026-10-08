@@ -51,11 +51,11 @@ describe("USUARIO_SCHEMA", () => {
     expect(e.nombreCalle).toBe("El campo nombre de calle no puede estar vacío");
     expect(e.numeroCalle).toBe("El campo número de calle no puede estar vacío");
     expect(e.email).toBe("El campo email no puede estar vacío");
-    expect(e.authorities).toBe("Debe seleccionar al menos un rol");
+    expect(e.authorities).toBe("Seleccioná al menos un rol");
     expect(e.dni).toBe("El campo DNI no puede estar vacío");
-    expect(e.tipoDocumentoID).toBe("Debe seleccionar un tipo de documento");
-    expect(e.sexoID).toBe("Debe seleccionar un sexo");
-    expect(e.localidadID).toBe("Debe seleccionar una localidad");
+    expect(e.tipoDocumentoID).toBe("Seleccioná un tipo de documento");
+    expect(e.sexoID).toBe("Seleccioná un sexo");
+    expect(e.localidadID).toBe("Seleccioná una localidad");
   });
 
   it("valida el formato del email", () => {
@@ -83,7 +83,7 @@ describe("USUARIO_SCHEMA", () => {
 describe("buildUsuarioValidate (SHG-FE-116: sucursal obligatoria para SUPERUSER, crear y editar)", () => {
   it("SUPERUSER sin sucursal → error en sucursalID", () => {
     const errors = buildUsuarioValidate(true)({ ...USUARIO_INITIAL_VALUES, sucursalID: null });
-    expect(errors.sucursalID).toBe("Debes seleccionar una sucursal");
+    expect(errors.sucursalID).toBe("Seleccioná una sucursal");
   });
 
   it("SUPERUSER con sucursal → sin error de sucursalID", () => {

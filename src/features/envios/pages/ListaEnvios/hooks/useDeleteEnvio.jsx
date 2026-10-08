@@ -25,7 +25,7 @@ export const useDeleteEnvio = (onSuccess) => {
       centered: true,
       children: (
         <Text size="sm">
-          ¿Estás seguro de que deseas eliminar el envío <strong>{identificador}</strong>? Esta acción no se
+          ¿Estás seguro de que querés eliminar el envío <strong>{identificador}</strong>? Esta acción no se
           puede deshacer.
         </Text>
       ),

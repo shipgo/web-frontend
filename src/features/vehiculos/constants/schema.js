@@ -103,11 +103,11 @@ export const VEHICULO_SCHEMA = z
             "Ingresá una patente válida (formato AA123BB o ABC123)",
           ),
       ),
-    tipoVehiculoID: requiredSelect("Debe seleccionar un tipo de vehículo"),
-    marcaID: requiredSelect("Debe seleccionar una marca"),
-    modeloID: requiredSelect("Debe seleccionar un modelo"),
-    combustibleID: requiredSelect("Debe seleccionar un combustible"),
-    tipoRuedaID: requiredSelect("Debe seleccionar un tipo de rueda"),
+    tipoVehiculoID: requiredSelect("Seleccioná un tipo de vehículo"),
+    marcaID: requiredSelect("Seleccioná una marca"),
+    modeloID: requiredSelect("Seleccioná un modelo"),
+    combustibleID: requiredSelect("Seleccioná un combustible"),
+    tipoRuedaID: requiredSelect("Seleccioná un tipo de rueda"),
     anioCompra: numberField(
       z
         .number({ error: "El campo año de compra no puede estar vacío" })

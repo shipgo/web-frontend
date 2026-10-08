@@ -19,6 +19,7 @@ import { useAuthStore } from "@stores/auth.store";
 import { NotificacionesBell } from "@features/notificaciones";
 import { OperatingSucursalSelector } from "@components";
 import { necesitaOnboardingEmpresa } from "@domain/empresa";
+import { rolLabel } from "@domain/roles";
 
 import NavigationSpotlight from "./NavigationSpotlight";
 
@@ -46,7 +47,7 @@ const AppHeader = () => {
   const initials = user.getInitials
     ? user.getInitials()
     : fullName.substring(0, 2).toUpperCase();
-  const role = user.authorities?.[0]?.name || user.role || "Usuario";
+  const role = rolLabel(user.authorities?.[0]?.name || user.role);
   // SHG-FE-116: sin empresa no hay nada que buscar ni notificaciones: queda el
   // menú del usuario (con "Cerrar sesión").
   const sinEmpresa = necesitaOnboardingEmpresa(user);

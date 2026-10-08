@@ -15,7 +15,7 @@ const CrearViaje = () => {
       <PageBreadcrumbsHeader
         entidad="Viajes"
         accion="Crear nuevo viaje"
-        descripcion="Completa las secciones para crear un viaje"
+        descripcion="Completá las secciones para crear un viaje"
       />
 
       <EnviosFormProvider>

@@ -48,11 +48,11 @@ export const USUARIO_SCHEMA = z.object({
     .min(1, 'El campo email no puede estar vacío')
     .max(TEXTO_MAX, `No puede superar los ${TEXTO_MAX} caracteres`)
     .refine((v) => EMAIL_RE.test(v), 'El email no es válido'),
-  authorities: z.array(z.string()).min(1, 'Debe seleccionar al menos un rol'),
+  authorities: z.array(z.string()).min(1, 'Seleccioná al menos un rol'),
   dni: textoRequerido('El campo DNI no puede estar vacío'),
-  tipoDocumentoID: valorRequerido('Debe seleccionar un tipo de documento'),
-  sexoID: valorRequerido('Debe seleccionar un sexo'),
-  localidadID: valorRequerido('Debe seleccionar una localidad'),
+  tipoDocumentoID: valorRequerido('Seleccioná un tipo de documento'),
+  sexoID: valorRequerido('Seleccioná un sexo'),
+  localidadID: valorRequerido('Seleccioná una localidad'),
   provinciaID: z.any().optional(),
   sucursalID: z.any().optional(),
 });
@@ -86,7 +86,7 @@ export const buildUsuarioValidate = (isSuper) => {
   return (values) => {
     const errors = base(values);
     if (isSuper && !values.sucursalID) {
-      return { ...errors, sucursalID: 'Debes seleccionar una sucursal' };
+      return { ...errors, sucursalID: 'Seleccioná una sucursal' };
     }
     return errors;
   };

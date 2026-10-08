@@ -67,6 +67,14 @@ describe("AppHeader", () => {
     expect(screen.getByText("K")).toBeInTheDocument();
   });
 
+  it("muestra el rol en español, no el valor crudo ROLE_*", () => {
+    mockUseAuth.mockReturnValue({ user: adminUser });
+    renderHeader();
+
+    expect(screen.getByText("Administrador")).toBeInTheDocument();
+    expect(screen.queryByText("ROLE_ADMIN")).not.toBeInTheDocument();
+  });
+
   it("clickear el trigger abre el spotlight", async () => {
     const user = userEvent.setup();
     mockUseAuth.mockReturnValue({ user: adminUser });

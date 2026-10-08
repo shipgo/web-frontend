@@ -238,7 +238,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
               <IconMapPin />
             </ThemeIcon>
             <Box>
-              <Title order={4}>Origen y destino</Title>
+              <Title order={4}>Destino</Title>
               <Text c="dimmed" size="sm">
                 Indicá los datos de contacto y cómo se entrega el envío
               </Text>
@@ -368,7 +368,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                   <Autocomplete
                     disabled={destinoBloqueado}
                     label="Buscar dirección"
-                    description="Completa automáticamente la calle, localidad y ubicación en el mapa"
+                    description="Completá automáticamente la calle, localidad y ubicación en el mapa"
                     error={form.errors.coordenadas}
                     value={searchValue}
                     onChange={handleSearchChange}

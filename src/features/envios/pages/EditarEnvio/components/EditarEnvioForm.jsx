@@ -5,7 +5,6 @@ import { notifications } from "@mantine/notifications";
 import { schemaResolver } from "@mantine/form";
 import { IconCheck, IconInfoCircle, IconX } from "@tabler/icons-react";
 
-import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
 import { envioApi } from "@api";
@@ -105,7 +104,7 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
   });
 
   return (
-    <PageContainer>
+    <Stack>
       <PageBreadcrumbsHeader
         entidad="Envíos"
         accion="Editar envío"
@@ -141,7 +140,7 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
           submitLabel="Guardar cambios"
         />
       </EnvioFormProvider>
-    </PageContainer>
+    </Stack>
   );
 };
 

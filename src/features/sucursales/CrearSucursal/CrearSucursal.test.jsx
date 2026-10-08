@@ -152,9 +152,9 @@ describe("CrearSucursal", () => {
     await waitFor(() => expect(mockGetAllProvincias).toHaveBeenCalled());
 
     await user.click(screen.getByRole("button", { name: /crear sucursal/i }));
-    expect(await screen.findByText("Debes ingresar el nombre")).toBeInTheDocument();
-    expect(screen.getByText("Debes ingresar el prefijo")).toBeInTheDocument();
-    expect(screen.getByText("Debes ingresar el teléfono")).toBeInTheDocument();
+    expect(await screen.findByText("Ingresá el nombre")).toBeInTheDocument();
+    expect(screen.getByText("Ingresá el prefijo")).toBeInTheDocument();
+    expect(screen.getByText("Ingresá el teléfono")).toBeInTheDocument();
     expect(container.querySelector("form")).toHaveAttribute("novalidate");
 
     await user.type(screen.getByLabelText(/^Prefijo/), "abc");

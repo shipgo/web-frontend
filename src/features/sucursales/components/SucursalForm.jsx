@@ -99,7 +99,7 @@ const SucursalForm = ({
     }
 
     modals.openConfirmModal({
-      title: "Cancelar",
+      title: "Cambios sin guardar",
       children: (
         <Text size="sm">
           Tenés cambios sin guardar. ¿Seguro que querés salir?
@@ -258,7 +258,7 @@ const SucursalForm = ({
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <Select
                   label="Provincia"
-                  placeholder="Selecciona una provincia"
+                  placeholder="Seleccioná una provincia"
                   data={provincias}
                   searchable
                   filter={filterIgnoreAccents}
@@ -273,7 +273,7 @@ const SucursalForm = ({
 
                 <Select
                   label="Localidad"
-                  placeholder="Selecciona una localidad"
+                  placeholder="Seleccioná una localidad"
                   data={localidades}
                   searchable
                   filter={filterIgnoreAccents}

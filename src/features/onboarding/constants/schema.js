@@ -11,7 +11,7 @@ import {
  * las reglas de `SUCURSAL_SCHEMA` (teléfono/prefijo sólo dígitos, largos, dirección).
  */
 export const EMPRESA_ONBOARDING_SCHEMA = SUCURSAL_SCHEMA.extend({
-  empresaNombre: nombreRequerido("Debes ingresar el nombre de la empresa"),
+  empresaNombre: nombreRequerido("Ingresá el nombre de la empresa"),
 });
 
 export const EMPRESA_ONBOARDING_INITIAL_VALUES = {

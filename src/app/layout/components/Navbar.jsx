@@ -36,6 +36,7 @@ const AppNavbar = () => {
 
   const pages = sinEmpresa ? [] : PAGES.filter(({ roles }) => hasAnyRole(user, roles));
   const admin = sinEmpresa ? [] : ADMIN.filter(({ roles }) => hasAnyRole(user, roles));
+  const perfilPath = `/usuarios/${user?.id}`;
 
   return (
     <AppShellNavbar>
@@ -102,7 +103,7 @@ const AppNavbar = () => {
               label={label}
               component={Link}
               leftSection={icon}
-              active={location.startsWith(to)}
+              active={location.startsWith(to) && location !== perfilPath}
             />
           ))}
         </>
@@ -115,10 +116,10 @@ const AppNavbar = () => {
       {!sinEmpresa && (
         <NavLink
           mt="auto"
-          to={`/usuarios/${user?.id}`}
+          to={perfilPath}
           label="Mi perfil"
           component={Link}
-          active={location === `/usuarios/${user?.id}`}
+          active={location === perfilPath}
           leftSection={<IconUser size={18} />}
         />
       )}
@@ -126,12 +127,12 @@ const AppNavbar = () => {
       <NavLink
         mt={sinEmpresa ? "auto" : undefined}
         onClick={handleToggleColorScheme}
-        label={computedColorScheme === "dark" ? "Modo oscuro" : "Modo claro"}
+        label={computedColorScheme === "dark" ? "Modo claro" : "Modo oscuro"}
         leftSection={
           computedColorScheme === "dark" ? (
-            <IconMoonStars size={18} />
-          ) : (
             <IconSun size={18} />
+          ) : (
+            <IconMoonStars size={18} />
           )
         }
       />
