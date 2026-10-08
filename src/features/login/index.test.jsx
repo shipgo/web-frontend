@@ -75,6 +75,14 @@ describe("LoginPage — captcha (SHG-FE-043)", () => {
     );
   });
 
+  it("SHG-FE-112: el divisor vertical entre los links sólo se muestra desde sm (a 390 px quedaba huérfano)", () => {
+    renderWithProviders(<LoginPage />, { route: "/login" });
+
+    const divisor = screen.getByText("Necesito ayuda").parentElement.querySelector('[data-orientation="vertical"]');
+    expect(divisor).not.toBeNull();
+    expect(divisor.className).toMatch(/visible-from-sm/);
+  });
+
   // --- SHG-FE-054: logo → landing / redirect post-login ---
 
   it("click en el logo sin sesión lleva siempre a la landing (/), incluso con ?redirect= en la URL", async () => {

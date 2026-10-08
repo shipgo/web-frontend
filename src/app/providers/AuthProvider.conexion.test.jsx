@@ -67,6 +67,7 @@ describe('AuthProvider — API caída en el bootstrap (SHG-FE-110)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockSetLocation.mockReset();
+    window.localStorage.clear();
     useAuthStore.setState({
       user: null,
       isAuthenticated: false,
@@ -180,6 +181,37 @@ describe('AuthProvider — API caída en el bootstrap (SHG-FE-110)', () => {
     await act(() => vi.advanceTimersByTimeAsync(BOOTSTRAP_TOTAL_TIMEOUT_MS + 500));
     expect(calls).toEqual(['/refresh', '/whoami', '/customer/me']);
     expect(screen.getByText(TITULO)).toBeInTheDocument();
+  });
+
+  it('pista customer + customer/me colgado: pantalla de conexión a los ~12 s, sin ir a /login', async () => {
+    window.localStorage.setItem('shipgo.sessionHint', 'customer');
+    const calls = [];
+    restclient.defaults.adapter = (config) => {
+      calls.push(config.url);
+      if (config.url === '/refresh') return ok(config, { access_token: 't' });
+      return new Promise(() => {});
+    };
+    renderAt('/portal');
+    await act(() => vi.advanceTimersByTimeAsync(BOOTSTRAP_TOTAL_TIMEOUT_MS + 500));
+    expect(calls).toEqual(['/refresh', '/customer/me']);
+    expect(screen.getByText(TITULO)).toBeInTheDocument();
+    expect(mockSetLocation).not.toHaveBeenCalled();
+  });
+
+  it('pista customer + customer/me 5xx: pantalla de conexión, sin probar whoami ni ir a /login', async () => {
+    window.localStorage.setItem('shipgo.sessionHint', 'customer');
+    const calls = [];
+    restclient.defaults.adapter = (config) => {
+      calls.push(config.url);
+      return config.url === '/refresh'
+        ? ok(config, { access_token: 't' })
+        : failWith(503)(config);
+    };
+    renderAt('/portal');
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(calls).toEqual(['/refresh', '/customer/me']);
+    expect(screen.getByText(TITULO)).toBeInTheDocument();
+    expect(mockSetLocation).not.toHaveBeenCalled();
   });
 
   it('connectionError viejo + login posterior: no muestra la pantalla estando autenticado ni saltea el redirect desde /login', async () => {

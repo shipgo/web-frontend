@@ -10,6 +10,12 @@ import { API_URLS } from "@constants/apiUrls";
 import { captchaHeader } from "@config/captcha";
 import { usuarioApi } from "@api/usuario.api";
 import {
+  HINT_CUSTOMER,
+  HINT_STAFF,
+  readSessionHint,
+  writeSessionHint,
+} from "@utils/sessionHint";
+import {
   hasAnyRole,
   hasRole,
   isAdminOrSuper,
@@ -161,35 +167,61 @@ export const useAuthStore = create((set, get) => ({
   // `CustomerMeDTO`) y construimos un `Usuario` mínimo con rol `ROLE_CUSTOMER`.
   // Así el login y el refresh al cargar la app (`initUser`) funcionan igual para
   // un customer con sesión activa.
+  //
+  // SHG-FE-112: para no generar un 403 seguro en cada carga de un CUSTOMER, se
+  // recuerda (localStorage, `sessionHint`) el tipo de la última sesión y se
+  // prueba primero el endpoint que corresponde. Es sólo una optimización: si la
+  // pista está mal o vencida, el 403/401 del primer endpoint se resuelve
+  // probando el otro, y los roles salen siempre de la respuesta del backend.
   getUserInfo: async () => {
-    try {
+    const fetchStaff = async () => {
       const response = await restclient.get(API_URLS.WHOAMI_URL);
-      const user = new Usuario(response.data);
-      set({ user, isAuthenticated: true });
-      return user;
+      return { user: new Usuario(response.data), hint: HINT_STAFF };
+    };
+    const fetchCustomer = async () => {
+      const { data } = await restclient.get(API_URLS.CUSTOMER_ME_URL);
+      return {
+        user: new Usuario({ ...data, authorities: [{ name: ROLE_CUSTOMER }] }),
+        hint: HINT_CUSTOMER,
+      };
+    };
+    const isDenied = (error) =>
+      error?.response?.status === 403 || error?.response?.status === 401;
+
+    const customerFirst = readSessionHint() === HINT_CUSTOMER;
+    const [first, second] = customerFirst
+      ? [fetchCustomer, fetchStaff]
+      : [fetchStaff, fetchCustomer];
+
+    let result;
+    try {
+      result = await first();
     } catch (error) {
-      if (error?.response?.status === 403) {
-        try {
-          const { data } = await restclient.get(API_URLS.CUSTOMER_ME_URL);
-          const user = new Usuario({
-            ...data,
-            authorities: [{ name: ROLE_CUSTOMER }],
-          });
-          set({ user, isAuthenticated: true });
-          return user;
-        } catch (customerError) {
-          // Un 401/403 acá es esperable (sesión vencida / no es un CUSTOMER):
-          // no es un error a nivel `error`. Sólo se loguea lo inesperado.
-          const st = customerError?.response?.status;
-          if (st !== 401 && st !== 403) {
-            console.warn("Error getting customer info:", customerError);
-          }
-          throw customerError;
-        }
+      // Sin pista (o con pista de staff) sólo el 403 de `whoami` indica "es un
+      // CUSTOMER" (comportamiento previo). Con pista de customer, un 401/403 de
+      // `customer/me` indica que la pista está mal.
+      const fallsBack = customerFirst
+        ? isDenied(error)
+        : error?.response?.status === 403;
+      if (!fallsBack) {
+        console.error("Error getting user info:", error);
+        throw error;
       }
-      console.error("Error getting user info:", error);
-      throw error;
+      try {
+        result = await second();
+      } catch (secondError) {
+        // Un 401/403 acá es esperable (sesión vencida / rol sin acceso): no es
+        // un error a nivel `error`. Sólo se loguea lo inesperado.
+        const st = secondError?.response?.status;
+        if (st !== 401 && st !== 403) {
+          console.warn("Error getting user info (fallback):", secondError);
+        }
+        throw secondError;
+      }
     }
+    writeSessionHint(result.hint);
+    set({ user: result.user, isAuthenticated: true });
+    return result.user;
   },
 
   // Login.
@@ -240,7 +272,9 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     try {
       const user = get().user;
-      if (user) {
+      // `PUT /api/user/updateToken` es SU/AD/CH/CA (UserController): para un
+      // CUSTOMER siempre responde 403, así que no se llama (SHG-FE-112).
+      if (user && !hasRole(user, ROLE_CUSTOMER)) {
         // Limpiar token de notificaciones (best-effort: no bloquea el logout)
         try {
           await get().updateToken(null);

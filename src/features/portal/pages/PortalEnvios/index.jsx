@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
+import { useMediaQuery } from '@mantine/hooks';
 import {
   Badge,
   Card,
   Group,
   Pagination,
+  Paper,
   Stack,
   Table,
   Text,
@@ -32,6 +34,67 @@ const getDestino = (envio) => {
 };
 
 /**
+ * Lista en cards para pantallas angostas (SHG-FE-112): a 390 px la tabla cortaba
+ * Destino y truncaba el badge de estado, así que cada envío es una card con
+ * código, estado, fecha y destino completos (el texto envuelve, no se corta).
+ */
+const EnviosCards = ({ envios, onOpen }) => (
+  <Stack gap="xs" p="sm" data-testid="portal-envios-cards">
+    {envios.map((envio) => {
+      const info = estadoBadge('envio', envio.estado);
+      const fecha = getFechaAlta(envio);
+      const codigo = envio.codigoSeguimiento || null;
+      return (
+        <Paper
+          key={envio.id ?? codigo}
+          withBorder
+          p="sm"
+          style={codigo ? { cursor: 'pointer' } : undefined}
+          onClick={codigo ? () => onOpen(codigo) : undefined}
+          onKeyDown={
+            codigo
+              ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onOpen(codigo);
+                  }
+                }
+              : undefined
+          }
+          tabIndex={codigo ? 0 : undefined}
+          role={codigo ? 'button' : undefined}
+          aria-label={codigo ? `Ver detalle del envío ${codigo}` : undefined}
+        >
+          <Stack gap={6}>
+            <Group justify="space-between" align="flex-start" wrap="wrap" gap="xs">
+              <Text size="sm" ff="monospace" fw={600}>
+                {codigo ?? EMPTY}
+              </Text>
+              <Badge
+                color={info.color}
+                variant="light"
+                radius="md"
+                style={{ overflow: 'visible', maxWidth: '100%' }}
+              >
+                {info.label}
+              </Badge>
+            </Group>
+            <Text size="sm">
+              <Text span c="dimmed">Fecha: </Text>
+              {fecha ? formatFecha(fecha) : EMPTY}
+            </Text>
+            <Text size="sm">
+              <Text span c="dimmed">Destino: </Text>
+              {getDestino(envio)}
+            </Text>
+          </Stack>
+        </Paper>
+      );
+    })}
+  </Stack>
+);
+
+/**
  * `/portal/envios` — lista paginada de los envíos del CUSTOMER logueado.
  * Contrato: `planning/CONTRACTS.md §7` (CONTRACT-007) · backend `SHG-BE-002`
  * (`GET /api/envio/mios`).
@@ -39,6 +102,11 @@ const getDestino = (envio) => {
 const PortalEnviosPage = () => {
   const [, navigate] = useLocation();
   const [page, setPage] = useState(1);
+  // Breakpoint `sm` de Mantine (48em): por debajo, cards en lugar de tabla.
+  const isMobile = useMediaQuery('(max-width: 47.99em)', undefined, {
+    // Sin esto el primer render en un celular muestra la tabla y salta a cards.
+    getInitialValueInEffect: false,
+  });
   const { envios, totalPages, totalElements, isLoading, isError, isFetching, refetch } =
     useMisEnvios(page);
 
@@ -66,7 +134,13 @@ const PortalEnviosPage = () => {
             description: 'Cuando alguien te envíe un paquete o vos generes uno con este email, va a aparecer acá.',
           }}
         >
-          {envios.length > 0 && (
+          {envios.length > 0 && isMobile && (
+            <EnviosCards
+              envios={envios}
+              onOpen={(codigo) => navigate(`~${PORTAL_HOME_PATH}/${codigo}`)}
+            />
+          )}
+          {envios.length > 0 && !isMobile && (
             <Table.ScrollContainer minWidth={480}>
               <Table highlightOnHover verticalSpacing="sm">
                 <Table.Thead>
