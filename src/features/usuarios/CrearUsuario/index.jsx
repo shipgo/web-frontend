@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useLocation } from "wouter";
-import { useForm, schemaResolver } from "@mantine/form";
+import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
@@ -11,7 +11,7 @@ import { applyApiError } from "@domain/apiError";
 import { ROLE_SUPERUSER, hasRole } from "@domain/roles";
 import { usuarioApi } from "@api";
 import UsuarioForm from "../components/UsuarioForm";
-import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA } from "../constants/schema";
+import { USUARIO_INITIAL_VALUES, buildUsuarioValidate } from "../constants/schema";
 import { toBackendDate } from "../utils";
 
 const CrearUsuario = () => {
@@ -21,19 +21,9 @@ const CrearUsuario = () => {
   const user = useAuthStore((state) => state.user);
   const isSuper = hasRole(user, ROLE_SUPERUSER);
 
-  // SHG-FE-116: un SUPERUSER debe elegir la sucursal del usuario que crea
-  // (`POST /api/user` exige `sucursalID`). Un ADMIN no elige: el form la fuerza
-  // a la suya y el backend la ignora igual.
-  const validateSchema = schemaResolver(USUARIO_SCHEMA, { sync: true });
   const form = useForm({
     initialValues: USUARIO_INITIAL_VALUES,
-    validate: (values) => {
-      const errors = validateSchema(values);
-      if (isSuper && !values.sucursalID) {
-        return { ...errors, sucursalID: "Debes seleccionar una sucursal" };
-      }
-      return errors;
-    },
+    validate: buildUsuarioValidate(isSuper),
   });
 
   const handleSubmit = useCallback(

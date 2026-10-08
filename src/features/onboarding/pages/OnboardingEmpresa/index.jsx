@@ -30,6 +30,7 @@ const OnboardingEmpresa = () => {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const setUser = useAuthStore((state) => state.setUser);
+  const getUserInfo = useAuthStore((state) => state.getUserInfo);
   const [loading, setLoading] = useState(false);
   // Guarda contra doble submit: `loading` es estado y se aplica en el próximo
   // render, un segundo clic dentro del mismo tick lo pasaría.
@@ -41,6 +42,30 @@ const OnboardingEmpresa = () => {
     validate: schemaResolver(EMPRESA_ONBOARDING_SCHEMA, { sync: true }),
   });
 
+  // Entra al panel tras crear (o tras comprobar que ya estaba creada).
+  const entrarAlPanel = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["operating-context"] });
+    notifications.show({
+      title: "Empresa creada",
+      message: "Tu empresa y su primera sucursal ya están listas",
+      color: "green",
+      icon: <IconCheck />,
+    });
+    navigate("/", { replace: true });
+  }, [navigate, queryClient]);
+
+  // El POST pudo aplicarse aunque la respuesta se perdió (red/timeout), o la
+  // empresa ya existía ("El usuario ya tiene una sucursal asignada", 400): se
+  // re-lee la sesión y, si ya tiene sucursal, se entra al panel.
+  const resincronizarSesion = useCallback(async () => {
+    try {
+      const user = await getUserInfo();
+      return Boolean(user?.sucursal);
+    } catch {
+      return false;
+    }
+  }, [getUserInfo]);
+
   const handleSubmit = useCallback(
     async (values) => {
       if (submittingRef.current) return;
@@ -51,18 +76,18 @@ const OnboardingEmpresa = () => {
         const user = await empresaApi.save(buildEmpresaReqDTO(values));
 
         setUser(user);
-        await queryClient.invalidateQueries({ queryKey: ["operating-context"] });
-
-        notifications.show({
-          title: "Empresa creada",
-          message: "Tu empresa y su primera sucursal ya están listas",
-          color: "green",
-          icon: <IconCheck />,
-        });
-
-        navigate("/", { replace: true });
+        await entrarAlPanel();
       } catch (error) {
         console.error("Error creando la empresa:", error);
+
+        const status = error?.response?.status;
+        const yaTieneSucursal =
+          status === 400 &&
+          /ya tiene una sucursal/i.test(error?.response?.data?.message ?? "");
+        if ((!error?.response || yaTieneSucursal) && (await resincronizarSesion())) {
+          await entrarAlPanel();
+          return;
+        }
 
         const message = applyApiError(form, remapEmpresaFieldErrors(error), {
           stripPrefix: ["sucursal.puntoEntrega", "sucursal"],
@@ -80,7 +105,7 @@ const OnboardingEmpresa = () => {
         setLoading(false);
       }
     },
-    [form, navigate, queryClient, setUser],
+    [form, entrarAlPanel, resincronizarSesion, setUser],
   );
 
   return (

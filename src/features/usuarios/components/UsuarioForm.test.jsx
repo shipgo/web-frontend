@@ -33,7 +33,7 @@ const ALL_AUTHORITIES = [
   { id: 5, name: "ROLE_CUSTOMER" },
 ];
 
-const FormHarness = ({ onSubmit = vi.fn() }) => {
+const FormHarness = ({ onSubmit = vi.fn(), isEdit = false }) => {
   const form = useForm({
     initialValues: {
       username: "",
@@ -61,7 +61,7 @@ const FormHarness = ({ onSubmit = vi.fn() }) => {
       onSubmit={onSubmit}
       loading={false}
       onCancel={vi.fn()}
-      isEdit={false}
+      isEdit={isEdit}
     />
   );
 };
@@ -142,5 +142,18 @@ describe("UsuarioForm — roles y sucursal (CONTRACTS.md §3)", () => {
 
     const sucursalInput = screen.getByRole("combobox", { name: /^sucursal/i });
     expect(sucursalInput).not.toBeDisabled();
+  });
+
+  it("SUPERUSER editando (SHG-FE-116): Sucursal es obligatoria y no se puede limpiar", async () => {
+    useAuthStore.setState({
+      user: new Usuario({ id: 2, username: "super1", authorities: ["ROLE_SUPERUSER"], sucursal: { id: 1, nombre: "Sucursal Centro" } }),
+      isAuthenticated: true,
+    });
+
+    renderWithProviders(<FormHarness isEdit />);
+    await waitFor(() => expect(sucursalApi.getAll).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByRole("combobox", { name: /^sucursal/i })).toBeRequired();
+    expect(screen.queryByRole("button", { name: /clear|limpiar/i })).not.toBeInTheDocument();
   });
 });

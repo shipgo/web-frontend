@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 
 import { renderWithProviders } from "../../test/renderWithProviders";
 
@@ -518,6 +518,31 @@ describe("AppRoutes — onboarding de empresa (SHG-FE-116)", () => {
       window.dispatchEvent(new CustomEvent(EMPRESA_REQUERIDA_EVENT));
 
       expect(getUserInfo).toHaveBeenCalledTimes(1);
+    } finally {
+      useAuthStore.setState({ getUserInfo: original });
+    }
+  });
+
+  it("una ráfaga de 409 dispara un solo whoami mientras hay uno en curso", async () => {
+    let resolver;
+    const getUserInfo = vi.fn(() => new Promise((resolve) => (resolver = resolve)));
+    const original = useAuthStore.getState().getUserInfo;
+    useAuthStore.setState({ getUserInfo });
+    try {
+      setAuth({ user: superUser({ id: 1 }), isLoading: false, isAuthenticated: true });
+      renderWithProviders(<AppRoutes />, { route: "/" });
+      await screen.findByText("Home");
+
+      for (let i = 0; i < 4; i += 1) {
+        window.dispatchEvent(new CustomEvent(EMPRESA_REQUERIDA_EVENT));
+      }
+      expect(getUserInfo).toHaveBeenCalledTimes(1);
+
+      resolver(null);
+      await waitFor(() => {
+        window.dispatchEvent(new CustomEvent(EMPRESA_REQUERIDA_EVENT));
+        expect(getUserInfo).toHaveBeenCalledTimes(2);
+      });
     } finally {
       useAuthStore.setState({ getUserInfo: original });
     }

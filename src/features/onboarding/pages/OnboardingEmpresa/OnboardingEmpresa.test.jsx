@@ -31,6 +31,7 @@ const USER_VINCULADO = {
   },
 };
 
+const ORIGINAL_GET_USER_INFO = useAuthStore.getState().getUserInfo;
 let queryClient;
 
 const renderPage = () => {
@@ -75,6 +76,7 @@ describe("OnboardingEmpresa (SHG-FE-116)", () => {
       user: null,
       isAuthenticated: false,
       connectionError: null,
+      getUserInfo: ORIGINAL_GET_USER_INFO,
     });
   });
 
@@ -210,5 +212,65 @@ describe("OnboardingEmpresa (SHG-FE-116)", () => {
     renderPage();
     await waitFor(() => expect(mockProvincias).toHaveBeenCalled());
     expect(screen.queryByRole("button", { name: /cancelar/i })).not.toBeInTheDocument();
+  });
+
+  describe("resincronización si la respuesta del POST se perdió", () => {
+    const timeoutError = () =>
+      Object.assign(new Error("timeout of 15000ms exceeded"), {
+        isAxiosError: true,
+        code: "ECONNABORTED",
+      });
+
+    it("timeout y el whoami ya trae sucursal → entra al panel", async () => {
+      const user = userEvent.setup();
+      mockSave.mockRejectedValue(timeoutError());
+      const getUserInfo = vi.fn().mockResolvedValue(USER_VINCULADO);
+      useAuthStore.setState({ getUserInfo });
+      renderPage();
+      await completarForm(user);
+
+      await user.click(screen.getByRole("button", { name: /crear empresa/i }));
+
+      await waitFor(() => expect(getUserInfo).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(window.location.pathname).toBe("/"));
+      expect(mockSave).toHaveBeenCalledTimes(1);
+    });
+
+    it("timeout y el whoami sigue sin sucursal → se queda en el onboarding con el error", async () => {
+      const user = userEvent.setup();
+      mockSave.mockRejectedValue(timeoutError());
+      const getUserInfo = vi.fn().mockResolvedValue({ id: 8, sucursal: null });
+      useAuthStore.setState({ getUserInfo });
+      renderPage();
+      await completarForm(user);
+
+      await user.click(screen.getByRole("button", { name: /crear empresa/i }));
+
+      await waitFor(() => expect(getUserInfo).toHaveBeenCalledTimes(1));
+      expect(window.location.pathname).toBe("/usuarios");
+      expect((await screen.findAllByText("Error")).length).toBeGreaterThan(0);
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: /crear empresa/i })).toBeEnabled(),
+      );
+    });
+
+    it("400 'ya tiene una sucursal asignada' y el whoami trae sucursal → entra al panel", async () => {
+      const user = userEvent.setup();
+      mockSave.mockRejectedValue({
+        response: {
+          status: 400,
+          data: { statusCode: 400, message: "El usuario ya tiene una sucursal asignada." },
+        },
+      });
+      const getUserInfo = vi.fn().mockResolvedValue(USER_VINCULADO);
+      useAuthStore.setState({ getUserInfo });
+      renderPage();
+      await completarForm(user);
+
+      await user.click(screen.getByRole("button", { name: /crear empresa/i }));
+
+      await waitFor(() => expect(window.location.pathname).toBe("/"));
+      expect(getUserInfo).toHaveBeenCalledTimes(1);
+    });
   });
 });

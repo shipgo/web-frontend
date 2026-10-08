@@ -137,8 +137,18 @@ const ProtectedRoutes = () => {
   // abajo se renderiza el onboarding. Si el whoami falla o trae sucursal, no se
   // cambia nada (la pantalla ya muestra el mensaje del backend).
   useEffect(() => {
+    // Una ráfaga de 409 (varias queries en paralelo) dispara un solo whoami.
+    let enCurso = false;
     const refrescarSesion = () => {
-      useAuthStore.getState().getUserInfo().catch(() => {});
+      if (enCurso) return;
+      enCurso = true;
+      useAuthStore
+        .getState()
+        .getUserInfo()
+        .catch(() => {})
+        .finally(() => {
+          enCurso = false;
+        });
     };
     window.addEventListener(EMPRESA_REQUERIDA_EVENT, refrescarSesion);
     return () => window.removeEventListener(EMPRESA_REQUERIDA_EVENT, refrescarSesion);

@@ -416,10 +416,9 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
                   data={sucursales}
                   searchable
                   filter={filterIgnoreAccents}
-                  // SHG-FE-116: al crear, el SUPERUSER debe elegir sucursal
-                  // (`POST /api/user` exige `sucursalID`, SHG-BE-078).
-                  required={!isEdit}
-                  clearable={isEdit}
+                  // SHG-FE-116: el SUPERUSER debe elegir sucursal al crear y al
+                  // editar (`POST`/`PUT /api/user` exigen `sucursalID`).
+                  required
                   {...form.getInputProps("sucursalID")}
                 />
               ) : (

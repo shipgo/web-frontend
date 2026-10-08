@@ -55,26 +55,26 @@ const AppHeader = () => {
     <AppShellHeader component={Flex} justify="center">
       <Flex flex={1} maw={1440} px="xl" py="xs">
         {!sinEmpresa && (
-        <Group>
-          <Button
-            w={400}
-            justify="space-between"
-            variant="default"
-            onClick={() => spotlight.open()}
-            leftSection={<IconSearch size={18} />}
-            rightSection={
-              <Group gap={4} wrap="nowrap">
-                <Kbd size="xs">Ctrl</Kbd>
-                <Kbd size="xs">K</Kbd>
-              </Group>
-            }
-          >
-            <Text size="sm" c="dimmed" fw={400}>
-              Buscar o navegar...
-            </Text>
-          </Button>
-          <OperatingSucursalSelector />
-        </Group>
+          <Group>
+            <Button
+              w={400}
+              justify="space-between"
+              variant="default"
+              onClick={() => spotlight.open()}
+              leftSection={<IconSearch size={18} />}
+              rightSection={
+                <Group gap={4} wrap="nowrap">
+                  <Kbd size="xs">Ctrl</Kbd>
+                  <Kbd size="xs">K</Kbd>
+                </Group>
+              }
+            >
+              <Text size="sm" c="dimmed" fw={400}>
+                Buscar o navegar...
+              </Text>
+            </Button>
+            <OperatingSucursalSelector />
+          </Group>
         )}
 
         {!sinEmpresa && <NavigationSpotlight />}
