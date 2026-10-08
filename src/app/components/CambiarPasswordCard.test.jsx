@@ -103,6 +103,8 @@ describe("CambiarPasswordCard", () => {
     await user.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
 
     await waitFor(() => expect(mockChangePassword).toHaveBeenCalled());
+    // Esperar a que la notificación de error realmente se renderice.
+    expect(await screen.findByText("Bad credentials")).toBeInTheDocument();
     expect(
       screen.queryByText("La contraseña actual es incorrecta"),
     ).not.toBeInTheDocument();
