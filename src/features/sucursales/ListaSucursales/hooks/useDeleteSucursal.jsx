@@ -14,7 +14,7 @@ export const useDeleteSucursal = (onSuccess) => {
       centered: true,
       children: (
         <Text size="sm">
-          ¿Estás seguro de que deseas eliminar la sucursal{" "}
+          ¿Estás seguro de que querés eliminar la sucursal{" "}
           <strong>{nombre}</strong>? Esta acción no se puede deshacer.
         </Text>
       ),

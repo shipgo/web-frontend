@@ -3,6 +3,7 @@ import { modals } from "@mantine/modals";
 import { useLocation } from "wouter";
 
 import PageFooter from "@components/PageFooter";
+import { formatPeso } from "@domain/format";
 
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
 
@@ -57,7 +58,7 @@ const Footer = ({
       )}
       {totalPeso > 0 && (
         <Badge variant="dot" color="orange">
-          {totalPeso} kg
+          {formatPeso(totalPeso)}
         </Badge>
       )}
       <Button

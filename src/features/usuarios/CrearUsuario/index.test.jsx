@@ -240,7 +240,7 @@ describe("CrearUsuario", () => {
       await user.click(screen.getByRole("button", { name: /crear usuario/i }));
 
       expect(
-        await screen.findByText("Debes seleccionar una sucursal")
+        await screen.findByText("Seleccioná una sucursal")
       ).toBeInTheDocument();
       expect(usuarioApi.save).not.toHaveBeenCalled();
     });

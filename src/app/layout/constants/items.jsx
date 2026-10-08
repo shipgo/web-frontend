@@ -17,7 +17,7 @@ const PAGES = [
     roles: ROLES_WEB,
   },
   {
-    label: 'Envios',
+    label: 'Envíos',
     to: '/envios',
     icon: <IconPackage size={18} />,
     roles: ROLES_WEB,

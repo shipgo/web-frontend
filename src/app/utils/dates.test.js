@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { formatDesdeAhora, formatFecha, formatFechaHora } from '@domain/format';
+import { EMPTY, formatDesdeAhora, formatFecha, formatFechaHora } from '@domain/format';
 
 import { timeFromNow, toLocalDate, toLocalDateTime } from './dates';
 
@@ -34,9 +34,13 @@ describe('toLocalDate / toLocalDateTime con hora local de Argentina', () => {
     expect(formatFecha(TARDE)).toBe('07/10/2026');
   });
 
-  it('fecha inválida o vacía no rompe', () => {
-    expect(toLocalDateTime(null)).toBe('-');
-    expect(toLocalDate('basura')).toBe('-');
+  it('fecha inválida o vacía devuelve siempre el mismo texto (EMPTY)', () => {
+    expect(EMPTY).toBe('—');
+    for (const vacio of [null, undefined, '', 'basura']) {
+      expect(toLocalDate(vacio)).toBe(EMPTY);
+      expect(toLocalDateTime(vacio)).toBe(EMPTY);
+      expect(timeFromNow(vacio)).toBe(EMPTY);
+    }
   });
 });
 

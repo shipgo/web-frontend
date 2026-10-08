@@ -101,8 +101,16 @@ describe("formatPeso", () => {
     expect(formatPeso(0)).toBe("0 kg");
   });
 
+  it("no muestra el artefacto de coma flotante y usa coma decimal", () => {
+    expect(formatPeso(40.099999999999994)).toBe("40,1 kg");
+    expect(formatPeso(0.1 + 0.2)).toBe("0,3 kg");
+    expect(formatPeso(2.5)).toBe("2,5 kg");
+    expect(formatPeso("2.5")).toBe("2,5 kg");
+  });
+
   it("EMPTY para valores no numéricos", () => {
     expect(formatPeso(null)).toBe(EMPTY);
+    expect(formatPeso(undefined)).toBe(EMPTY);
     expect(formatPeso("")).toBe(EMPTY);
     expect(formatPeso("abc")).toBe(EMPTY);
   });

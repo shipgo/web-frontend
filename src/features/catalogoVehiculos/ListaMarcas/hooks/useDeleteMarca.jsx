@@ -21,7 +21,7 @@ export const useDeleteMarca = (onSuccess) => {
       centered: true,
       children: (
         <Text size="sm">
-          ¿Estás seguro de que deseas eliminar la marca <strong>{nombre}</strong>?
+          ¿Estás seguro de que querés eliminar la marca <strong>{nombre}</strong>?
           Esta acción no se puede deshacer.
         </Text>
       ),

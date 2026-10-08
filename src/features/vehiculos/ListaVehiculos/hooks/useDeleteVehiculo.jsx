@@ -24,7 +24,7 @@ export const useDeleteVehiculo = (onSuccess) => {
         centered: true,
         children: (
           <Text size="sm">
-            ¿Está seguro que desea eliminar el vehículo{" "}
+            ¿Estás seguro de que querés eliminar el vehículo{" "}
             <strong>{identificador}</strong>?
             <br />
             Esta acción no se puede deshacer.

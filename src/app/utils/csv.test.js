@@ -8,6 +8,7 @@ import {
   escapeCsvValue,
   toCsv,
 } from './csv';
+import { toLocalDate } from './dates';
 
 const BOM = '﻿';
 
@@ -146,5 +147,15 @@ describe('downloadBlob / toCsv', () => {
     const blobArg = createObjectURL.mock.calls[0][0];
     expect(blobArg).toBeInstanceOf(Blob);
     expect(clickSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('fecha vacía en el CSV (SHG-FE-114)', () => {
+  it('una fecha sin valor sale como "—", igual que en pantalla (no como "\'-")', () => {
+    const csv = buildCsv(
+      [{ fecha: null }],
+      [{ header: 'Fecha de registro', value: (r) => toLocalDate(r.fecha) }],
+    );
+    expect(csv).toBe(`${BOM}Fecha de registro\r\n—\r\n`);
   });
 });

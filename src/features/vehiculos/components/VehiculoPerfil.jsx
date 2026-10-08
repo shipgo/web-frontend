@@ -17,6 +17,7 @@ import {
   IconId,
 } from "@tabler/icons-react";
 
+import { EMPTY, formatPeso } from "@domain/format";
 import { toLocalDate } from "@utils/dates";
 
 const InfoItem = ({ icon, label, value, color = "blue" }) => {
@@ -34,7 +35,7 @@ const InfoItem = ({ icon, label, value, color = "blue" }) => {
           {label}
         </Text>
         <Text size="sm" fw={500}>
-          {value || "No especificado"}
+          {value || EMPTY}
         </Text>
       </Stack>
     </Group>
@@ -188,7 +189,7 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true }) => {
                   label="Peso Máximo"
                   value={
                     vehiculo.pesoMaximo
-                      ? `${vehiculo.pesoMaximo.toLocaleString("es-AR")} kg`
+                      ? formatPeso(vehiculo.pesoMaximo)
                       : null
                   }
                   color="violet"

@@ -146,11 +146,11 @@ describe("OnboardingEmpresa (SHG-FE-116)", () => {
     await user.click(screen.getByRole("button", { name: /crear empresa/i }));
 
     expect(
-      await screen.findByText("Debes ingresar el nombre de la empresa"),
+      await screen.findByText("Ingresá el nombre de la empresa"),
     ).toBeInTheDocument();
     // (el toast "Revisá el formulario" repite el primer error: por eso getAllBy)
-    expect(screen.getAllByText("Debes ingresar el nombre").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Debes ingresar el prefijo").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Ingresá el nombre").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Ingresá el prefijo").length).toBeGreaterThan(0);
     expect(mockSave).not.toHaveBeenCalled();
   });
 

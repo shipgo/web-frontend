@@ -12,6 +12,7 @@ import {
   NumberFormatter,
   Loader,
   Pagination,
+  PasswordInput,
 } from "@mantine/core";
 import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 
@@ -142,6 +143,15 @@ export const THEME = createTheme({
       defaultProps: {
         centered: true,
         padding: "lg",
+        // Sin nombre propio, la X de cierre queda como botón sin texto
+        // (axe-core `button-name`). Cubre también los de `@mantine/modals`.
+        closeButtonProps: { "aria-label": "Cerrar" },
+      },
+    }),
+    // Mantine pone "Toggle password visibility" (inglés) por defecto.
+    PasswordInput: PasswordInput.extend({
+      defaultProps: {
+        visibilityToggleButtonProps: { "aria-label": "Mostrar contraseña" },
       },
     }),
     Tooltip: Tooltip.extend({
