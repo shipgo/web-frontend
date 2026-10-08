@@ -14,7 +14,7 @@ vi.mock("@api", () => ({
 import { useAuthStore } from "@stores/auth.store";
 import ListaUsuariosTabla from "./ListaUsuariosTabla";
 
-const LOGGED_IN_USER = { id: 1, username: "yo" };
+const LOGGED_IN_USER = { id: 1, username: "yo", authorities: ["ROLE_SUPERUSER"] };
 
 const SELF = {
   id: 1,
@@ -131,7 +131,7 @@ describe("ListaUsuariosTabla (SHG-FE-094)", () => {
 
     renderWithProviders(
       <ListaUsuariosTabla
-        items={[SELF]}
+        items={[{ ...SELF, authorities: ["ROLE_CHOFER"] }]}
         selectedIds={new Set()}
         onToggle={vi.fn()}
         onToggleAll={vi.fn()}
@@ -194,5 +194,55 @@ describe("ListaUsuariosTabla (SHG-FE-094)", () => {
     const row = screen.getByText("Otra Persona").closest("tr");
     expect(within(row).getByText("Administrador")).toBeInTheDocument();
     expect(within(row).getByText("Superusuario")).toBeInTheDocument();
+  });
+});
+
+describe("ListaUsuariosTabla — ADMIN sobre otros ADMIN (SHG-FE-121)", () => {
+  const ADMIN_LOGUEADO = { id: 1, username: "yo", authorities: ["ROLE_ADMIN"] };
+  const OTRO_ADMIN = { id: 2, nombre: "Otro", apellido: "Admin", username: "otroadmin", authorities: ["ROLE_ADMIN"] };
+  const CHOFER = { id: 3, nombre: "Cho", apellido: "Fer", username: "chofer", authorities: ["ROLE_CHOFER"] };
+
+  const renderTabla = (items) =>
+    renderWithProviders(
+      <ListaUsuariosTabla
+        items={items}
+        selectedIds={new Set()}
+        onToggle={vi.fn()}
+        onToggleAll={vi.fn()}
+        onRefresh={vi.fn()}
+      />
+    );
+
+  beforeEach(() => {
+    useAuthStore.setState({ user: ADMIN_LOGUEADO });
+  });
+
+  it("no ofrece Editar ni Eliminar sobre otro ADMIN y su checkbox está deshabilitado", async () => {
+    const user = userEvent.setup();
+    renderTabla([OTRO_ADMIN]);
+
+    await user.click(screen.getByRole("button", { name: "Acciones de Otro Admin" }));
+    expect(await screen.findByText("Ver detalles")).toBeInTheDocument();
+    expect(screen.queryByText("Editar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Eliminar")).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /No podés seleccionar a otroadmin/ })).toBeDisabled();
+  });
+
+  it("sobre un chofer ofrece Editar y Eliminar", async () => {
+    const user = userEvent.setup();
+    renderTabla([CHOFER]);
+
+    await user.click(screen.getByRole("button", { name: "Acciones de Cho Fer" }));
+    expect(await screen.findByText("Editar")).toBeInTheDocument();
+    expect(screen.getByText("Eliminar")).toBeInTheDocument();
+  });
+
+  it("sobre el propio usuario ADMIN ofrece Editar pero no Eliminar", async () => {
+    const user = userEvent.setup();
+    renderTabla([SELF]);
+
+    await user.click(screen.getByRole("button", { name: "Acciones de Yo Mismo" }));
+    expect(await screen.findByText("Editar")).toBeInTheDocument();
+    expect(screen.queryByText("Eliminar")).not.toBeInTheDocument();
   });
 });

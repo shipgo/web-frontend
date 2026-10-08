@@ -7,6 +7,8 @@ import { notifications } from "@mantine/notifications";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { usuarioApi } from "@api";
+import { useAuthStore } from "@stores/auth.store";
+import { canManageUsuario } from "../utils";
 import UsuarioPerfil from "../components/UsuarioPerfil";
 import { usePasswordReset } from "../hooks/usePasswordReset";
 
@@ -17,6 +19,7 @@ const DetalleUsuario = () => {
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
   const { confirmReset } = usePasswordReset();
+  const currentUser = useAuthStore((state) => state.user);
 
   useEffect(() => {
     const loadUsuario = async () => {
@@ -78,9 +81,11 @@ const DetalleUsuario = () => {
         >
           Resetear contraseña
         </Button>
-        <Button leftSection={<IconEdit size={18} />} onClick={handleEdit}>
-          Editar
-        </Button>
+        {canManageUsuario(currentUser, usuario) && (
+          <Button leftSection={<IconEdit size={18} />} onClick={handleEdit}>
+            Editar
+          </Button>
+        )}
       </PageBreadcrumbsHeader>
 
       <UsuarioPerfil usuario={usuario} showAllInfo={true} />

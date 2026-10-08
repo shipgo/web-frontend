@@ -71,7 +71,7 @@ const fillMinimalForm = async (user) => {
   );
   await selectOption(user, "Localidad", "Córdoba Capital");
 
-  await selectOption(user, "Roles", "Administrador");
+  await selectOption(user, "Roles", "Chofer");
 };
 
 describe("CrearUsuario", () => {
@@ -129,7 +129,7 @@ describe("CrearUsuario", () => {
         nombre: "Juan",
         apellido: "Pérez",
         email: "juan@example.com",
-        authorities: ["ROLE_ADMIN"],
+        authorities: ["ROLE_CHOFER"],
         // ADMIN nunca eligió sucursal (el campo ni se muestra): el payload
         // lleva igual la sucursal propia del ADMIN logueado, forzada por
         // UsuarioForm — ver test dedicado en UsuarioForm.test.jsx.
@@ -257,6 +257,26 @@ describe("CrearUsuario", () => {
 
       await waitFor(() => expect(usuarioApi.save).toHaveBeenCalledTimes(1));
       expect(usuarioApi.save.mock.calls[0][0].sucursalID).toBe(8);
+    });
+
+    it("SHG-FE-121: un 403 por rol no permitido muestra el mensaje del backend, no el texto fijo de permisos", async () => {
+      const user = userEvent.setup();
+      usuarioApi.save.mockRejectedValue({
+        response: {
+          status: 403,
+          data: { statusCode: 403, message: "Sólo un SUPERUSER puede asignar el rol ADMIN" },
+        },
+      });
+      renderWithProviders(<CrearUsuario />);
+      await waitFor(() => expect(sucursalApi.getAll).toHaveBeenCalled());
+
+      await fillMinimalForm(user);
+      await selectOption(user, "Sucursal", "Sucursal Norte");
+      await user.click(screen.getByRole("button", { name: /crear usuario/i }));
+
+      expect(
+        await screen.findByText("Sólo un SUPERUSER puede asignar el rol ADMIN")
+      ).toBeInTheDocument();
     });
 
     it("un 409 empresa_requerida muestra el mensaje del backend, no uno genérico", async () => {

@@ -15,7 +15,7 @@ import UsuarioForm from "../components/UsuarioForm";
 import FotoPerfilUpload from "../components/FotoPerfilUpload";
 import CambiarPasswordCard from "@components/CambiarPasswordCard";
 import { USUARIO_INITIAL_VALUES, buildUsuarioValidate } from "../constants/schema";
-import { toBackendDate } from "../utils";
+import { toBackendDate, canManageUsuario } from "../utils";
 
 const EditarUsuario = () => {
   const { id } = useParams();
@@ -45,6 +45,19 @@ const EditarUsuario = () => {
       try {
         setLoadingUser(true);
         const userData = await usuarioApi.getById(id);
+
+        // SHG-FE-121: un ADMIN no puede editar a otro ADMIN/SUPERUSER (el PUT
+        // daría 404). Entrando por URL no se muestra un form que no puede guardar.
+        if (!canManageUsuario(currentUser, userData)) {
+          notifications.show({
+            title: "Sin permisos",
+            message: "No tenés permisos para editar a este usuario",
+            color: "red",
+            icon: <IconX />,
+          });
+          navigate("~/usuarios");
+          return;
+        }
 
         // `fechaNacimiento` llega del backend como `LocalDate` (`YYYY-MM-DD`), que
         // es exactamente el formato de valor que espera el `DateInput` de Mantine
@@ -148,6 +161,7 @@ const EditarUsuario = () => {
         console.error("Error actualizando usuario:", error);
 
         const message = applyApiError(form, error, {
+          backendForbiddenMessage: true,
           fallbackMessage: "No se pudo actualizar el usuario",
         });
 

@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import { usuarioApi } from "@api";
+import { parseApiError } from "@domain/apiError";
 
 /**
  * Hook para manejar la eliminación de usuarios con confirmación
@@ -48,9 +49,10 @@ export const useDeleteUsuario = (onSuccess) => {
             console.error("Error eliminando usuario:", error);
             notifications.show({
               title: "Error",
-              message:
-                error.response?.data?.message ||
-                "No se pudo eliminar el usuario",
+              message: parseApiError(error, {
+                backendForbiddenMessage: true,
+                fallbackMessage: "No se pudo eliminar el usuario",
+              }).message,
               color: "red",
               icon: <IconX />,
             });

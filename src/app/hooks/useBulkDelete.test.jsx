@@ -93,6 +93,23 @@ describe('useBulkDelete', () => {
     await waitFor(() => expect(onSettled).toHaveBeenCalledTimes(1));
   });
 
+  it('un 403 de negocio conserva el mensaje del backend en el reporte', async () => {
+    const deleteFn = vi.fn((id) =>
+      id === 1
+        ? Promise.reject({ response: { status: 403, data: { message: 'No podés borrar a un administrador' } } })
+        : Promise.resolve({}),
+    );
+    const user = userEvent.setup();
+
+    renderWithProviders(<TestComponent deleteFn={deleteFn} />);
+
+    await user.click(screen.getByRole('button', { name: 'Eliminar seleccionados' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
+
+    expect(await screen.findByText(/No podés borrar a un administrador/)).toBeInTheDocument();
+  });
+
   it('reporta fallo total (todos 404) con un toast distinto al de éxito parcial', async () => {
     const deleteFn = vi.fn().mockRejectedValue({ response: { status: 404 } });
     const user = userEvent.setup();

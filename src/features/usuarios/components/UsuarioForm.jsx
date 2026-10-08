@@ -143,7 +143,8 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
         // `results[resultIndex]` es la respuesta de `authorityApi.getAll()` (catálogo
         // real del backend, `GET /api/authority/all`). Se filtra a los roles
         // asignables desde la web y, si quien crea/edita no es SUPERUSER, se saca
-        // ROLE_SUPERUSER de las opciones (solo un SUPERUSER puede crear otro).
+        // ROLE_SUPERUSER y ROLE_ADMIN de las opciones (solo un SUPERUSER puede
+        // asignar esos roles; el backend responde 403 a un ADMIN, SHG-BE-107).
         const authoritiesRaw = results[resultIndex] || [];
         const authoritiesData = authoritiesRaw
           .map((a) => normalizarRol(a))
@@ -153,7 +154,9 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
         setAuthorities(
           isSuper
             ? authoritiesData
-            : authoritiesData.filter((auth) => auth.value !== ROLE_SUPERUSER)
+            : authoritiesData.filter(
+                (auth) => auth.value !== ROLE_SUPERUSER && auth.value !== ROLE_ADMIN
+              )
         );
 
         setTiposDocumento(
@@ -233,6 +236,24 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuper, user?.sucursal?.id]);
+
+  // Un ADMIN que edita a alguien con un rol que no puede asignar (ADMIN o
+  // SUPERUSER): ese rol ya no está entre las opciones, así que el campo quedaría
+  // vacío y un cambio accidental se mandaría al backend. Se muestra el rol actual
+  // (etiqueta legible) y el campo queda deshabilitado; el valor sigue en el form.
+  const rolesActuales = Array.isArray(form.values.authorities)
+    ? form.values.authorities
+    : [];
+  const rolesNoAsignables = isSuper
+    ? []
+    : rolesActuales.filter((rol) => !authorities.some((a) => a.value === rol));
+  const rolesBloqueados = isEdit && rolesNoAsignables.length > 0;
+  const rolesData = rolesBloqueados
+    ? [
+        ...authorities,
+        ...rolesNoAsignables.map((rol) => ({ value: rol, label: rolLabel(rol) })),
+      ]
+    : authorities;
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)} noValidate>
@@ -403,7 +424,13 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
                 label="Roles"
                 placeholder="Seleccione los roles"
                 required
-                data={authorities}
+                data={rolesData}
+                disabled={rolesBloqueados}
+                description={
+                  rolesBloqueados
+                    ? "Sólo un superusuario puede cambiar este rol"
+                    : undefined
+                }
                 searchable
                 filter={filterIgnoreAccents}
                 hidePickedOptions

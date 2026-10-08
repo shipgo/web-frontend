@@ -98,6 +98,10 @@ const stripKnownPrefix = (field, prefixes) => {
  *   común automáticamente.
  * @param {string} [options.fallbackMessage]        Mensaje si el backend no mandó
  *   uno (no aplica a 403/5xx, que tienen texto propio).
+ * @param {boolean} [options.backendForbiddenMessage]  Para un 403 de negocio con
+ *   mensaje propio (ej. un ADMIN que intenta asignar ROLE_ADMIN): muestra el
+ *   `message` del backend en vez del texto fijo de permisos. Si no vino mensaje,
+ *   cae al texto fijo.
  * @returns {ParsedApiError}
  */
 export const parseApiError = (err, options = {}) => {
@@ -131,7 +135,9 @@ export const parseApiError = (err, options = {}) => {
 
   let message;
   if (status === 403) {
-    message = FORBIDDEN_MESSAGE;
+    message =
+      (options.backendForbiddenMessage && pickMessage(data)) ||
+      FORBIDDEN_MESSAGE;
   } else if (status != null && status >= 500) {
     message = SERVER_ERROR_MESSAGE;
   } else {
