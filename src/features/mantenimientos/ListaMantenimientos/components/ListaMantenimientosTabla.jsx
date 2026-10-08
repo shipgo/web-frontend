@@ -67,7 +67,7 @@ const ListaMantenimientosTabla = ({
           <Table.Th>Vehículo</Table.Th>
           <Table.Th>Tipo</Table.Th>
           <Table.Th>Mecánico</Table.Th>
-          <Table.Th>Fecha de mantenimiento</Table.Th>
+          <Table.Th>Período</Table.Th>
           <Table.Th>Sucursal</Table.Th>
           <Table.Th>Acciones</Table.Th>
         </Table.Tr>
@@ -82,6 +82,7 @@ const ListaMantenimientosTabla = ({
             `${item.nombreMecanico ?? ""} ${item.apellidoMecanico ?? ""}`.trim() || "-";
           const sucursal = item.sucursal?.nombre ?? "-";
           const fecha = item.fechaHoraMantenimiento;
+          const fin = item.fechaHoraFin;
 
           return (
             <Table.Tr
@@ -119,7 +120,10 @@ const ListaMantenimientosTabla = ({
               <Table.Td>
                 {fecha ? (
                   <Stack gap={0}>
-                    <Text size="sm">{toLocalDateTime(fecha)}</Text>
+                    <Text size="sm">
+                      {toLocalDateTime(fecha)}
+                      {fin ? ` a ${toLocalDateTime(fin)}` : ""}
+                    </Text>
                     <Text size="xs" fw="bold">
                       {timeFromNow(fecha)}
                     </Text>
