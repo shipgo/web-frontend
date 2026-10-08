@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { notifications } from "@mantine/notifications";
 
 import { renderWithProviders } from "../../test/renderWithProviders";
 
@@ -15,6 +16,7 @@ import CambiarPasswordCard from "./CambiarPasswordCard";
 describe("CambiarPasswordCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    notifications.clean();
   });
 
   it("envía { oldPassword, newPassword } al store", async () => {
@@ -63,7 +65,6 @@ describe("CambiarPasswordCard", () => {
   });
 
   it.each([
-    ["401 (backend de hoy)", { status: 401, data: { message: "Bad credentials" } }],
     [
       '400 con code "password_incorrecta" (SHG-BE-083)',
       { status: 400, data: { message: "Otro texto", code: "password_incorrecta" } },
@@ -87,6 +88,24 @@ describe("CambiarPasswordCard", () => {
     expect(
       (await screen.findAllByText("La contraseña actual es incorrecta")).length,
     ).toBeGreaterThan(0);
+  });
+
+  it("un 401 (sesión vencida) NO se muestra como contraseña incorrecta", async () => {
+    const user = userEvent.setup();
+    mockChangePassword.mockRejectedValue({
+      response: { status: 401, data: { message: "Bad credentials" } },
+    });
+    renderWithProviders(<CambiarPasswordCard />);
+
+    await user.type(screen.getByLabelText("Contraseña actual"), "claveMala1");
+    await user.type(screen.getByLabelText("Nueva contraseña"), "claveNueva2");
+    await user.type(screen.getByLabelText("Repetí la contraseña"), "claveNueva2");
+    await user.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
+
+    await waitFor(() => expect(mockChangePassword).toHaveBeenCalled());
+    expect(
+      screen.queryByText("La contraseña actual es incorrecta"),
+    ).not.toBeInTheDocument();
   });
 
   it("otro error sin mensaje (ej. 400 vacío): mensaje genérico", async () => {

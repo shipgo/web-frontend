@@ -212,7 +212,7 @@ const SucursalForm = ({
 
                 <TextInput
                   label="Teléfono"
-                  placeholder="Ej: 351-1234567"
+                  placeholder="Ej: 3511234567"
                   leftSection={<IconPhone size={18} />}
                   required
                   {...form.getInputProps("telefono")}
