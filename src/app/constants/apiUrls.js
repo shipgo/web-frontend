@@ -31,12 +31,10 @@ export const API_URLS = {
 
   // --- Envíos (ENDPOINTS.md §4) ---
   ENVIO_URL: '/envio',
-  DETALLE_ENVIO_URL: '/detalleEnvio', // §5
   PUNTO_ENTREGA_URL: '/puntoEntrega', // §6
 
   // --- Viajes (ENDPOINTS.md §7) ---
   VIAJE_URL: '/viaje',
-  DETALLE_RECORRIDO_URL: '/detalleRecorrido', // §8
 
   // --- Tracking en tiempo real (ENDPOINTS.md §9) ---
   TRACKING_URL: '/tracking',

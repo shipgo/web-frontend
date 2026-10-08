@@ -70,7 +70,6 @@ vi.mock("@api/viaje.api", () => ({
     getById: vi.fn(),
     update: vi.fn(),
   },
-  detalleRecorridoApi: {},
 }));
 
 vi.mock("@api", () => ({

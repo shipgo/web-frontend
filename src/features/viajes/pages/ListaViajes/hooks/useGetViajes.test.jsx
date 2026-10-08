@@ -6,7 +6,6 @@ import { DEFAULT_OPERATING_CONTEXT, OperatingContext } from "@contexts/operating
 
 vi.mock("@api/viaje.api", () => ({
   viajeApi: { get: vi.fn(), getAll: vi.fn() },
-  detalleRecorridoApi: {},
 }));
 
 import { viajeApi } from "@api/viaje.api";

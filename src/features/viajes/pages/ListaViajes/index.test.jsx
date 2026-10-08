@@ -7,7 +7,6 @@ import { renderWithProviders } from "../../../../test/renderWithProviders";
 
 vi.mock("@api/viaje.api", () => ({
   viajeApi: { get: vi.fn(), cancelar: vi.fn(), delete: vi.fn() },
-  detalleRecorridoApi: {},
 }));
 
 import { viajeApi } from "@api/viaje.api";

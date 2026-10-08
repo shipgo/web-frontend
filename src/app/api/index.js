@@ -5,10 +5,10 @@
 export { createCrudApi, createReadOnlyApi, notImplemented } from './base.api';
 
 // Envíos
-export { envioApi, detalleEnvioApi, puntoEntregaApi } from './envio.api';
+export { envioApi, puntoEntregaApi } from './envio.api';
 
 // Viajes
-export { viajeApi, detalleRecorridoApi } from './viaje.api';
+export { viajeApi } from './viaje.api';
 
 // Tracking en tiempo real
 export { trackingApi } from './tracking.api';
