@@ -22,14 +22,12 @@ import { useAuthStore } from "@stores/auth.store";
 const PASSWORD_INCORRECTA_MESSAGE = "La contraseña actual es incorrecta";
 
 /**
- * Contraseña actual incorrecta. Caso definitivo (SHG-BE-083, CONTRACTS.md §13):
- * `400` + `code: "password_incorrecta"`. El `401` es un fallback TRANSITORIO del
- * backend de hoy: se ELIMINA cuando se mergee SHG-BE-083, porque ahí un `401`
- * pasa a significar token vencido y no contraseña incorrecta.
+ * Contraseña actual incorrecta (SHG-BE-083, CONTRACTS.md §13): `400` + `code:
+ * "password_incorrecta"`. Un `401` significa sesión vencida, no contraseña
+ * incorrecta, así que no se trata acá.
  */
 const isPasswordIncorrecta = (error) =>
-  error?.response?.data?.code === "password_incorrecta" ||
-  error?.response?.status === 401;
+  error?.response?.data?.code === "password_incorrecta";
 
 /**
  * Cambio de contraseña del PROPIO usuario logueado (`POST /api/changePassword`,

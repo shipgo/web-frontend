@@ -26,14 +26,6 @@ import {
 } from "../constants/schema";
 
 /**
- * "El email no existe": hoy el backend lo informa con un 404 (`NotFoundException`);
- * con SHG-BE-083 (CONTRACTS.md §13) responde el mismo 200 neutro exista o no. El
- * front trata ambos como éxito para no revelar si el email está registrado. Red,
- * 5xx, 429 y captcha NO entran acá: esos se siguen mostrando.
- */
-const isEmailInexistente = (error) => error?.response?.status === 404;
-
-/**
  * Paso 1 de "olvidé mi contraseña" (`/recuperar-cuenta`).
  *
  * Envía el email a `POST /api/user/resetPassword` (vía `verifyEmail` del store).
@@ -59,10 +51,6 @@ const RecuperarCuenta = () => {
       await verifyEmail(userEmail.trim(), captcha.token);
       setEnviado(true);
     } catch (error) {
-      if (isEmailInexistente(error)) {
-        setEnviado(true);
-        return;
-      }
       // Captcha faltante/inválido/vencido (SHG-BE-032): re-emitimos el
       // challenge, el token es de un solo uso.
       if (isCaptchaApiError(error)) {

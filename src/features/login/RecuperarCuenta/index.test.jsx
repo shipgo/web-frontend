@@ -64,16 +64,15 @@ describe("RecuperarCuenta", () => {
     await user.click(screen.getByRole("button", { name: "Enviar enlace" }));
   };
 
-  it("email inexistente (404): muestra el mismo mensaje neutro que un éxito", async () => {
+  it("un 404 se muestra como error, no como éxito", async () => {
     const user = userEvent.setup();
     mockVerifyEmail.mockRejectedValue({
       response: { status: 404, data: { message: "Usuario no encontrado" } },
     });
     await enviar(user);
 
-    expect(await screen.findByText("Revisá tu correo")).toBeInTheDocument();
-    expect(screen.getByText(/Si el email está registrado, te enviamos un enlace/)).toBeInTheDocument();
-    expect(screen.queryByText("No se pudo enviar")).not.toBeInTheDocument();
+    expect(await screen.findByText("No se pudo enviar")).toBeInTheDocument();
+    expect(screen.queryByText("Revisá tu correo")).not.toBeInTheDocument();
   });
 
   it("un 429 (rate limit) NO se oculta como éxito", async () => {
