@@ -32,14 +32,13 @@ export { sucursalApi } from './sucursal.api';
 // Usuarios + authorities (el recurso "rol" no existe en la API → usar `authorityApi`)
 export { usuarioApi, authorityApi } from './usuario.api';
 
-// Catálogos + calificaciones + huella + notificaciones + empresa
+// Catálogos + calificaciones + notificaciones + empresa
 export {
   categoriaApi,
   sexoApi,
   tipoDocumentoApi,
   calificacionChoferApi,
   calificacionRutaApi,
-  huellaCarbonoApi,
   notificacionesApi,
   empresaApi,
   catalogsApi,

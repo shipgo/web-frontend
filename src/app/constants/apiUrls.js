@@ -81,9 +81,6 @@ export const API_URLS = {
   CALIFICACION_CHOFER_URL: '/calificacionChofer',
   CALIFICACION_RUTA_URL: '/calificacionRuta',
 
-  // --- Huella de carbono (ENDPOINTS.md §20) ---
-  HUELLA_CARBONO_URL: '/huellaCarbono',
-
   // --- Notificaciones (ENDPOINTS.md §21) ---
   NOTIFICACIONES_URL: '/notificaciones',
 

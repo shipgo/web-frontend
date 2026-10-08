@@ -162,68 +162,6 @@ export const calificacionRutaApi = {
 };
 
 /**
- * API de Huella de Carbono — `/api/huellaCarbono` (ENDPOINTS.md §20).
- * ⚠️ Hoy TODO el controller es público (sin token). No hay `GET /{id}` ni update.
- */
-export const huellaCarbonoApi = {
-  /**
-   * `GET /api/huellaCarbono?fechaInicio&fechaFin` — `HuellaCarbono[]` en el período.
-   * @param {{ fechaInicio: string, fechaFin: string }} params  `yyyy-MM-dd'T'HH:mm:ss`.
-   */
-  getByPeriodo: async (params) => {
-    const response = await restclient.get(API_URLS.HUELLA_CARBONO_URL, {
-      params,
-    });
-    return response.data;
-  },
-
-  /**
-   * `GET /api/huellaCarbono/all` — `HuellaCarbono[]`.
-   */
-  getAll: async () => {
-    const response = await restclient.get(
-      `${API_URLS.HUELLA_CARBONO_URL}/all`,
-    );
-    return response.data;
-  },
-
-  /**
-   * `GET /api/huellaCarbono/comparar?fechaInicio&fechaFin` — `Double` (% vs período base).
-   * @param {{ fechaInicio: string, fechaFin: string }} params
-   */
-  comparar: async (params) => {
-    const response = await restclient.get(
-      `${API_URLS.HUELLA_CARBONO_URL}/comparar`,
-      { params },
-    );
-    return response.data;
-  },
-
-  /**
-   * `POST /api/huellaCarbono`
-   * @param {Object} data - entidad `HuellaCarbono`.
-   */
-  save: async (data) => {
-    const response = await restclient.post(
-      API_URLS.HUELLA_CARBONO_URL,
-      data,
-    );
-    return response.data;
-  },
-
-  /**
-   * `DELETE /api/huellaCarbono/{huellaCarbonoId}`
-   * @param {number|string} id
-   */
-  delete: async (id) => {
-    const response = await restclient.delete(
-      `${API_URLS.HUELLA_CARBONO_URL}/${id}`,
-    );
-    return response.data;
-  },
-};
-
-/**
  * API de Notificaciones — `/api/notificaciones` (ENDPOINTS.md §21).
  * El listado es del usuario logueado (`GET /api/notificaciones`, sin `/all`).
  * El update lleva el id en el body, NO en el path. No hay `GET /{id}`.
