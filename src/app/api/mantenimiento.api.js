@@ -15,7 +15,8 @@ import { createCrudApi, createReadOnlyApi } from './base.api';
  * @property {string} [descripcion]
  * @property {number} tipoMantenimientoID
  * @property {number} vehiculoID
- * @property {string} [fechaHoraMantenimiento]
+ * @property {string} fechaHoraMantenimiento  Inicio, `yyyy-MM-ddTHH:mm:ss` (obligatoria).
+ * @property {string} fechaHoraFin  Fin, `yyyy-MM-ddTHH:mm:ss` (obligatoria, posterior al inicio).
  * @property {string} [fechaHoraRegistro]
  */
 

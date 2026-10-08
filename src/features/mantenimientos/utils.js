@@ -38,6 +38,7 @@ export const buildMantenimientoReqDTO = (values, extra = {}) => {
     vehiculoID: Number(values.vehiculoID),
     tipoMantenimientoID: Number(values.tipoMantenimientoID),
     fechaHoraMantenimiento: toLocalDateTimeString(values.fechaHoraMantenimiento),
+    fechaHoraFin: toLocalDateTimeString(values.fechaHoraFin),
     descripcion: values.descripcion?.trim() ? values.descripcion.trim() : null,
   };
 
@@ -67,5 +68,6 @@ export const buildMantenimientoFormValues = (mantenimiento) => ({
   fechaHoraMantenimiento: mantenimiento.fechaHoraMantenimiento
     ? new Date(mantenimiento.fechaHoraMantenimiento)
     : null,
+  fechaHoraFin: mantenimiento.fechaHoraFin ? new Date(mantenimiento.fechaHoraFin) : null,
   descripcion: mantenimiento.descripcion ?? '',
 });

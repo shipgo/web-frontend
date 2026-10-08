@@ -3,6 +3,7 @@ import {
   CardSection,
   Group,
   Stack,
+  Text,
   TextInput,
   Title,
 } from "@mantine/core";
@@ -25,6 +26,11 @@ const SearchVehiculos = ({ handleOnSearch, handleRefetch, isFetching }) => {
       </Group>
 
       <Stack mt="xs" gap="sm">
+        <Text size="xs" c="dimmed">
+          Los vehículos en mantenimiento durante las fechas del viaje no figuran en
+          este listado.
+        </Text>
+
         <TextInput
           flex={1}
           onChange={handleOnChange}

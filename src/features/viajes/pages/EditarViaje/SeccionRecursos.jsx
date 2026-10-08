@@ -121,6 +121,7 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
         <Select
           {...getInputProps("vehiculo")}
           label="Vehículo"
+          description="Los vehículos en mantenimiento durante las fechas del viaje no figuran en la lista."
           placeholder="Seleccioná un vehículo"
           data={vehiculoOptions}
           value={values.vehiculo?.id?.toString() ?? null}

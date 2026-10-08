@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import {
   Badge,
   Card,
@@ -17,7 +18,7 @@ import {
   IconId,
 } from "@tabler/icons-react";
 
-import { EMPTY, formatPeso } from "@domain/format";
+import { EMPTY, formatFechaHora, formatPeso } from "@domain/format";
 import { toLocalDate } from "@utils/dates";
 
 const InfoItem = ({ icon, label, value, color = "blue" }) => {
@@ -60,13 +61,20 @@ const getStatusLabel = (status) => {
   return status.replace(/_/g, " ");
 };
 
+const mantenimientoEtiqueta = ({ fechaHoraMantenimiento, fechaHoraFin }) =>
+  dayjs(fechaHoraMantenimiento).isAfter(dayjs())
+    ? `Mantenimiento programado del ${formatFechaHora(fechaHoraMantenimiento)} al ${formatFechaHora(fechaHoraFin)}`
+    : `En mantenimiento hasta el ${formatFechaHora(fechaHoraFin)}`;
+
 /**
  * Componente reutilizable para mostrar el perfil/detalle de un vehículo
  * @param {Object} props
  * @param {Object} props.vehiculo - Datos del vehículo a mostrar
  * @param {boolean} props.showAllInfo - Si debe mostrar toda la información o solo la básica
+ * @param {{ fechaHoraMantenimiento: string, fechaHoraFin: string }} [props.mantenimiento] -
+ *   Mantenimiento vigente o próximo del vehículo (SHG-FE-115), si lo hay.
  */
-const VehiculoPerfil = ({ vehiculo, showAllInfo = true }) => {
+const VehiculoPerfil = ({ vehiculo, showAllInfo = true, mantenimiento = null }) => {
   if (!vehiculo) {
     return (
       <Card>
@@ -105,6 +113,12 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true }) => {
               </Badge>
             )}
           </Group>
+
+          {mantenimiento && (
+            <Badge color="orange" variant="light" size="lg" w="fit-content">
+              {mantenimientoEtiqueta(mantenimiento)}
+            </Badge>
+          )}
 
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
             <InfoItem

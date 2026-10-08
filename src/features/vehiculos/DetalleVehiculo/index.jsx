@@ -8,7 +8,8 @@ import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import RecursoNoEncontrado from "@components/RecursoNoEncontrado";
 import { isNotFoundError } from "@utils/httpErrors";
-import { vehiculoApi } from "@api";
+import { mantenimientoApi, vehiculoApi } from "@api";
+import { mantenimientoVigenteOProximo } from "../utils/mantenimiento";
 
 import VehiculoPerfil from "../components/VehiculoPerfil";
 
@@ -19,6 +20,7 @@ const DetalleVehiculo = () => {
   const [vehiculo, setVehiculo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [mantenimiento, setMantenimiento] = useState(null);
 
   useEffect(() => {
     const loadVehiculo = async () => {
@@ -48,6 +50,30 @@ const DetalleVehiculo = () => {
       loadVehiculo();
     }
   }, [id, navigate]);
+
+  // Mantenimiento vigente o próximo (SHG-FE-115). Informativo: si falla, no se muestra.
+  useEffect(() => {
+    if (!vehiculo?.patente) return undefined;
+    let cancelled = false;
+    mantenimientoApi
+      .get({
+        patente: vehiculo.patente,
+        page: 0,
+        size: 50,
+        sort: "fechaHoraMantenimiento:desc",
+      })
+      .then((page) => {
+        if (!cancelled) {
+          setMantenimiento(
+            mantenimientoVigenteOProximo(page?.content ?? [], vehiculo.patente),
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [vehiculo?.patente]);
 
   if (notFound) {
     return (
@@ -89,7 +115,7 @@ const DetalleVehiculo = () => {
           <Text c="dimmed">Cargando vehículo...</Text>
         </Card>
       ) : (
-        <VehiculoPerfil vehiculo={vehiculo} showAllInfo={true} />
+        <VehiculoPerfil vehiculo={vehiculo} showAllInfo={true} mantenimiento={mantenimiento} />
       )}
     </PageContainer>
   );

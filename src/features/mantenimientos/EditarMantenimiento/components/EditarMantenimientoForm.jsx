@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useForm, schemaResolver } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
@@ -10,7 +10,7 @@ import { applyApiError } from "@domain/apiError";
 import { mantenimientoApi } from "../../api/mantenimientos.api";
 
 import MantenimientoForm from "../../components/MantenimientoForm";
-import { MANTENIMIENTO_SCHEMA } from "../../constants/schema";
+import { buildMantenimientoSchema } from "../../constants/schema";
 import {
   buildMantenimientoFormValues,
   buildMantenimientoReqDTO,
@@ -30,10 +30,19 @@ const EditarMantenimientoForm = ({ id, mantenimiento }) => {
   const [, navigate] = useLocation();
   const [loading, setLoading] = useState(false);
 
+  // El inicio original se puede conservar aunque ya haya pasado (mantenimiento en curso).
+  const schema = useMemo(
+    () =>
+      buildMantenimientoSchema({
+        inicioOriginal: mantenimiento.fechaHoraMantenimiento,
+      }),
+    [mantenimiento.fechaHoraMantenimiento],
+  );
+
   const form = useForm({
     mode: "controlled",
     initialValues: buildMantenimientoFormValues(mantenimiento),
-    validate: schemaResolver(MANTENIMIENTO_SCHEMA, { sync: true }),
+    validate: schemaResolver(schema, { sync: true }),
   });
 
   const handleSubmit = useCallback(

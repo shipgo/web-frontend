@@ -35,7 +35,7 @@ const InfoItem = ({ icon, label, value }) => (
 
 /**
  * Detalle de un `MantenimientoDTO` (backend, `dto/MantenimientoDTO.java`):
- * `nombreMecanico`, `apellidoMecanico`, `descripcion`, `fechaHoraMantenimiento`,
+ * `nombreMecanico`, `apellidoMecanico`, `descripcion`, `fechaHoraMantenimiento` (inicio), `fechaHoraFin`,
  * `fechaHoraRegistro`, `tipoMantenimiento`, `vehiculo`, `sucursal`.
  * NO hay estado ni costo — `Mantenimiento` es un registro histórico sin ciclo
  * de vida (ver bitácora de `SHG-FE-020`).
@@ -120,10 +120,19 @@ const MantenimientoPerfil = ({ mantenimiento }) => {
             />
             <InfoItem
               icon={<IconCalendar size={16} />}
-              label="Fecha del mantenimiento"
+              label="Desde"
               value={
                 mantenimiento.fechaHoraMantenimiento
                   ? formatFechaHora(mantenimiento.fechaHoraMantenimiento)
+                  : null
+              }
+            />
+            <InfoItem
+              icon={<IconCalendar size={16} />}
+              label="Hasta"
+              value={
+                mantenimiento.fechaHoraFin
+                  ? formatFechaHora(mantenimiento.fechaHoraFin)
                   : null
               }
             />

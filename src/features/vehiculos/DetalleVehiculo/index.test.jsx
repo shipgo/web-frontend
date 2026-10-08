@@ -16,8 +16,12 @@ vi.mock("wouter", async () => {
 });
 
 const mockGetById = vi.fn();
+const mockGetMantenimientos = vi.fn();
 
 vi.mock("@api", () => ({
+  mantenimientoApi: {
+    get: (...args) => mockGetMantenimientos(...args),
+  },
   vehiculoApi: {
     getById: (...args) => mockGetById(...args),
   },
@@ -36,6 +40,31 @@ const renderDetalle = () =>
 describe("DetalleVehiculo", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetMantenimientos.mockResolvedValue({ content: [] });
+  });
+
+  it("indica 'En mantenimiento hasta el …' si el vehículo tiene un mantenimiento vigente (SHG-FE-115)", async () => {
+    mockGetById.mockResolvedValue({ id: 1, patente: "AB123CD" });
+    mockGetMantenimientos.mockResolvedValue({
+      content: [
+        {
+          id: 3,
+          vehiculo: { patente: "AB123CD" },
+          fechaHoraMantenimiento: "2020-01-01T08:00:00",
+          fechaHoraFin: "2099-12-31T18:30:00.000",
+        },
+      ],
+    });
+    renderDetalle();
+    expect(
+      await screen.findByText("En mantenimiento hasta el 31/12/2099 18:30"),
+    ).toBeInTheDocument();
+    expect(mockGetMantenimientos).toHaveBeenCalledWith({
+      patente: "AB123CD",
+      page: 0,
+      size: 50,
+      sort: "fechaHoraMantenimiento:desc",
+    });
   });
 
   it('"Ver mantenimientos" navega al historial filtrado por patente (SHG-FE-098)', async () => {

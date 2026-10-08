@@ -211,15 +211,31 @@ const MantenimientoForm = ({
                 />
               </SimpleGrid>
 
-              <DateTimePicker
-                label="Fecha y Hora del Mantenimiento"
-                placeholder="Seleccioná la fecha"
-                leftSection={<IconCalendar size={18} />}
-                valueFormat="DD/MM/YYYY HH:mm"
-                minDate={isEdit ? undefined : new Date()}
-                required
-                {...form.getInputProps("fechaHoraMantenimiento")}
-              />
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <DateTimePicker
+                  label="Desde"
+                  placeholder="Seleccioná inicio"
+                  leftSection={<IconCalendar size={18} />}
+                  valueFormat="DD/MM/YYYY HH:mm"
+                  minDate={isEdit ? undefined : new Date()}
+                  required
+                  {...form.getInputProps("fechaHoraMantenimiento")}
+                />
+
+                <DateTimePicker
+                  label="Hasta"
+                  placeholder="Seleccioná fin"
+                  leftSection={<IconCalendar size={18} />}
+                  valueFormat="DD/MM/YYYY HH:mm"
+                  minDate={form.values.fechaHoraMantenimiento ?? (isEdit ? undefined : new Date())}
+                  required
+                  {...form.getInputProps("fechaHoraFin")}
+                />
+              </SimpleGrid>
+
+              <Text size="xs" c="dimmed">
+                Durante este período el vehículo no se puede asignar a un viaje.
+              </Text>
 
               <Textarea
                 label="Descripción"

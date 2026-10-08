@@ -34,6 +34,7 @@ describe('buildMantenimientoReqDTO', () => {
     vehiculoID: '7',
     tipoMantenimientoID: '3',
     fechaHoraMantenimiento: new Date(2026, 5, 15, 9, 0, 0),
+    fechaHoraFin: new Date(2026, 5, 16, 18, 30, 0),
     descripcion: '  Cambio de aceite  ',
   };
 
@@ -44,6 +45,7 @@ describe('buildMantenimientoReqDTO', () => {
       vehiculoID: 7,
       tipoMantenimientoID: 3,
       fechaHoraMantenimiento: '2026-06-15T09:00:00',
+      fechaHoraFin: '2026-06-16T18:30:00',
       descripcion: 'Cambio de aceite',
     });
   });
@@ -70,6 +72,7 @@ describe('buildMantenimientoFormValues', () => {
       vehiculo: { id: 12, patente: 'AB123CD' },
       tipoMantenimiento: { id: 4, nombre: 'Frenos' },
       fechaHoraMantenimiento: '2026-06-15T09:00:00',
+      fechaHoraFin: '2026-06-16T18:30:00.000',
       descripcion: 'Revisión general',
     };
 
@@ -79,6 +82,8 @@ describe('buildMantenimientoFormValues', () => {
     expect(values.vehiculoID).toBe('12');
     expect(values.tipoMantenimientoID).toBe('4');
     expect(values.fechaHoraMantenimiento).toBeInstanceOf(Date);
+    expect(values.fechaHoraFin).toBeInstanceOf(Date);
+    expect(values.fechaHoraFin.getHours()).toBe(18);
     expect(values.descripcion).toBe('Revisión general');
   });
 
@@ -90,6 +95,7 @@ describe('buildMantenimientoFormValues', () => {
       vehiculoID: '',
       tipoMantenimientoID: '',
       fechaHoraMantenimiento: null,
+      fechaHoraFin: null,
       descripcion: '',
     });
   });
@@ -101,6 +107,7 @@ describe('buildMantenimientoFormValues', () => {
       vehiculo: { id: 12 },
       tipoMantenimiento: { id: 4 },
       fechaHoraMantenimiento: '2026-06-15T09:00:00',
+      fechaHoraFin: '2026-06-16T18:30:00',
       descripcion: 'Revisión general',
     };
     const payload = buildMantenimientoReqDTO(buildMantenimientoFormValues(dto));
@@ -110,6 +117,7 @@ describe('buildMantenimientoFormValues', () => {
       vehiculoID: 12,
       tipoMantenimientoID: 4,
       fechaHoraMantenimiento: '2026-06-15T09:00:00',
+      fechaHoraFin: '2026-06-16T18:30:00',
       descripcion: 'Revisión general',
     });
   });

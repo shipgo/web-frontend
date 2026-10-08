@@ -10,6 +10,7 @@ export const MANTENIMIENTOS_CSV_COLUMNS = [
   { header: 'Modelo', value: (m) => m.vehiculo?.modelo?.nombre },
   { header: 'Tipo de mantenimiento', value: (m) => m.tipoMantenimiento?.nombre },
   { header: 'Mecánico', value: mecanico },
-  { header: 'Fecha de mantenimiento', value: (m) => toLocalDateTime(m.fechaHoraMantenimiento) },
+  { header: 'Desde', value: (m) => toLocalDateTime(m.fechaHoraMantenimiento) },
+  { header: 'Hasta', value: (m) => toLocalDateTime(m.fechaHoraFin) },
   { header: 'Sucursal', value: (m) => m.sucursal?.nombre },
 ];
