@@ -1,25 +1,12 @@
-import dayjs from "dayjs";
+import { formatDesdeAhora, formatFecha, formatFechaHora } from "@domain/format";
 
-import { formatDesdeAhora } from "@domain/format";
+/**
+ * Wrappers históricos sobre `@domain/format` (fuente única de formato).
+ * Fecha vacía / inválida (`null`, `undefined`, texto no parseable) -> `EMPTY`
+ * (`—`, de `@domain/format`), el mismo texto en pantalla y en el CSV.
+ */
+export const toLocalDate = (date, format) => formatFecha(date, format);
 
-const LOCAL_DATE_FORMAT = "DD/MM/YYYY";
-const LOCAL_DATE_TIME_FORMAT = "DD/MM/YYYY HH:mm";
+export const toLocalDateTime = (date, format) => formatFechaHora(date, format);
 
-export const toLocalDate = (date, format = LOCAL_DATE_FORMAT) => {
-  const dateToFormat = dayjs(date);
-  if (dateToFormat.isValid()) return dateToFormat.format(format);
-  return "-";
-};
-
-export const toLocalDateTime = (date, format = LOCAL_DATE_TIME_FORMAT) => {
-  const dateToFormat = dayjs(date);
-  if (dateToFormat.isValid()) return dateToFormat.format(format);
-  return "-";
-};
-
-export const timeFromNow = (date) => {
-  const dateToFormat = dayjs(date);
-  // Relativo en español: misma fuente (locale `es` por llamada) que `formatDesdeAhora`.
-  if (dateToFormat.isValid()) return formatDesdeAhora(date);
-  return "-";
-};
+export const timeFromNow = (date) => formatDesdeAhora(date);

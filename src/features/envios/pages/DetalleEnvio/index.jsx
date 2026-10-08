@@ -44,7 +44,7 @@ import ScreenContainer from "@components/ScreenContainer";
 import { isNotFoundError } from "@utils/httpErrors";
 import { envioApi } from "@api";
 import { BUTTON_ACTION_TEXT_COLOR, esEstadoTerminal, estadoBadge, estadoLabel, normalizarEstado } from "@domain/estados";
-import { formatDireccion, formatFecha, formatFechaHora } from "@domain/format";
+import { formatDireccion, formatFecha, formatFechaHora, formatPeso } from "@domain/format";
 import { useAuthStore } from "@stores/auth.store";
 
 import { TIPO_ENTREGA } from "../../constants";
@@ -431,7 +431,7 @@ const DetalleEnvio = () => {
                   Paquetes
                 </Text>
                 <Text size="sm" c="dimmed">
-                  {detalleEnvios.length} {detalleEnvios.length === 1 ? "paquete" : "paquetes"} · {pesoTotal} kg en total
+                  {detalleEnvios.length} {detalleEnvios.length === 1 ? "paquete" : "paquetes"} · {formatPeso(pesoTotal)} en total
                 </Text>
               </Box>
             </Group>
@@ -456,7 +456,7 @@ const DetalleEnvio = () => {
                   <Table.Tr key={d.id ?? index}>
                     <Table.Td>{index + 1}</Table.Td>
                     <Table.Td>{d.categoria?.nombre ?? "-"}</Table.Td>
-                    <Table.Td>{d.peso != null ? `${d.peso} kg` : "-"}</Table.Td>
+                    <Table.Td>{formatPeso(d.peso)}</Table.Td>
                     <Table.Td>{d.descripcion || "-"}</Table.Td>
                   </Table.Tr>
                 ))}

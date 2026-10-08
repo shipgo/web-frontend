@@ -7,6 +7,7 @@ import {
 } from "@tabler/icons-react";
 
 import { RowActionsMenu } from "@components";
+import { EMPTY } from "@domain/format";
 import { timeFromNow, toLocalDateTime } from "@utils/dates";
 
 import { useDeleteMantenimiento } from "../hooks/useDeleteMantenimiento";
@@ -125,7 +126,7 @@ const ListaMantenimientosTabla = ({
                   </Stack>
                 ) : (
                   <Text size="sm" c="dimmed">
-                    Sin fecha
+                    {EMPTY}
                   </Text>
                 )}
               </Table.Td>

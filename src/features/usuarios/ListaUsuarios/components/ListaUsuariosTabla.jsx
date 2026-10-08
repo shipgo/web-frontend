@@ -15,6 +15,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 
+import { EMPTY } from "@domain/format";
 import { timeFromNow, toLocalDate } from "@utils/dates";
 import { RowActionsMenu } from "@components";
 import { API_URLS } from "@constants/apiUrls";
@@ -184,7 +185,7 @@ const ListaUsuariosTabla = ({
                   </Stack>
                 ) : (
                   <Text size="sm" c="dimmed">
-                    Sin fecha
+                    {EMPTY}
                   </Text>
                 )}
               </Table.Td>

@@ -25,7 +25,7 @@ export const useDeleteMantenimiento = (onSuccess) => {
       centered: true,
       children: (
         <Text size="sm">
-          ¿Estás seguro de que deseas eliminar el mantenimiento{" "}
+          ¿Estás seguro de que querés eliminar el mantenimiento{" "}
           <strong>{identificador}</strong>? Esta acción no se puede deshacer.
         </Text>
       ),

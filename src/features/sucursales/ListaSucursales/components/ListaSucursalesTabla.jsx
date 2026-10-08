@@ -15,6 +15,7 @@ import {
 } from "@tabler/icons-react";
 import { useLocation } from "wouter";
 
+import { EMPTY } from "@domain/format";
 import { timeFromNow, toLocalDate } from "@utils/dates";
 import { useDeleteSucursal } from "../hooks/useDeleteSucursal";
 
@@ -168,7 +169,7 @@ const ListaSucursalesTabla = ({
                   </Stack>
                 ) : (
                   <Text size="sm" c="dimmed">
-                    Sin fecha
+                    {EMPTY}
                   </Text>
                 )}
               </Table.Td>

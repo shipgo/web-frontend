@@ -20,6 +20,7 @@ import {
   IconUser,
 } from "@tabler/icons-react";
 
+import { EMPTY } from "@domain/format";
 import { toLocalDate } from "@utils/dates";
 import { rolBadge } from "@domain/roles";
 
@@ -35,7 +36,7 @@ const InfoItem = ({ icon: Icon, label, value, color = "blue" }) => (
         {label}
       </Text>
       <Text size="sm" fw={500}>
-        {value || "No especificado"}
+        {value || EMPTY}
       </Text>
     </Stack>
   </Group>
