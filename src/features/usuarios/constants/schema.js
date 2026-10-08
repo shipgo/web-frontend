@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { schemaResolver } from '@mantine/form';
 
 import {
   TEXTO_MAX,
@@ -73,4 +74,20 @@ export const USUARIO_INITIAL_VALUES = {
   sexoID: null,
   localidadID: null,
   provinciaID: null,
+};
+
+/**
+ * `validate` del form de Crear/Editar usuario (SHG-FE-116): el esquema de arriba
+ * más "sucursal obligatoria" cuando quien guarda es SUPERUSER (`POST`/`PUT
+ * /api/user` exigen `sucursalID`). Un ADMIN no elige: el form la fuerza a la suya.
+ */
+export const buildUsuarioValidate = (isSuper) => {
+  const base = schemaResolver(USUARIO_SCHEMA, { sync: true });
+  return (values) => {
+    const errors = base(values);
+    if (isSuper && !values.sucursalID) {
+      return { ...errors, sucursalID: 'Debes seleccionar una sucursal' };
+    }
+    return errors;
+  };
 };

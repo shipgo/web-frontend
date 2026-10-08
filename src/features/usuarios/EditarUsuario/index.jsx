@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { Card, Text } from "@mantine/core";
-import { useForm, schemaResolver } from "@mantine/form";
+import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
+import { ROLE_SUPERUSER, hasRole } from "@domain/roles";
 import { usuarioApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
 import UsuarioForm from "../components/UsuarioForm";
 import FotoPerfilUpload from "../components/FotoPerfilUpload";
 import CambiarPasswordCard from "@components/CambiarPasswordCard";
-import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA } from "../constants/schema";
+import { USUARIO_INITIAL_VALUES, buildUsuarioValidate } from "../constants/schema";
 import { toBackendDate } from "../utils";
 
 const EditarUsuario = () => {
@@ -35,7 +36,7 @@ const EditarUsuario = () => {
 
   const form = useForm({
     initialValues: USUARIO_INITIAL_VALUES,
-    validate: schemaResolver(USUARIO_SCHEMA, { sync: true }),
+    validate: buildUsuarioValidate(hasRole(currentUser, ROLE_SUPERUSER)),
   });
 
   // Cargar datos del usuario

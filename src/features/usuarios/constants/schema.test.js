@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA } from "./schema";
+import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA, buildUsuarioValidate } from "./schema";
 
 const errores = (values) => {
   const result = USUARIO_SCHEMA.safeParse(values);
@@ -77,5 +77,22 @@ describe("USUARIO_SCHEMA", () => {
     const e = errores(USUARIO_INITIAL_VALUES);
     expect(e.provinciaID).toBeUndefined();
     expect(e.sucursalID).toBeUndefined();
+  });
+});
+
+describe("buildUsuarioValidate (SHG-FE-116: sucursal obligatoria para SUPERUSER, crear y editar)", () => {
+  it("SUPERUSER sin sucursal → error en sucursalID", () => {
+    const errors = buildUsuarioValidate(true)({ ...USUARIO_INITIAL_VALUES, sucursalID: null });
+    expect(errors.sucursalID).toBe("Debes seleccionar una sucursal");
+  });
+
+  it("SUPERUSER con sucursal → sin error de sucursalID", () => {
+    const errors = buildUsuarioValidate(true)({ ...USUARIO_INITIAL_VALUES, sucursalID: "3" });
+    expect(errors.sucursalID).toBeUndefined();
+  });
+
+  it("ADMIN no elige sucursal → sin error de sucursalID", () => {
+    const errors = buildUsuarioValidate(false)({ ...USUARIO_INITIAL_VALUES, sucursalID: null });
+    expect(errors.sucursalID).toBeUndefined();
   });
 });

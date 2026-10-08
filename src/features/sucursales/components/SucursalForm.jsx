@@ -56,6 +56,12 @@ const filterIgnoreAccents = ({ options, search }) => {
  * @param {boolean} props.loading - Estado de carga del submit
  * @param {Function} props.onCancel - Función para cancelar
  * @param {boolean} props.isEdit - Si es modo edición o creación
+ * @param {import('react').ReactNode} [props.beforeSections] - Cards extra antes de
+ *   "Información de la sucursal" (onboarding de empresa, SHG-FE-116).
+ * @param {string} [props.submitLabel] - Texto del botón de submit (por defecto
+ *   "Crear sucursal" / "Guardar cambios").
+ * @param {boolean} [props.hideCancel] - Oculta "Cancelar" (onboarding: no hay a
+ *   dónde volver; el logout está en el header).
  */
 const SucursalForm = ({
   form,
@@ -63,6 +69,9 @@ const SucursalForm = ({
   loading,
   onCancel,
   isEdit = false,
+  beforeSections = null,
+  submitLabel,
+  hideCancel = false,
 }) => {
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [provincias, setProvincias] = useState([]);
@@ -174,6 +183,8 @@ const SucursalForm = ({
 
       <form onSubmit={form.onSubmit(onSubmit, handleInvalid)} noValidate>
         <Stack gap="lg">
+          {beforeSections}
+
           {/* Información de la Sucursal */}
           <Card>
             <Stack gap="md">
@@ -281,19 +292,21 @@ const SucursalForm = ({
           del `<form>`, así que el submit se recablea a `onClick`. Se preserva el
           confirm-al-cancelar-si-dirty. */}
       <PageFooter>
-        <Button
-          variant="light"
-          color="red"
-          onClick={handleCancel}
-          disabled={loading}
-        >
-          Cancelar
-        </Button>
+        {!hideCancel && (
+          <Button
+            variant="light"
+            color="red"
+            onClick={handleCancel}
+            disabled={loading}
+          >
+            Cancelar
+          </Button>
+        )}
         <Button
           loading={loading}
           onClick={() => form.onSubmit(onSubmit, handleInvalid)()}
         >
-          {isEdit ? "Guardar cambios" : "Crear sucursal"}
+          {submitLabel ?? (isEdit ? "Guardar cambios" : "Crear sucursal")}
         </Button>
       </PageFooter>
     </Box>

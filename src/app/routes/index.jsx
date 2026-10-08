@@ -19,6 +19,8 @@ import {
   ROLE_SUPERUSER,
   ROLES_WEB,
 } from '@domain/roles';
+import { useAuthStore } from '@stores/auth.store';
+import { EMPRESA_REQUERIDA_EVENT, necesitaOnboardingEmpresa } from '@domain/empresa';
 import { buildLoginRedirectTo } from '@utils/redirect';
 import { SECTION_PATHS } from '@utils/protectedPaths';
 import { Center, Loader, useMantineColorScheme } from '@mantine/core';
@@ -26,6 +28,9 @@ import { Center, Loader, useMantineColorScheme } from '@mantine/core';
 const RecuperarCuentaPage = lazy(() => import('@features/login/RecuperarCuenta'));
 const RecuperarCuentaTokenPage = lazy(
   () => import('@features/login/RecuperarCuentaToken'),
+);
+const OnboardingEmpresaPage = lazy(() =>
+  import('@features/onboarding').then((m) => ({ default: m.OnboardingEmpresa })),
 );
 const HomePage = lazy(() => import('@features/home'));
 const LandingPage = lazy(() =>
@@ -126,6 +131,29 @@ const ProtectedRoutes = () => {
     }
   }, [isAuthenticated]);
 
+  // SHG-FE-116: si algún endpoint responde `409 empresa_requerida` (SUPERUSER sin
+  // empresa) `restclient` avisa con un evento. Se re-lee la sesión: si el backend
+  // confirma que no hay sucursal, el usuario pasa a `necesitaOnboardingEmpresa` y
+  // abajo se renderiza el onboarding. Si el whoami falla o trae sucursal, no se
+  // cambia nada (la pantalla ya muestra el mensaje del backend).
+  useEffect(() => {
+    // Una ráfaga de 409 (varias queries en paralelo) dispara un solo whoami.
+    let enCurso = false;
+    const refrescarSesion = () => {
+      if (enCurso) return;
+      enCurso = true;
+      useAuthStore
+        .getState()
+        .getUserInfo()
+        .catch(() => {})
+        .finally(() => {
+          enCurso = false;
+        });
+    };
+    window.addEventListener(EMPRESA_REQUERIDA_EVENT, refrescarSesion);
+    return () => window.removeEventListener(EMPRESA_REQUERIDA_EVENT, refrescarSesion);
+  }, []);
+
   // Acceso directo (link compartido) a una ruta protegida sin sesión: manda a
   // `/login` preservando el destino en `?redirect=` (SHG-FE-054) en vez de
   // perderlo — ver `@utils/redirect`. `ProtectedRoutes` es a donde delega
@@ -145,6 +173,21 @@ const ProtectedRoutes = () => {
   // gestión, sólo la pantalla "usá la app".
   if (!hasAnyRole(user, ROLES_WEB)) {
     return <MobileOnlyScreen />;
+  }
+
+  // SUPERUSER sin empresa (SHG-FE-116): la pantalla "Configurá tu empresa"
+  // reemplaza a TODAS las rutas de gestión, sin redirecciones (no hay loop) y
+  // dentro del `Layout` (el header conserva "Cerrar sesión"). La decisión sale
+  // del usuario ya cargado (`whoami`), nunca de una consulta a medio cargar; al
+  // crear la empresa el store recibe el usuario vinculado y esto se desmonta.
+  if (necesitaOnboardingEmpresa(user)) {
+    return (
+      <Layout>
+        <Suspense fallback={<RouteFallback />}>
+          <OnboardingEmpresaPage />
+        </Suspense>
+      </Layout>
+    );
   }
 
   return (

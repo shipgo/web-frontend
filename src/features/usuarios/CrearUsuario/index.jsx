@@ -1,25 +1,29 @@
 import { useCallback, useState } from "react";
 import { useLocation } from "wouter";
-import { useForm, schemaResolver } from "@mantine/form";
+import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { useAuthStore } from "@stores/auth.store";
 import { applyApiError } from "@domain/apiError";
+import { ROLE_SUPERUSER, hasRole } from "@domain/roles";
 import { usuarioApi } from "@api";
 import UsuarioForm from "../components/UsuarioForm";
-import { USUARIO_INITIAL_VALUES, USUARIO_SCHEMA } from "../constants/schema";
+import { USUARIO_INITIAL_VALUES, buildUsuarioValidate } from "../constants/schema";
 import { toBackendDate } from "../utils";
 
 const CrearUsuario = () => {
   const [, navigate] = useLocation();
 
   const [loading, setLoading] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const isSuper = hasRole(user, ROLE_SUPERUSER);
 
   const form = useForm({
     initialValues: USUARIO_INITIAL_VALUES,
-    validate: schemaResolver(USUARIO_SCHEMA, { sync: true }),
+    validate: buildUsuarioValidate(isSuper),
   });
 
   const handleSubmit = useCallback(

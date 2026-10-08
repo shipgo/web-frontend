@@ -10,6 +10,7 @@ import {
 import BrandLogo from "@components/BrandLogo";
 import {
   IconBook,
+  IconBuilding,
   IconExternalLink,
   IconHome,
   IconMoonStars,
@@ -21,6 +22,7 @@ import { ADMIN, PAGES } from "../constants/items";
 import { IconMap } from "@tabler/icons-react";
 import { useAuth } from "@contexts/auth";
 import { hasAnyRole } from "@domain/roles";
+import { necesitaOnboardingEmpresa } from "@domain/empresa";
 import { useToggleColorScheme } from "@hooks/useToggleColorScheme";
 
 const AppNavbar = () => {
@@ -28,8 +30,12 @@ const AppNavbar = () => {
   const { computedColorScheme, handleToggleColorScheme } = useToggleColorScheme();
   const { user } = useAuth();
 
-  const pages = PAGES.filter(({ roles }) => hasAnyRole(user, roles));
-  const admin = ADMIN.filter(({ roles }) => hasAnyRole(user, roles));
+  // SHG-FE-116: un SUPERUSER sin empresa sólo ve "Configurá tu empresa"; ninguna
+  // sección de gestión funciona hasta que cree la empresa.
+  const sinEmpresa = necesitaOnboardingEmpresa(user);
+
+  const pages = sinEmpresa ? [] : PAGES.filter(({ roles }) => hasAnyRole(user, roles));
+  const admin = sinEmpresa ? [] : ADMIN.filter(({ roles }) => hasAnyRole(user, roles));
 
   return (
     <AppShellNavbar>
@@ -40,21 +46,31 @@ const AppNavbar = () => {
         <BrandLogo h={37} alt="ShipGo — inicio" mx="auto" />
       </UnstyledButton>
 
-      <NavLink
-        to="/"
-        label="Home"
-        component={Link}
-        active={location === "/"}
-        leftSection={<IconHome size={18} />}
-      />
+      {sinEmpresa ? (
+        <NavLink
+          label="Configurá tu empresa"
+          active
+          leftSection={<IconBuilding size={18} />}
+        />
+      ) : (
+        <>
+          <NavLink
+            to="/"
+            label="Home"
+            component={Link}
+            active={location === "/"}
+            leftSection={<IconHome size={18} />}
+          />
 
-      <NavLink
-        to="/mapa"
-        label="Mapa"
-        component={Link}
-        active={location.startsWith("/mapa")}
-        leftSection={<IconMap size={18} />}
-      />
+          <NavLink
+            to="/mapa"
+            label="Mapa"
+            component={Link}
+            active={location.startsWith("/mapa")}
+            leftSection={<IconMap size={18} />}
+          />
+        </>
+      )}
 
       {pages.length > 0 && (
         <>
@@ -96,16 +112,19 @@ const AppNavbar = () => {
           (pantalla en blanco, sin catch-all). El detalle del usuario logueado
           ya existe en `/usuarios/:id` (`DetalleUsuario`), así que "Mi perfil"
           apunta ahí directamente en vez de un destino sin implementar. */}
-      <NavLink
-        mt="auto"
-        to={`/usuarios/${user?.id}`}
-        label="Mi perfil"
-        component={Link}
-        active={location === `/usuarios/${user?.id}`}
-        leftSection={<IconUser size={18} />}
-      />
+      {!sinEmpresa && (
+        <NavLink
+          mt="auto"
+          to={`/usuarios/${user?.id}`}
+          label="Mi perfil"
+          component={Link}
+          active={location === `/usuarios/${user?.id}`}
+          leftSection={<IconUser size={18} />}
+        />
+      )}
 
       <NavLink
+        mt={sinEmpresa ? "auto" : undefined}
         onClick={handleToggleColorScheme}
         label={computedColorScheme === "dark" ? "Modo oscuro" : "Modo claro"}
         leftSection={

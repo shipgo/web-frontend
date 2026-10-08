@@ -1,8 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AxiosError } from 'axios';
 
 import { CSV_MAX_ROWS } from '@utils/csv';
+import { EMPRESA_REQUERIDA_EVENT } from '@domain/empresa';
 import { usuarioApi } from '@api/usuario.api';
 import {
   DEFAULT_TIMEOUT_MS,
@@ -151,4 +152,49 @@ describe('restclient — timeouts y errores de conexión (SHG-FE-110)', () => {
       expect(window.location.href).toBe('/login');
     },
   );
+});
+
+describe('restclient — 409 empresa_requerida (SHG-FE-116)', () => {
+  const conflict = (code) => (config) =>
+    Promise.reject(
+      new AxiosError('409', AxiosError.ERR_BAD_REQUEST, config, null, {
+        status: 409,
+        data: { statusCode: 409, message: 'Primero tenés que crear tu empresa', code },
+        config,
+        headers: {},
+        statusText: '',
+      }),
+    );
+
+  afterEach(() => {
+    restclient.defaults.adapter = originalAdapter;
+  });
+
+  it('emite el evento una sola vez y la promesa igual rechaza con el 409', async () => {
+    restclient.defaults.adapter = conflict('empresa_requerida');
+    const listener = vi.fn();
+    window.addEventListener(EMPRESA_REQUERIDA_EVENT, listener);
+    try {
+      await expect(restclient.post('/user', {})).rejects.toMatchObject({
+        response: { status: 409, data: { code: 'empresa_requerida' } },
+      });
+      expect(listener).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener(EMPRESA_REQUERIDA_EVENT, listener);
+    }
+  });
+
+  it('un 409 con otro code no emite el evento', async () => {
+    restclient.defaults.adapter = conflict('otro_conflicto');
+    const listener = vi.fn();
+    window.addEventListener(EMPRESA_REQUERIDA_EVENT, listener);
+    try {
+      await expect(restclient.post('/user', {})).rejects.toMatchObject({
+        response: { status: 409 },
+      });
+      expect(listener).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(EMPRESA_REQUERIDA_EVENT, listener);
+    }
+  });
 });

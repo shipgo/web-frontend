@@ -7,3 +7,4 @@ export * from './estados';
 export * from './roles';
 export * from './format';
 export * from './apiError';
+export * from './empresa';

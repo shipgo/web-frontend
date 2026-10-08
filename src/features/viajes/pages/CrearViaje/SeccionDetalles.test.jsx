@@ -60,14 +60,17 @@ describe("SeccionDetalles — SHG-FE-052 (aviso de sucursal de origen para SUPER
     expect(screen.getByText(/Sucursal Norte/)).toBeInTheDocument();
   });
 
-  it("SUPERUSER sin sucursal propia: avisa que el viaje se crea sin sucursal asociada", () => {
+  it("SUPERUSER sin sucursal propia: ya no muestra el aviso de 'pendiente de soporte de backend' (SHG-FE-116)", () => {
     mockUser = { sucursal: null };
     renderSeccionDetalles({ isSuperUser: true, activeSucursal: null });
 
     expect(screen.getByDisplayValue("—")).toBeInTheDocument();
     expect(
-      screen.getByText(/no tiene una sucursal propia asignada/i),
-    ).toBeInTheDocument();
+      screen.queryByText(/pendiente de soporte de backend/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/no tiene una sucursal propia asignada/i),
+    ).not.toBeInTheDocument();
   });
 });
 
