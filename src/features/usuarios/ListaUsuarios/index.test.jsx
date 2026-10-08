@@ -40,7 +40,7 @@ describe('ListaUsuarios — la selección masiva nunca incluye al propio usuario
   beforeEach(() => {
     vi.clearAllMocks();
     notifications.clean();
-    useAuthStore.setState({ user: { id: 1, username: 'yo' } });
+    useAuthStore.setState({ user: { id: 1, username: 'yo', authorities: ['ROLE_SUPERUSER'] } });
   });
 
   it('"Seleccionar todos" tilda a los demás pero nunca a la propia fila (disabled)', async () => {
@@ -126,7 +126,7 @@ describe('ListaUsuarios — la selección masiva nunca incluye al propio usuario
     // Al momento de seleccionar, el usuario logueado es un tercero: ninguna
     // fila está deshabilitada por `isSelf` y "Seleccionar todos" tilda tanto
     // a OTRO (id 2) como a OTRO2 (id 3).
-    useAuthStore.setState({ user: { id: 99, username: 'admin-temporal' } });
+    useAuthStore.setState({ user: { id: 99, username: 'admin-temporal', authorities: ['ROLE_SUPERUSER'] } });
 
     const user = userEvent.setup();
     renderWithProviders(<ListaUsuarios />);
@@ -139,7 +139,7 @@ describe('ListaUsuarios — la selección masiva nunca incluye al propio usuario
     // refresh de sesión): el filtro de la selección ya corrió y no vuelve a
     // correr, pero el segundo filtro —el que actúa recién al confirmar el
     // borrado masivo, antes de llamar a `deleteFn`— tiene que sacarlo igual.
-    useAuthStore.setState({ user: { id: 2, username: 'otra' } });
+    useAuthStore.setState({ user: { id: 2, username: 'otra', authorities: ['ROLE_SUPERUSER'] } });
 
     await user.click(screen.getByRole('button', { name: 'Acciones' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados' }));

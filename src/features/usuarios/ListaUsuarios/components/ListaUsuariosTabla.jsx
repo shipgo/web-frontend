@@ -23,6 +23,7 @@ import { rolBadge } from "@domain/roles";
 import { useAuthStore } from "@stores/auth.store";
 import { useDeleteUsuario } from "../hooks/useDeleteUsuario";
 import { usePasswordReset } from "../../hooks/usePasswordReset";
+import { canManageUsuario } from "../../utils";
 
 const ListaUsuariosTabla = ({
   items = [],
@@ -52,14 +53,18 @@ const ListaUsuariosTabla = ({
     // backend (`enabled` no existe en `UserDTO`), y activar/desactivar
     // usuarios quedó fuera de alcance.
     const self = isSelf(usuario);
+    // SHG-FE-121: un ADMIN no edita ni borra a otros ADMIN/SUPERUSER (404 del backend).
+    const manageable = canManageUsuario(currentUser, usuario);
 
     const actions = [
       { icon: <IconEye size={18} />, label: "Ver detalles", onClick: () => handleViewDetails(usuario.id) },
-      { icon: <IconEdit size={18} />, label: "Editar", color: "blue", onClick: () => handleEdit(usuario.id) },
-      { icon: <IconKey size={18} />, label: "Resetear contraseña", color: "orange", onClick: () => confirmReset(usuario) },
     ];
+    if (manageable) {
+      actions.push({ icon: <IconEdit size={18} />, label: "Editar", color: "blue", onClick: () => handleEdit(usuario.id) });
+    }
+    actions.push({ icon: <IconKey size={18} />, label: "Resetear contraseña", color: "orange", onClick: () => confirmReset(usuario) });
 
-    if (!self) {
+    if (!self && manageable) {
       actions.push({
         icon: <IconTrash size={18} />,
         label: "Eliminar",
@@ -75,7 +80,7 @@ const ListaUsuariosTabla = ({
   // "Seleccionar todos" ignora la propia fila (no seleccionable): si no se
   // excluyera acá, el checkbox de cabecera nunca llegaría a `checked` con el
   // resto de la página ya tildada (la propia fila jamás entra a `selectedIds`).
-  const selectableItems = items.filter((i) => !isSelf(i));
+  const selectableItems = items.filter((i) => !isSelf(i) && canManageUsuario(currentUser, i));
   const allSelected = selectableItems.length > 0 && selectableItems.every((i) => selectedIds.has(i.id));
   const indeterminate = !allSelected && selectableItems.some((i) => selectedIds.has(i.id));
 
@@ -113,6 +118,7 @@ const ListaUsuariosTabla = ({
           const fechaRegistro = item.fechaCreacion || item.createdAt || item.fecha;
           const authorities = item.authorities || [];
           const self = isSelf(item);
+          const manageable = canManageUsuario(currentUser, item);
 
           return (
             <Table.Tr
@@ -124,10 +130,12 @@ const ListaUsuariosTabla = ({
                   aria-label={
                     self
                       ? "No podés seleccionar tu propio usuario"
-                      : `Seleccionar usuario ${item.username}`
+                      : !manageable
+                        ? `No podés seleccionar a ${item.username}`
+                        : `Seleccionar usuario ${item.username}`
                   }
                   checked={selectedIds.has(item.id)}
-                  disabled={self}
+                  disabled={self || !manageable}
                   onChange={() => onToggle(item.id)}
                 />
               </Table.Td>

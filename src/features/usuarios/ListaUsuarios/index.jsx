@@ -17,6 +17,7 @@ import ListaUsuariosFiltros from './components/ListaUsuariosFiltros';
 import ListaUsuariosTabla from './components/ListaUsuariosTabla';
 
 import { useGetUsuarios } from './hooks/useGetUsuarios';
+import { canManageUsuario } from '../utils';
 import { USUARIOS_CSV_COLUMNS } from './listaUsuarios.csv';
 
 const ListaUsuarios = () => {
@@ -33,6 +34,9 @@ const ListaUsuarios = () => {
   // el checkbox nunca se haya podido tildar.
   const isSelf = (usuario) =>
     Boolean(currentUser?.id) && String(currentUser.id) === String(usuario.id);
+  // SHG-FE-121: tampoco se seleccionan (ni borran) otros ADMIN/SUPERUSER si
+  // quien mira es ADMIN.
+  const isSelectable = (usuario) => !isSelf(usuario) && canManageUsuario(currentUser, usuario);
 
   const { exportar, isExporting } = useCsvExport({
     fetchRows: fetchExportRows,
@@ -68,7 +72,7 @@ const ListaUsuarios = () => {
   const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   const onToggleAll = () => {
     // Excluye la propia fila: nunca es seleccionable (ver `isSelf` arriba).
-    const seleccionables = (data.results ?? []).filter((i) => !isSelf(i));
+    const seleccionables = (data.results ?? []).filter(isSelectable);
     if (seleccionables.length > 0 && seleccionables.every((i) => selectedIds.has(i.id))) {
       seleccionables.forEach((i) => selectedIds.delete(i.id));
     } else {
@@ -96,7 +100,7 @@ const ListaUsuarios = () => {
         onExport={() => exportarSeleccionados(data.results, selectedIds)}
         onDelete={() =>
           confirmBulkDelete(
-            (data.results ?? []).filter((item) => selectedIds.has(item.id) && !isSelf(item)),
+            (data.results ?? []).filter((item) => selectedIds.has(item.id) && isSelectable(item)),
           )
         }
       />
