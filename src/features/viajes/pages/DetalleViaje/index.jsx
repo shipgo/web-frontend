@@ -19,7 +19,7 @@ const DetalleViaje = () => {
   const { viajeQuery, ubicacionQuery, historialQuery } = useViajeDetalle(id);
   const { data: viaje, isLoading, isError, error, refetch } = viajeQuery;
   const notFound = isError && isNotFoundError(error);
-  const { confirmFinalizar, confirmCancelar } = useViajeAcciones(id, { onSuccess: refetch });
+  const { confirmFinalizar, confirmReanudar, confirmCancelar } = useViajeAcciones(id, { onSuccess: refetch });
 
   return (
     <PageContainer>
@@ -52,6 +52,7 @@ const DetalleViaje = () => {
               id={id}
               onEditar={() => navigate(`~/viajes/${id}/editar`)}
               onFinalizar={confirmFinalizar}
+              onReanudar={confirmReanudar}
               onCancelar={confirmCancelar}
             />
           )}

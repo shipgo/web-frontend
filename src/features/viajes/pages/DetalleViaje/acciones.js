@@ -11,6 +11,8 @@ import { VIAJE_ESTADOS_EDITABLES } from '../../constants';
  *   (`ViajeService.iniciarViaje`) solo acepta al chofer asignado, y la web es
  *   exclusiva SU/AD. Mobile inicia desde ROLE_CHOFER en su propio repo.
  * - `finalizar` -> `PUT /viaje/{id}/finalizar` (SU/AD/CH), sólo con el viaje en_camino.
+ * - `reanudar`  -> `PUT /viaje/{id}/reanudar` (acá sólo SU/AD; el chofer reanuda desde
+ *   mobile), sólo con el viaje con_problemas (SHG-BE-097, SHG-FE-126).
  * - `cancelar`  -> `PUT /viaje/{id}/cancelar` (SU/AD), estados cancelables (SHG-BE-009).
  * - `editar`    -> navega a `EditarViaje` (SU/AD), ya implementado; no es una
  *   transición de estado por lo que no está bloqueado por SHG-FE-012.
@@ -29,3 +31,5 @@ export const puedeFinalizar = (user, estado) =>
 
 export const puedeCancelar = (user, estado) =>
   isAdminOrSuper(user) && ESTADOS_CANCELABLES.includes(estado);
+
+export const puedeReanudar = (user, estado) => isAdminOrSuper(user) && estado === 'con_problemas';

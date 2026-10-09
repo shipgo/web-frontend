@@ -1,4 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
+import { notifications } from '@mantine/notifications';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { Route } from 'wouter';
@@ -9,6 +10,7 @@ vi.mock('@api', () => ({
   viajeApi: {
     getById: vi.fn(),
     finalizar: vi.fn(),
+    reanudar: vi.fn(),
     cancelar: vi.fn(),
   },
   trackingApi: { getUltimaUbicacion: vi.fn(), getHistorial: vi.fn() },
@@ -291,6 +293,111 @@ describe('DetalleViaje', () => {
 
       expect(await screen.findByText('No se puede completar la acción')).toBeInTheDocument();
       expect(screen.getByText('El viaje no está en camino')).toBeInTheDocument();
+    });
+  });
+
+  describe('reanudar viaje con problemas (SHG-FE-126)', () => {
+    const VIAJE_CON_PROBLEMAS = { ...EXISTING_VIAJE, estado: 'con_problemas' };
+
+    // El store de Mantine es global: toasts de tests previos ocupan el límite (5) y encolan los nuevos.
+    beforeEach(() => notifications.clean());
+
+    const render = () =>
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, { route: '/viajes/42' });
+    const setRol = (rol) =>
+      useAuthStore.setState({
+        user: new Usuario({ id: 1, username: 'u', authorities: [rol] }),
+        isAuthenticated: true,
+      });
+
+    it.each(['ROLE_ADMIN', 'ROLE_SUPERUSER'])('%s ve "Reanudar" en con_problemas', async (rol) => {
+      setRol(rol);
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      render();
+      expect(await screen.findByRole('button', { name: 'Reanudar' })).toBeInTheDocument();
+    });
+
+    it('un CHOFER no ve "Reanudar" en con_problemas', async () => {
+      setRol('ROLE_CHOFER');
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      render();
+      await screen.findByText('Viaje #42');
+      expect(screen.queryByRole('button', { name: 'Reanudar' })).not.toBeInTheDocument();
+    });
+
+    it.each(['creado', 'planificado', 'en_proceso_de_carga', 'en_camino', 'finalizado', 'cancelado'])(
+      'no muestra "Reanudar" en estado %s',
+      async (estado) => {
+        viajeApi.getById.mockResolvedValue({ ...EXISTING_VIAJE, estado });
+        render();
+        await screen.findByText('Viaje #42');
+        expect(screen.queryByRole('button', { name: 'Reanudar' })).not.toBeInTheDocument();
+      },
+    );
+
+    it('confirma, llama PUT /reanudar, avisa y relee el detalle', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      viajeApi.reanudar.mockResolvedValue({ ...VIAJE_CON_PROBLEMAS, estado: 'en_camino' });
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      viajeApi.getById.mockResolvedValue({ ...VIAJE_CON_PROBLEMAS, estado: 'en_camino' });
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+
+      await waitFor(() => expect(viajeApi.reanudar).toHaveBeenCalledWith('42'));
+      expect(await screen.findByText('Viaje reanudado')).toBeInTheDocument();
+      await waitFor(() => expect(viajeApi.getById).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(screen.queryByRole('button', { name: 'Reanudar' })).not.toBeInTheDocument());
+    });
+
+    it('doble click en "Sí, reanudar" manda un solo PUT', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      let resolver;
+      viajeApi.reanudar.mockImplementation(() => new Promise((resolve) => { resolver = resolve; }));
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      await user.dblClick(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+      expect(viajeApi.reanudar).toHaveBeenCalledTimes(1);
+      resolver({});
+      expect(await screen.findByText('Viaje reanudado')).toBeInTheDocument();
+      expect(viajeApi.reanudar).toHaveBeenCalledTimes(1);
+    });
+
+    it('409: muestra el mensaje del backend como aviso y relee el viaje', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      viajeApi.reanudar.mockRejectedValue({
+        response: { status: 409, data: { message: 'El chofer ya tiene otro viaje en camino' } },
+      });
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+
+      expect(await screen.findByText('No se puede completar la acción')).toBeInTheDocument();
+      expect(screen.getByText('El chofer ya tiene otro viaje en camino')).toBeInTheDocument();
+      await waitFor(() => expect(viajeApi.getById).toHaveBeenCalledTimes(2));
+    });
+
+    it('un error distinto de 409 no relee el viaje', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      viajeApi.reanudar.mockRejectedValue({ response: { status: 500, data: {} } });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+
+      expect(await screen.findByText('Error')).toBeInTheDocument();
+      expect(viajeApi.getById).toHaveBeenCalledTimes(1);
     });
   });
 
