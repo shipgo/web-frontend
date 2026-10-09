@@ -9,10 +9,12 @@ import { VirtuosoItem } from "@components/VirtuosoListA11y";
 
 import ItemVehiculo from "./ItemVehiculo";
 import { useFormContext } from "../contexts/EnviosFormContext";
+import { motivoNoDisponible } from "@features/vehiculos/utils/mantenimiento";
 import useEnviosStats from "../hooks/useEnviosStats";
 
 const ListaVehiculosDisponibles = ({
   vehiculos,
+  enMantenimiento = [],
   isFetching,
   isError,
   refetch,
@@ -36,13 +38,16 @@ const ListaVehiculosDisponibles = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehiculos]);
 
+  // Disponibles primero y, debajo, los que están en mantenimiento (no seleccionables).
+  const items = [...vehiculos, ...enMantenimiento];
+
   const handleSelectedVehicle = (vehicle) => {
     setFieldValue("vehiculo", vehicle);
   };
 
   return (
     <Virtuoso
-      data={vehiculos}
+      data={items}
       style={{ flex: 1 }}
       components={{
         Item: VirtuosoItem,
@@ -74,7 +79,7 @@ const ListaVehiculosDisponibles = ({
           />
         ),
         Footer: () => {
-          if (isFetching || isError || vehiculos.length === 0) return null;
+          if (isFetching || isError || items.length === 0) return null;
 
           return (
             <Center h="72px">
@@ -83,16 +88,25 @@ const ListaVehiculosDisponibles = ({
           );
         },
       }}
-      itemContent={(_, vehicle) => (
-        <SelectableItemList
-          singleSelection
-          key={vehicle.id}
-          selected={vehiculo?.id === vehicle.id}
-          onClick={() => handleSelectedVehicle(vehicle)}
-        >
-          <ItemVehiculo vehicle={vehicle} pesoTotal={pesoTotal} />
-        </SelectableItemList>
-      )}
+      itemContent={(_, vehicle) => {
+        const enMant = enMantenimiento.some((v) => v.id === vehicle.id);
+
+        return (
+          <SelectableItemList
+            singleSelection
+            key={vehicle.id}
+            selected={!enMant && vehiculo?.id === vehicle.id}
+            disabled={enMant}
+            onClick={() => handleSelectedVehicle(vehicle)}
+          >
+            <ItemVehiculo
+              vehicle={vehicle}
+              pesoTotal={pesoTotal}
+              motivoNoDisponible={enMant ? motivoNoDisponible(vehicle) : undefined}
+            />
+          </SelectableItemList>
+        );
+      }}
     />
   );
 };

@@ -43,6 +43,43 @@ describe("ListaVehiculosTabla", () => {
     vi.clearAllMocks();
   });
 
+  it("muestra el indicador de mantenimiento vigente y próximo con el copy del detalle (SHG-FE-118)", () => {
+    renderTabla({
+      items: [
+        {
+          ...VEHICULO,
+          mantenimiento: {
+            id: 3,
+            fechaHoraMantenimiento: "2026-10-10T08:00:00.000",
+            fechaHoraFin: "2026-10-11T18:30:00.000",
+            vigente: true,
+          },
+        },
+        {
+          ...VEHICULO,
+          id: 2,
+          patente: "ZZ999ZZ",
+          mantenimiento: {
+            id: 4,
+            fechaHoraMantenimiento: "2026-10-20T08:00:00.000",
+            fechaHoraFin: "2026-10-21T18:30:00.000",
+            vigente: false,
+          },
+        },
+      ],
+    });
+
+    expect(screen.getByText("En mantenimiento hasta el 11/10/2026 18:30")).toBeInTheDocument();
+    expect(
+      screen.getByText("Mantenimiento programado del 20/10/2026 08:00 al 21/10/2026 18:30"),
+    ).toBeInTheDocument();
+  });
+
+  it("sin el campo mantenimiento no muestra indicador", () => {
+    renderTabla();
+    expect(screen.queryByText(/en mantenimiento|mantenimiento programado/i)).not.toBeInTheDocument();
+  });
+
   it('no ofrece "Asignar chofer" (SHG-FE-098: no hay relación fija chofer-vehículo)', async () => {
     const user = userEvent.setup();
     renderTabla();

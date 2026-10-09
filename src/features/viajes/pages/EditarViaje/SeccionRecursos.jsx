@@ -15,6 +15,8 @@ import { IconTruckDelivery } from "@tabler/icons-react";
 import { useFormContext } from "../CrearViaje/contexts/EnviosFormContext";
 import { useDisponibilidadParams } from "../CrearViaje/hooks/useDisponibilidadParams";
 import { useGetVehiculosDisponibles } from "../CrearViaje/hooks/useGetVehiculosDisponibles";
+import { useGetVehiculosEnMantenimiento } from "../CrearViaje/hooks/useGetVehiculosEnMantenimiento";
+import { motivoNoDisponible } from "@features/vehiculos/utils/mantenimiento";
 import { useChoferesDisponibles } from "../CrearViaje/hooks/useChoferesDisponibles";
 import { choferLabel, vehiculoLabel } from "./utils";
 
@@ -52,6 +54,9 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
     hasta,
     viajeIdExcluido,
   });
+  // Vehículos excluidos de "disponibles" por un mantenimiento solapado con la
+  // ventana (SHG-BE-108): se listan deshabilitados y con el motivo.
+  const enMantenimientoQuery = useGetVehiculosEnMantenimiento({ desde, hasta });
   const choferesQuery = useChoferesDisponibles({
     desde,
     hasta,
@@ -59,11 +64,18 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
   });
 
   const vehiculosDisponibles = vehiculosQuery.data || [];
+  const vehiculosEnMantenimiento = enMantenimientoQuery.data || [];
   const choferesDisponibles = choferesQuery.data || [];
 
+  // El vehículo actual que no figura en ninguna de las dos listas se agrega igual
+  // (ver punto 2 del comentario del componente). Si figura en mantenimiento, queda
+  // la entrada deshabilitada con su motivo.
   const vehiculos = [
     ...vehiculosDisponibles,
-    ...(vehiculoActual && !vehiculosDisponibles.some((v) => v.id === vehiculoActual.id)
+    ...vehiculosEnMantenimiento,
+    ...(vehiculoActual &&
+    !vehiculosDisponibles.some((v) => v.id === vehiculoActual.id) &&
+    !vehiculosEnMantenimiento.some((v) => v.id === vehiculoActual.id)
       ? [vehiculoActual]
       : []),
   ];
@@ -75,10 +87,16 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
     ),
   ];
 
-  const vehiculoOptions = vehiculos.map((vehiculo) => ({
-    value: vehiculo.id.toString(),
-    label: vehiculoLabel(vehiculo),
-  }));
+  const vehiculoOptions = vehiculos.map((vehiculo) => {
+    const enMantenimiento = vehiculosEnMantenimiento.some((v) => v.id === vehiculo.id);
+    return {
+      value: vehiculo.id.toString(),
+      label: enMantenimiento
+        ? `${vehiculoLabel(vehiculo)} - ${motivoNoDisponible(vehiculo)}`
+        : vehiculoLabel(vehiculo),
+      disabled: enMantenimiento,
+    };
+  });
 
   const choferOptions = choferes.map((chofer) => ({
     value: chofer.id.toString(),
@@ -121,14 +139,13 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
         <Select
           {...getInputProps("vehiculo")}
           label="Vehículo"
-          description="Los vehículos en mantenimiento durante las fechas del viaje no figuran en la lista."
           placeholder="Seleccioná un vehículo"
           data={vehiculoOptions}
           value={values.vehiculo?.id?.toString() ?? null}
           onChange={handleVehiculoChange}
           searchable
           nothingFoundMessage="No hay vehículos disponibles"
-          disabled={vehiculosQuery.isFetching}
+          disabled={vehiculosQuery.isFetching || enMantenimientoQuery.isFetching}
         />
 
         <MultiSelect

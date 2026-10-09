@@ -1,28 +1,27 @@
-import dayjs from 'dayjs';
+import { formatFechaHora } from '@domain/format';
 
 /**
- * De una lista de `MantenimientoDTO` (filtrada por `patente`, que en el backend es
- * "contains") devuelve el mantenimiento del vehículo que está vigente (inicio <= ahora < fin)
- * o, si no hay, el próximo (el de inicio más cercano). `null` si no hay ninguno.
+ * Copy del mantenimiento de un vehículo (SHG-FE-115 / SHG-FE-118). Una sola fuente para
+ * el detalle, la lista de vehículos y el selector de viaje.
  *
- * @param {Object[]} mantenimientos
- * @param {string} patente
- * @param {Date} [ahora]
+ * `mantenimiento` es el campo `VehiculoDTO.mantenimiento` (SHG-BE-108):
+ * `{ id, fechaHoraMantenimiento, fechaHoraFin, vigente }`. `vigente: false` = próximo.
+ *
+ * @param {{ fechaHoraMantenimiento: string, fechaHoraFin: string, vigente?: boolean }} mantenimiento
  */
-export const mantenimientoVigenteOProximo = (mantenimientos, patente, ahora = new Date()) => {
-  const now = dayjs(ahora);
-  const candidatos = (mantenimientos ?? [])
-    .filter(
-      (m) =>
-        m.vehiculo?.patente === patente &&
-        m.fechaHoraMantenimiento &&
-        m.fechaHoraFin &&
-        dayjs(m.fechaHoraFin).isAfter(now),
-    )
-    .sort((a, b) => dayjs(a.fechaHoraMantenimiento).diff(dayjs(b.fechaHoraMantenimiento)));
-  return (
-    candidatos.find((m) => !dayjs(m.fechaHoraMantenimiento).isAfter(now)) ??
-    candidatos[0] ??
-    null
-  );
-};
+export const mantenimientoEtiqueta = ({ fechaHoraMantenimiento, fechaHoraFin, vigente }) =>
+  vigente === false
+    ? `Mantenimiento programado del ${formatFechaHora(fechaHoraMantenimiento)} al ${formatFechaHora(fechaHoraFin)}`
+    : `En mantenimiento hasta el ${formatFechaHora(fechaHoraFin)}`;
+
+/**
+ * Motivo por el que un vehículo de `GET /api/vehiculo/enMantenimiento` no se puede elegir:
+ * ahí `mantenimiento` es el período que bloquea la ventana del viaje (no necesariamente
+ * el vigente), y el copy es siempre "En mantenimiento hasta …".
+ *
+ * @param {{ mantenimiento?: { fechaHoraFin: string } }} vehiculo
+ */
+export const motivoNoDisponible = (vehiculo) =>
+  vehiculo?.mantenimiento?.fechaHoraFin
+    ? `En mantenimiento hasta el ${formatFechaHora(vehiculo.mantenimiento.fechaHoraFin)}`
+    : 'En mantenimiento';

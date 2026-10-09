@@ -97,13 +97,17 @@ vi.mock("@mantine/dates", async () => {
 
 const mockGetParaViaje = vi.fn();
 const mockGetDisponibles = vi.fn();
+const mockGetEnMantenimiento = vi.fn();
 const mockGetChoferesDisponibles = vi.fn();
 const mockSaveViaje = vi.fn();
 const mockGetSucursalesRestantes = vi.fn();
 
 vi.mock("@api", () => ({
   envioApi: { getParaViaje: (...args) => mockGetParaViaje(...args) },
-  vehiculoApi: { getDisponibles: (...args) => mockGetDisponibles(...args) },
+  vehiculoApi: {
+    getDisponibles: (...args) => mockGetDisponibles(...args),
+    getEnMantenimiento: (...args) => mockGetEnMantenimiento(...args),
+  },
   usuarioApi: {
     getChoferesDisponibles: (...args) => mockGetChoferesDisponibles(...args),
   },
@@ -367,6 +371,7 @@ describe("CrearViaje", () => {
     vi.clearAllMocks();
     mockGetParaViaje.mockResolvedValue(ENVIOS_PARA_VIAJE);
     mockGetDisponibles.mockResolvedValue([]);
+    mockGetEnMantenimiento.mockResolvedValue([]);
     mockGetChoferesDisponibles.mockResolvedValue([]);
     mockGetSucursalesRestantes.mockResolvedValue([]);
   });
@@ -426,6 +431,96 @@ describe("CrearViaje", () => {
       expect(mockNavigate).toHaveBeenCalledWith("~/viajes"),
     );
     expect(mockSaveViaje).not.toHaveBeenCalled();
+  });
+
+  describe("vehículos en mantenimiento en el selector (SHG-FE-118)", () => {
+    const EN_MANTENIMIENTO = {
+      id: 7,
+      patente: "MM777MM",
+      pesoMaximo: 3000,
+      modelo: { nombre: "Actros", marca: { nombre: "Mercedes-Benz" } },
+      mantenimiento: {
+        id: 3,
+        fechaHoraMantenimiento: "2026-09-10T10:00:00.000",
+        fechaHoraFin: "2026-09-11T21:28:38.376",
+        vigente: false,
+      },
+    };
+
+    beforeEach(() => {
+      mockGetDisponibles.mockResolvedValue([
+        {
+          id: 9,
+          patente: "AB123CD",
+          pesoMaximo: 3000,
+          modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+        },
+      ]);
+      mockGetEnMantenimiento.mockResolvedValue([EN_MANTENIMIENTO]);
+    });
+
+    it("lista el vehículo en mantenimiento con el motivo y no se puede elegir", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+      await screen.findByText("SHG-DEV-0001");
+      setearFechasValidas();
+
+      await waitFor(() =>
+        expect(mockGetEnMantenimiento).toHaveBeenCalledWith({
+          desde: "2026-09-10T08:00:00",
+          hasta: "2026-09-10T18:00:00",
+          sucursalId: undefined,
+        }),
+      );
+
+      expect(
+        await screen.findByText("En mantenimiento hasta el 11/09/2026 21:28"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("MM777MM")).toBeInTheDocument();
+      expect(screen.queryByText(/no figuran en este listado/i)).not.toBeInTheDocument();
+
+      // Elegir el disponible y luego intentar el de mantenimiento: la selección no cambia.
+      await user.click(await screen.findByText("AB123CD"));
+      await user.click(screen.getByText("MM777MM"));
+      const radios = screen.getAllByRole("radio", { hidden: true });
+      expect(radios.map((r) => r.checked)).toEqual([true, false]);
+      expect(radios[1]).toBeDisabled();
+    });
+
+    it("si falla enMantenimiento, sigue mostrando los disponibles, se puede elegir uno y no hay error", async () => {
+      mockGetEnMantenimiento.mockRejectedValue(new Error("boom"));
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+      await screen.findByText("SHG-DEV-0001");
+      setearFechasValidas();
+      await waitFor(() => expect(mockGetEnMantenimiento).toHaveBeenCalled());
+
+      await user.click(await screen.findByText("AB123CD"));
+      const radios = screen.getAllByRole("radio", { hidden: true });
+      expect(radios.map((r) => r.checked)).toEqual([true]);
+      expect(screen.queryByText(/error al cargar/i)).not.toBeInTheDocument();
+      expect(screen.queryByText("MM777MM")).not.toBeInTheDocument();
+    });
+
+    it("vuelve a consultar al cambiar la ventana del viaje", async () => {
+      renderWithProviders(<CrearViaje />);
+      await screen.findByText("SHG-DEV-0001");
+      setearFechasValidas();
+      await waitFor(() => expect(mockGetEnMantenimiento).toHaveBeenCalledTimes(1));
+
+      fireEvent.change(screen.getByLabelText(/llegada planificada/i), {
+        target: { value: "2026-09-12T18:00" },
+      });
+
+      await waitFor(() =>
+        expect(mockGetEnMantenimiento).toHaveBeenLastCalledWith({
+          desde: "2026-09-10T08:00:00",
+          hasta: "2026-09-12T18:00:00",
+          sucursalId: undefined,
+        }),
+      );
+      expect(mockGetEnMantenimiento).toHaveBeenCalledTimes(2);
+    });
   });
 
   it("postea el ViajeReqDTO completo (fechas + vehículo + chofer + envío) y navega al éxito", async () => {
