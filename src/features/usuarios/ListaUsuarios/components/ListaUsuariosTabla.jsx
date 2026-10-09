@@ -62,7 +62,9 @@ const ListaUsuariosTabla = ({
     if (manageable) {
       actions.push({ icon: <IconEdit size={18} />, label: "Editar", color: "blue", onClick: () => handleEdit(usuario.id) });
     }
-    actions.push({ icon: <IconKey size={18} />, label: "Resetear contraseña", color: "orange", onClick: () => confirmReset(usuario) });
+    if (manageable) {
+      actions.push({ icon: <IconKey size={18} />, label: "Resetear contraseña", color: "orange", onClick: () => confirmReset(usuario) });
+    }
 
     if (!self && manageable) {
       actions.push({

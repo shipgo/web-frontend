@@ -21,7 +21,7 @@ export const toBackendDate = (date) => {
  * SHG-FE-121 / SHG-BE-107: un ADMIN sólo puede editar o borrar usuarios que no
  * sean ADMIN ni SUPERUSER (el backend responde 404), salvo su propio perfil
  * (edición). Un SUPERUSER puede con todos. Se usa para ocultar "Editar" /
- * "Eliminar", deshabilitar la selección masiva y bloquear la ruta de edición.
+ * "Eliminar" / "Resetear contraseña", deshabilitar la selección masiva y bloquear la ruta de edición.
  *
  * @param {Object} currentUser  Usuario logueado.
  * @param {Object} target       Usuario de la fila / del detalle.

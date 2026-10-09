@@ -73,14 +73,16 @@ const DetalleUsuario = () => {
         accion="Detalle de usuario"
         descripcion={nombreCompleto}
       >
-        <Button
-          variant="light"
-          color="orange"
-          leftSection={<IconKey size={18} />}
-          onClick={() => confirmReset(usuario)}
-        >
-          Resetear contraseña
-        </Button>
+        {canManageUsuario(currentUser, usuario) && (
+          <Button
+            variant="light"
+            color="orange"
+            leftSection={<IconKey size={18} />}
+            onClick={() => confirmReset(usuario)}
+          >
+            Resetear contraseña
+          </Button>
+        )}
         {canManageUsuario(currentUser, usuario) && (
           <Button leftSection={<IconEdit size={18} />} onClick={handleEdit}>
             Editar

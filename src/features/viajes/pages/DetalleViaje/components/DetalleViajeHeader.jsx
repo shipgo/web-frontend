@@ -19,7 +19,7 @@ const InfoItem = ({ label, value }) => (
 );
 
 const choferLabel = (chofer) =>
-  [chofer?.nombre, chofer?.apellido].filter(Boolean).join(' ') || chofer?.username || '—';
+  [chofer?.nombre, chofer?.apellido].filter(Boolean).join(' ') || '—';
 
 const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onCancelar }) => {
   const user = useAuthStore((state) => state.user);

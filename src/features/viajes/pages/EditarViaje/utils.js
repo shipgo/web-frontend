@@ -7,7 +7,6 @@ export const vehiculoLabel = (vehiculo) =>
 
 export const choferLabel = (chofer) =>
   [chofer.nombre, chofer.apellido].filter(Boolean).join(" ") ||
-  chofer.username ||
   `Chofer ${chofer.id}`;
 
 /**
