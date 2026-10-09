@@ -487,6 +487,21 @@ describe("CrearViaje", () => {
       expect(radios[1]).toBeDisabled();
     });
 
+    it("si falla enMantenimiento, sigue mostrando los disponibles, se puede elegir uno y no hay error", async () => {
+      mockGetEnMantenimiento.mockRejectedValue(new Error("boom"));
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+      await screen.findByText("SHG-DEV-0001");
+      setearFechasValidas();
+      await waitFor(() => expect(mockGetEnMantenimiento).toHaveBeenCalled());
+
+      await user.click(await screen.findByText("AB123CD"));
+      const radios = screen.getAllByRole("radio", { hidden: true });
+      expect(radios.map((r) => r.checked)).toEqual([true]);
+      expect(screen.queryByText(/error al cargar/i)).not.toBeInTheDocument();
+      expect(screen.queryByText("MM777MM")).not.toBeInTheDocument();
+    });
+
     it("vuelve a consultar al cambiar la ventana del viaje", async () => {
       renderWithProviders(<CrearViaje />);
       await screen.findByText("SHG-DEV-0001");

@@ -16,8 +16,12 @@ vi.mock("wouter", async () => {
 });
 
 const mockGetById = vi.fn();
+const mockGetMantenimientos = vi.fn();
 
 vi.mock("@api", () => ({
+  mantenimientoApi: {
+    get: (...args) => mockGetMantenimientos(...args),
+  },
   vehiculoApi: {
     getById: (...args) => mockGetById(...args),
   },
@@ -54,6 +58,7 @@ describe("DetalleVehiculo", () => {
       await screen.findByText("En mantenimiento hasta el 31/12/2099 18:30"),
     ).toBeInTheDocument();
     expect(mockGetById).toHaveBeenCalledTimes(1);
+    expect(mockGetMantenimientos).not.toHaveBeenCalled();
   });
 
   it("indica 'Mantenimiento programado …' si el mantenimiento es el próximo (vigente: false)", async () => {

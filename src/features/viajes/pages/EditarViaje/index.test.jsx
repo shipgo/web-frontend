@@ -300,6 +300,65 @@ describe("EditarViaje", () => {
     expect(screen.queryByText(/no figuran en la lista/i)).not.toBeInTheDocument();
   });
 
+  it("si el vehículo actual del viaje está en mantenimiento, aparece una sola vez, deshabilitado y con el motivo, y sigue seleccionado (SHG-FE-118)", async () => {
+    const user = userEvent.setup();
+    // No figura en disponibles (como haría el backend) pero sí en enMantenimiento.
+    vehiculoApi.getDisponibles.mockResolvedValue([VEHICULOS[1]]);
+    vehiculoApi.getEnMantenimiento.mockResolvedValue([
+      {
+        id: 5,
+        patente: "AB123CD",
+        modelo: { nombre: "Hilux" },
+        mantenimiento: {
+          id: 3,
+          fechaHoraMantenimiento: "2026-08-01T10:00:00.000",
+          fechaHoraFin: "2026-08-02T21:28:38.376",
+          vigente: false,
+        },
+      },
+    ]);
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => expect(vehiculoApi.getEnMantenimiento).toHaveBeenCalled());
+    const combobox = screen.getByRole("combobox", { name: /^vehículo/i });
+    await waitFor(() => expect(combobox).toHaveValue("AB123CD - Hilux"));
+
+    await user.click(combobox);
+    const textos = await screen.findAllByText(
+      "AB123CD - Hilux - En mantenimiento hasta el 02/08/2026 21:28",
+    );
+    expect(textos).toHaveLength(1);
+    expect(textos[0].closest('[role="option"]')).toHaveAttribute(
+      "data-combobox-disabled",
+      "true",
+    );
+    expect(
+      screen
+        .getAllByRole("option", { hidden: true })
+        .filter((o) => o.textContent.startsWith("AB123CD")),
+    ).toHaveLength(1);
+  });
+
+  it("si falla enMantenimiento, el selector sigue con los disponibles, se puede elegir uno y no hay error", async () => {
+    const user = userEvent.setup();
+    vehiculoApi.getEnMantenimiento.mockRejectedValue(new Error("boom"));
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => expect(vehiculoApi.getEnMantenimiento).toHaveBeenCalled());
+    const combobox = screen.getByRole("combobox", { name: /^vehículo/i });
+    await waitFor(() => expect(combobox).toBeEnabled());
+    await user.click(combobox);
+    await user.click(await screen.findByText("ZZ999ZZ - Ranger"));
+    expect(combobox).toHaveValue("ZZ999ZZ - Ranger");
+    expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
+  });
+
   it("precarga el chofer cuando la API devuelve `chofer` singular (SHG-FE-106) y deja guardar sin tocar nada", async () => {
     const user = userEvent.setup();
     const { choferes, ...sinLista } = EXISTING_VIAJE;
