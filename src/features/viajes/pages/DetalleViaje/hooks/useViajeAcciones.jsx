@@ -60,6 +60,45 @@ const handleAccionError = (error, accionLabel) => {
  * Mobile inicia desde ROLE_CHOFER en su propio repo.
  */
 export const useViajeAcciones = (id, { onSuccess } = {}) => {
+  const confirmReanudar = () => {
+    // Mismo guard contra doble click que `confirmFinalizar`.
+    let isRunning = false;
+    const modalId = modals.openConfirmModal({
+      title: 'Reanudar viaje',
+      centered: true,
+      children: (
+        <Text size="sm">
+          ¿Confirmás que el viaje #{id} se reanuda? El estado pasará a "En camino".
+        </Text>
+      ),
+      labels: { confirm: 'Sí, reanudar', cancel: 'Volver' },
+      confirmProps: { color: 'green' },
+      closeOnConfirm: false,
+      onConfirm: async () => {
+        if (isRunning) return;
+        isRunning = true;
+        modals.updateModal({ modalId, confirmProps: { color: 'green', loading: true } });
+        try {
+          await viajeApi.reanudar(id);
+          notifications.show({
+            title: 'Viaje reanudado',
+            message: `El viaje #${id} volvió a estar en camino`,
+            color: 'green',
+            icon: <IconCheck />,
+          });
+          onSuccess?.();
+        } catch (error) {
+          handleAccionError(error, 'reanudar el viaje');
+          // 409: el estado en pantalla puede estar viejo (otro usuario o el
+          // chofer ya lo reanudó, o el chofer tiene otro viaje en camino).
+          if (error.response?.status === 409) onSuccess?.();
+        } finally {
+          modals.close(modalId);
+        }
+      },
+    });
+  };
+
   const confirmFinalizar = () => {
     // Guard contra doble click (mismo patrón que `useBulkDelete`): cierra
     // sobre esta apertura del modal y descarta `onConfirm` repetidos.
@@ -127,5 +166,5 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
     });
   };
 
-  return { confirmFinalizar, confirmCancelar };
+  return { confirmFinalizar, confirmReanudar, confirmCancelar };
 };

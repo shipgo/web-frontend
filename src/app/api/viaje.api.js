@@ -63,6 +63,18 @@ export const viajeApi = {
   },
 
   /**
+   * `PUT /api/viaje/{id}/reanudar` — `con_problemas` → `en_camino` (SU/AD/CH), sin body.
+   * `409` si el viaje no está `con_problemas` o el chofer ya tiene otro `en_camino`. SHG-BE-097.
+   * @param {number|string} id
+   */
+  reanudar: async (id) => {
+    const response = await restclient.put(
+      `${API_URLS.VIAJE_URL}/${id}/reanudar`,
+    );
+    return response.data;
+  },
+
+  /**
    * `PUT /api/viaje/{id}/cancelar` — estado → `cancelado` + rollback (SU/AD). SHG-BE-009.
    * `409` si el viaje no está en un estado cancelable (`creado`/`planificado`/`en_proceso_de_carga`).
    * @param {number|string} id

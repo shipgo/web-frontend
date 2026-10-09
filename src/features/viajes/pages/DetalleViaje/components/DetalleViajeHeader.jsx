@@ -1,11 +1,11 @@
 import { Badge, Box, Button, Divider, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { IconBan, IconEdit, IconFlagCheck } from '@tabler/icons-react';
+import { IconBan, IconEdit, IconFlagCheck, IconPlayerPlay } from '@tabler/icons-react';
 
 import { BUTTON_ACTION_TEXT_COLOR, estadoBadge } from '@domain/estados';
 import { formatFechaHora } from '@domain/format';
 import { useAuthStore } from '@stores/auth.store';
 
-import { puedeCancelar, puedeEditar, puedeFinalizar } from '../acciones';
+import { puedeCancelar, puedeEditar, puedeFinalizar, puedeReanudar } from '../acciones';
 
 const InfoItem = ({ label, value }) => (
   <Box>
@@ -21,7 +21,7 @@ const InfoItem = ({ label, value }) => (
 const choferLabel = (chofer) =>
   [chofer?.nombre, chofer?.apellido].filter(Boolean).join(' ') || '—';
 
-const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onCancelar }) => {
+const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onReanudar, onCancelar }) => {
   const user = useAuthStore((state) => state.user);
   const estadoInfo = estadoBadge('viaje', viaje.estado);
   const choferes = viaje.choferes?.length ? viaje.choferes : viaje.chofer ? [viaje.chofer] : [];
@@ -66,6 +66,17 @@ const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onCancelar }) =>
               onClick={onFinalizar}
             >
               Finalizar
+            </Button>
+          )}
+          {puedeReanudar(user, viaje.estado) && (
+            <Button
+              variant="light"
+              color="green"
+              c={BUTTON_ACTION_TEXT_COLOR.green}
+              leftSection={<IconPlayerPlay size={18} />}
+              onClick={onReanudar}
+            >
+              Reanudar
             </Button>
           )}
           {puedeCancelar(user, viaje.estado) && (
