@@ -16,12 +16,8 @@ vi.mock("wouter", async () => {
 });
 
 const mockGetById = vi.fn();
-const mockGetMantenimientos = vi.fn();
 
 vi.mock("@api", () => ({
-  mantenimientoApi: {
-    get: (...args) => mockGetMantenimientos(...args),
-  },
   vehiculoApi: {
     getById: (...args) => mockGetById(...args),
   },
@@ -40,31 +36,50 @@ const renderDetalle = () =>
 describe("DetalleVehiculo", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetMantenimientos.mockResolvedValue({ content: [] });
   });
 
-  it("indica 'En mantenimiento hasta el …' si el vehículo tiene un mantenimiento vigente (SHG-FE-115)", async () => {
-    mockGetById.mockResolvedValue({ id: 1, patente: "AB123CD" });
-    mockGetMantenimientos.mockResolvedValue({
-      content: [
-        {
-          id: 3,
-          vehiculo: { patente: "AB123CD" },
-          fechaHoraMantenimiento: "2020-01-01T08:00:00",
-          fechaHoraFin: "2099-12-31T18:30:00.000",
-        },
-      ],
+  it("indica 'En mantenimiento hasta el …' con el campo mantenimiento del vehículo, sin consultar mantenimientos (SHG-FE-118)", async () => {
+    mockGetById.mockResolvedValue({
+      id: 1,
+      patente: "AB123CD",
+      mantenimiento: {
+        id: 3,
+        fechaHoraMantenimiento: "2020-01-01T08:00:00",
+        fechaHoraFin: "2099-12-31T18:30:00.000",
+        vigente: true,
+      },
     });
     renderDetalle();
     expect(
       await screen.findByText("En mantenimiento hasta el 31/12/2099 18:30"),
     ).toBeInTheDocument();
-    expect(mockGetMantenimientos).toHaveBeenCalledWith({
+    expect(mockGetById).toHaveBeenCalledTimes(1);
+  });
+
+  it("indica 'Mantenimiento programado …' si el mantenimiento es el próximo (vigente: false)", async () => {
+    mockGetById.mockResolvedValue({
+      id: 1,
       patente: "AB123CD",
-      page: 0,
-      size: 50,
-      sort: "fechaHoraMantenimiento:desc",
+      mantenimiento: {
+        id: 4,
+        fechaHoraMantenimiento: "2099-12-30T08:00:00.000",
+        fechaHoraFin: "2099-12-31T18:30:00.000",
+        vigente: false,
+      },
     });
+    renderDetalle();
+    expect(
+      await screen.findByText(
+        "Mantenimiento programado del 30/12/2099 08:00 al 31/12/2099 18:30",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("sin el campo mantenimiento no muestra el indicador", async () => {
+    mockGetById.mockResolvedValue({ id: 1, patente: "AB123CD" });
+    renderDetalle();
+    await screen.findByText("AB123CD");
+    expect(screen.queryByText(/mantenimiento (hasta|programado)/i)).not.toBeInTheDocument();
   });
 
   it('"Ver mantenimientos" navega al historial filtrado por patente (SHG-FE-098)', async () => {

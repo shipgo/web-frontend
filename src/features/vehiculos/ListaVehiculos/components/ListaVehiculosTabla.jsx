@@ -20,6 +20,7 @@ import {
 
 import { estadoBadge } from "@domain/estados";
 import { useDeleteVehiculo } from "../hooks/useDeleteVehiculo";
+import { mantenimientoEtiqueta } from "@features/vehiculos/utils/mantenimiento";
 
 const ACTIONS = [
   {
@@ -176,9 +177,22 @@ const ListaVehiculosTabla = ({
               </Table.Td>
 
               <Table.Td>
-                <Badge color={estadoColor} variant="light" radius="md">
-                  {estadoLabel}
-                </Badge>
+                <Stack gap={4} align="flex-start">
+                  <Badge color={estadoColor} variant="light" radius="md">
+                    {estadoLabel}
+                  </Badge>
+                  {item.mantenimiento && (
+                    <Badge
+                      color="orange"
+                      variant="light"
+                      radius="md"
+                      leftSection={<IconTool size={12} />}
+                      style={{ textTransform: "none" }}
+                    >
+                      {mantenimientoEtiqueta(item.mantenimiento)}
+                    </Badge>
+                  )}
+                </Stack>
               </Table.Td>
 
               <Table.Td>

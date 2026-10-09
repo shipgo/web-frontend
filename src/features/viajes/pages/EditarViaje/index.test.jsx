@@ -74,7 +74,7 @@ vi.mock("@api/viaje.api", () => ({
 
 vi.mock("@api", () => ({
   envioApi: { getParaViaje: vi.fn() },
-  vehiculoApi: { getDisponibles: vi.fn() },
+  vehiculoApi: { getDisponibles: vi.fn(), getEnMantenimiento: vi.fn() },
   usuarioApi: { getChoferesDisponibles: vi.fn() },
   sucursalApi: { getSucursalesRestantes: vi.fn() },
 }));
@@ -184,6 +184,7 @@ describe("EditarViaje", () => {
     viajeApi.getById.mockResolvedValue(EXISTING_VIAJE);
     viajeApi.update.mockResolvedValue({ id: 42 });
     vehiculoApi.getDisponibles.mockResolvedValue(VEHICULOS);
+    vehiculoApi.getEnMantenimiento.mockResolvedValue([]);
     usuarioApi.getChoferesDisponibles.mockResolvedValue(CHOFERES);
     envioApi.getParaViaje.mockResolvedValue([]);
     sucursalApi.getSucursalesRestantes.mockResolvedValue([]);
@@ -249,6 +250,54 @@ describe("EditarViaje", () => {
         viajeIdExcluido: 42,
       });
     });
+  });
+
+  it("lista el vehículo en mantenimiento deshabilitado y con el motivo, sin texto de ayuda provisorio (SHG-FE-118)", async () => {
+    const user = userEvent.setup();
+    vehiculoApi.getEnMantenimiento.mockResolvedValue([
+      {
+        id: 7,
+        patente: "MM777MM",
+        modelo: { nombre: "Actros" },
+        mantenimiento: {
+          id: 3,
+          fechaHoraMantenimiento: "2026-08-01T10:00:00.000",
+          fechaHoraFin: "2026-08-02T21:28:38.376",
+          vigente: false,
+        },
+      },
+    ]);
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+        "AB123CD - Hilux"
+      );
+    });
+    await waitFor(() => {
+      expect(vehiculoApi.getEnMantenimiento).toHaveBeenCalledWith({
+        desde: "2026-08-01T09:00:00",
+        hasta: "2026-08-01T17:00:00",
+        sucursalId: undefined,
+      });
+    });
+
+    await user.click(screen.getByRole("combobox", { name: /^vehículo/i }));
+    const opcion = (
+      await screen.findByText(
+        "MM777MM - Actros - En mantenimiento hasta el 02/08/2026 21:28",
+      )
+    ).closest('[role="option"]');
+    expect(opcion).toHaveAttribute("data-combobox-disabled", "true");
+
+    await user.click(opcion);
+    expect(screen.getByRole("combobox", { name: /^vehículo/i })).toHaveValue(
+      "AB123CD - Hilux"
+    );
+    expect(screen.queryByText(/no figuran en la lista/i)).not.toBeInTheDocument();
   });
 
   it("precarga el chofer cuando la API devuelve `chofer` singular (SHG-FE-106) y deja guardar sin tocar nada", async () => {

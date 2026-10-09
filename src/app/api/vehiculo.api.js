@@ -61,6 +61,22 @@ export const vehiculoApi = {
     );
     return response.data;
   },
+
+  /**
+   * `GET /api/vehiculo/enMantenimiento` — vehículos que `disponibles` excluye por un
+   * mantenimiento solapado con `[desde, hasta)` (SHG-BE-108). Cada `VehiculoDTO` trae
+   * `mantenimiento { id, fechaHoraMantenimiento, fechaHoraFin, vigente }` = el período
+   * que bloquea la ventana (si hay varios, el que empieza primero). Ordenados por patente.
+   * Mismos params, roles y `400` que `getDisponibles` (sin `viajeIdExcluido`).
+   * @param {Omit<DisponibilidadParams, 'viajeIdExcluido'>} params
+   */
+  getEnMantenimiento: async (params) => {
+    const response = await restclient.get(
+      `${API_URLS.VEHICULO_URL}/enMantenimiento`,
+      { params },
+    );
+    return response.data;
+  },
 };
 
 /**
