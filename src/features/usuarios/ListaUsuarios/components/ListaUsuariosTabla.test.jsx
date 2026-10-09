@@ -225,6 +225,7 @@ describe("ListaUsuariosTabla — ADMIN sobre otros ADMIN (SHG-FE-121)", () => {
     expect(await screen.findByText("Ver detalles")).toBeInTheDocument();
     expect(screen.queryByText("Editar")).not.toBeInTheDocument();
     expect(screen.queryByText("Eliminar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Resetear contraseña")).not.toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /No podés seleccionar a otroadmin/ })).toBeDisabled();
   });
 
@@ -235,6 +236,25 @@ describe("ListaUsuariosTabla — ADMIN sobre otros ADMIN (SHG-FE-121)", () => {
     await user.click(screen.getByRole("button", { name: "Acciones de Cho Fer" }));
     expect(await screen.findByText("Editar")).toBeInTheDocument();
     expect(screen.getByText("Eliminar")).toBeInTheDocument();
+    expect(screen.getByText("Resetear contraseña")).toBeInTheDocument();
+  });
+
+  it("no ofrece Resetear contraseña sobre el SUPERUSER", async () => {
+    const user = userEvent.setup();
+    renderTabla([{ id: 4, nombre: "Su", apellido: "Per", username: "su", authorities: ["ROLE_SUPERUSER"] }]);
+
+    await user.click(screen.getByRole("button", { name: "Acciones de Su Per" }));
+    expect(await screen.findByText("Ver detalles")).toBeInTheDocument();
+    expect(screen.queryByText("Resetear contraseña")).not.toBeInTheDocument();
+  });
+
+  it("un SUPERUSER ve Resetear contraseña sobre otro ADMIN", async () => {
+    useAuthStore.setState({ user: { id: 9, username: "su", authorities: ["ROLE_SUPERUSER"] } });
+    const user = userEvent.setup();
+    renderTabla([OTRO_ADMIN]);
+
+    await user.click(screen.getByRole("button", { name: "Acciones de Otro Admin" }));
+    expect(await screen.findByText("Resetear contraseña")).toBeInTheDocument();
   });
 
   it("sobre el propio usuario ADMIN ofrece Editar pero no Eliminar", async () => {
@@ -243,6 +263,7 @@ describe("ListaUsuariosTabla — ADMIN sobre otros ADMIN (SHG-FE-121)", () => {
 
     await user.click(screen.getByRole("button", { name: "Acciones de Yo Mismo" }));
     expect(await screen.findByText("Editar")).toBeInTheDocument();
+    expect(screen.getByText("Resetear contraseña")).toBeInTheDocument();
     expect(screen.queryByText("Eliminar")).not.toBeInTheDocument();
   });
 });

@@ -20,7 +20,7 @@ const showWarning = (item, fecha) =>
 const nombreCompleto = (persona) =>
   persona?.nombre && persona?.apellido
     ? `${persona.nombre} ${persona.apellido}`
-    : persona?.nombre || persona?.username || 'Sin nombre';
+    : persona?.nombre || 'Sin nombre';
 
 const ChoferCell = ({ chofer, choferes = [] }) => {
   if (chofer) {

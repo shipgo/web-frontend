@@ -3,9 +3,7 @@ import { Avatar, Stack, Text } from "@mantine/core";
 import { formatTelefono } from "@domain/format";
 
 const ItemChofer = ({ chofer }) => {
-  const nombreCompleto =
-    [chofer.nombre, chofer.apellido].filter(Boolean).join(" ") ||
-    chofer.username;
+  const nombreCompleto = [chofer.nombre, chofer.apellido].filter(Boolean).join(" ");
 
   return (
     <>

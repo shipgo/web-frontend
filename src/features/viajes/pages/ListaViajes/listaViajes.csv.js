@@ -4,7 +4,7 @@ import { toLocalDateTime } from '@utils/dates';
 const nombrePersona = (persona) => {
   if (!persona) return '';
   if (persona.nombre && persona.apellido) return `${persona.nombre} ${persona.apellido}`;
-  return persona.nombre || persona.username || '';
+  return persona.nombre || '';
 };
 
 const choferViaje = (viaje) => {
