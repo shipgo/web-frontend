@@ -1,5 +1,8 @@
 import { formatFechaHora } from '@domain/format';
 
+const enMantenimientoHasta = (fechaHoraFin) =>
+  `En mantenimiento hasta el ${formatFechaHora(fechaHoraFin)}`;
+
 /**
  * Copy del mantenimiento de un vehículo (SHG-FE-115 / SHG-FE-118). Una sola fuente para
  * el detalle, la lista de vehículos y el selector de viaje.
@@ -9,9 +12,6 @@ import { formatFechaHora } from '@domain/format';
  *
  * @param {{ fechaHoraMantenimiento: string, fechaHoraFin: string, vigente?: boolean }} mantenimiento
  */
-const enMantenimientoHasta = (fechaHoraFin) =>
-  `En mantenimiento hasta el ${formatFechaHora(fechaHoraFin)}`;
-
 export const mantenimientoEtiqueta = ({ fechaHoraMantenimiento, fechaHoraFin, vigente }) =>
   vigente === false
     ? `Mantenimiento programado del ${formatFechaHora(fechaHoraMantenimiento)} al ${formatFechaHora(fechaHoraFin)}`

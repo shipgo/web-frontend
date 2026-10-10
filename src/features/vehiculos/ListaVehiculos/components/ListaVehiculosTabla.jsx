@@ -190,7 +190,7 @@ const ListaVehiculosTabla = ({
                       h="auto"
                       py={2}
                       styles={{
-                        label: { whiteSpace: "normal", textTransform: "none" },
+                        label: { whiteSpace: "normal" },
                       }}
                       style={{ textTransform: "none" }}
                     >
