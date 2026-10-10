@@ -497,7 +497,8 @@ describe("CrearViaje", () => {
 
       await user.click(await screen.findByText("AB123CD"));
       const radios = screen.getAllByRole("radio", { hidden: true });
-      expect(radios.map((r) => r.checked)).toEqual([true]);
+      expect(radios).toHaveLength(1);
+      expect(radios[0]).toBeChecked();
       expect(screen.queryByText(/error al cargar/i)).not.toBeInTheDocument();
       expect(screen.queryByText("MM777MM")).not.toBeInTheDocument();
     });

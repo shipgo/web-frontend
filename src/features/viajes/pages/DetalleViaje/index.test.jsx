@@ -385,7 +385,24 @@ describe('DetalleViaje', () => {
       await waitFor(() => expect(viajeApi.getById).toHaveBeenCalledTimes(2));
     });
 
-    it('un error distinto de 409 no relee el viaje', async () => {
+    it('404: avisa y relee el viaje, que pasa a la vista de no encontrado', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById
+        .mockResolvedValueOnce(VIAJE_CON_PROBLEMAS)
+        .mockRejectedValue(Object.assign(new Error('Not found'), { response: { status: 404 } }));
+      viajeApi.reanudar.mockRejectedValue({ response: { status: 404, data: {} } });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+
+      expect(await screen.findByText('Viaje no encontrado')).toBeInTheDocument();
+      expect(viajeApi.getById).toHaveBeenCalledTimes(2);
+    });
+
+    it('un error distinto de 409 y 404 no relee el viaje', async () => {
       const user = userEvent.setup();
       viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
       viajeApi.reanudar.mockRejectedValue({ response: { status: 500, data: {} } });
