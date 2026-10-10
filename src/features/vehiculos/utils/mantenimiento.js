@@ -9,10 +9,13 @@ import { formatFechaHora } from '@domain/format';
  *
  * @param {{ fechaHoraMantenimiento: string, fechaHoraFin: string, vigente?: boolean }} mantenimiento
  */
+const enMantenimientoHasta = (fechaHoraFin) =>
+  `En mantenimiento hasta el ${formatFechaHora(fechaHoraFin)}`;
+
 export const mantenimientoEtiqueta = ({ fechaHoraMantenimiento, fechaHoraFin, vigente }) =>
   vigente === false
     ? `Mantenimiento programado del ${formatFechaHora(fechaHoraMantenimiento)} al ${formatFechaHora(fechaHoraFin)}`
-    : `En mantenimiento hasta el ${formatFechaHora(fechaHoraFin)}`;
+    : enMantenimientoHasta(fechaHoraFin);
 
 /**
  * Motivo por el que un vehículo de `GET /api/vehiculo/enMantenimiento` no se puede elegir:
@@ -23,5 +26,5 @@ export const mantenimientoEtiqueta = ({ fechaHoraMantenimiento, fechaHoraFin, vi
  */
 export const motivoNoDisponible = (vehiculo) =>
   vehiculo?.mantenimiento?.fechaHoraFin
-    ? `En mantenimiento hasta el ${formatFechaHora(vehiculo.mantenimiento.fechaHoraFin)}`
+    ? enMantenimientoHasta(vehiculo.mantenimiento.fechaHoraFin)
     : 'En mantenimiento';
