@@ -91,7 +91,9 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
           handleAccionError(error, 'reanudar el viaje');
           // 409: el estado en pantalla puede estar viejo (otro usuario o el
           // chofer ya lo reanudó, o el chofer tiene otro viaje en camino).
-          if (error.response?.status === 409) onSuccess?.();
+          // 404: el viaje no existe o quedó fuera del alcance; releer muestra "no encontrado".
+          const status = error.response?.status;
+          if (status === 409 || status === 404) onSuccess?.();
         } finally {
           modals.close(modalId);
         }
@@ -161,7 +163,11 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
       title: 'Cancelar viaje',
       centered: true,
       children: (
-        <CancelarViajeModalBody id={id} onCancelar={ejecutarCancelar} onVolver={() => modals.closeAll()} />
+        <CancelarViajeModalBody
+          id={id}
+          onCancelar={ejecutarCancelar}
+          onVolver={() => modals.closeAll()}
+        />
       ),
     });
   };

@@ -145,7 +145,7 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
           onChange={handleVehiculoChange}
           searchable
           nothingFoundMessage="No hay vehículos disponibles"
-          disabled={vehiculosQuery.isFetching || enMantenimientoQuery.isFetching}
+          disabled={vehiculosQuery.isFetching}
         />
 
         <MultiSelect

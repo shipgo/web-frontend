@@ -187,6 +187,11 @@ const ListaVehiculosTabla = ({
                       variant="light"
                       radius="md"
                       leftSection={<IconTool size={12} />}
+                      h="auto"
+                      py={2}
+                      styles={{
+                        label: { whiteSpace: "normal" },
+                      }}
                       style={{ textTransform: "none" }}
                     >
                       {mantenimientoEtiqueta(item.mantenimiento)}

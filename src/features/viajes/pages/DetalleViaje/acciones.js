@@ -32,4 +32,5 @@ export const puedeFinalizar = (user, estado) =>
 export const puedeCancelar = (user, estado) =>
   isAdminOrSuper(user) && ESTADOS_CANCELABLES.includes(estado);
 
-export const puedeReanudar = (user, estado) => isAdminOrSuper(user) && estado === 'con_problemas';
+export const puedeReanudar = (user, estado) =>
+  isAdminOrSuper(user) && estado === 'con_problemas';

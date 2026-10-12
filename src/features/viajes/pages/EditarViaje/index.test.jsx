@@ -356,7 +356,23 @@ describe("EditarViaje", () => {
     await user.click(combobox);
     await user.click(await screen.findByText("ZZ999ZZ - Ranger"));
     expect(combobox).toHaveValue("ZZ999ZZ - Ranger");
-    expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/error al cargar/i)).not.toBeInTheDocument();
+  });
+
+  it("permite elegir un vehículo disponible mientras enMantenimiento sigue pendiente", async () => {
+    const user = userEvent.setup();
+    vehiculoApi.getEnMantenimiento.mockImplementation(() => new Promise(() => {}));
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => expect(vehiculoApi.getEnMantenimiento).toHaveBeenCalled());
+    const combobox = screen.getByRole("combobox", { name: /^vehículo/i });
+    await waitFor(() => expect(combobox).toBeEnabled());
+    await user.click(combobox);
+    await user.click(await screen.findByText("ZZ999ZZ - Ranger"));
+    expect(combobox).toHaveValue("ZZ999ZZ - Ranger");
   });
 
   it("precarga el chofer cuando la API devuelve `chofer` singular (SHG-FE-106) y deja guardar sin tocar nada", async () => {
