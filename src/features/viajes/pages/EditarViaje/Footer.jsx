@@ -11,7 +11,7 @@ import { useFormContext } from "../CrearViaje/contexts/EnviosFormContext";
  * (`PageFooter` → slot `AppShell.footer`). La lógica de guardado (PUT + manejo
  * de errores + navegación) vive en `index.jsx` y llega por `onSubmit`.
  */
-const Footer = ({ loading, onSubmit, onCancel }) => {
+const Footer = ({ loading, onSubmit, onCancel, guardarDeshabilitado = false }) => {
   const form = useFormContext();
 
   const handleInvalid = (errors) => {
@@ -32,6 +32,7 @@ const Footer = ({ loading, onSubmit, onCancel }) => {
       </Button>
       <Button
         loading={loading}
+        disabled={guardarDeshabilitado}
         onClick={() => form.onSubmit(onSubmit, handleInvalid)()}
       >
         Guardar cambios

@@ -41,6 +41,9 @@ const EditarViaje = () => {
   const [errorViaje, setErrorViaje] = useState(false);
   const [viajeNoEncontrado, setViajeNoEncontrado] = useState(false);
   const [viajeOriginal, setViajeOriginal] = useState(null);
+  // `SeccionRecursos` avisa cuando está validando la disponibilidad de la
+  // ventana nueva: mientras tanto no se puede guardar (SHG-FE-128).
+  const [validandoRecursos, setValidandoRecursos] = useState(false);
 
   const form = useForm({ initialValues: INITIAL_VALUES, validate });
 
@@ -224,10 +227,14 @@ const EditarViaje = () => {
                   viajeIdExcluido={id ? Number(id) : undefined}
                   vehiculoActual={viajeOriginal?.vehiculo}
                   choferesActuales={getChoferesDeViaje(viajeOriginal)}
+                  inicioOriginal={viajeOriginal.fechaHoraInicioPlanificada}
+                  finOriginal={viajeOriginal.fechaHoraFinPlanificada}
+                  onValidandoChange={setValidandoRecursos}
                 />
                 <SeccionResumen />
                 <Footer
                   loading={loading}
+                  guardarDeshabilitado={validandoRecursos}
                   onSubmit={handleSubmit}
                   onCancel={() => navigate(`~/viajes/${id}`)}
                 />
