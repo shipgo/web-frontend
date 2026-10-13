@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import {
   Box,
   Card,
@@ -18,7 +20,25 @@ import { useGetVehiculosDisponibles } from "../CrearViaje/hooks/useGetVehiculosD
 import { useGetVehiculosEnMantenimiento } from "../CrearViaje/hooks/useGetVehiculosEnMantenimiento";
 import { motivoNoDisponible } from "@features/vehiculos/utils/mantenimiento";
 import { useChoferesDisponibles } from "../CrearViaje/hooks/useChoferesDisponibles";
+import { toLocalDateTimeString } from "../CrearViaje/utils";
 import { choferLabel, vehiculoLabel } from "./utils";
+
+/**
+ * Une listas de recursos sin repetir ids (gana la primera aparición).
+ */
+const sinRepetidos = (...listas) => {
+  const vistos = new Set();
+  return listas.flat().filter((recurso) => {
+    if (vistos.has(recurso.id)) return false;
+    vistos.add(recurso.id);
+    return true;
+  });
+};
+
+const ventanaDe = (inicio, fin) => ({
+  desde: inicio ? toLocalDateTimeString(inicio) : undefined,
+  hasta: fin ? toLocalDateTimeString(fin) : undefined,
+});
 
 /**
  * Asignación de recursos en modo edición. Comparte el encabezado de sección
@@ -31,23 +51,40 @@ import { choferLabel, vehiculoLabel } from "./utils";
  * los `ListadoVehiculos`/`ListadoChoferes` del wizard:
  *
  * 1. Los listados del wizard están cableados a `useDisponibilidadParams()` sin
- *    `viajeIdExcluido`; acá se necesita reinyectar el viaje propio
- *    (`SHG-BE-006`, trabajo de `SHG-FE-010`) para que su vehículo/chofer
- *    actuales no cuenten como "ocupados por sí mismos".
- * 2. El vehículo/chofer actualmente asignado puede no figurar en
- *    "disponibles" (si la ventana de fechas cambió respecto de la original);
- *    se lo agrega igual a las opciones para no perder la selección y que el
- *    usuario pueda guardar sin verse forzado a cambiar de recurso. Los
- *    `ListaVehiculosDisponibles`/`ListadoChoferes` del wizard, en cambio,
- *    limpian la selección apenas deja de figurar en la lista "disponible"
- *    cruda — comportamiento correcto en creación (no hay recurso previo que
- *    preservar) pero no en edición.
+ *    `viajeIdExcluido`; acá se reinyecta el viaje propio (`SHG-BE-006`, trabajo
+ *    de `SHG-FE-010`) para que su vehículo/chofer actuales no cuenten como
+ *    "ocupados por sí mismos".
+ * 2. Regla de disponibilidad (`SHG-FE-128`): un vehículo o chofer sólo se puede
+ *    elegir si figura en "disponibles" para la ventana planificada. Excepción:
+ *    con la ventana ORIGINAL del viaje, lo ya asignado se conserva y sigue
+ *    siendo elegible aunque no figure (datos viejos, p. ej. un mantenimiento
+ *    solapado con el viaje, que el backend ya no deja crear). Con una ventana
+ *    distinta, lo asignado se evalúa como cualquier otro recurso: cuando las
+ *    consultas terminan y no figura como disponible, se lo saca de la
+ *    selección y se avisa en el campo (igual que en `CrearViaje`, más el
+ *    aviso). No se revisa nada mientras las consultas cargan ni si fallaron.
  * 3. El alcance de edición es más chico (sin wizard de envíos), así que un
  *    selector compacto es suficiente.
  */
-const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) => {
+const SeccionRecursos = ({
+  viajeIdExcluido,
+  vehiculoActual,
+  choferesActuales,
+  inicioOriginal,
+  finOriginal,
+}) => {
   const { getInputProps, values, setFieldValue } = useFormContext();
   const { desde, hasta } = useDisponibilidadParams();
+  const [avisoVehiculo, setAvisoVehiculo] = useState(null);
+  const [avisoChoferes, setAvisoChoferes] = useState(null);
+
+  const ventanaOriginal = ventanaDe(inicioOriginal, finOriginal);
+  const esVentanaOriginal = Boolean(
+    desde &&
+      hasta &&
+      desde === ventanaOriginal.desde &&
+      hasta === ventanaOriginal.hasta,
+  );
 
   const vehiculosQuery = useGetVehiculosDisponibles({
     desde,
@@ -67,25 +104,69 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
   const vehiculosEnMantenimiento = enMantenimientoQuery.data || [];
   const choferesDisponibles = choferesQuery.data || [];
 
-  // El vehículo actual que no figura en ninguna de las dos listas se agrega igual
-  // (ver punto 2 del comentario del componente). Si figura en mantenimiento, queda
-  // la entrada deshabilitada con su motivo.
-  const vehiculos = [
-    ...vehiculosDisponibles,
-    ...vehiculosEnMantenimiento,
-    ...(vehiculoActual &&
-    !vehiculosDisponibles.some((v) => v.id === vehiculoActual.id) &&
-    !vehiculosEnMantenimiento.some((v) => v.id === vehiculoActual.id)
-      ? [vehiculoActual]
-      : []),
-  ];
+  const vehiculoSeleccionado = values.vehiculo;
+  const choferesSeleccionados = values.choferes;
 
-  const choferes = [
-    ...choferesDisponibles,
-    ...(choferesActuales || []).filter(
-      (chofer) => !choferesDisponibles.some((c) => c.id === chofer.id),
-    ),
-  ];
+  // Sólo se revisa la selección con la consulta de la ventana vigente ya
+  // resuelta: ni cargando ni con error (no vaciar el campo por un fallo de red).
+  const vehiculosListos = vehiculosQuery.isSuccess && !vehiculosQuery.isFetching;
+  const choferesListos = choferesQuery.isSuccess && !choferesQuery.isFetching;
+
+  useEffect(() => {
+    if (esVentanaOriginal) {
+      setAvisoVehiculo(null);
+      setAvisoChoferes(null);
+    }
+  }, [esVentanaOriginal]);
+
+  useEffect(() => {
+    if (esVentanaOriginal || !vehiculosListos || !vehiculoSeleccionado) return;
+    if (!vehiculosDisponibles.some((v) => v.id === vehiculoSeleccionado.id)) {
+      setFieldValue("vehiculo", null);
+      setAvisoVehiculo(
+        `${vehiculoSeleccionado.patente ?? vehiculoLabel(vehiculoSeleccionado)} no está disponible en esas fechas`,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [esVentanaOriginal, vehiculosListos, vehiculosQuery.data, vehiculoSeleccionado]);
+
+  useEffect(() => {
+    if (esVentanaOriginal || !choferesListos || choferesSeleccionados.length === 0) {
+      return;
+    }
+    const disponiblesIds = new Set(choferesDisponibles.map((c) => c.id));
+    const quitados = choferesSeleccionados.filter((c) => !disponiblesIds.has(c.id));
+    if (quitados.length === 0) return;
+    setFieldValue(
+      "choferes",
+      choferesSeleccionados.filter((c) => disponiblesIds.has(c.id)),
+    );
+    const nombres = quitados.map(choferLabel).join(", ");
+    setAvisoChoferes(
+      quitados.length === 1
+        ? `${nombres} no está disponible en esas fechas`
+        : `${nombres} no están disponibles en esas fechas`,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [esVentanaOriginal, choferesListos, choferesQuery.data, choferesSeleccionados]);
+
+  // Con la ventana original lo asignado sigue siendo elegible aunque no figure
+  // en "disponibles" (ver punto 2 del comentario del componente). Si figura en
+  // mantenimiento, queda la entrada deshabilitada con su motivo. La selección
+  // actual se mantiene siempre en las opciones para que el campo muestre su
+  // etiqueta mientras cargan las consultas.
+  const vehiculos = sinRepetidos(
+    vehiculosDisponibles,
+    vehiculosEnMantenimiento,
+    esVentanaOriginal && vehiculoActual ? [vehiculoActual] : [],
+    vehiculoSeleccionado ? [vehiculoSeleccionado] : [],
+  );
+
+  const choferes = sinRepetidos(
+    choferesDisponibles,
+    esVentanaOriginal ? choferesActuales || [] : [],
+    choferesSeleccionados,
+  );
 
   const vehiculoOptions = vehiculos.map((vehiculo) => {
     const enMantenimiento = vehiculosEnMantenimiento.some((v) => v.id === vehiculo.id);
@@ -104,6 +185,7 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
   }));
 
   const handleVehiculoChange = (value) => {
+    setAvisoVehiculo(null);
     setFieldValue(
       "vehiculo",
       vehiculos.find((vehiculo) => vehiculo.id.toString() === value) ?? null,
@@ -111,6 +193,7 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
   };
 
   const handleChoferesChange = (values_) => {
+    setAvisoChoferes(null);
     setFieldValue(
       "choferes",
       values_
@@ -138,6 +221,7 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <Select
           {...getInputProps("vehiculo")}
+          error={getInputProps("vehiculo").error || avisoVehiculo}
           label="Vehículo"
           placeholder="Seleccioná un vehículo"
           data={vehiculoOptions}
@@ -150,6 +234,7 @@ const SeccionRecursos = ({ viajeIdExcluido, vehiculoActual, choferesActuales }) 
 
         <MultiSelect
           {...getInputProps("choferes")}
+          error={getInputProps("choferes").error || avisoChoferes}
           label="Choferes"
           placeholder="Seleccioná uno o más choferes"
           data={choferOptions}

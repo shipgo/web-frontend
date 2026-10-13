@@ -224,6 +224,8 @@ const EditarViaje = () => {
                   viajeIdExcluido={id ? Number(id) : undefined}
                   vehiculoActual={viajeOriginal?.vehiculo}
                   choferesActuales={getChoferesDeViaje(viajeOriginal)}
+                  inicioOriginal={viajeOriginal.fechaHoraInicioPlanificada}
+                  finOriginal={viajeOriginal.fechaHoraFinPlanificada}
                 />
                 <SeccionResumen />
                 <Footer
