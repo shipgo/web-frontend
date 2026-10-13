@@ -342,6 +342,23 @@ describe("EditarViaje", () => {
     ).toHaveLength(1);
   });
 
+  it("si el vehículo y el chofer del viaje no figuran en disponibles, se abre con ambos elegidos y Guardar habilitado (ventana original, SHG-FE-128)", async () => {
+    vehiculoApi.getDisponibles.mockResolvedValue([VEHICULOS[1]]);
+    usuarioApi.getChoferesDisponibles.mockResolvedValue([CHOFERES[1]]);
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() => expect(usuarioApi.getChoferesDisponibles).toHaveBeenCalled());
+    const combobox = screen.getByRole("combobox", { name: /^vehículo/i });
+    await waitFor(() => expect(combobox).toHaveValue("AB123CD - Hilux"));
+    await waitFor(() => expect(combobox).toBeEnabled());
+    expect(screen.getAllByText("Juan Perez").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/no está disponible en esas fechas/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /guardar cambios/i })).toBeEnabled();
+  });
+
   it("si falla enMantenimiento, el selector sigue con los disponibles, se puede elegir uno y no hay error", async () => {
     const user = userEvent.setup();
     vehiculoApi.getEnMantenimiento.mockRejectedValue(new Error("boom"));

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -20,6 +21,7 @@ import { validate } from "../CrearViaje/contexts/enviosFormConfig";
 const INICIO_ORIGINAL = "2026-08-01T09:00:00";
 const FIN_ORIGINAL = "2026-08-01T17:00:00";
 const NUEVA = "2026-08-02T09:00:00";
+const OTRA_NUEVA = "2026-08-03T09:00:00";
 
 const AUTO_ACTUAL = { id: 5, patente: "AB123CD", modelo: { nombre: "Hilux" } };
 const AUTO_OTRO = { id: 6, patente: "ZZ999ZZ", modelo: { nombre: "Ranger" } };
@@ -28,7 +30,11 @@ const MARIA = { id: 11, nombre: "Maria", apellido: "Gomez" };
 const PEDRO = { id: 12, nombre: "Pedro", apellido: "Lopez" };
 
 // Mueve la ventana del form igual que lo haría `SeccionDetalles`.
-const Harness = () => {
+const Harness = ({
+  inicioOriginal = INICIO_ORIGINAL,
+  finOriginal = FIN_ORIGINAL,
+}) => {
+  const [validando, setValidando] = useState(false);
   const form = useForm({
     initialValues: {
       fechaHoraInicioPlanificada: new Date(INICIO_ORIGINAL),
@@ -51,8 +57,9 @@ const Harness = () => {
         viajeIdExcluido={42}
         vehiculoActual={AUTO_ACTUAL}
         choferesActuales={[JUAN, MARIA]}
-        inicioOriginal={INICIO_ORIGINAL}
-        finOriginal={FIN_ORIGINAL}
+        inicioOriginal={inicioOriginal}
+        finOriginal={finOriginal}
+        onValidandoChange={setValidando}
       />
       <button
         onClick={() => moverVentana(NUEVA, "2026-08-02T17:00:00")}
@@ -62,7 +69,11 @@ const Harness = () => {
       <button onClick={() => moverVentana(INICIO_ORIGINAL, FIN_ORIGINAL)}>
         ventana original
       </button>
+      <button onClick={() => moverVentana(OTRA_NUEVA, "2026-08-03T17:00:00")}>
+        otra ventana nueva
+      </button>
       <button onClick={() => form.validate()}>validar</button>
+      <button disabled={validando}>guardar</button>
     </FormProvider>
   );
 };
@@ -78,8 +89,8 @@ const choferesElegidos = () =>
     el.textContent.replace(/\s+$/, ""),
   );
 
-const renderSeccion = async () => {
-  renderWithProviders(<Harness />);
+const renderSeccion = async (props) => {
+  renderWithProviders(<Harness {...props} />);
   await waitFor(() => expect(vehiculoCombo()).toHaveValue("AB123CD - Hilux"));
   await waitFor(() => expect(vehiculoCombo()).toBeEnabled());
 };
@@ -278,5 +289,88 @@ describe("EditarViaje/SeccionRecursos — disponibilidad en la ventana (SHG-FE-1
 
     expect(vehiculoCombo()).toHaveValue("ZZ999ZZ - Ranger");
     expect(screen.queryByText(/no está disponible/i)).toBeNull();
+  });
+
+  it("con una ventana distinta, Guardar queda deshabilitado mientras cargan las consultas y se habilita al terminar", async () => {
+    const user = userEvent.setup();
+    let resolver;
+    vehiculoApi.getDisponibles.mockImplementation((params) =>
+      esNueva(params)
+        ? new Promise((resolve) => {
+            resolver = resolve;
+          })
+        : Promise.resolve([AUTO_ACTUAL, AUTO_OTRO]),
+    );
+    await renderSeccion();
+    expect(screen.getByRole("button", { name: "guardar" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "ventana nueva" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "guardar" })).toBeDisabled(),
+    );
+
+    resolver([AUTO_ACTUAL, AUTO_OTRO]);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "guardar" })).toBeEnabled(),
+    );
+  });
+
+  it("si la consulta de la ventana nueva falla, Guardar no queda bloqueado", async () => {
+    const user = userEvent.setup();
+    vehiculoApi.getDisponibles.mockImplementation(async (params) => {
+      if (esNueva(params)) throw new Error("boom");
+      return [AUTO_ACTUAL];
+    });
+    await renderSeccion();
+
+    await user.click(screen.getByRole("button", { name: "ventana nueva" }));
+    await waitFor(() =>
+      expect(vehiculoApi.getDisponibles).toHaveBeenCalledWith(
+        expect.objectContaining({ desde: NUEVA }),
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "guardar" })).toBeEnabled(),
+    );
+  });
+
+  it("al pasar de una ventana nueva a otra, el aviso de la primera desaparece", async () => {
+    const user = userEvent.setup();
+    vehiculoApi.getDisponibles.mockImplementation((params) =>
+      params.desde === OTRA_NUEVA
+        ? new Promise(() => {})
+        : Promise.resolve(esNueva(params) ? [AUTO_OTRO] : [AUTO_ACTUAL]),
+    );
+    await renderSeccion();
+
+    await user.click(screen.getByRole("button", { name: "ventana nueva" }));
+    await screen.findByText("AB123CD no está disponible en esas fechas");
+
+    await user.click(screen.getByRole("button", { name: "otra ventana nueva" }));
+    await waitFor(() =>
+      expect(
+        screen.queryByText("AB123CD no está disponible en esas fechas"),
+      ).toBeNull(),
+    );
+  });
+
+  it("sin fechas originales conserva lo asignado y no revisa", async () => {
+    const user = userEvent.setup();
+    vehiculoApi.getDisponibles.mockResolvedValue([AUTO_OTRO]);
+    usuarioApi.getChoferesDisponibles.mockResolvedValue([PEDRO]);
+    await renderSeccion({ inicioOriginal: null, finOriginal: null });
+
+    await user.click(screen.getByRole("button", { name: "ventana nueva" }));
+    await waitFor(() =>
+      expect(vehiculoApi.getDisponibles).toHaveBeenCalledWith(
+        expect.objectContaining({ desde: NUEVA }),
+      ),
+    );
+    await waitFor(() => expect(vehiculoCombo()).toBeEnabled());
+
+    expect(vehiculoCombo()).toHaveValue("AB123CD - Hilux");
+    expect(choferesElegidos()).toEqual(["Juan Perez", "Maria Gomez"]);
+    expect(screen.queryByText(/no está disponible/i)).toBeNull();
+    expect(screen.getByRole("button", { name: "guardar" })).toBeEnabled();
   });
 });

@@ -72,6 +72,7 @@ const SeccionRecursos = ({
   choferesActuales,
   inicioOriginal,
   finOriginal,
+  onValidandoChange,
 }) => {
   const { getInputProps, values, setFieldValue } = useFormContext();
   const { desde, hasta } = useDisponibilidadParams();
@@ -79,12 +80,18 @@ const SeccionRecursos = ({
   const [avisoChoferes, setAvisoChoferes] = useState(null);
 
   const ventanaOriginal = ventanaDe(inicioOriginal, finOriginal);
+  const tieneVentanaOriginal = Boolean(
+    ventanaOriginal.desde && ventanaOriginal.hasta,
+  );
   const esVentanaOriginal = Boolean(
     desde &&
       hasta &&
       desde === ventanaOriginal.desde &&
       hasta === ventanaOriginal.hasta,
   );
+  // Sin ventana original no hay contra qué comparar: se conserva lo asignado y
+  // no se revisa nada (igual que con la ventana original).
+  const conservarAsignados = esVentanaOriginal || !tieneVentanaOriginal;
 
   const vehiculosQuery = useGetVehiculosDisponibles({
     desde,
@@ -112,15 +119,27 @@ const SeccionRecursos = ({
   const vehiculosListos = vehiculosQuery.isSuccess && !vehiculosQuery.isFetching;
   const choferesListos = choferesQuery.isSuccess && !choferesQuery.isFetching;
 
+  // El aviso corresponde a la ventana vigente: se limpia cuando cambia. Va
+  // antes de las revisiones para que, si éstas corren en el mismo commit
+  // (consulta ya en caché), el aviso nuevo quede puesto.
   useEffect(() => {
-    if (esVentanaOriginal) {
-      setAvisoVehiculo(null);
-      setAvisoChoferes(null);
-    }
-  }, [esVentanaOriginal]);
+    setAvisoVehiculo(null);
+    setAvisoChoferes(null);
+  }, [desde, hasta]);
+
+  // Con una ventana distinta de la original, mientras cargan las consultas de
+  // disponibles, el padre deshabilita Guardar (si fallaron, no bloquea).
+  const validando =
+    !conservarAsignados &&
+    Boolean(desde && hasta) &&
+    (vehiculosQuery.isFetching || choferesQuery.isFetching);
+  useEffect(() => {
+    onValidandoChange?.(validando);
+  }, [validando, onValidandoChange]);
+  useEffect(() => () => onValidandoChange?.(false), [onValidandoChange]);
 
   useEffect(() => {
-    if (esVentanaOriginal || !vehiculosListos || !vehiculoSeleccionado) return;
+    if (conservarAsignados || !vehiculosListos || !vehiculoSeleccionado) return;
     if (!vehiculosDisponibles.some((v) => v.id === vehiculoSeleccionado.id)) {
       setFieldValue("vehiculo", null);
       setAvisoVehiculo(
@@ -128,10 +147,10 @@ const SeccionRecursos = ({
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [esVentanaOriginal, vehiculosListos, vehiculosQuery.data, vehiculoSeleccionado]);
+  }, [conservarAsignados, vehiculosListos, vehiculosQuery.data, vehiculoSeleccionado]);
 
   useEffect(() => {
-    if (esVentanaOriginal || !choferesListos || choferesSeleccionados.length === 0) {
+    if (conservarAsignados || !choferesListos || choferesSeleccionados.length === 0) {
       return;
     }
     const disponiblesIds = new Set(choferesDisponibles.map((c) => c.id));
@@ -148,7 +167,7 @@ const SeccionRecursos = ({
         : `${nombres} no están disponibles en esas fechas`,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [esVentanaOriginal, choferesListos, choferesQuery.data, choferesSeleccionados]);
+  }, [conservarAsignados, choferesListos, choferesQuery.data, choferesSeleccionados]);
 
   // Con la ventana original lo asignado sigue siendo elegible aunque no figure
   // en "disponibles" (ver punto 2 del comentario del componente). Si figura en
@@ -158,13 +177,13 @@ const SeccionRecursos = ({
   const vehiculos = sinRepetidos(
     vehiculosDisponibles,
     vehiculosEnMantenimiento,
-    esVentanaOriginal && vehiculoActual ? [vehiculoActual] : [],
+    conservarAsignados && vehiculoActual ? [vehiculoActual] : [],
     vehiculoSeleccionado ? [vehiculoSeleccionado] : [],
   );
 
   const choferes = sinRepetidos(
     choferesDisponibles,
-    esVentanaOriginal ? choferesActuales || [] : [],
+    conservarAsignados ? choferesActuales || [] : [],
     choferesSeleccionados,
   );
 
