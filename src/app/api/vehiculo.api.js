@@ -49,8 +49,10 @@ export const vehiculoApi = {
   ...createCrudApi(API_URLS.VEHICULO_URL),
 
   /**
-   * `GET /api/vehiculo/disponibles` — vehículos `disponible` sin viaje solapado
-   * en `[desde, hasta]` (`VehiculoDTO[]`, ordenados por patente). SHG-BE-006.
+   * `GET /api/vehiculo/disponibles` — vehículos sin viaje ocupante ni mantenimiento
+   * solapado en `[desde, hasta)` (`VehiculoDTO[]`, ordenados por patente). SHG-BE-006.
+   * Desde SHG-BE-132 decide la ventana, no el estado: un vehículo `asignado_a_viaje`
+   * a otra ventana aparece; sólo `fuera_de_servicio` y `en_service` quedan siempre afuera.
    * `400` si falta `desde`/`hasta` o `hasta <= desde`.
    * @param {DisponibilidadParams} params
    */
