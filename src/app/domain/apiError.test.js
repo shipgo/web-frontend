@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   applyApiError,
+  BUSY_MESSAGE,
   getRateLimitMessage,
   isRateLimitedError,
   parseApiError,
@@ -230,6 +231,33 @@ describe('parseApiError — 5xx', () => {
       path: '/api/envio',
     });
     expect(parseApiError(err).message).toBe(
+      'Ocurrió un error en el servidor. Intentá nuevamente en unos minutos.',
+    );
+  });
+});
+
+describe('parseApiError — 503 de lock tras los reintentos (SHG-FE-131)', () => {
+  it('muestra el message del backend («…probá de nuevo…»)', () => {
+    const err = axiosError(503, {
+      statusCode: 503,
+      message: 'El recurso está ocupado, probá de nuevo en unos segundos.',
+    });
+    expect(parseApiError(err).message).toBe(
+      'El recurso está ocupado, probá de nuevo en unos segundos.',
+    );
+  });
+
+  it('sin message (o con body no JSON de un proxy) usa el texto de «sistema ocupado»', () => {
+    expect(BUSY_MESSAGE).toBe('El sistema está ocupado, probá de nuevo en unos segundos.');
+    expect(parseApiError(axiosError(503, {})).message).toBe(BUSY_MESSAGE);
+    expect(parseApiError(axiosError(503, '<html>503</html>')).message).toBe(BUSY_MESSAGE);
+    expect(
+      parseApiError(axiosError(503, {}), { fallbackMessage: 'No se pudo guardar' }).message,
+    ).toBe(BUSY_MESSAGE);
+  });
+
+  it('los otros 5xx siguen con el mensaje genérico de servidor', () => {
+    expect(parseApiError(axiosError(502, { message: 'x' })).message).toBe(
       'Ocurrió un error en el servidor. Intentá nuevamente en unos minutos.',
     );
   });

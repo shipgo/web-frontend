@@ -4,6 +4,7 @@ import { isProtectedPath } from "@utils/protectedPaths";
 import { isConnectionError } from "@utils/connectionError";
 import { CSV_MAX_ROWS } from "@utils/csv";
 import { EMPRESA_REQUERIDA_EVENT, esEmpresaRequerida } from "@domain/empresa";
+import { retryOn503 } from "./retry503";
 
 import {
   DEFAULT_TIMEOUT_MS,
@@ -49,6 +50,13 @@ restclient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // SHG-FE-131: `503` por contención de locks (SHG-BE-118) → se reintenta
+    // respetando `Retry-After`, con tope (ver `./retry503`). El reintento vuelve
+    // a pasar por este interceptor, así que un `401` posterior sigue el flujo de
+    // refresh de siempre; si el `503` persiste se rechaza como antes.
+    const retry = retryOn503(restclient, error);
+    if (retry) return retry;
 
     // Si el error es 401 y no es del endpoint de login o refresh
     if (
