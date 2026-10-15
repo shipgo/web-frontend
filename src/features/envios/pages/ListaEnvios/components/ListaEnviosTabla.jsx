@@ -9,10 +9,10 @@ import {
 
 import { timeFromNow, toLocalDate } from '@utils/dates';
 import { RowActionsMenu } from '@components';
-import { ESTADOS_VIAJE_CON_TRACKING, esEstadoTerminal, estadoBadge, normalizarEstado } from '@domain/estados';
+import { ESTADOS_VIAJE_CON_TRACKING, estadoBadge, normalizarEstado } from '@domain/estados';
 
 import { useDeleteEnvio } from '../hooks/useDeleteEnvio';
-import { getViajeAsociado } from '../../../utils';
+import { esEnvioEditable, getViajeAsociado } from '../../../utils';
 
 /** Fecha de alta = `historialEstado` con `estado === 'creado'` (CONTRACTS.md §4 / SHG-BE-004). */
 const getFechaAlta = (envio) =>
@@ -49,7 +49,6 @@ const getLocalizarAction = (envio, onLocalizar) => {
 };
 
 const getActionsForRow = (envio, { onEditar, onVerDetalles, onEliminar, onLocalizar }) => {
-  const terminal = esEstadoTerminal('envio', envio.estado);
 
   return [
     {
@@ -62,7 +61,7 @@ const getActionsForRow = (envio, { onEditar, onVerDetalles, onEliminar, onLocali
     {
       name: 'Opciones',
       items: [
-        { icon: <IconEdit size={18} />, label: 'Editar', color: 'blue', disabled: terminal, onClick: onEditar },
+        { icon: <IconEdit size={18} />, label: 'Editar', color: 'blue', disabled: !esEnvioEditable(envio), onClick: onEditar },
         { icon: <IconTrash size={18} />, label: 'Eliminar', color: 'red', onClick: onEliminar },
       ],
     },

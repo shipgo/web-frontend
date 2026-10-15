@@ -1,4 +1,3 @@
-import { normalizarEstado } from "@domain/estados";
 import { formatDireccion } from "@domain/format";
 
 import { TIPO_ENTREGA, TIPO_ENTREGA_DEFAULT } from "./constants";
@@ -181,11 +180,9 @@ export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
 };
 
 /**
- * Envío "en ruta" (`en_vehiculo` / `en_camino`): `CONTRACTS.md §16.4` — sólo se
- * editan los datos de contacto (nombre, apellido, teléfono, emails); destino y
- * bultos no (`SHG-FE-113`; el backend lo impone con `SHG-BE-082`).
+ * `EnvioDTO.editable` (`SHG-BE-112`, `SHG-CONTRACT-022`) es la única fuente de la
+ * regla de edición. Cuando no viene (`undefined`/`null`: envío anidado o backend
+ * viejo) se ofrece la edición y el `409` del `PUT` actúa de respaldo; sólo
+ * `editable === false` la bloquea.
  */
-export const ESTADOS_ENVIO_EN_RUTA = ["en_vehiculo", "en_camino"];
-
-export const esEnvioEnRuta = (estado) =>
-  ESTADOS_ENVIO_EN_RUTA.includes(normalizarEstado(estado));
+export const esEnvioEditable = (envio) => envio?.editable !== false;

@@ -303,6 +303,27 @@ describe('ListaEnvios', () => {
     expect(screen.queryByRole('button', { name: 'Importar' })).not.toBeInTheDocument();
   });
 
+  describe('"Editar" según editable (SHG-FE-125)', () => {
+    it.each([
+      [false, true],
+      [true, false],
+      [undefined, false],
+    ])('editable=%s -> Editar deshabilitado: %s', async (editable, deshabilitado) => {
+      envioApi.get.mockResolvedValue({
+        content: [{ ...ENVIO_EN_SUCURSAL, editable }],
+        totalElements: 1,
+        totalPages: 1,
+      });
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+      await user.click(await screen.findByRole('button', { name: 'Acciones de SHG-DEV-0001' }));
+
+      const editar = await screen.findByRole('menuitem', { name: 'Editar' }, { timeout: 3000 });
+      if (deshabilitado) expect(editar).toHaveAttribute('data-disabled');
+      else expect(editar).not.toHaveAttribute('data-disabled');
+    });
+  });
+
   describe('"Localizar" (SHG-FE-097)', () => {
     // `MENU_ITEM_TIMEOUT`: mismo motivo que en `ListaViajes` (SHG-FE-096) — el
     // `Menu` de Mantine anima su apertura con un `setTimeout` real, que bajo
