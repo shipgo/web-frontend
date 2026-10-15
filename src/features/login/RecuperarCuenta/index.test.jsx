@@ -80,8 +80,8 @@ describe("RecuperarCuenta", () => {
     mockVerifyEmail.mockRejectedValue({ response: { status: 429, data: { message: "Demasiados intentos" } } });
     await enviar(user);
 
-    expect(await screen.findByText("No se pudo enviar")).toBeInTheDocument();
-    expect(screen.getByText("Demasiados intentos")).toBeInTheDocument();
+    expect(await screen.findAllByText("Demasiados intentos")).toHaveLength(2);
+    expect(screen.queryByText("No se pudo enviar")).not.toBeInTheDocument();
   });
 
   it("un error de red (sin response) NO se oculta como éxito", async () => {
