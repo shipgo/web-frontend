@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AxiosError, AxiosHeaders } from 'axios';
+import { AxiosError, AxiosHeaders, CancelToken, CanceledError } from 'axios';
 
 import { CSV_MAX_ROWS } from '@utils/csv';
 import { EMPRESA_REQUERIDA_EVENT } from '@domain/empresa';
@@ -338,7 +338,29 @@ describe('restclient — reintento ante 503 con Retry-After (SHG-FE-131)', () =>
     const result = settle(restclient.get('/envios', { signal: controller.signal }));
     await vi.advanceTimersByTimeAsync(10_000);
     expect(calls).toHaveLength(1);
-    expect(result.error).toBeTruthy();
+    // Axios convierte el rechazo de una request ya abortada en `CanceledError`
+    // antes de los interceptores: se corta sin esperar ni reintentar.
+    expect(result.error).toBeInstanceOf(CanceledError);
+    expect(result.error.code).toBe('ERR_CANCELED');
+    expect(classifyConnectionError(result.error)).toBeNull();
+  });
+
+  it('si se cancela por cancelToken durante la espera, corta con ERR_CANCELED y no reintenta', async () => {
+    const calls = sequence(fail(503, { retryAfter: '5' }));
+    const source = CancelToken.source();
+    const result = settle(restclient.get('/envios', { cancelToken: source.token }));
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(result.done).toBe(false);
+    source.cancel('salió de la pantalla');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(result.error).toBeInstanceOf(CanceledError);
+    expect(result.error.code).toBe('ERR_CANCELED');
+    expect(result.error.message).toBe('salió de la pantalla');
+    expect(classifyConnectionError(result.error)).toBeNull();
+
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(calls).toHaveLength(1);
   });
 
   it('503 y después 401: el reintento sigue el refresh de siempre y termina bien', async () => {
