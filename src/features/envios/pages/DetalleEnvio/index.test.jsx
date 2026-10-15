@@ -233,8 +233,12 @@ describe("DetalleEnvio", () => {
     ).toBeInTheDocument();
   });
 
-  it("no muestra el botón Editar cuando el estado es terminal", async () => {
-    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+  it.each([
+    ["entregado"],
+    ["en_camino"],
+    ["asignado_a_viaje"],
+  ])("no muestra el botón Editar cuando editable es false (%s)", async (estado) => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado, editable: false });
 
     renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
       route: "/envios/9",

@@ -9,16 +9,15 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import ScreenContainer from "@components/ScreenContainer";
 import { isNotFoundError } from "@utils/httpErrors";
 import { envioApi, categoriaApi } from "@api";
-import { esEstadoTerminal } from "@domain/estados";
 
 import EditarEnvioForm from "./components/EditarEnvioForm";
+import { esEnvioEditable } from "../../utils";
 import EnvioNoEditable from "./components/EnvioNoEditable";
 
 /**
  * Carga el envío + catálogos y delega en el form canónico (`EditarEnvioForm`,
  * comparte `EnvioFormProvider`/schema/secciones con `CrearEnvios` — `SHG-FE-031`).
- * Resuelve acá el estado de carga, el 404 y el gate de estado terminal
- * (`SHG-FE-004`) para que el form monte una sola vez con los `initialValues`
+ * Resuelve acá el estado de carga, el 404 y el gate `editable` (`SHG-FE-004`/`SHG-FE-125`) para que el form monte una sola vez con los `initialValues`
  * ya resueltos.
  */
 const EditarEnvio = () => {
@@ -110,8 +109,8 @@ const EditarEnvio = () => {
       >
         {envio && (
           <>
-            {esEstadoTerminal("envio", envio.estado) ? (
-              <EnvioNoEditable estado={envio.estado} />
+            {!esEnvioEditable(envio) ? (
+              <EnvioNoEditable id={id} estado={envio.estado} />
             ) : (
               <EditarEnvioForm id={id} envio={envio} categorias={categorias} />
             )}

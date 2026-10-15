@@ -43,12 +43,12 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import ScreenContainer from "@components/ScreenContainer";
 import { isNotFoundError } from "@utils/httpErrors";
 import { envioApi } from "@api";
-import { BUTTON_ACTION_TEXT_COLOR, esEstadoTerminal, estadoBadge, estadoLabel, normalizarEstado } from "@domain/estados";
+import { BUTTON_ACTION_TEXT_COLOR, estadoBadge, estadoLabel, normalizarEstado } from "@domain/estados";
 import { formatDireccion, formatFecha, formatFechaHora, formatPeso } from "@domain/format";
 import { useAuthStore } from "@stores/auth.store";
 
 import { TIPO_ENTREGA } from "../../constants";
-import { getRecorridoActual, getViajeAsociado } from "../../utils";
+import { esEnvioEditable, getRecorridoActual, getViajeAsociado } from "../../utils";
 import { puedeAccionarEntrega, puedeConfirmarRetiro } from "./acciones";
 import { useEnvioAcciones } from "./hooks/useEnvioAcciones";
 
@@ -123,7 +123,7 @@ const DetalleEnvio = () => {
 
   // Precompute derived values only if envio exists to avoid errors
   const estadoInfo = envio ? estadoBadge("envio", envio.estado) : null;
-  const canEdit = envio ? !esEstadoTerminal("envio", envio.estado) : false;
+  const canEdit = envio ? esEnvioEditable(envio) : false;
   const canAccionarEstado = envio ? puedeAccionarEntrega(user, envio.estado) : false;
   const canConfirmarRetiro = envio ? puedeConfirmarRetiro(user, envio) : false;
   const esRetiroSucursal = envio?.tipoEntrega === TIPO_ENTREGA.SUCURSAL;

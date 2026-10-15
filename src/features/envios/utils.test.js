@@ -5,6 +5,7 @@ import {
   buildEnvioReqDTO,
   formatDestinoEnvio,
   getRecorridoActual,
+  esEnvioEditable,
   getViajeAsociado,
 } from "./utils";
 
@@ -348,5 +349,15 @@ describe("getViajeAsociado (SHG-FE-097)", () => {
   it("devuelve null si el envío no tiene ningún recorrido", () => {
     expect(getViajeAsociado({ detalleRecorridos: [] })).toBeNull();
     expect(getViajeAsociado({})).toBeNull();
+  });
+});
+
+describe('esEnvioEditable (SHG-FE-125)', () => {
+  it('sólo editable === false bloquea; ausente se considera editable', () => {
+    expect(esEnvioEditable({ editable: true })).toBe(true);
+    expect(esEnvioEditable({ editable: false })).toBe(false);
+    expect(esEnvioEditable({})).toBe(true);
+    expect(esEnvioEditable({ editable: null })).toBe(true);
+    expect(esEnvioEditable(null)).toBe(true);
   });
 });
