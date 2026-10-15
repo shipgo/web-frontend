@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import { IconArrowLeft, IconCheck } from "@tabler/icons-react";
 
-import { applyApiError } from "@domain/apiError";
+import { applyApiError, getRateLimitMessage } from "@domain/apiError";
 import { useAuthStore } from "@stores/auth.store";
 import { useCaptcha } from "@hooks/useCaptcha";
 import CaptchaField from "@components/CaptchaField";
@@ -37,6 +37,7 @@ const RecuperarCuenta = () => {
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [rateLimited, setRateLimited] = useState(false);
 
   const form = useForm({
     mode: "uncontrolled",
@@ -47,6 +48,7 @@ const RecuperarCuenta = () => {
   const handleSubmit = async ({ userEmail }) => {
     setLoading(true);
     setErrorMsg(null);
+    setRateLimited(false);
     try {
       await verifyEmail(userEmail.trim(), captcha.token);
       setEnviado(true);
@@ -55,6 +57,12 @@ const RecuperarCuenta = () => {
       // challenge, el token es de un solo uso.
       if (isCaptchaApiError(error)) {
         captcha.reset();
+      }
+      const rateLimitMessage = getRateLimitMessage(error);
+      if (rateLimitMessage) {
+        setRateLimited(true);
+        setErrorMsg(rateLimitMessage);
+        return;
       }
       setErrorMsg(
         applyApiError(form, error, {
@@ -91,7 +99,7 @@ const RecuperarCuenta = () => {
       <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
         <Stack gap="lg">
           {errorMsg ? (
-            <Alert color="red" title="No se pudo enviar">
+            <Alert color="red" title={rateLimited ? "Demasiados intentos" : "No se pudo enviar"}>
               {errorMsg}
             </Alert>
           ) : null}

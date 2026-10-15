@@ -110,6 +110,28 @@ describe("CambiarPasswordCard", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("429 rate_limited: muestra «Demasiados intentos» y no marca la contraseña actual", async () => {
+    const user = userEvent.setup();
+    mockChangePassword.mockRejectedValue({
+      response: {
+        status: 429,
+        data: { statusCode: 429, message: "Esperá unos minutos", code: "rate_limited" },
+      },
+    });
+    renderWithProviders(<CambiarPasswordCard />);
+
+    await user.type(screen.getByLabelText("Contraseña actual"), "claveMala1");
+    await user.type(screen.getByLabelText("Nueva contraseña"), "claveNueva2");
+    await user.type(screen.getByLabelText("Repetí la contraseña"), "claveNueva2");
+    await user.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
+
+    expect(await screen.findByText("Demasiados intentos")).toBeInTheDocument();
+    expect(screen.getByText("Esperá unos minutos")).toBeInTheDocument();
+    expect(
+      screen.queryByText("La contraseña actual es incorrecta"),
+    ).not.toBeInTheDocument();
+  });
+
   it("otro error sin mensaje (ej. 400 vacío): mensaje genérico", async () => {
     const user = userEvent.setup();
     mockChangePassword.mockRejectedValue({ response: { status: 400, data: {} } });

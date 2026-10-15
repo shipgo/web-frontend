@@ -30,6 +30,7 @@ import {
 } from "@mantine/core";
 
 import { useAuthStore } from "@stores/auth.store";
+import { getRateLimitMessage } from "@domain/apiError";
 import { landingPathFor } from "@domain/roles";
 import { resolvePostLoginRedirect } from "@utils/redirect";
 import { useCaptcha } from "@hooks/useCaptcha";
@@ -127,6 +128,21 @@ const LoginPage = ({ variant = "operator" }) => {
           title: "No pudimos verificar que sos una persona",
           message:
             "La verificación de seguridad venció o no es válida. Resolvela de nuevo e intentá otra vez.",
+          icon: (
+            <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
+          ),
+        });
+        return;
+      }
+
+      // Límite de intentos (SHG-CONTRACT-013): 429 `rate_limited`. No es un
+      // error de credenciales: hay que esperar, no seguir probando.
+      const rateLimitMessage = getRateLimitMessage(error);
+      if (rateLimitMessage) {
+        notifications.show({
+          color: "red",
+          title: "Demasiados intentos",
+          message: rateLimitMessage,
           icon: (
             <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
           ),

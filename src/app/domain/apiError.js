@@ -175,3 +175,28 @@ export const applyApiError = (form, err, options = {}) => {
 
   return message;
 };
+
+const RATE_LIMITED_MESSAGE =
+  'Demasiados intentos. Probá de nuevo en unos minutos.';
+
+/**
+ * ¿Es el 429 por límite de intentos (SHG-CONTRACT-013)? Se distingue por
+ * `code === 'rate_limited'` o por `status === 429`, nunca por el texto.
+ *
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+export const isRateLimitedError = (err) =>
+  err?.response?.status === 429 || err?.response?.data?.code === 'rate_limited';
+
+/**
+ * Mensaje de espera para un 429 por límite de intentos: el `message` del
+ * backend, o uno propio si falta. `null` si el error no es un 429.
+ *
+ * @param {unknown} err
+ * @returns {string|null}
+ */
+export const getRateLimitMessage = (err) => {
+  if (!isRateLimitedError(err)) return null;
+  return pickMessage(err?.response?.data) || RATE_LIMITED_MESSAGE;
+};
