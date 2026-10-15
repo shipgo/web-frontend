@@ -5,6 +5,7 @@ import { MantineProvider } from '@mantine/core';
 
 import { restclient } from '@config/restclient';
 import { BOOTSTRAP_TIMEOUT_MS, BOOTSTRAP_TOTAL_TIMEOUT_MS } from '@constants/timeouts';
+import { DEFAULT_503_WAIT_MS, MAX_503_RETRIES } from '@config/retry503';
 import { useAuthStore } from '@stores/auth.store';
 import { necesitaOnboardingEmpresa } from '@domain/empresa';
 
@@ -43,6 +44,10 @@ const failWith = (status) => (config) =>
       statusText: '',
     }),
   );
+
+// SHG-FE-131: un 503 se reintenta (sin `Retry-After`, `DEFAULT_503_WAIT_MS` por
+// intento) antes de rechazarse; la pantalla aparece recién después.
+const RETRIES_503_MS = DEFAULT_503_WAIT_MS * MAX_503_RETRIES;
 
 const USER = {
   id: 1,
@@ -116,8 +121,11 @@ describe('AuthProvider — API caída en el bootstrap (SHG-FE-110)', () => {
   it('un 5xx en el bootstrap también muestra la pantalla (no manda a /login)', async () => {
     restclient.defaults.adapter = failWith(503);
     renderAt('/viajes');
-    await act(() => vi.advanceTimersByTimeAsync(0));
+    await act(() => vi.advanceTimersByTimeAsync(RETRIES_503_MS - 1));
+    expect(screen.queryByText(TITULO)).not.toBeInTheDocument();
+    await act(() => vi.advanceTimersByTimeAsync(1));
     expect(screen.getByText(TITULO)).toBeInTheDocument();
+    expect(useAuthStore.getState().connectionError).toBe('server');
     expect(mockSetLocation).not.toHaveBeenCalled();
   });
 
@@ -151,7 +159,7 @@ describe('AuthProvider — API caída en el bootstrap (SHG-FE-110)', () => {
     restclient.defaults.adapter = (config) =>
       config.url === '/refresh' ? ok(config, { access_token: 't' }) : failWith(503)(config);
     renderAt('/usuarios');
-    await act(() => vi.advanceTimersByTimeAsync(0));
+    await act(() => vi.advanceTimersByTimeAsync(RETRIES_503_MS));
 
     expect(screen.getByText(TITULO)).toBeInTheDocument();
     expect(screen.queryByText('contenido')).not.toBeInTheDocument();
@@ -208,8 +216,8 @@ describe('AuthProvider — API caída en el bootstrap (SHG-FE-110)', () => {
         : failWith(503)(config);
     };
     renderAt('/portal');
-    await act(() => vi.advanceTimersByTimeAsync(0));
-    expect(calls).toEqual(['/refresh', '/customer/me']);
+    await act(() => vi.advanceTimersByTimeAsync(RETRIES_503_MS));
+    expect(calls).toEqual(['/refresh', '/customer/me', '/customer/me', '/customer/me']);
     expect(screen.getByText(TITULO)).toBeInTheDocument();
     expect(mockSetLocation).not.toHaveBeenCalled();
   });

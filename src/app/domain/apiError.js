@@ -9,7 +9,7 @@
  * El backend expone exactamente dos shapes de error (ver contrato):
  *
  * - `ErrorResponse`  → `{ statusCode, message }` — TODOS los errores sin
- *   field-errors (400 de negocio, 401, 403, 404, 409, 500).
+ *   field-errors (400 de negocio, 401, 403, 404, 409, 500, 503 de lock).
  * - `ApiFieldError`  → `{ statusCode, message, fields: [{ field, error }] }` —
  *   sólo el 400 de Bean Validation sobre el body.
  *
@@ -27,6 +27,10 @@ const FORBIDDEN_MESSAGE = 'No tenés permisos para esta acción.';
 const SERVER_ERROR_MESSAGE =
   'Ocurrió un error en el servidor. Intentá nuevamente en unos minutos.';
 const VALIDATION_FALLBACK_MESSAGE = 'Revisá los campos marcados.';
+// SHG-FE-131: `503` por contención de locks (SHG-BE-118) que siguió después de
+// los reintentos automáticos del interceptor (`@config/retry503`).
+export const BUSY_MESSAGE =
+  'El sistema está ocupado, probá de nuevo en unos segundos.';
 
 /** Toma el primer array de field-errors que exista, con los nombres conocidos. */
 const pickRawFields = (data) => {
@@ -97,7 +101,8 @@ const stripKnownPrefix = (field, prefixes) => {
  *   `stripPrefix: 'puntoEntrega'`). Si se omite, se intenta detectar un prefijo
  *   común automáticamente.
  * @param {string} [options.fallbackMessage]        Mensaje si el backend no mandó
- *   uno (no aplica a 403/5xx, que tienen texto propio).
+ *   uno (no aplica a 403/5xx, que tienen texto propio; el 503 usa el `message`
+ *   del backend o el texto de «sistema ocupado»).
  * @param {boolean} [options.backendForbiddenMessage]  Para un 403 de negocio con
  *   mensaje propio (ej. un ADMIN que intenta asignar ROLE_ADMIN): muestra el
  *   `message` del backend en vez del texto fijo de permisos. Si no vino mensaje,
@@ -138,6 +143,12 @@ export const parseApiError = (err, options = {}) => {
     message =
       (options.backendForbiddenMessage && pickMessage(data)) ||
       FORBIDDEN_MESSAGE;
+  } else if (status === 503) {
+    // El `503` del backend (lock vencido / deadlock) trae un `message` en
+    // castellano del estilo «…probá de nuevo…»: se muestra tal cual. Un 503 sin
+    // body JSON (p. ej. HTML de un proxy) cae al texto propio de «ocupado».
+    message =
+      (data && typeof data === 'object' && pickMessage(data)) || BUSY_MESSAGE;
   } else if (status != null && status >= 500) {
     message = SERVER_ERROR_MESSAGE;
   } else {
