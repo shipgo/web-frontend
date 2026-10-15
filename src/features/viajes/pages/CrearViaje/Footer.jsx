@@ -10,6 +10,7 @@ import { applyApiError } from "@domain/apiError";
 import { useFormContext } from "./contexts/EnviosFormContext";
 import useEnviosStats from "./hooks/useEnviosStats";
 import { useCrearViaje } from "./hooks/useCrearViaje";
+import { useRefrescarRecursosTras409 } from "./hooks/useRefrescarRecursosTras409";
 import { buildViajeReqDTO } from "./utils";
 
 const Footer = () => {
@@ -21,6 +22,7 @@ const Footer = () => {
 
   const { totalPackages, totalStops } = useEnviosStats();
   const { mutate, isPending } = useCrearViaje();
+  const refrescarRecursosTras409 = useRefrescarRecursosTras409();
 
   const handleCancel = () => {
     // `isDirty()` no detecta bien el `Map` de envíos: se chequea el contenido
@@ -78,6 +80,7 @@ const Footer = () => {
       },
       onError: (error) => {
         console.error("Error creando viaje:", error);
+        refrescarRecursosTras409(error);
         // Body anidado (`ViajeReqDTO.viaje`): los `field` vienen prefijados
         // "viaje." — el helper los alinea a los nombres planos del form.
         const message = applyApiError(form, error, {

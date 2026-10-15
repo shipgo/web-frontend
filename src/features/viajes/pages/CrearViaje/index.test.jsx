@@ -369,6 +369,8 @@ const InyectarEnvioDestinoInvalido = () => {
 describe("CrearViaje", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Store global de notificaciones: un toast de un test no debe verse en el siguiente.
+    notifications.clean();
     mockGetParaViaje.mockResolvedValue(ENVIOS_PARA_VIAJE);
     mockGetDisponibles.mockResolvedValue([]);
     mockGetEnMantenimiento.mockResolvedValue([]);
@@ -643,6 +645,91 @@ describe("CrearViaje", () => {
       await screen.findByText(/el vehículo ya no está disponible/i),
     ).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalledWith("~/viajes");
+  });
+
+  describe("refresco de recursos tras un error al guardar (SHG-FE-130)", () => {
+    const VEHICULO = {
+      id: 9,
+      patente: "AB123CD",
+      pesoMaximo: 3000,
+      modelo: { nombre: "Hilux", marca: { nombre: "Toyota" } },
+    };
+    const CHOFER = {
+      id: 15,
+      nombre: "Juan",
+      apellido: "Perez",
+      email: "juan@shipgo.dev",
+    };
+
+    const llenarYGuardar = async (status) => {
+      mockGetDisponibles.mockResolvedValue([VEHICULO]);
+      mockGetChoferesDisponibles.mockResolvedValue([CHOFER]);
+      mockSaveViaje.mockRejectedValue({
+        response: { status, data: { message: "Error del backend." } },
+      });
+
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await user.click(await screen.findByText("SHG-DEV-0001"));
+      await user.click(
+        await screen.findByRole("button", { name: /marcar envíos para/i }),
+      );
+      await user.click(await screen.findByText(/entrega a destino final/i));
+
+      fireEvent.change(screen.getByLabelText(/salida planificada/i), {
+        target: { value: "2026-09-10T08:00" },
+      });
+      fireEvent.change(screen.getByLabelText(/llegada planificada/i), {
+        target: { value: "2026-09-10T18:00" },
+      });
+
+      await user.click(await screen.findByText("AB123CD"));
+      await user.click(await screen.findByText("Juan Perez"));
+      await waitFor(() => expect(mockGetDisponibles).toHaveBeenCalled());
+
+      const llamadasPrevias = {
+        vehiculos: mockGetDisponibles.mock.calls.length,
+        choferes: mockGetChoferesDisponibles.mock.calls.length,
+      };
+      // Entre el armado y el guardado otro viaje tomó los recursos.
+      mockGetDisponibles.mockResolvedValue([]);
+      mockGetChoferesDisponibles.mockResolvedValue([]);
+      await user.click(screen.getByRole("button", { name: /crear viaje/i }));
+      await waitFor(() => expect(mockSaveViaje).toHaveBeenCalledTimes(1));
+      // Toast de error (en 5xx el mensaje es genérico).
+      await screen.findByRole("alert");
+      return llamadasPrevias;
+    };
+
+    it("tras un 409 vuelve a pedir vehículos y choferes disponibles y quita lo que ya no figura", async () => {
+      const previas = await llenarYGuardar(409);
+
+      await waitFor(() => {
+        expect(mockGetDisponibles.mock.calls.length).toBeGreaterThan(
+          previas.vehiculos,
+        );
+        expect(mockGetChoferesDisponibles.mock.calls.length).toBeGreaterThan(
+          previas.choferes,
+        );
+      });
+      // El vehículo y el chofer ya no figuran: se quitan de la selección.
+      await waitFor(() => {
+        expect(screen.queryByText("AB123CD")).not.toBeInTheDocument();
+        expect(screen.queryByText("Juan Perez")).not.toBeInTheDocument();
+      });
+    });
+
+    it.each([400, 500])("tras un %i no vuelve a pedir los disponibles", async (status) => {
+      const previas = await llenarYGuardar(status);
+
+      // Margen para que un refresco indebido alcance a dispararse.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(mockGetDisponibles.mock.calls.length).toBe(previas.vehiculos);
+      expect(mockGetChoferesDisponibles.mock.calls.length).toBe(
+        previas.choferes,
+      );
+    });
   });
 
   it("agrupa envíos con el mismo destino en UN recorrido y crea recorridos separados por destino distinto, incluso en acciones separadas", async () => {

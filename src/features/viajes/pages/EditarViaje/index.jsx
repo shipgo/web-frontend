@@ -23,6 +23,7 @@ import {
 } from "../CrearViaje/contexts/EnviosFormContext";
 import { INITIAL_VALUES, validate } from "../CrearViaje/contexts/enviosFormConfig";
 import { buildViajeReqDTO } from "../CrearViaje/utils";
+import { useRefrescarRecursosTras409 } from "../CrearViaje/hooks/useRefrescarRecursosTras409";
 
 import SeccionRecursos from "./SeccionRecursos";
 import Footer from "./Footer";
@@ -57,6 +58,8 @@ const EditarViaje = () => {
   );
 
   const viajeEstadoInfo = viajeOriginal ? estadoBadge("viaje", viajeOriginal.estado) : null;
+
+  const refrescarRecursosTras409 = useRefrescarRecursosTras409();
 
   const loadViaje = useCallback(async () => {
     if (!id) return;
@@ -122,6 +125,7 @@ const EditarViaje = () => {
         navigate(`~/viajes/${id}`);
       } catch (error) {
         console.error("Error actualizando viaje:", error);
+        refrescarRecursosTras409(error);
 
         // Body anidado (`ViajeReqDTO.viaje`): los `field` vienen prefijados
         // "viaje." — el helper los alinea a los nombres planos del form.
@@ -140,7 +144,7 @@ const EditarViaje = () => {
         setLoading(false);
       }
     },
-    [id, navigate, viajeOriginal, esEditable, form],
+    [id, navigate, viajeOriginal, esEditable, form, refrescarRecursosTras409],
   );
 
   // Envíos ya asignados al viaje, aplanados — ver `extraerEnviosDeRecorridos`
