@@ -369,6 +369,8 @@ const InyectarEnvioDestinoInvalido = () => {
 describe("CrearViaje", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Store global de notificaciones: un toast de un test no debe verse en el siguiente.
+    notifications.clean();
     mockGetParaViaje.mockResolvedValue(ENVIOS_PARA_VIAJE);
     mockGetDisponibles.mockResolvedValue([]);
     mockGetEnMantenimiento.mockResolvedValue([]);
@@ -695,7 +697,8 @@ describe("CrearViaje", () => {
       mockGetChoferesDisponibles.mockResolvedValue([]);
       await user.click(screen.getByRole("button", { name: /crear viaje/i }));
       await waitFor(() => expect(mockSaveViaje).toHaveBeenCalledTimes(1));
-      await screen.findByText(/error del backend/i);
+      // Toast de error (en 5xx el mensaje es genérico).
+      await screen.findByRole("alert");
       return llamadasPrevias;
     };
 
@@ -717,8 +720,8 @@ describe("CrearViaje", () => {
       });
     });
 
-    it("tras un 500 no vuelve a pedir los disponibles", async () => {
-      const previas = await llenarYGuardar(500);
+    it.each([400, 500])("tras un %i no vuelve a pedir los disponibles", async (status) => {
+      const previas = await llenarYGuardar(status);
 
       // Margen para que un refresco indebido alcance a dispararse.
       await new Promise((resolve) => setTimeout(resolve, 50));

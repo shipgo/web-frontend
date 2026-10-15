@@ -180,6 +180,9 @@ const CHOFERES = [
 describe("EditarViaje", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // `@mantine/notifications` es un store global: el toast de error de los
+    // tests de 409/500 (SHG-FE-130) sobrevive al desmontaje y contamina al siguiente.
+    notifications.clean();
 
     viajeApi.getById.mockResolvedValue(EXISTING_VIAJE);
     viajeApi.update.mockResolvedValue({ id: 42 });
@@ -384,7 +387,8 @@ describe("EditarViaje", () => {
 
       await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
       await waitFor(() => expect(viajeApi.update).toHaveBeenCalledTimes(1));
-      await screen.findByText(/error del backend/i);
+      // Toast de error (en 5xx el mensaje es genérico, no el del backend).
+      await screen.findByRole("alert");
       return { combobox, previas };
     };
 
@@ -404,8 +408,8 @@ describe("EditarViaje", () => {
       expect(screen.queryByText(/no está disponible en esas fechas/i)).not.toBeInTheDocument();
     });
 
-    it("tras un 500 no vuelve a pedir los disponibles", async () => {
-      const { previas } = await abrirYGuardar(500);
+    it.each([400, 500])("tras un %i no vuelve a pedir los disponibles", async (status) => {
+      const { previas } = await abrirYGuardar(status);
 
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect(vehiculoApi.getDisponibles.mock.calls.length).toBe(previas.vehiculos);
