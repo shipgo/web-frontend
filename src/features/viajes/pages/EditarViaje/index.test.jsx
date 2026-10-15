@@ -359,6 +359,62 @@ describe("EditarViaje", () => {
     expect(screen.getByRole("button", { name: /guardar cambios/i })).toBeEnabled();
   });
 
+  describe("refresco de recursos tras un error al guardar (SHG-FE-130)", () => {
+    const abrirYGuardar = async (status) => {
+      const user = userEvent.setup();
+      viajeApi.update.mockRejectedValue({
+        response: { status, data: { message: "Error del backend." } },
+      });
+      renderWithProviders(
+        <Route path="/viajes/:id/editar" component={EditarViaje} />,
+        { route: "/viajes/42/editar" }
+      );
+
+      const combobox = await screen.findByRole("combobox", { name: /^vehículo/i });
+      await waitFor(() => expect(combobox).toHaveValue("AB123CD - Hilux"));
+      await waitFor(() => expect(combobox).toBeEnabled());
+      const previas = {
+        vehiculos: vehiculoApi.getDisponibles.mock.calls.length,
+        choferes: usuarioApi.getChoferesDisponibles.mock.calls.length,
+      };
+
+      // Otro viaje tomó el vehículo y el chofer: ya no figuran como disponibles.
+      vehiculoApi.getDisponibles.mockResolvedValue([VEHICULOS[1]]);
+      usuarioApi.getChoferesDisponibles.mockResolvedValue([CHOFERES[1]]);
+
+      await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+      await waitFor(() => expect(viajeApi.update).toHaveBeenCalledTimes(1));
+      await screen.findByText(/error del backend/i);
+      return { combobox, previas };
+    };
+
+    it("tras un 409 vuelve a pedir los disponibles y, con la ventana original, conserva lo asignado (SHG-FE-128)", async () => {
+      const { combobox, previas } = await abrirYGuardar(409);
+
+      await waitFor(() => {
+        expect(vehiculoApi.getDisponibles.mock.calls.length).toBeGreaterThan(
+          previas.vehiculos,
+        );
+        expect(usuarioApi.getChoferesDisponibles.mock.calls.length).toBeGreaterThan(
+          previas.choferes,
+        );
+      });
+      expect(combobox).toHaveValue("AB123CD - Hilux");
+      expect(screen.getAllByText("Juan Perez").length).toBeGreaterThan(0);
+      expect(screen.queryByText(/no está disponible en esas fechas/i)).not.toBeInTheDocument();
+    });
+
+    it("tras un 500 no vuelve a pedir los disponibles", async () => {
+      const { previas } = await abrirYGuardar(500);
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(vehiculoApi.getDisponibles.mock.calls.length).toBe(previas.vehiculos);
+      expect(usuarioApi.getChoferesDisponibles.mock.calls.length).toBe(
+        previas.choferes,
+      );
+    });
+  });
+
   it("si falla enMantenimiento, el selector sigue con los disponibles, se puede elegir uno y no hay error", async () => {
     const user = userEvent.setup();
     vehiculoApi.getEnMantenimiento.mockRejectedValue(new Error("boom"));
