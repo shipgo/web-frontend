@@ -77,10 +77,22 @@ describe("RecuperarCuenta", () => {
 
   it("un 429 (rate limit) NO se oculta como éxito", async () => {
     const user = userEvent.setup();
-    mockVerifyEmail.mockRejectedValue({ response: { status: 429, data: { message: "Demasiados intentos" } } });
+    mockVerifyEmail.mockRejectedValue({
+      response: {
+        status: 429,
+        data: {
+          statusCode: 429,
+          message: "Demasiados intentos. Probá de nuevo en unos minutos.",
+          code: "rate_limited",
+        },
+      },
+    });
     await enviar(user);
 
-    expect(await screen.findAllByText("Demasiados intentos")).toHaveLength(2);
+    expect(await screen.findByText("Demasiados intentos")).toBeInTheDocument();
+    expect(
+      screen.getByText("Demasiados intentos. Probá de nuevo en unos minutos."),
+    ).toBeInTheDocument();
     expect(screen.queryByText("No se pudo enviar")).not.toBeInTheDocument();
   });
 
