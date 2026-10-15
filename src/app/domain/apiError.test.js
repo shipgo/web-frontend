@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { applyApiError, BUSY_MESSAGE, parseApiError } from './apiError';
+import {
+  applyApiError,
+  BUSY_MESSAGE,
+  getRateLimitMessage,
+  isRateLimitedError,
+  parseApiError,
+} from './apiError';
 
 /** Helper: arma un error tipo axios con `response.status` + `response.data`. */
 const axiosError = (status, data) => ({
@@ -319,5 +325,22 @@ describe('applyApiError', () => {
       fields: [{ field: 'viaje.vehiculoID', error: 'Requerido' }],
     }), { stripPrefix: 'viaje' });
     expect(form.setErrors).toHaveBeenCalledWith({ vehiculoID: 'Requerido' });
+  });
+});
+
+describe('límite de intentos (429 rate_limited)', () => {
+  it('reconoce el 429 por status y por code, sin mirar el texto', () => {
+    expect(isRateLimitedError(axiosError(429, {}))).toBe(true);
+    expect(isRateLimitedError(axiosError(400, { code: 'rate_limited' }))).toBe(true);
+    expect(isRateLimitedError(axiosError(401, { message: 'Demasiados intentos' }))).toBe(false);
+    expect(isRateLimitedError(new Error('Network Error'))).toBe(false);
+  });
+
+  it('devuelve el message del backend, o uno propio si falta', () => {
+    expect(
+      getRateLimitMessage(axiosError(429, { message: 'Esperá 5 min', code: 'rate_limited' })),
+    ).toBe('Esperá 5 min');
+    expect(getRateLimitMessage(axiosError(429, {}))).toMatch(/Demasiados intentos/);
+    expect(getRateLimitMessage(axiosError(401, {}))).toBeNull();
   });
 });

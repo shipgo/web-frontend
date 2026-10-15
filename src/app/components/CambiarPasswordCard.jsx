@@ -15,7 +15,7 @@ import {
 } from "@mantine/core";
 import { IconCheck, IconLock, IconX } from "@tabler/icons-react";
 
-import { applyApiError } from "@domain/apiError";
+import { applyApiError, getRateLimitMessage } from "@domain/apiError";
 import { PASSWORD_MIN } from "@domain/validation";
 import { useAuthStore } from "@stores/auth.store";
 
@@ -89,7 +89,13 @@ const CambiarPasswordCard = () => {
     } catch (error) {
       console.error("Error cambiando contraseña:", error);
       let message;
-      if (isPasswordIncorrecta(error)) {
+      let title = "Error";
+      const rateLimitMessage = getRateLimitMessage(error);
+      if (rateLimitMessage) {
+        // 429 por límite de intentos: esperar, no marcar la contraseña como mala.
+        message = rateLimitMessage;
+        title = "Demasiados intentos";
+      } else if (isPasswordIncorrecta(error)) {
         message = PASSWORD_INCORRECTA_MESSAGE;
         form.setFieldError("oldPassword", message);
       } else {
@@ -98,7 +104,7 @@ const CambiarPasswordCard = () => {
         });
       }
       notifications.show({
-        title: "Error",
+        title,
         message,
         color: "red",
         icon: <IconX />,

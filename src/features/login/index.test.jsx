@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { notifications } from "@mantine/notifications";
 
 import { renderWithProviders } from "../../test/renderWithProviders";
 
@@ -18,6 +19,7 @@ import LoginPage from "./index";
 describe("LoginPage — captcha (SHG-FE-043)", () => {
   beforeEach(() => {
     mockLogin.mockReset();
+    notifications.clean();
     mockUser = null;
     window.localStorage.clear();
     delete window.turnstile;
@@ -157,5 +159,54 @@ describe("LoginPage — captcha (SHG-FE-043)", () => {
     expect(
       screen.queryByText(/usuario y\/o contraseña incorrectos/i),
     ).not.toBeInTheDocument();
+  });
+
+  const submit = async (user) => {
+    renderWithProviders(<LoginPage />);
+    await user.type(screen.getByLabelText("Usuario"), "juan");
+    await user.type(screen.getByLabelText("Contraseña"), "Shipgo123!");
+    await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
+  };
+
+  it("429 rate_limited: muestra «Demasiados intentos» con el mensaje del backend, no «incorrectos»", async () => {
+    const user = userEvent.setup();
+    mockLogin.mockRejectedValue({
+      response: {
+        status: 429,
+        data: { statusCode: 429, message: "Demasiados intentos. Probá de nuevo en unos minutos.", code: "rate_limited" },
+      },
+    });
+    await submit(user);
+
+    expect(await screen.findByText("Demasiados intentos")).toBeInTheDocument();
+    expect(
+      screen.getByText("Demasiados intentos. Probá de nuevo en unos minutos."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/usuario y\/o contraseña incorrectos/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("401 sigue mostrando «Usuario y/o contraseña incorrectos»", async () => {
+    const user = userEvent.setup();
+    mockLogin.mockRejectedValue({
+      response: { status: 401, data: { message: "Bad credentials" } },
+    });
+    await submit(user);
+
+    expect(
+      await screen.findByText(/usuario y\/o contraseña incorrectos/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Demasiados intentos")).not.toBeInTheDocument();
+  });
+
+  it("401 de cuenta sin verificar sigue mostrando «Cuenta sin verificar»", async () => {
+    const user = userEvent.setup();
+    mockLogin.mockRejectedValue({
+      response: { status: 401, data: { message: "Tenés que verificar tu email" } },
+    });
+    await submit(user);
+
+    expect(await screen.findByText("Cuenta sin verificar")).toBeInTheDocument();
   });
 });
