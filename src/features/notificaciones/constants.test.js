@@ -2,6 +2,22 @@ import { describe, expect, it } from 'vitest';
 
 import { notificacionHref, parseNotificacionData, parseActionUrl } from './constants';
 
+describe('avisos de viaje (SHG-FE-124)', () => {
+  it.each(['VIAJE_LISTO_PARA_VIAJE', 'VIAJE_EN_CAMINO', 'VIAJE_FINALIZADO'])(
+    '%s abre el detalle del viaje',
+    (tipo) => {
+      const data = JSON.stringify({
+        tipo,
+        resource_type: 'viaje',
+        resource_id: 9,
+        action_url: 'shipgo://viaje/9',
+      });
+      expect(notificacionHref({ data })).toBe('/viajes/9');
+      expect(notificacionHref({ data: '{"action_url":"shipgo://viaje/9"}' })).toBe('/viajes/9');
+    },
+  );
+});
+
 describe('parseNotificacionData', () => {
   it('parsea el string JSON de `data`', () => {
     const notif = { data: '{"resource_type":"viaje","resource_id":12}' };
