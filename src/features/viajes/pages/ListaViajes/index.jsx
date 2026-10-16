@@ -65,7 +65,7 @@ const ListaViajes = () => {
   });
 
   // `DELETE /api/viaje/{id}` sólo admite creado / planificado /
-  // en_proceso_de_carga (409 fuera de eso, SHG-BE-075). Igual se separan acá,
+  // en_proceso_de_carga / listo_para_viaje (409 fuera de eso, SHG-BE-075). Igual se separan acá,
   // ANTES de confirmar (SHG-FE-106), para que el diálogo diga qué no se va a
   // eliminar en vez de prometer N y fallar después. Se filtra por
   // `ESTADOS_CANCELABLES` (misma matriz que `puedeCancelar` en

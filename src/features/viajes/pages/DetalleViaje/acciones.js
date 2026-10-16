@@ -21,7 +21,7 @@ import { VIAJE_ESTADOS_EDITABLES } from '../../constants';
 // pinte la misma advertencia de "atrasado" que antes calculaba con una lista
 // local propia y desalineada de ésta — única fuente de verdad para evitar que
 // vuelvan a divergir.
-export const ESTADOS_CANCELABLES = ['creado', 'planificado', 'en_proceso_de_carga'];
+export const ESTADOS_CANCELABLES = ['creado', 'planificado', 'en_proceso_de_carga', 'listo_para_viaje'];
 
 export const puedeEditar = (user, estado) =>
   isAdminOrSuper(user) && VIAJE_ESTADOS_EDITABLES.includes(estado);

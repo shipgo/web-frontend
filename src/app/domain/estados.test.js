@@ -17,6 +17,7 @@ describe("mapas de estado canónicos", () => {
   it("usan el valor snake_case del backend como clave", () => {
     expect(Object.keys(ESTADO_ENVIO)).toContain("en_sucursal");
     expect(Object.keys(ESTADO_VIAJE)).toContain("en_proceso_de_carga");
+    expect(ESTADO_VIAJE.listo_para_viaje).toEqual({ label: "Listo para salir", color: "indigo" });
     expect(Object.keys(ESTADO_RECORRIDO)).toContain("finalizado_con_problemas");
     expect(Object.keys(ESTADO_VEHICULO)).toContain("fuera_de_servicio");
   });

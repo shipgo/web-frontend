@@ -76,7 +76,7 @@ export const viajeApi = {
 
   /**
    * `PUT /api/viaje/{id}/cancelar` — estado → `cancelado` + rollback (SU/AD). SHG-BE-009.
-   * `409` si el viaje no está en un estado cancelable (`creado`/`planificado`/`en_proceso_de_carga`).
+   * `409` si el viaje no está en un estado cancelable (`creado`/`planificado`/`en_proceso_de_carga`/`listo_para_viaje`).
    * @param {number|string} id
    * @param {{ motivo?: string }} [body]  `CancelarViajeReqDTO` — body opcional.
    */

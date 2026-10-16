@@ -21,6 +21,7 @@ export const ESTADO_VIAJE = {
   creado: { label: 'Creado', color: 'gray' },
   planificado: { label: 'Planificado', color: 'blue' },
   en_proceso_de_carga: { label: 'En carga', color: 'cyan' },
+  listo_para_viaje: { label: 'Listo para salir', color: 'indigo' },
   en_camino: { label: 'En camino', color: 'orange' },
   finalizado: { label: 'Finalizado', color: 'green' },
   cancelado: { label: 'Cancelado', color: 'red' },
@@ -178,6 +179,6 @@ export const esEstadoTerminal = (entidad, valor) =>
  * `con_problemas` no es terminal (`ESTADOS_TERMINALES.viaje`) — el viaje sigue
  * despachado, sólo que con un incidente reportado — así que también es
  * "trackeable" aunque no tenga sentido "monitorear" un viaje que todavía no
- * salió (`creado`/`planificado`/`en_proceso_de_carga`) ni uno ya cerrado.
+ * salió (`creado`/`planificado`/`en_proceso_de_carga`/`listo_para_viaje`) ni uno ya cerrado.
  */
 export const ESTADOS_VIAJE_CON_TRACKING = ['en_camino', 'con_problemas'];
