@@ -238,6 +238,17 @@ describe("ListaViajes", () => {
       expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
     });
 
+    it('listo_para_viaje: se puede cancelar pero no editar (igual que en_proceso_de_carga)', async () => {
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [{ ...VIAJE, estado: "listo_para_viaje" }], totalElements: 1, totalPages: 1 });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+
+      expect(await encontrarMenuItem("Cancelar viaje")).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
+    });
+
     it('"Cancelar viaje" pide confirmación, llama a la API real y refresca el listado', async () => {
       const user = userEvent.setup();
       viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });

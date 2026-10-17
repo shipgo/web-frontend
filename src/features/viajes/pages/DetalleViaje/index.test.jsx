@@ -449,6 +449,18 @@ describe('DetalleViaje', () => {
       expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
     });
 
+    it('listo_para_viaje: muestra el badge y "Cancelar viaje", sin "Editar"', async () => {
+      viajeApi.getById.mockResolvedValue({ ...EXISTING_VIAJE, estado: 'listo_para_viaje' });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      expect(await screen.findByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+      expect(screen.getAllByText('Listo para salir').length).toBeGreaterThan(0);
+      expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    });
+
     it('no muestra el botón "Editar" para viajes con_problemas', async () => {
       const VIAJE_CON_PROBLEMAS = { ...EXISTING_VIAJE, estado: 'con_problemas' };
       viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
