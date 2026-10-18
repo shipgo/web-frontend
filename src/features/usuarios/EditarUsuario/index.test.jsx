@@ -117,6 +117,20 @@ describe("EditarUsuario (SHG-FE-121)", () => {
     ).toBeInTheDocument();
   });
 
+  it("un 409 por cambio de sucursal de un chofer con viajes activos muestra el mensaje del backend (SHG-FE-132)", async () => {
+    const user = userEvent.setup();
+    const mensaje = "El chofer tiene viajes activos (#1, #2): terminalos o reasignalos antes de cambiarlo de sucursal.";
+    usuarioApi.getById.mockResolvedValue(buildUsuarioDto());
+    usuarioApi.update.mockRejectedValue({
+      response: { status: 409, data: { statusCode: 409, message: mensaje } },
+    });
+
+    renderEditar(<EditarUsuario />, 1);
+    await user.click(await screen.findByRole("button", { name: /guardar cambios/i }));
+
+    expect(await screen.findByText(mensaje)).toBeInTheDocument();
+  });
+
   it("entrando por URL a otro ADMIN, un ADMIN no ve el formulario (se redirige con aviso)", async () => {
     usuarioApi.getById.mockResolvedValue(buildUsuarioDto({ id: 9, username: "otro" }));
 

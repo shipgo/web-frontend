@@ -13,6 +13,8 @@ import { IconSearch } from "@tabler/icons-react";
 import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
 
+import { useAuth } from "@contexts/auth";
+
 import ItemChofer from "./ItemChofer";
 import { useFormContext } from "../contexts/EnviosFormContext";
 import { useChoferesDisponibles } from "../hooks/useChoferesDisponibles";
@@ -41,7 +43,13 @@ const ListadoChoferes = () => {
   const { desde, hasta } = useDisponibilidadParams();
   const fechasSeleccionadas = Boolean(desde && hasta);
 
-  const choferesQuery = useChoferesDisponibles({ desde, hasta });
+  // `POST /api/viaje` crea el viaje en la sucursal del propio usuario (también
+  // para SUPERUSER, ver `SeccionDetalles`), y el backend rechaza con 409 un
+  // chofer de otra sucursal (SHG-BE-113): se listan sólo los de esa sucursal.
+  const { user } = useAuth();
+  const sucursalId = user?.sucursal?.id;
+
+  const choferesQuery = useChoferesDisponibles({ desde, hasta, sucursalId });
   const { data = [], isFetching, isError, refetch } = choferesQuery;
 
   // Igual que con el vehículo: si cambian las fechas y alguno de los

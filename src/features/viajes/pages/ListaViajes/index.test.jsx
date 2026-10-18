@@ -238,6 +238,22 @@ describe("ListaViajes", () => {
       expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
     });
 
+    it('con_problemas: se puede cancelar desde la fila (PUT /cancelar) pero no editar (SHG-FE-132)', async () => {
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [{ ...VIAJE, estado: "con_problemas" }], totalElements: 1, totalPages: 1 });
+      viajeApi.cancelar.mockResolvedValue({ ...VIAJE, estado: "cancelado" });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
+      await user.click(await encontrarMenuItem("Cancelar viaje"));
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
+
+      await waitFor(() => expect(viajeApi.cancelar).toHaveBeenCalledWith(42, { motivo: undefined }));
+    });
+
     it('listo_para_viaje: se puede cancelar pero no editar (igual que en_proceso_de_carga)', async () => {
       const user = userEvent.setup();
       viajeApi.get.mockResolvedValue({ content: [{ ...VIAJE, estado: "listo_para_viaje" }], totalElements: 1, totalPages: 1 });
@@ -375,11 +391,9 @@ describe("ListaViajes", () => {
     });
   });
 
-  describe("eliminar seleccionados respeta ESTADOS_CANCELABLES (SHG-FE-095, review)", () => {
-    // `DELETE /api/viaje/{id}` no valida estado del lado del backend (a
-    // diferencia de `PUT /cancelar`, que sí devuelve 409 fuera de
-    // `ESTADOS_CANCELABLES`) — si el front no filtrara antes de llamar a
-    // `deleteFn`, un viaje `en_camino`/`finalizado` se borraría igual con 200.
+  describe("eliminar seleccionados respeta ESTADOS_ELIMINABLES (SHG-FE-095, review)", () => {
+    // `DELETE /api/viaje/{id}` devuelve 409 fuera de `ESTADOS_ELIMINABLES`; el
+    // front filtra antes de llamar a `deleteFn` para no ofrecer lo que va a fallar.
     const VIAJE_NO_CANCELABLE = { ...VIAJE, id: 43, estado: "en_camino" };
 
     it("una selección mixta sólo llama a delete con los viajes cancelables y reporta el resto sin pegarle al backend", async () => {
@@ -419,6 +433,23 @@ describe("ListaViajes", () => {
       // Refresca y limpia la selección igual que cualquier otro resultado.
       await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(2));
       expect(screen.queryByText(/viajes seleccionados/)).not.toBeInTheDocument();
+    });
+
+    it("un viaje con_problemas no se ofrece para eliminar en masa (el backend da 409, SHG-FE-132)", async () => {
+      const CON_PROBLEMAS = { ...VIAJE, id: 44, estado: "con_problemas" };
+      viajeApi.get.mockResolvedValue({ content: [CON_PROBLEMAS], totalElements: 1, totalPages: 1 });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaViajes />);
+
+      await user.click(await screen.findByLabelText("Seleccionar viaje 44"));
+      await user.click(screen.getByRole("button", { name: "Acciones" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText(/viaje #44: no se puede eliminar en su estado actual/)).toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
+      expect(viajeApi.delete).not.toHaveBeenCalled();
     });
 
     it("si todos los seleccionados son no cancelables, avisa en el diálogo (sin botón de eliminar) y no llama a delete", async () => {

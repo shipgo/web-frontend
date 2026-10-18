@@ -9,11 +9,11 @@ import { RowActionsMenu } from '@components';
 import { useAuthStore } from '@stores/auth.store';
 
 import { VIAJE_ESTADOS_EDITABLES } from '../../../constants';
-import { ESTADOS_CANCELABLES, puedeCancelar } from '../../DetalleViaje/acciones';
+import { ESTADOS_ELIMINABLES, puedeCancelar } from '../../DetalleViaje/acciones';
 import { useViajeAcciones } from '../../DetalleViaje/hooks/useViajeAcciones';
 
 const showWarning = (item, fecha) =>
-  ESTADOS_CANCELABLES.includes(normalizarEstado(item.estado)) &&
+  ESTADOS_ELIMINABLES.includes(normalizarEstado(item.estado)) &&
   !!fecha &&
   dayjs(fecha).isBefore(dayjs());
 

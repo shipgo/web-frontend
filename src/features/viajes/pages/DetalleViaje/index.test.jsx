@@ -317,6 +317,25 @@ describe('DetalleViaje', () => {
       expect(await screen.findByRole('button', { name: 'Reanudar' })).toBeInTheDocument();
     });
 
+    it.each(['ROLE_ADMIN', 'ROLE_SUPERUSER'])(
+      '%s puede cancelar un viaje con_problemas (PUT /cancelar)',
+      async (rol) => {
+        const user = userEvent.setup();
+        setRol(rol);
+        viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+        viajeApi.cancelar.mockResolvedValue({ ...VIAJE_CON_PROBLEMAS, estado: 'cancelado' });
+        render();
+
+        await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+        const dialog = await screen.findByRole('dialog');
+        await user.click(within(dialog).getByRole('button', { name: 'Cancelar viaje' }));
+
+        await waitFor(() => {
+          expect(viajeApi.cancelar).toHaveBeenCalledWith('42', { motivo: undefined });
+        });
+      },
+    );
+
     it('un CHOFER no ve "Reanudar" en con_problemas', async () => {
       setRol('ROLE_CHOFER');
       viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { notificacionHref, parseNotificacionData, parseActionUrl } from './constants';
 
 describe('avisos de viaje (SHG-FE-124)', () => {
-  it.each(['VIAJE_LISTO_PARA_VIAJE', 'VIAJE_EN_CAMINO', 'VIAJE_FINALIZADO'])(
+  it.each(['VIAJE_LISTO_PARA_VIAJE', 'VIAJE_EN_CAMINO', 'VIAJE_FINALIZADO', 'VIAJE_REANUDADO'])(
     '%s abre el detalle del viaje',
     (tipo) => {
       const data = JSON.stringify({
@@ -16,6 +16,16 @@ describe('avisos de viaje (SHG-FE-124)', () => {
       expect(notificacionHref({ data: '{"action_url":"shipgo://viaje/9"}' })).toBe('/viajes/9');
     },
   );
+
+  it('VIAJE_REANUDADO abre /viajes/{id} sólo por resource_type/resource_id o sólo por action_url (SHG-FE-132)', () => {
+    const base = { tipo: 'VIAJE_REANUDADO' };
+    expect(
+      notificacionHref({ data: JSON.stringify({ ...base, resource_type: 'viaje', resource_id: 15 }) }),
+    ).toBe('/viajes/15');
+    expect(
+      notificacionHref({ data: JSON.stringify({ ...base, action_url: 'shipgo://viaje/16' }) }),
+    ).toBe('/viajes/16');
+  });
 });
 
 describe('parseNotificacionData', () => {
