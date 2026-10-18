@@ -10,6 +10,8 @@
  * Ver `planning/NOTIFICATIONS.md`.
  */
 
+import { PORTAL_HOME_PATH } from '@domain/roles';
+
 /** Query key única de la lista de notificaciones del usuario logueado. */
 export const NOTIFICACIONES_QUERY_KEY = ['notificaciones'];
 
@@ -62,8 +64,18 @@ export const parseActionUrl = (actionUrl) => {
  * Ruta del panel a la que navegar al hacer click en una notificación, o `null`
  * si no hay recurso asociado / el tipo no se abre desde la web.
  */
-export const notificacionHref = (notificacion) => {
+export const notificacionHref = (notificacion, { portal = false } = {}) => {
   const data = parseNotificacionData(notificacion);
+
+  // Portal CUSTOMER (`SHG-BE-106`): los avisos son `tipo="envio"` y traen
+  // `data.codigoSeguimiento`; el portal navega por código, no por id. Los links
+  // del admin (`/envios/:id`) no existen para el cliente. `~` = ruta absoluta
+  // (el header del portal vive dentro del nest `/portal`).
+  if (portal) {
+    const codigo = data.codigoSeguimiento;
+    if (codigo == null || String(codigo).trim() === '') return null;
+    return `~${PORTAL_HOME_PATH}/${encodeURIComponent(String(codigo).trim())}`;
+  }
 
   let resourceType = data.resource_type;
   let resourceId = data.resource_id;

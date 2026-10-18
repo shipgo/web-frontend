@@ -101,10 +101,34 @@ describe('NotificacionesBell — gate de rol', () => {
 
   it('no consulta la API si el rol no está habilitado', async () => {
     mockUseAuth.mockReturnValue({
-      user: { authorities: [{ name: 'ROLE_CUSTOMER' }] },
+      user: { authorities: [{ name: 'ROLE_CHOFER' }] },
     });
     renderBell();
 
     await waitFor(() => expect(mockGetMias).not.toHaveBeenCalled());
+  });
+
+  it('renderiza la campana y consulta la API para un CUSTOMER (portal)', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { authorities: [{ name: 'ROLE_CUSTOMER' }] },
+    });
+    mockGetMias.mockResolvedValue([
+      { id: 1, title: 'Tu envío está en camino - ShipGO', visto: false, data: '{}' },
+    ]);
+    renderBell();
+
+    expect(await screen.findByLabelText('Notificaciones, 1 sin leer')).toBeInTheDocument();
+    expect(mockGetMias).toHaveBeenCalled();
+  });
+
+  it('el CUSTOMER no registra push (OneSignal no se inicializa)', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { authorities: [{ name: 'ROLE_CUSTOMER' }] },
+    });
+    renderBell();
+    await screen.findByLabelText('Notificaciones');
+
+    const { default: OneSignal } = await import('react-onesignal');
+    expect(OneSignal.init).not.toHaveBeenCalled();
   });
 });

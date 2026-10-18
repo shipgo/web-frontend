@@ -44,7 +44,7 @@ const NOTIFS = [
   },
 ];
 
-const renderMenu = () => {
+const renderMenu = ({ portal = false, base = '' } = {}) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -54,8 +54,8 @@ const renderMenu = () => {
     <QueryClientProvider client={queryClient}>
       <MantineProvider>
         <ModalsProvider>
-          <Router hook={hook}>
-            <NotificacionesMenu />
+          <Router hook={hook} base={base}>
+            <NotificacionesMenu portal={portal} />
           </Router>
           <Notifications />
         </ModalsProvider>
@@ -118,6 +118,32 @@ describe('NotificacionesMenu', () => {
 
     await waitFor(() => expect(history.at(-1)).toBe('/viajes/7'));
     expect(mockDelete).toHaveBeenCalledWith(1);
+  });
+
+  it('portal: el aviso de un envío lleva a /portal/envios/:codigo y muestra la fecha DD/MM/YYYY 24 h', async () => {
+    mockGetMias.mockResolvedValue([
+      {
+        id: 11,
+        title: 'Tu envío está en camino - ShipGO',
+        body: 'Va en camino.',
+        visto: false,
+        fecha: '2026-10-17T15:30:00',
+        data: JSON.stringify({
+          evento: 'ENVIO_EN_CAMINO',
+          resource_type: 'envio',
+          resource_id: 5,
+          codigoSeguimiento: 'ABC-123',
+        }),
+      },
+    ]);
+    const { history } = renderMenu({ portal: true, base: '/portal' });
+
+    await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+    expect(await screen.findByText('17/10/2026 15:30')).toBeInTheDocument();
+    await userEvent.click(await screen.findByText('Tu envío está en camino - ShipGO'));
+
+    await waitFor(() => expect(history.at(-1)).toBe('/portal/envios/ABC-123'));
+    expect(mockDelete).toHaveBeenCalledWith(11);
   });
 
   it('muestra el estado vacío sin notificaciones', async () => {
