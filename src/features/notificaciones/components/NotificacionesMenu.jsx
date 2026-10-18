@@ -23,8 +23,8 @@ import { useNotificaciones } from '../hooks/useNotificaciones';
 
 const MAX_BADGE = 9;
 
-const NotificacionFila = ({ notificacion, onNavigate, onMarcarLeida }) => {
-  const href = notificacionHref(notificacion);
+const NotificacionFila = ({ notificacion, portal, onNavigate, onMarcarLeida }) => {
+  const href = notificacionHref(notificacion, { portal });
   const noLeida = !notificacion?.visto;
 
   return (
@@ -61,11 +61,18 @@ const NotificacionFila = ({ notificacion, onNavigate, onMarcarLeida }) => {
             {notificacion.body}
           </Text>
         ) : null}
-        <Tooltip label={formatFechaHora(notificacion?.fecha)} withArrow position="bottom">
-          <Text size="10px" c="dimmed" mt={2} style={{ cursor: 'help' }}>
-            {formatDesdeAhora(notificacion?.fecha)}
+        {portal ? (
+          // Sin hover en el celular: la fecha exacta (DD/MM/YYYY 24 h) va visible.
+          <Text size="xs" c="dimmed" mt={2}>
+            {formatFechaHora(notificacion?.fecha)}
           </Text>
-        </Tooltip>
+        ) : (
+          <Tooltip label={formatFechaHora(notificacion?.fecha)} withArrow position="bottom">
+            <Text size="10px" c="dimmed" mt={2} style={{ cursor: 'help' }}>
+              {formatDesdeAhora(notificacion?.fecha)}
+            </Text>
+          </Tooltip>
+        )}
         {noLeida ? <VisuallyHidden>Sin leer</VisuallyHidden> : null}
       </UnstyledButton>
 
@@ -94,9 +101,13 @@ const NotificacionFila = ({ notificacion, onNavigate, onMarcarLeida }) => {
  * últimas notificaciones del usuario, acción "marcar leída" y navegación al
  * recurso asociado (viaje / envío / usuario según `data.resource_type`).
  *
- * Se asume ya gateada por rol (`NotificacionesBell`).
+ * Se asume ya gateada por rol (`NotificacionesBell`). Con `portal` (CUSTOMER) los
+ * avisos van a `/portal/envios/:codigo` y la fecha se muestra completa.
+ *
+ * @param {Object} props
+ * @param {boolean} [props.portal]
  */
-const NotificacionesMenu = () => {
+const NotificacionesMenu = ({ portal = false }) => {
   const [, navigate] = useLocation();
   const [opened, setOpened] = useState(false);
   const { notificaciones, unreadCount, isLoading, isError, marcarLeida, vaciarTodas } =
@@ -133,7 +144,7 @@ const NotificacionesMenu = () => {
       opened={opened}
       onChange={setOpened}
       position="bottom-end"
-      width={360}
+      width="min(360px, calc(100vw - 16px))"
       shadow="md"
       withArrow
     >
@@ -200,6 +211,7 @@ const NotificacionesMenu = () => {
                 <NotificacionFila
                   key={notificacion.id}
                   notificacion={notificacion}
+                  portal={portal}
                   onNavigate={handleNavigate}
                   onMarcarLeida={(id) => marcarLeida.mutate(id)}
                 />

@@ -161,3 +161,27 @@ describe('parseActionUrl', () => {
     expect(parseActionUrl('')).toBeNull();
   });
 });
+
+describe('avisos del cliente en el portal (SHG-FE-120)', () => {
+  it.each([
+    'ENVIO_CREADO',
+    'ENVIO_EN_CAMINO',
+    'ENVIO_EN_SUCURSAL',
+    'ENVIO_ENTREGADO',
+    'ENVIO_RECHAZADO',
+  ])('%s navega por codigoSeguimiento al detalle del portal', (evento) => {
+    const data = JSON.stringify({
+      evento,
+      resource_type: 'envio',
+      resource_id: 5,
+      codigoSeguimiento: 'ABC 123',
+    });
+    expect(notificacionHref({ data }, { portal: true })).toBe('~/portal/envios/ABC%20123');
+  });
+
+  it('sin codigoSeguimiento no hay link (nunca el link del admin)', () => {
+    const data = JSON.stringify({ resource_type: 'envio', resource_id: 5 });
+    expect(notificacionHref({ data }, { portal: true })).toBeNull();
+    expect(notificacionHref({ data })).toBe('/envios/5');
+  });
+});

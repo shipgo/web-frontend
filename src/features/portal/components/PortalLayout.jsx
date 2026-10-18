@@ -7,6 +7,7 @@ import {
   IconUserCircle,
 } from '@tabler/icons-react';
 
+import { NotificacionesBell } from '@features/notificaciones';
 import PublicLayout from '../../../app/layout/PublicLayout';
 import { useAuth } from '@contexts/auth';
 import { useAuthStore } from '@stores/auth.store';
@@ -32,47 +33,50 @@ const PortalLayout = ({ children }) => {
   const nombre = user?.getFullName?.().trim() || user?.email || 'Mi cuenta';
 
   const headerRight = (
-    <Menu shadow="md" width={220} position="bottom-end">
-      <Menu.Target>
-        <UnstyledButton aria-label="Menú de la cuenta">
-          <Group gap="xs" wrap="nowrap">
-            <Avatar radius="xl" size="sm" color="blue">
-              {user?.getInitials?.() || null}
-            </Avatar>
-            <Text size="sm" fw={500} visibleFrom="xs" lineClamp={1}>
-              {nombre}
-            </Text>
-            <IconChevronDown size={16} />
-          </Group>
-        </UnstyledButton>
-      </Menu.Target>
+    <Group gap="xs" wrap="nowrap">
+      <NotificacionesBell />
+      <Menu shadow="md" width={220} position="bottom-end">
+        <Menu.Target>
+          <UnstyledButton aria-label="Menú de la cuenta">
+            <Group gap="xs" wrap="nowrap">
+              <Avatar radius="xl" size="sm" color="blue">
+                {user?.getInitials?.() || null}
+              </Avatar>
+              <Text size="sm" fw={500} visibleFrom="xs" lineClamp={1}>
+                {nombre}
+              </Text>
+              <IconChevronDown size={16} />
+            </Group>
+          </UnstyledButton>
+        </Menu.Target>
 
-      <Menu.Dropdown>
-        <Menu.Label>{user?.email}</Menu.Label>
-        <Menu.Item
-          component={Link}
-          href={PORTAL_HOME_HREF}
-          leftSection={<IconPackage size={16} />}
-        >
-          Mis envíos
-        </Menu.Item>
-        <Menu.Item
-          component={Link}
-          href={PORTAL_PERFIL_HREF}
-          leftSection={<IconUserCircle size={16} />}
-        >
-          Mi perfil
-        </Menu.Item>
-        <Menu.Divider />
-        <Menu.Item
-          color="red"
-          leftSection={<IconLogout size={16} />}
-          onClick={() => logout()}
-        >
-          Cerrar sesión
-        </Menu.Item>
-      </Menu.Dropdown>
-    </Menu>
+        <Menu.Dropdown>
+          <Menu.Label>{user?.email}</Menu.Label>
+          <Menu.Item
+            component={Link}
+            href={PORTAL_HOME_HREF}
+            leftSection={<IconPackage size={16} />}
+          >
+            Mis envíos
+          </Menu.Item>
+          <Menu.Item
+            component={Link}
+            href={PORTAL_PERFIL_HREF}
+            leftSection={<IconUserCircle size={16} />}
+          >
+            Mi perfil
+          </Menu.Item>
+          <Menu.Divider />
+          <Menu.Item
+            color="red"
+            leftSection={<IconLogout size={16} />}
+            onClick={() => logout()}
+          >
+            Cerrar sesión
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    </Group>
   );
 
   return (
