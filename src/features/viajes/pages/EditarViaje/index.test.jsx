@@ -129,6 +129,7 @@ const ENVIO_300_PENDIENTE = {
 const EXISTING_VIAJE = {
   id: 42,
   estado: "planificado",
+  sucursal: { id: 2, nombre: "Sucursal Centro" },
   fechaHoraInicio: null,
   fechaHoraFin: null,
   fechaHoraInicioPlanificada: "2026-08-01T09:00:00",
@@ -249,7 +250,7 @@ describe("EditarViaje", () => {
       expect(usuarioApi.getChoferesDisponibles).toHaveBeenCalledWith({
         desde: "2026-08-01T09:00:00",
         hasta: "2026-08-01T17:00:00",
-        sucursalId: undefined,
+        sucursalId: 2,
         viajeIdExcluido: 42,
       });
     });
@@ -417,6 +418,37 @@ describe("EditarViaje", () => {
         previas.choferes,
       );
     });
+  });
+
+  it("pide los choferes disponibles de la sucursal del viaje (SHG-FE-132)", async () => {
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    await waitFor(() =>
+      expect(usuarioApi.getChoferesDisponibles).toHaveBeenCalledWith(
+        expect.objectContaining({ sucursalId: 2, viajeIdExcluido: 42 }),
+      ),
+    );
+  });
+
+  it("un 409 por chofer de otra sucursal muestra el mensaje del backend (SHG-FE-132)", async () => {
+    const user = userEvent.setup();
+    const mensaje = "El chofer Juan Perez es de otra sucursal: sólo se puede asignar a viajes de su sucursal.";
+    viajeApi.update.mockRejectedValue({
+      response: { status: 409, data: { statusCode: 409, message: mensaje } },
+    });
+    renderWithProviders(
+      <Route path="/viajes/:id/editar" component={EditarViaje} />,
+      { route: "/viajes/42/editar" }
+    );
+
+    const combobox = await screen.findByRole("combobox", { name: /^vehículo/i });
+    await waitFor(() => expect(combobox).toHaveValue("AB123CD - Hilux"));
+    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+    expect(await screen.findByText(mensaje)).toBeInTheDocument();
   });
 
   it("si falla enMantenimiento, el selector sigue con los disponibles, se puede elegir uno y no hay error", async () => {

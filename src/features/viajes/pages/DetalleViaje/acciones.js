@@ -17,11 +17,15 @@ import { VIAJE_ESTADOS_EDITABLES } from '../../constants';
  * - `editar`    -> navega a `EditarViaje` (SU/AD), ya implementado; no es una
  *   transición de estado por lo que no está bloqueado por SHG-FE-012.
  */
-// Exportado (además de `puedeCancelar`) para que `ListaViajesTabla` (SHG-FE-096)
+// `ESTADOS_ELIMINABLES` se exporta (además de `puedeCancelar`) para que `ListaViajesTabla` (SHG-FE-096)
 // pinte la misma advertencia de "atrasado" que antes calculaba con una lista
 // local propia y desalineada de ésta — única fuente de verdad para evitar que
 // vuelvan a divergir.
-export const ESTADOS_CANCELABLES = ['creado', 'planificado', 'en_proceso_de_carga', 'listo_para_viaje'];
+// Eliminables (`DELETE /api/viaje/{id}`): el backend rechaza con 409 un `con_problemas`.
+export const ESTADOS_ELIMINABLES = ['creado', 'planificado', 'en_proceso_de_carga', 'listo_para_viaje'];
+
+// Cancelables (`PUT /api/viaje/{id}/cancelar`): suman `con_problemas` desde SHG-BE-113.
+export const ESTADOS_CANCELABLES = [...ESTADOS_ELIMINABLES, 'con_problemas'];
 
 export const puedeEditar = (user, estado) =>
   isAdminOrSuper(user) && VIAJE_ESTADOS_EDITABLES.includes(estado);

@@ -705,6 +705,8 @@ describe("CrearViaje", () => {
     it("tras un 409 vuelve a pedir vehículos y choferes disponibles y quita lo que ya no figura", async () => {
       const previas = await llenarYGuardar(409);
 
+      // El aviso muestra el mensaje del backend (p. ej. chofer de otra sucursal, SHG-BE-113).
+      expect(await screen.findByText("Error del backend.")).toBeInTheDocument();
       await waitFor(() => {
         expect(mockGetDisponibles.mock.calls.length).toBeGreaterThan(
           previas.vehiculos,

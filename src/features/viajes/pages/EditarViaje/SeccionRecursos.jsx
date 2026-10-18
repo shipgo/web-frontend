@@ -72,6 +72,7 @@ const SeccionRecursos = ({
   choferesActuales,
   inicioOriginal,
   finOriginal,
+  sucursalId,
   onValidandoChange,
 }) => {
   const { getInputProps, values, setFieldValue } = useFormContext();
@@ -104,6 +105,7 @@ const SeccionRecursos = ({
   const choferesQuery = useChoferesDisponibles({
     desde,
     hasta,
+    sucursalId,
     viajeIdExcluido,
   });
 

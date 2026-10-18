@@ -233,6 +233,7 @@ const EditarViaje = () => {
                   choferesActuales={getChoferesDeViaje(viajeOriginal)}
                   inicioOriginal={viajeOriginal.fechaHoraInicioPlanificada}
                   finOriginal={viajeOriginal.fechaHoraFinPlanificada}
+                  sucursalId={viajeOriginal.sucursal?.id}
                   onValidandoChange={setValidandoRecursos}
                 />
                 <SeccionResumen />

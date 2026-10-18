@@ -87,6 +87,27 @@ describe('useTrackingStream', () => {
     expect(result.current.locationsByViajeId[1]).toBeUndefined();
   });
 
+  it('viaje-finalizado con estado "cancelado" saca el viaje del mapa igual que al finalizar (SHG-BE-113)', () => {
+    const { result } = renderHook(() => useTrackingStream(), { wrapper });
+    const emitter = MockEventSource.instances[0];
+
+    act(() => {
+      emitter.emit('location-update', { viajeId: 7, latitud: -34, longitud: -58 });
+    });
+    expect(result.current.locationsByViajeId[7]).toBeDefined();
+
+    act(() => {
+      emitter.emit('viaje-finalizado', {
+        viajeId: 7,
+        estado: 'cancelado',
+        timestamp: '2026-10-17T10:00:00',
+        message: 'Viaje cancelado',
+      });
+    });
+    expect(result.current.viajesFinalizados.has(7)).toBe(true);
+    expect(result.current.locationsByViajeId[7]).toBeUndefined();
+  });
+
   it('reconecta con backoff cuando el EventSource corta, y refetchea al reabrir', () => {
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const { result } = renderHook(() => useTrackingStream(), { wrapper });
