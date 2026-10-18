@@ -343,7 +343,7 @@ describe("ListaViajes", () => {
       const monitorear = await encontrarMenuItem("Monitorear");
 
       // En en_camino ya no es cancelable ni editable: no debería quedar
-      // ninguna acción sin sentido (ver ESTADOS_CANCELABLES/VIAJE_ESTADOS_EDITABLES).
+      // ninguna acción sin sentido (ver ESTADOS_ELIMINABLES/VIAJE_ESTADOS_EDITABLES).
       expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Cancelar viaje" })).not.toBeInTheDocument();
 
@@ -392,10 +392,8 @@ describe("ListaViajes", () => {
   });
 
   describe("eliminar seleccionados respeta ESTADOS_ELIMINABLES (SHG-FE-095, review)", () => {
-    // `DELETE /api/viaje/{id}` no valida estado del lado del backend (a
-    // diferencia de `PUT /cancelar`, que sí devuelve 409 fuera de
-    // `ESTADOS_CANCELABLES`) — si el front no filtrara antes de llamar a
-    // `deleteFn`, un viaje `en_camino`/`finalizado` se borraría igual con 200.
+    // `DELETE /api/viaje/{id}` devuelve 409 fuera de `ESTADOS_ELIMINABLES`; el
+    // front filtra antes de llamar a `deleteFn` para no ofrecer lo que va a fallar.
     const VIAJE_NO_CANCELABLE = { ...VIAJE, id: 43, estado: "en_camino" };
 
     it("una selección mixta sólo llama a delete con los viajes cancelables y reporta el resto sin pegarle al backend", async () => {

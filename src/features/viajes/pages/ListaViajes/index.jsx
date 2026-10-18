@@ -64,28 +64,24 @@ const ListaViajes = () => {
     },
   });
 
-  // `DELETE /api/viaje/{id}` sólo admite creado / planificado /
-  // en_proceso_de_carga / listo_para_viaje (409 fuera de eso, SHG-BE-075). Igual se separan acá,
-  // ANTES de confirmar (SHG-FE-106), para que el diálogo diga qué no se va a
-  // eliminar en vez de prometer N y fallar después. Se filtra por
-  // `ESTADOS_ELIMINABLES` (`DetalleViaje/acciones.js`; ya no es la matriz de
-  // `puedeCancelar`: `con_problemas` se cancela pero no se elimina, SHG-BE-113) ANTES de llamar a `deleteFn`, así el bulk
-  // delete nunca le pega al backend con un viaje no cancelable. El export sí
-  // puede incluir cualquier estado (no se toca `exportarSeleccionados`).
+  // `DELETE /api/viaje/{id}` sólo admite `ESTADOS_ELIMINABLES` (409 fuera de eso,
+  // SHG-BE-113: `con_problemas` se cancela pero no se elimina). Se separan acá, antes
+  // de confirmar (SHG-FE-106), para que el diálogo diga qué no se va a eliminar.
+  // El export sí puede incluir cualquier estado.
   const onBulkDeleteViajes = () => {
     const seleccionados = (data.results ?? []).filter((item) => selectedIds.has(item.id));
-    const cancelables = [];
+    const eliminables = [];
     const excluidos = [];
 
     seleccionados.forEach((item) => {
       if (ESTADOS_ELIMINABLES.includes(normalizarEstado(item.estado))) {
-        cancelables.push(item);
+        eliminables.push(item);
       } else {
         excluidos.push({ item, reason: 'no se puede eliminar en su estado actual' });
       }
     });
 
-    confirmBulkDelete(cancelables, excluidos);
+    confirmBulkDelete(eliminables, excluidos);
   };
 
   const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
