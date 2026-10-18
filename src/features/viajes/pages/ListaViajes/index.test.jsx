@@ -343,7 +343,7 @@ describe("ListaViajes", () => {
       const monitorear = await encontrarMenuItem("Monitorear");
 
       // En en_camino ya no es cancelable ni editable: no debería quedar
-      // ninguna acción sin sentido (ver ESTADOS_ELIMINABLES/VIAJE_ESTADOS_EDITABLES).
+      // ninguna acción sin sentido (ver ESTADOS_CANCELABLES/VIAJE_ESTADOS_EDITABLES).
       expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Cancelar viaje" })).not.toBeInTheDocument();
 

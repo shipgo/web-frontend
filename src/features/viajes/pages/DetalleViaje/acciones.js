@@ -17,8 +17,8 @@ import { VIAJE_ESTADOS_EDITABLES } from '../../constants';
  * - `editar`    -> navega a `EditarViaje` (SU/AD), ya implementado; no es una
  *   transición de estado por lo que no está bloqueado por SHG-FE-012.
  */
-// Se exporta para que `ListaViajesTabla` (SHG-FE-096) use la misma lista que
-// `puedeCancelar` y no diverjan.
+// Se exporta para que `ListaViajesTabla` (SHG-FE-096) y el borrado masivo de
+// `ListaViajes` usen esta única lista y no diverjan.
 // Eliminables (`DELETE /api/viaje/{id}`): el backend rechaza con 409 un `con_problemas`.
 export const ESTADOS_ELIMINABLES = ['creado', 'planificado', 'en_proceso_de_carga', 'listo_para_viaje'];
 
