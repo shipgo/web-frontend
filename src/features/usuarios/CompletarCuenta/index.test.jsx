@@ -174,7 +174,6 @@ describe("CompletarCuenta (SHG-FE-133)", () => {
   it("si cambia el username la sesión se invalida y va a /login con aviso", async () => {
     const user = userEvent.setup();
     usuarioApi.update.mockResolvedValue({});
-    window.localStorage.setItem("shipgo.sessionHint", "staff");
     renderPage(<CompletarCuenta />);
     const username = await screen.findByLabelText(/^Usuario/);
     await completarForm(user);
@@ -187,7 +186,6 @@ describe("CompletarCuenta (SHG-FE-133)", () => {
     expect(usuarioApi.update.mock.calls[0][1].username).toBe("nico");
     await waitFor(() => expect(window.location.pathname).toBe("/login"));
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
-    expect(window.localStorage.getItem("shipgo.sessionHint")).toBeNull();
     expect(mockGetUserInfo).not.toHaveBeenCalled();
     expect(
       await screen.findByText(/volver a iniciar sesión con el nuevo/i),

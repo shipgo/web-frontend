@@ -12,7 +12,6 @@ import { usuarioApi } from "@api/usuario.api";
 import {
   HINT_CUSTOMER,
   HINT_STAFF,
-  clearSessionHint,
   readSessionHint,
   writeSessionHint,
 } from "@utils/sessionHint";
@@ -275,10 +274,10 @@ export const useAuthStore = create((set, get) => ({
   },
 
   // Limpieza local de la sesión (sin llamar al backend): usuario fuera del store
-  // y sin pista de sesión. La usa `logout` y los flujos donde el backend ya
-  // invalidó la sesión (ej. cambio de username en "Completá tu cuenta").
+  // La pista de sesión (SHG-FE-112) se conserva a propósito. La usa `logout` y
+  // los flujos donde el backend ya invalidó la sesión (ej. cambio de username en
+  // "Completá tu cuenta").
   clearSession: () => {
-    clearSessionHint();
     set({ user: null, isAuthenticated: false });
   },
 
