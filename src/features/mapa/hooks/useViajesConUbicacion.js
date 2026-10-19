@@ -49,6 +49,7 @@ export const useViajesConUbicacion = () => {
           sucursalNombre: viaje.sucursal?.nombre,
           currentLocation: ubicacion ? [ubicacion.longitud, ubicacion.latitud] : null,
           ultimaActualizacion: ubicacion?.timestamp ?? null,
+          velocidad: ubicacion?.velocidad ?? null,
         };
       }),
     [viajesActivos, locationsByViajeId, ubicacionInicialPorViajeId],

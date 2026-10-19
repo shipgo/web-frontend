@@ -19,6 +19,7 @@ import {
   IconClock,
   IconMapPin,
   IconPackage,
+  IconGauge,
   IconPhone,
   IconTruck,
   IconUser,
@@ -26,7 +27,13 @@ import {
 } from '@tabler/icons-react';
 
 import { esEstadoTerminal } from '@domain/estados';
-import { digitosWhatsapp as calcularDigitosWhatsapp, formatFechaHora, formatTelefono } from '@domain/format';
+import {
+  digitosWhatsapp as calcularDigitosWhatsapp,
+  EMPTY,
+  formatFechaHora,
+  formatTelefono,
+  formatVelocidad,
+} from '@domain/format';
 
 import { useSelectedViaje } from '../contexts/selectedViaje';
 import { useGetRoute } from '../hooks/useGetRoute';
@@ -105,7 +112,7 @@ const MapDetalles = () => {
 
   // Estado y ETA: misma derivación que la tarjeta de la lista (`SHG-FE-113`).
   // Con la ruta sin datos se muestra la llegada planificada, no "Sin datos".
-  const { estado: estadoInfo, eta, etaFuente } = getEstadoEtaViaje(
+  const { estado: estadoInfo, sinSenal, eta, etaFuente } = getEstadoEtaViaje(
     { fechaHoraFinPlanificada: viaje.fechaHoraFinPlanificada ?? seleccionado.fechaHoraFinPlanificada },
     seleccionado.ultimaActualizacion,
     { etaRuta },
@@ -192,6 +199,11 @@ const MapDetalles = () => {
           {eta
             ? `${formatFechaHora(eta)}${ETA_SUFIJO[etaFuente] ?? ''}`
             : 'Sin datos de ruta'}
+        </InfoRow>
+
+        {/* Sin señal la última ubicación es vieja: su velocidad ya no es actual. */}
+        <InfoRow icon={<IconGauge size={14} />} label="Velocidad">
+          {sinSenal ? EMPTY : formatVelocidad(seleccionado.velocidad)}
         </InfoRow>
 
         <InfoRow icon={<IconMapPin size={14} />} label="Próxima parada">

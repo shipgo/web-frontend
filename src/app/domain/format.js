@@ -18,6 +18,17 @@ const DATE_FORMAT = 'DD/MM/YYYY';
 const DATE_TIME_FORMAT = 'DD/MM/YYYY HH:mm';
 export const EMPTY = '—';
 
+/**
+ * Velocidad en km/h sin decimales: `62 km/h`. `null`, `undefined` o no
+ * numérica/negativa -> `—` (nunca "0 km/h" por falta de dato). El contrato
+ * entrega km/h (SHG-BE-103): no se convierte unidad acá.
+ */
+export const formatVelocidad = (value) => {
+  if (value == null || value === '') return EMPTY;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? `${Math.round(n)} km/h` : EMPTY;
+};
+
 /** Fecha corta: `31/12/2026` (o `—` si no es válida). */
 export const formatFecha = (value, format = DATE_FORMAT) => {
   const d = dayjs(value).locale(LOCALE_DAYJS);

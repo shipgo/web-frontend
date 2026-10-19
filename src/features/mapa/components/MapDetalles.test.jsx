@@ -111,6 +111,47 @@ describe('MapDetalles', () => {
     expect(screen.getByText('20/01/2026 15:00 (planificada)')).toBeInTheDocument();
   });
 
+  describe('velocidad (SHG-FE-119)', () => {
+    const conUbicacion = (extra) =>
+      mockUseViajesConUbicacion.mockReturnValue({
+        viajes: [
+          {
+            id: 7,
+            currentLocation: [-64.15, -31.45],
+            ultimaActualizacion: new Date().toISOString(),
+            ...extra,
+          },
+        ],
+        isLoading: false,
+      });
+
+    it('muestra la velocidad de la última ubicación en km/h sin decimales', () => {
+      conUbicacion({ velocidad: 61.6 });
+      renderWithProviders(<MapDetalles />);
+      expect(screen.getByText('62 km/h')).toBeInTheDocument();
+    });
+
+    it('muestra 0 km/h cuando el vehículo está detenido con dato real', () => {
+      conUbicacion({ velocidad: 0 });
+      renderWithProviders(<MapDetalles />);
+      expect(screen.getByText('0 km/h')).toBeInTheDocument();
+    });
+
+    it('sin velocidad no muestra un número', () => {
+      conUbicacion({ velocidad: null });
+      renderWithProviders(<MapDetalles />);
+      expect(screen.getByText('Velocidad')).toBeInTheDocument();
+      expect(screen.queryByText(/km\/h/)).not.toBeInTheDocument();
+    });
+
+    it('con ubicación vieja (sin señal) no muestra la velocidad aunque exista', () => {
+      conUbicacion({ velocidad: 80, ultimaActualizacion: '2020-01-01T00:00:00' });
+      renderWithProviders(<MapDetalles />);
+      expect(screen.getByText('Sin señal')).toBeInTheDocument();
+      expect(screen.queryByText(/km\/h/)).not.toBeInTheDocument();
+    });
+  });
+
   it('cuando todas las paradas están entregadas no calcula una ETA con la hora actual', () => {
     mockUseGetRoute.mockReturnValue({
       viaje: VIAJE,
