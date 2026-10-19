@@ -24,3 +24,11 @@ export const writeSessionHint = (hint) => {
     /* storage bloqueado: la pista es sólo una optimización */
   }
 };
+
+export const clearSessionHint = () => {
+  try {
+    window.localStorage.removeItem(KEY);
+  } catch {
+    /* storage bloqueado: la pista es sólo una optimización */
+  }
+};

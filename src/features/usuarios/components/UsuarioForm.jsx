@@ -76,6 +76,7 @@ const filterIgnoreAccents = ({ options, search }) => {
  * @param {boolean} [props.usernameEditable] - Permite editar el username aunque sea edición
  *   ("Completá tu cuenta", SHG-FE-133)
  * @param {boolean} [props.hideCancel] - Oculta el botón Cancelar
+ * @param {boolean} [props.lockRolesAndSucursal] - Roles y sucursal no editables (se mandan los actuales)
  * @param {string} [props.submitLabel] - Texto del botón de submit
  */
 const UsuarioForm = ({
@@ -87,6 +88,7 @@ const UsuarioForm = ({
   usernameEditable = false,
   hideCancel = false,
   submitLabel,
+  lockRolesAndSucursal = false,
 }) => {
   const { user } = useAuthStore();
 
@@ -260,7 +262,7 @@ const UsuarioForm = ({
   const rolesNoAsignables = isSuper
     ? []
     : rolesActuales.filter((rol) => !authorities.some((a) => a.value === rol));
-  const rolesBloqueados = isEdit && rolesNoAsignables.length > 0;
+  const rolesBloqueados = lockRolesAndSucursal || (isEdit && rolesNoAsignables.length > 0);
   const rolesData = rolesBloqueados
     ? [
         ...authorities,
@@ -440,7 +442,9 @@ const UsuarioForm = ({
                 data={rolesData}
                 disabled={rolesBloqueados}
                 description={
-                  rolesBloqueados
+                  lockRolesAndSucursal
+                    ? "No podés cambiar tus propios roles"
+                    : rolesBloqueados
                     ? "Sólo un superusuario puede cambiar este rol"
                     : undefined
                 }
@@ -459,6 +463,7 @@ const UsuarioForm = ({
                   // SHG-FE-116: el SUPERUSER debe elegir sucursal al crear y al
                   // editar (`POST`/`PUT /api/user` exigen `sucursalID`).
                   required
+                  disabled={lockRolesAndSucursal}
                   {...form.getInputProps("sucursalID")}
                 />
               ) : (

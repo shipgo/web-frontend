@@ -71,6 +71,7 @@ describe('Usuario sin datos personales (SHG-BE-154)', () => {
     expect(u.getInitials()).toBe('N');
     expect(u.getPhoneNumber()).not.toMatch(/undefined/);
     expect(u.getAddress()).not.toMatch(/undefined/);
-    expect(u.getLocation()).not.toMatch(/undefined/);
+    expect(u.getLocation()).toBe('—');
+    expect(new Usuario({ localidad: { nombre: 'Rosario' } }).getLocation()).toBe('Rosario');
   });
 });

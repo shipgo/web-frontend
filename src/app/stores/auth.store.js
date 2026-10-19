@@ -12,6 +12,7 @@ import { usuarioApi } from "@api/usuario.api";
 import {
   HINT_CUSTOMER,
   HINT_STAFF,
+  clearSessionHint,
   readSessionHint,
   writeSessionHint,
 } from "@utils/sessionHint";
@@ -72,9 +73,11 @@ export class Usuario {
   }
 
   getLocation() {
-    return `${this.localidad?.nombre || ""}, ${
-      this.localidad?.provincia?.nombre || ""
-    }`;
+    return (
+      [this.localidad?.nombre, this.localidad?.provincia?.nombre]
+        .filter(Boolean)
+        .join(", ") || EMPTY
+    );
   }
 
   getInitials() {
@@ -271,6 +274,14 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Limpieza local de la sesión (sin llamar al backend): usuario fuera del store
+  // y sin pista de sesión. La usa `logout` y los flujos donde el backend ya
+  // invalidó la sesión (ej. cambio de username en "Completá tu cuenta").
+  clearSession: () => {
+    clearSessionHint();
+    set({ user: null, isAuthenticated: false });
+  },
+
   // Logout
   logout: async () => {
     try {
@@ -287,14 +298,14 @@ export const useAuthStore = create((set, get) => ({
       }
 
       await restclient.post(API_URLS.LOGOUT_URL, {});
-      set({ user: null, isAuthenticated: false });
+      get().clearSession();
 
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }
     } catch (error) {
       console.error("Logout error:", error);
-      set({ user: null, isAuthenticated: false });
+      get().clearSession();
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }

@@ -31,7 +31,7 @@ const CompletarCuenta = () => {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const getUserInfo = useAuthStore((state) => state.getUserInfo);
-  const setUser = useAuthStore((state) => state.setUser);
+  const clearSession = useAuthStore((state) => state.clearSession);
   const [loading, setLoading] = useState(false);
   // Guarda contra doble submit (el estado `loading` se aplica en el próximo render).
   const submittingRef = useRef(false);
@@ -78,7 +78,7 @@ const CompletarCuenta = () => {
         // Cambiar el `username` invalida la sesión en el backend.
         if (dto.username !== user.username) {
           queryClient.clear();
-          setUser(null);
+          clearSession();
           notifications.show({
             title: "Cuenta completada",
             message:
@@ -90,7 +90,24 @@ const CompletarCuenta = () => {
           return;
         }
 
-        await getUserInfo();
+        try {
+          await getUserInfo();
+        } catch (refreshError) {
+          // El PUT ya se aplicó: no es un error de guardado. Se vuelve a
+          // iniciar sesión para recargar los datos.
+          console.error("Error refrescando la sesión:", refreshError);
+          queryClient.clear();
+          clearSession();
+          notifications.show({
+            title: "Cuenta completada",
+            message:
+              "Tus datos se guardaron, pero no pudimos recargar tu sesión. Iniciá sesión de nuevo.",
+            color: "green",
+            icon: <IconCheck />,
+          });
+          navigate("/login", { replace: true });
+          return;
+        }
         notifications.show({
           title: "Cuenta completada",
           message: "Tus datos se guardaron correctamente",
@@ -115,7 +132,7 @@ const CompletarCuenta = () => {
         setLoading(false);
       }
     },
-    [form, user, queryClient, setUser, getUserInfo, navigate],
+    [form, user, queryClient, clearSession, getUserInfo, navigate],
   );
 
   return (
@@ -134,6 +151,7 @@ const CompletarCuenta = () => {
         isEdit
         usernameEditable
         hideCancel
+        lockRolesAndSucursal
         submitLabel="Guardar y continuar"
       />
     </PageContainer>

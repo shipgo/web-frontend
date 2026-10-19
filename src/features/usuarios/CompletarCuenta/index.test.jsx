@@ -100,6 +100,30 @@ describe("CompletarCuenta (SHG-FE-133)", () => {
     expect(screen.queryByRole("button", { name: /cancelar/i })).not.toBeInTheDocument();
   });
 
+  it("roles y sucursal no son editables", async () => {
+    renderPage(<CompletarCuenta />);
+
+    await screen.findByLabelText(/^Usuario/);
+    expect(screen.getByRole("combobox", { name: /^Roles/ })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: /^Sucursal/ })).toBeDisabled();
+  });
+
+  it("si el PUT sale bien y falla whoami, avisa que se guardó y manda a /login (sin 'No se pudieron guardar')", async () => {
+    const user = userEvent.setup();
+    usuarioApi.update.mockResolvedValue({});
+    mockGetUserInfo.mockRejectedValue(new Error("red"));
+    renderPage(<CompletarCuenta />);
+    await screen.findByLabelText(/^Usuario/);
+    await completarForm(user);
+
+    await user.click(screen.getByRole("button", { name: /guardar y continuar/i }));
+
+    expect(await screen.findByText(/Tus datos se guardaron, pero no pudimos recargar/i)).toBeInTheDocument();
+    expect(screen.queryByText(/No se pudieron guardar tus datos/i)).not.toBeInTheDocument();
+    await waitFor(() => expect(window.location.pathname).toBe("/login"));
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+  });
+
   it("no envía con datos faltantes", async () => {
     const user = userEvent.setup();
     renderPage(<CompletarCuenta />);
@@ -150,6 +174,7 @@ describe("CompletarCuenta (SHG-FE-133)", () => {
   it("si cambia el username la sesión se invalida y va a /login con aviso", async () => {
     const user = userEvent.setup();
     usuarioApi.update.mockResolvedValue({});
+    window.localStorage.setItem("shipgo.sessionHint", "staff");
     renderPage(<CompletarCuenta />);
     const username = await screen.findByLabelText(/^Usuario/);
     await completarForm(user);
@@ -162,6 +187,7 @@ describe("CompletarCuenta (SHG-FE-133)", () => {
     expect(usuarioApi.update.mock.calls[0][1].username).toBe("nico");
     await waitFor(() => expect(window.location.pathname).toBe("/login"));
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(window.localStorage.getItem("shipgo.sessionHint")).toBeNull();
     expect(mockGetUserInfo).not.toHaveBeenCalled();
     expect(
       await screen.findByText(/volver a iniciar sesión con el nuevo/i),
