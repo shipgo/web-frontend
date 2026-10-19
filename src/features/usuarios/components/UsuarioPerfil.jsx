@@ -23,6 +23,7 @@ import {
 import { EMPTY } from "@domain/format";
 import { toLocalDate } from "@utils/dates";
 import { rolBadge } from "@domain/roles";
+import { iniciales, nombreCompleto, tieneNombre } from "@domain/usuario";
 
 const InfoItem = ({ icon: Icon, label, value, color = "blue" }) => (
   <Group gap="sm" wrap="nowrap">
@@ -58,15 +59,8 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
     );
   }
 
-  const fullName =
-    usuario.nombre && usuario.apellido
-      ? `${usuario.nombre} ${usuario.apellido}`
-      : usuario.nombre || usuario.username || "Sin nombre";
-
-  const initials =
-    usuario.nombre && usuario.apellido
-      ? `${usuario.nombre.charAt(0)}${usuario.apellido.charAt(0)}`
-      : usuario.username?.charAt(0) || "U";
+  const fullName = nombreCompleto(usuario, "Sin nombre");
+  const initials = iniciales(usuario) || "U";
 
   const authorities = usuario.authorities || [];
 
@@ -128,7 +122,7 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
                 <InfoItem
                   icon={IconUser}
                   label="Nombre completo"
-                  value={fullName}
+                  value={tieneNombre(usuario) ? fullName : null}
                 />
                 <InfoItem
                   icon={IconId}

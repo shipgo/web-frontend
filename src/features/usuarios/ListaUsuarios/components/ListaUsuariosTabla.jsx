@@ -24,6 +24,7 @@ import { useAuthStore } from "@stores/auth.store";
 import { useDeleteUsuario } from "../hooks/useDeleteUsuario";
 import { usePasswordReset } from "../../hooks/usePasswordReset";
 import { canManageUsuario } from "../../utils";
+import { nombreCompleto } from "@domain/usuario";
 
 const ListaUsuariosTabla = ({
   items = [],
@@ -110,10 +111,7 @@ const ListaUsuariosTabla = ({
 
       <Table.Tbody>
         {items.map((item) => {
-          const fullName =
-            item.nombre && item.apellido
-              ? `${item.nombre} ${item.apellido}`
-              : item.nombre || item.username || "Sin nombre";
+          const fullName = nombreCompleto(item, "Sin nombre");
 
           const email = item.email || "Sin email";
           const sucursal = item.sucursal?.nombre || "Sin sucursal";

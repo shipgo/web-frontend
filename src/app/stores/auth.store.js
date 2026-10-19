@@ -15,6 +15,8 @@ import {
   readSessionHint,
   writeSessionHint,
 } from "@utils/sessionHint";
+import { EMPTY, formatTelefono } from "@domain/format";
+import { iniciales, nombreCompleto } from "@domain/usuario";
 import {
   hasAnyRole,
   hasRole,
@@ -57,15 +59,16 @@ export class Usuario {
   }
 
   getFullName() {
-    return `${this.nombre} ${this.apellido}`;
+    // Sin datos personales (primer SUPERUSER, SHG-BE-154): cae a username/email.
+    return nombreCompleto(this);
   }
 
   getPhoneNumber() {
-    return `${this.prefijo} ${this.telefono}`;
+    return formatTelefono(this.prefijo, this.telefono);
   }
 
   getAddress() {
-    return `${this.nombreCalle} ${this.numeroCalle}`;
+    return [this.nombreCalle, this.numeroCalle].filter(Boolean).join(" ") || EMPTY;
   }
 
   getLocation() {
@@ -75,7 +78,7 @@ export class Usuario {
   }
 
   getInitials() {
-    return `${this.nombre?.charAt(0) || ""}${this.apellido?.charAt(0) || ""}`;
+    return iniciales(this);
   }
 
   getAuthorities() {

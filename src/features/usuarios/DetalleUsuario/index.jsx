@@ -9,6 +9,7 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { usuarioApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
 import { canManageUsuario } from "../utils";
+import { nombreCompleto } from "@domain/usuario";
 import UsuarioPerfil from "../components/UsuarioPerfil";
 import { usePasswordReset } from "../hooks/usePasswordReset";
 
@@ -59,9 +60,9 @@ const DetalleUsuario = () => {
     );
   }
 
-  const nombreCompleto =
-    usuario?.nombre && usuario?.apellido
-      ? `${usuario.nombre} ${usuario.apellido}`
+  const descripcion =
+    usuario?.nombre || usuario?.apellido
+      ? nombreCompleto(usuario)
       : usuario?.username
         ? `@${usuario.username}`
         : undefined;
@@ -71,7 +72,7 @@ const DetalleUsuario = () => {
       <PageBreadcrumbsHeader
         entidad="Usuarios"
         accion="Detalle de usuario"
-        descripcion={nombreCompleto}
+        descripcion={descripcion}
       >
         {canManageUsuario(currentUser, usuario) && (
           <Button

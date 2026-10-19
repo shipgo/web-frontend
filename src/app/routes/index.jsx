@@ -21,6 +21,7 @@ import {
 } from '@domain/roles';
 import { useAuthStore } from '@stores/auth.store';
 import { EMPRESA_REQUERIDA_EVENT, necesitaOnboardingEmpresa } from '@domain/empresa';
+import { necesitaCompletarCuenta } from '@domain/usuario';
 import { buildLoginRedirectTo } from '@utils/redirect';
 import { SECTION_PATHS } from '@utils/protectedPaths';
 import { Center, Loader, useMantineColorScheme } from '@mantine/core';
@@ -31,6 +32,9 @@ const RecuperarCuentaTokenPage = lazy(
 );
 const OnboardingEmpresaPage = lazy(() =>
   import('@features/onboarding').then((m) => ({ default: m.OnboardingEmpresa })),
+);
+const CompletarCuentaPage = lazy(() =>
+  import('@features/usuarios/CompletarCuenta'),
 );
 const HomePage = lazy(() => import('@features/home'));
 const LandingPage = lazy(() =>
@@ -190,6 +194,19 @@ const ProtectedRoutes = () => {
     );
   }
 
+  // "Completá tu cuenta" (SHG-FE-133): ya con empresa pero sin nombre (primer
+  // SUPERUSER creado por consola, SHG-BE-154). Mismo patrón que el onboarding:
+  // reemplaza a todas las rutas de gestión hasta que guarde sus datos.
+  if (necesitaCompletarCuenta(user)) {
+    return (
+      <Layout>
+        <Suspense fallback={<RouteFallback />}>
+          <CompletarCuentaPage />
+        </Suspense>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <Suspense fallback={<RouteFallback />}>
@@ -299,6 +316,16 @@ const AppRoutes = () => {
         <PublicRoute>
           <Suspense fallback={<RouteFallback />}>
             <RecuperarCuentaTokenPage />
+          </Suspense>
+        </PublicRoute>
+      </Route>
+      {/* SHG-FE-133: link de bienvenida / invitación (SHG-BE-154). Misma pantalla
+          que el token de recuperación, con textos de activación. Pública: no
+          está en `PROTECTED_PATH_PREFIXES`. */}
+      <Route path='/activar-cuenta/:token'>
+        <PublicRoute>
+          <Suspense fallback={<RouteFallback />}>
+            <RecuperarCuentaTokenPage variant='activar' />
           </Suspense>
         </PublicRoute>
       </Route>

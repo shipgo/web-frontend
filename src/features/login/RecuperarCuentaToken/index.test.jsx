@@ -72,4 +72,46 @@ describe("RecuperarCuentaToken", () => {
     ).toBeInTheDocument();
     expect(mockResetPassword).not.toHaveBeenCalled();
   });
+
+  describe("variante activar (/activar-cuenta/:token)", () => {
+    it("con token válido muestra textos de activación y activa la cuenta", async () => {
+      const user = userEvent.setup();
+      mockVerifyToken.mockResolvedValue({ mensaje: "ok" });
+      mockResetPassword.mockResolvedValue(null);
+      renderWithProviders(<RecuperarCuentaToken variant="activar" />);
+
+      expect(await screen.findByText("Activá tu cuenta")).toBeInTheDocument();
+      expect(
+        screen.getByText("Elegí una contraseña para empezar a usar ShipGo.")
+      ).toBeInTheDocument();
+      await user.type(screen.getByLabelText("Nueva contraseña"), "claveNueva1");
+      await user.type(screen.getByLabelText("Repetí la contraseña"), "claveNueva1");
+      await user.click(screen.getByRole("button", { name: "Activar cuenta" }));
+
+      await waitFor(() =>
+        expect(mockResetPassword).toHaveBeenCalledWith({
+          token: "tok-123",
+          newPassword: "claveNueva1",
+        })
+      );
+      expect(await screen.findByText("Cuenta activada")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Ya podés iniciar sesión con tu email y la contraseña que elegiste."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("con token inválido muestra el aviso y la salida a Olvidé mi contraseña", async () => {
+      mockVerifyToken.mockRejectedValue({ response: { status: 404, data: {} } });
+      renderWithProviders(<RecuperarCuentaToken variant="activar" />);
+
+      expect(
+        await screen.findByText("El enlace expiró o ya se usó")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Olvidé mi contraseña" })
+      ).toHaveAttribute("href", "/recuperar-cuenta");
+    });
+  });
 });

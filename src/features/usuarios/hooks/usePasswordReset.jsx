@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import { usuarioApi } from "@api";
+import { nombreCompleto } from "@domain/usuario";
 
 /**
  * Reset de contraseña (SU/AD) para un empleado desde el panel.
@@ -28,10 +29,7 @@ export const usePasswordReset = () => {
       return;
     }
 
-    const fullName =
-      usuario.nombre && usuario.apellido
-        ? `${usuario.nombre} ${usuario.apellido}`
-        : usuario.username;
+    const fullName = nombreCompleto(usuario);
 
     modals.openConfirmModal({
       title: "Resetear contraseña",

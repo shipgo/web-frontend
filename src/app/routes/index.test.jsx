@@ -45,10 +45,13 @@ vi.mock("@features/login/RecuperarCuenta", () => ({
   default: () => <div>RecuperarCuenta</div>,
 }));
 vi.mock("@features/login/RecuperarCuentaToken", () => ({
-  default: () => <div>RecuperarCuentaToken</div>,
+  default: ({ variant }) => <div>RecuperarCuentaToken{variant ? `:${variant}` : ""}</div>,
 }));
 vi.mock("@features/onboarding", () => ({
   OnboardingEmpresa: () => <div>Configurá tu empresa</div>,
+}));
+vi.mock("@features/usuarios/CompletarCuenta", () => ({
+  default: () => <div>Completá tu cuenta</div>,
 }));
 vi.mock("@features/home", () => ({ default: () => <div>Home</div> }));
 vi.mock("@features/mapa", () => ({ default: () => <div>Mapa</div> }));
@@ -188,6 +191,15 @@ describe("AppRoutes", () => {
     expect(await screen.findByText("RecuperarCuentaToken")).toBeInTheDocument();
   });
 
+  it("sin sesión, /activar-cuenta/:token renderiza la pantalla de token en variante activar", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/activar-cuenta/abc123" });
+
+    expect(
+      await screen.findByText("RecuperarCuentaToken:activar"),
+    ).toBeInTheDocument();
+  });
+
   it("con sesión, /recuperar-cuenta redirige al Home", async () => {
     setAuth({
       user: { authorities: [{ name: "ROLE_ADMIN" }] },
@@ -233,7 +245,7 @@ describe("AppRoutes", () => {
 
   it("SUPERUSER accede a /sucursales", async () => {
     setAuth({
-      user: { authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: { id: 1 } },
+      user: { authorities: [{ name: "ROLE_SUPERUSER" }], sucursal: { id: 1 }, nombre: "Nico" },
       isLoading: false,
       isAuthenticated: true,
     });
@@ -447,9 +459,10 @@ describe("AppRoutes — onboarding de empresa (SHG-FE-116)", () => {
     mockUseAuth.mockReset();
   });
 
-  const superUser = (sucursal) => ({
+  const superUser = (sucursal, nombre = "Nico") => ({
     authorities: [{ name: "ROLE_SUPERUSER" }],
     sucursal,
+    nombre,
   });
 
   it("SUPERUSER sin empresa ve el onboarding al entrar a /, dentro del layout (para poder cerrar sesión)", async () => {
@@ -480,6 +493,46 @@ describe("AppRoutes — onboarding de empresa (SHG-FE-116)", () => {
 
     expect(await screen.findByText("Home")).toBeInTheDocument();
     expect(screen.queryByText("Configurá tu empresa")).not.toBeInTheDocument();
+  });
+
+  // --- SHG-FE-133: "Completá tu cuenta" ---
+
+  it("SUPERUSER con empresa pero sin nombre ve 'Completá tu cuenta' dentro del layout, en cualquier sección", async () => {
+    setAuth({
+      user: superUser({ id: 1, empresa: { id: 1 } }, null),
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/usuarios" });
+
+    expect(await screen.findByText("Completá tu cuenta")).toBeInTheDocument();
+    expect(screen.getByTestId("layout")).toBeInTheDocument();
+    expect(screen.queryByText("Usuarios")).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe("/usuarios");
+  });
+
+  it("SUPERUSER sin empresa y sin nombre ve el onboarding, no 'Completá tu cuenta'", async () => {
+    setAuth({
+      user: superUser(null, null),
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(await screen.findByText("Configurá tu empresa")).toBeInTheDocument();
+    expect(screen.queryByText("Completá tu cuenta")).not.toBeInTheDocument();
+  });
+
+  it("SUPERUSER con empresa y con nombre no ve 'Completá tu cuenta'", async () => {
+    setAuth({
+      user: superUser({ id: 1, empresa: { id: 1 } }),
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/" });
+
+    expect(await screen.findByText("Home")).toBeInTheDocument();
+    expect(screen.queryByText("Completá tu cuenta")).not.toBeInTheDocument();
   });
 
   it("ADMIN no ve el onboarding (aunque no tuviera sucursal)", async () => {

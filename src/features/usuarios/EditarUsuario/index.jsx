@@ -16,6 +16,7 @@ import FotoPerfilUpload from "../components/FotoPerfilUpload";
 import CambiarPasswordCard from "@components/CambiarPasswordCard";
 import { USUARIO_INITIAL_VALUES, buildUsuarioValidate } from "../constants/schema";
 import { toBackendDate, canManageUsuario } from "../utils";
+import { nombreCompleto } from "@domain/usuario";
 
 const EditarUsuario = () => {
   const { id } = useParams();
@@ -92,9 +93,7 @@ const EditarUsuario = () => {
 
         setProfile(userData.profile || null);
         setFullName(
-          userData.nombre && userData.apellido
-            ? `${userData.nombre} ${userData.apellido}`
-            : userData.username || ""
+          nombreCompleto(userData)
         );
       } catch (error) {
         console.error("Error cargando usuario:", error);

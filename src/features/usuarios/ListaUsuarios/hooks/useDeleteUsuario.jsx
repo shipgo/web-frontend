@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import { usuarioApi } from "@api";
+import { nombreCompleto } from "@domain/usuario";
 import { parseApiError } from "@domain/apiError";
 
 /**
@@ -13,10 +14,7 @@ import { parseApiError } from "@domain/apiError";
 export const useDeleteUsuario = (onSuccess) => {
   const confirmDelete = useCallback(
     (usuario) => {
-      const fullName =
-        usuario.nombre && usuario.apellido
-          ? `${usuario.nombre} ${usuario.apellido}`
-          : usuario.username;
+      const fullName = nombreCompleto(usuario);
 
       modals.openConfirmModal({
         title: "Eliminar Usuario",

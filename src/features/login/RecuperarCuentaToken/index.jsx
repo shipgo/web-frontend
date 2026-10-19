@@ -32,13 +32,49 @@ const ESTADO = {
 };
 
 /**
- * Paso 2 de "olvidé mi contraseña" (`/recuperar-cuenta/:token`).
+ * Textos por variante (SHG-FE-133). `recuperar` es "olvidé mi contraseña"
+ * (`/recuperar-cuenta/:token`); `activar` es el link de bienvenida/invitación
+ * (`/activar-cuenta/:token`). Mismo flujo y mismos endpoints.
+ */
+const TEXTOS = {
+  recuperar: {
+    titulo: "Creá una nueva contraseña",
+    subtitulo: "Elegí una contraseña que no hayas usado antes.",
+    boton: "Guardar contraseña",
+    exitoTitulo: "Contraseña actualizada",
+    exitoMensaje: "Ya podés iniciar sesión con tu nueva contraseña.",
+    invalidoMensaje: "Pedí un nuevo enlace de recuperación e intentá otra vez.",
+    invalidoLink: "Pedir un nuevo enlace",
+    errorTitulo: "No se pudo cambiar la contraseña",
+    errorFallback:
+      "No se pudo cambiar la contraseña. El enlace puede haber expirado.",
+  },
+  activar: {
+    titulo: "Activá tu cuenta",
+    subtitulo: "Elegí una contraseña para empezar a usar ShipGo.",
+    boton: "Activar cuenta",
+    exitoTitulo: "Cuenta activada",
+    exitoMensaje:
+      "Ya podés iniciar sesión con tu email y la contraseña que elegiste.",
+    invalidoMensaje:
+      "Si todavía no activaste tu cuenta, pedí un nuevo enlace desde “Olvidé mi contraseña”.",
+    invalidoLink: "Olvidé mi contraseña",
+    errorTitulo: "No se pudo activar la cuenta",
+    errorFallback:
+      "No se pudo activar la cuenta. El enlace puede haber expirado.",
+  },
+};
+
+/**
+ * Paso 2 de "olvidé mi contraseña" (`/recuperar-cuenta/:token`) y activación de
+ * cuenta (`/activar-cuenta/:token`, `variant="activar"`).
  *
  * Al montar valida el token contra `GET /api/token/{token}` (`verifyToken`).
  * Si es válido muestra el form de nueva contraseña → `POST /api/user/changePassword`
  * (`resetPasswordWithToken`). Si no, un mensaje de error con link para pedir otro.
  */
-const RecuperarCuentaToken = () => {
+const RecuperarCuentaToken = ({ variant = "recuperar" }) => {
+  const textos = TEXTOS[variant] ?? TEXTOS.recuperar;
   const { token } = useParams();
   const verifyToken = useAuthStore((state) => state.verifyToken);
   const resetPasswordWithToken = useAuthStore(
@@ -86,8 +122,7 @@ const RecuperarCuentaToken = () => {
     } catch (error) {
       setErrorMsg(
         applyApiError(form, error, {
-          fallbackMessage:
-            "No se pudo cambiar la contraseña. El enlace puede haber expirado.",
+          fallbackMessage: textos.errorFallback,
         })
       );
     } finally {
@@ -109,10 +144,10 @@ const RecuperarCuentaToken = () => {
     return (
       <AuthCardShell title="Enlace no válido">
         <Alert color="red" title="El enlace expiró o ya se usó">
-          Pedí un nuevo enlace de recuperación e intentá otra vez.
+          {textos.invalidoMensaje}
         </Alert>
         <Anchor component={Link} href="/recuperar-cuenta">
-          Pedir un nuevo enlace
+          {textos.invalidoLink}
         </Anchor>
         <Anchor component={Link} href="/login" c="dimmed">
           <Group gap={6}>
@@ -126,9 +161,9 @@ const RecuperarCuentaToken = () => {
 
   if (estado === ESTADO.LISTO) {
     return (
-      <AuthCardShell title="Contraseña actualizada">
+      <AuthCardShell title={textos.exitoTitulo}>
         <Alert color="green" icon={<IconCheck size={18} />} title="Listo">
-          Ya podés iniciar sesión con tu nueva contraseña.
+          {textos.exitoMensaje}
         </Alert>
         <Anchor component={Link} href="/login">
           Ir a iniciar sesión
@@ -139,12 +174,12 @@ const RecuperarCuentaToken = () => {
 
   return (
     <AuthCardShell
-      title="Creá una nueva contraseña"
-      subtitle="Elegí una contraseña que no hayas usado antes."
+      title={textos.titulo}
+      subtitle={textos.subtitulo}
     >
       <Stack gap="lg" component="form" onSubmit={form.onSubmit(handleSubmit)} noValidate>
         {errorMsg ? (
-          <Alert color="red" title="No se pudo cambiar la contraseña">
+          <Alert color="red" title={textos.errorTitulo}>
             {errorMsg}
           </Alert>
         ) : null}
@@ -168,7 +203,7 @@ const RecuperarCuentaToken = () => {
         />
 
         <Button type="submit" size="md" loading={loading}>
-          Guardar contraseña
+          {textos.boton}
         </Button>
 
         <Group justify="center">

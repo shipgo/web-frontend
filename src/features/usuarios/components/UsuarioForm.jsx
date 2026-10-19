@@ -73,8 +73,21 @@ const filterIgnoreAccents = ({ options, search }) => {
  * @param {boolean} props.loading - Estado de carga del submit
  * @param {Function} props.onCancel - Función para cancelar
  * @param {boolean} props.isEdit - Si es modo edición o creación
+ * @param {boolean} [props.usernameEditable] - Permite editar el username aunque sea edición
+ *   ("Completá tu cuenta", SHG-FE-133)
+ * @param {boolean} [props.hideCancel] - Oculta el botón Cancelar
+ * @param {string} [props.submitLabel] - Texto del botón de submit
  */
-const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
+const UsuarioForm = ({
+  form,
+  onSubmit,
+  loading,
+  onCancel,
+  isEdit = false,
+  usernameEditable = false,
+  hideCancel = false,
+  submitLabel,
+}) => {
   const { user } = useAuthStore();
 
   // Mismo patrón de cancelación que el `Footer` canónico de `CrearEnvios`:
@@ -276,7 +289,7 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
                 label="Usuario"
                 placeholder="Ej: jperez"
                 required
-                disabled={isEdit}
+                disabled={isEdit && !usernameEditable}
                 {...form.getInputProps("username")}
               />
               <TextInput
@@ -464,17 +477,19 @@ const UsuarioForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
       {/* Footer canónico (SHG-FE-036): el slot vive en `AppShell.footer`; el
           botón sigue dentro del `<form>` para conservar el submit nativo. */}
       <PageFooter>
-        <Button
-          type="button"
-          variant="light"
-          color="red"
-          disabled={loading}
-          onClick={handleCancel}
-        >
-          Cancelar
-        </Button>
+        {!hideCancel && (
+          <Button
+            type="button"
+            variant="light"
+            color="red"
+            disabled={loading}
+            onClick={handleCancel}
+          >
+            Cancelar
+          </Button>
+        )}
         <Button type="submit" loading={loading}>
-          {isEdit ? "Guardar cambios" : "Crear usuario"}
+          {submitLabel ?? (isEdit ? "Guardar cambios" : "Crear usuario")}
         </Button>
       </PageFooter>
     </form>
