@@ -9,8 +9,23 @@ import {
   formatFechaHora,
   formatPeso,
   formatTelefono,
+  formatVelocidad,
   normalizarPrefijoWhatsapp,
 } from "./format";
+
+describe("formatVelocidad", () => {
+  it("redondea a entero y agrega km/h", () => {
+    expect(formatVelocidad(61.6)).toBe("62 km/h");
+    expect(formatVelocidad(0)).toBe("0 km/h");
+  });
+
+  it("sin dato o inválido devuelve EMPTY", () => {
+    expect(formatVelocidad(null)).toBe(EMPTY);
+    expect(formatVelocidad(undefined)).toBe(EMPTY);
+    expect(formatVelocidad("abc")).toBe(EMPTY);
+    expect(formatVelocidad(-3)).toBe(EMPTY);
+  });
+});
 
 describe("formatFecha / formatFechaHora", () => {
   it("formatea en DD/MM/YYYY", () => {
