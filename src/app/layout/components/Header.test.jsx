@@ -87,6 +87,20 @@ describe("AppHeader", () => {
     openSpy.mockRestore();
   });
 
+  it("un usuario sin nombre ni apellido (SHG-BE-154) muestra su username, nunca 'undefined'", () => {
+    mockUseAuth.mockReturnValue({
+      user: {
+        username: "nico@x.com",
+        email: "nico@x.com",
+        authorities: [{ name: "ROLE_SUPERUSER" }],
+      },
+    });
+    const { container } = renderHeader();
+
+    expect(container.textContent).not.toMatch(/undefined/);
+    expect(screen.getByText("nico@x.com")).toBeInTheDocument();
+  });
+
   it("no renderiza nada si no hay usuario autenticado", () => {
     mockUseAuth.mockReturnValue({ user: null });
     const { container } = renderHeader();

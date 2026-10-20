@@ -8,3 +8,4 @@ export * from './roles';
 export * from './format';
 export * from './apiError';
 export * from './empresa';
+export * from './usuario';

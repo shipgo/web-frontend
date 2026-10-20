@@ -23,6 +23,7 @@ describe('isProtectedPath', () => {
     '/tracking/ABC',
     '/registro',
     '/recuperar-cuenta/tok',
+    '/activar-cuenta/tok',
     '/portal/ingresar',
     '/cualquier-cosa',
     '/enviosx',

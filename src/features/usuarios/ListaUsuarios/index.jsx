@@ -18,6 +18,7 @@ import ListaUsuariosTabla from './components/ListaUsuariosTabla';
 
 import { useGetUsuarios } from './hooks/useGetUsuarios';
 import { canManageUsuario } from '../utils';
+import { nombreCompleto } from '@domain/usuario';
 import { USUARIOS_CSV_COLUMNS } from './listaUsuarios.csv';
 
 const ListaUsuarios = () => {
@@ -61,8 +62,7 @@ const ListaUsuarios = () => {
     deleteFn: (id) => usuarioApi.delete(id),
     singular: 'usuario',
     plural: 'usuarios',
-    getLabel: (item) =>
-      item.nombre && item.apellido ? `${item.nombre} ${item.apellido}` : item.username,
+    getLabel: (item) => nombreCompleto(item),
     onSettled: () => {
       refetch();
       selectedIds.clear();

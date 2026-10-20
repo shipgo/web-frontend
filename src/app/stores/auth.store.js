@@ -15,6 +15,8 @@ import {
   readSessionHint,
   writeSessionHint,
 } from "@utils/sessionHint";
+import { EMPTY, formatTelefono } from "@domain/format";
+import { iniciales, nombreCompleto } from "@domain/usuario";
 import {
   hasAnyRole,
   hasRole,
@@ -57,25 +59,28 @@ export class Usuario {
   }
 
   getFullName() {
-    return `${this.nombre} ${this.apellido}`;
+    // Sin datos personales (primer SUPERUSER, SHG-BE-154): cae a username/email.
+    return nombreCompleto(this);
   }
 
   getPhoneNumber() {
-    return `${this.prefijo} ${this.telefono}`;
+    return formatTelefono(this.prefijo, this.telefono);
   }
 
   getAddress() {
-    return `${this.nombreCalle} ${this.numeroCalle}`;
+    return [this.nombreCalle, this.numeroCalle].filter(Boolean).join(" ") || EMPTY;
   }
 
   getLocation() {
-    return `${this.localidad?.nombre || ""}, ${
-      this.localidad?.provincia?.nombre || ""
-    }`;
+    return (
+      [this.localidad?.nombre, this.localidad?.provincia?.nombre]
+        .filter(Boolean)
+        .join(", ") || EMPTY
+    );
   }
 
   getInitials() {
-    return `${this.nombre?.charAt(0) || ""}${this.apellido?.charAt(0) || ""}`;
+    return iniciales(this);
   }
 
   getAuthorities() {
@@ -268,6 +273,14 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Limpieza local de la sesión (sin llamar al backend): usuario fuera del store
+  // La pista de sesión (SHG-FE-112) se conserva a propósito. La usa `logout` y
+  // los flujos donde el backend ya invalidó la sesión (ej. cambio de username en
+  // "Completá tu cuenta").
+  clearSession: () => {
+    set({ user: null, isAuthenticated: false });
+  },
+
   // Logout
   logout: async () => {
     try {
@@ -284,14 +297,14 @@ export const useAuthStore = create((set, get) => ({
       }
 
       await restclient.post(API_URLS.LOGOUT_URL, {});
-      set({ user: null, isAuthenticated: false });
+      get().clearSession();
 
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }
     } catch (error) {
       console.error("Logout error:", error);
-      set({ user: null, isAuthenticated: false });
+      get().clearSession();
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }
