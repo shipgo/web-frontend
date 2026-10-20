@@ -1,7 +1,6 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { AppShell, MantineProvider } from "@mantine/core";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { screen } from "@testing-library/react";
+import { AppShell } from "@mantine/core";
 
 import { renderWithProviders } from "../../../test/renderWithProviders";
 
@@ -20,35 +19,6 @@ const renderNavbar = (options) =>
     </AppShell>,
     options,
   );
-
-// Clave interna que usa el `localStorageColorSchemeManager` de Mantine para
-// persistir la preferencia entre sesiones (misma que lee `routes/index.jsx`).
-const MANTINE_COLOR_SCHEME_STORAGE_KEY = "mantine-color-scheme-value";
-
-// Reproduce el mismo `MantineProvider` raíz que `App.jsx`
-// (`defaultColorScheme="auto"`) — el bug de SHG-FE-077 sólo aparece con
-// "auto" como default, `renderWithProviders` no lo configura así.
-const renderNavbarWithAutoScheme = () =>
-  render(
-    <MantineProvider defaultColorScheme="auto">
-      <AppShell navbar={{ width: 260 }}>
-        <AppNavbar />
-      </AppShell>
-    </MantineProvider>
-  );
-
-const mockMatchMediaPrefersDark = (prefersDark) => {
-  window.matchMedia = vi.fn().mockImplementation((query) => ({
-    matches: prefersDark && query === "(prefers-color-scheme: dark)",
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  }));
-};
 
 describe("AppNavbar", () => {
   beforeEach(() => {
@@ -80,7 +50,7 @@ describe("AppNavbar", () => {
     renderNavbar();
 
     expect(screen.getByText("Configurá tu empresa")).toBeInTheDocument();
-    for (const label of ["Home", "Mapa", "Envíos", "Viajes", "Usuarios", "Sucursales", "Mi perfil"]) {
+    for (const label of ["Home", "Mapa", "Envíos", "Viajes", "Usuarios", "Sucursales"]) {
       expect(screen.queryByText(label)).not.toBeInTheDocument();
     }
   });
@@ -94,90 +64,34 @@ describe("AppNavbar", () => {
     expect(screen.getByText("Envíos")).toBeInTheDocument();
   });
 
-  // SHG-FE-100: "Opciones" llevaba a `/opciones`, una ruta inexistente (pantalla
-  // en blanco). Ahora es "Mi perfil" y abre el detalle del usuario logueado.
-  it("'Mi perfil' abre el detalle del usuario logueado (SHG-FE-100)", () => {
+  // SHG-FE-134: "Mi perfil" y el toggle de tema viven en el menú del avatar.
+  it("ya no contiene 'Mi perfil' ni el toggle de tema, y deja 'Manual' fijo abajo", () => {
     mockUseAuth.mockReturnValue({
       user: { id: 42, authorities: [{ name: "ROLE_ADMIN" }] },
     });
     renderNavbar();
 
-    expect(screen.queryByText("Opciones")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /mi perfil/i })).toHaveAttribute(
-      "href",
-      "/usuarios/42",
-    );
+    expect(screen.queryByText("Mi perfil")).not.toBeInTheDocument();
+    expect(screen.queryByText("Modo claro")).not.toBeInTheDocument();
+    expect(screen.queryByText("Modo oscuro")).not.toBeInTheDocument();
+    const manual = screen.getByRole("link", { name: /manual/i });
+    expect(manual).toHaveAttribute("href", "https://shipgo.gitbook.io/manual");
+    // "Manual" queda fuera del área con scroll; los ítems de navegación, dentro.
+    expect(manual.closest(".mantine-ScrollArea-viewport")).toBeNull();
+    expect(
+      screen.getByRole("link", { name: /usuarios/i }).closest(".mantine-ScrollArea-viewport"),
+    ).not.toBeNull();
   });
 
-  it("en el perfil propio sólo 'Mi perfil' queda activo; en /usuarios, sólo 'Usuarios'", () => {
+  it("en el perfil propio 'Usuarios' no queda activo; en /usuarios sí", () => {
     mockUseAuth.mockReturnValue({
       user: { id: 42, authorities: [{ name: "ROLE_ADMIN" }] },
     });
     const { unmount } = renderNavbar({ route: "/usuarios/42" });
-    expect(screen.getByRole("link", { name: /mi perfil/i })).toHaveAttribute("data-active", "true");
     expect(screen.getByRole("link", { name: /usuarios/i })).not.toHaveAttribute("data-active");
     unmount();
 
     renderNavbar({ route: "/usuarios" });
     expect(screen.getByRole("link", { name: /usuarios/i })).toHaveAttribute("data-active", "true");
-    expect(screen.getByRole("link", { name: /mi perfil/i })).not.toHaveAttribute("data-active");
-  });
-});
-
-describe("AppNavbar — toggle de tema (SHG-FE-077)", () => {
-  const originalMatchMedia = window.matchMedia;
-
-  beforeEach(() => {
-    mockUseAuth.mockReset();
-    mockUseAuth.mockReturnValue({ user: { authorities: [{ name: "ROLE_ADMIN" }] } });
-    window.localStorage.removeItem(MANTINE_COLOR_SCHEME_STORAGE_KEY);
-  });
-
-  afterEach(() => {
-    window.matchMedia = originalMatchMedia;
-    window.localStorage.removeItem(MANTINE_COLOR_SCHEME_STORAGE_KEY);
-  });
-
-  it("con el SO en modo oscuro y sin preferencia guardada, muestra 'Modo claro' desde el primer render", () => {
-    mockMatchMediaPrefersDark(true);
-    renderNavbarWithAutoScheme();
-
-    expect(screen.getByText("Modo claro")).toBeInTheDocument();
-    expect(screen.queryByText("Modo oscuro")).not.toBeInTheDocument();
-  });
-
-  it("con el SO en modo claro y sin preferencia guardada, muestra 'Modo oscuro' desde el primer render", () => {
-    mockMatchMediaPrefersDark(false);
-    renderNavbarWithAutoScheme();
-
-    expect(screen.getByText("Modo oscuro")).toBeInTheDocument();
-    expect(screen.queryByText("Modo claro")).not.toBeInTheDocument();
-  });
-
-  it("un solo click alterna el tema y actualiza la etiqueta en el mismo click (arrancando en 'auto'/oscuro)", async () => {
-    const user = userEvent.setup();
-    mockMatchMediaPrefersDark(true);
-    renderNavbarWithAutoScheme();
-
-    expect(screen.getByText("Modo claro")).toBeInTheDocument();
-
-    await user.click(screen.getByText("Modo claro"));
-
-    expect(screen.getByText("Modo oscuro")).toBeInTheDocument();
-    expect(screen.queryByText("Modo claro")).not.toBeInTheDocument();
-  });
-
-  it("respeta una preferencia explícita guardada de una sesión previa y alterna en un solo click", async () => {
-    const user = userEvent.setup();
-    // El SO dice "claro" pero el usuario ya había elegido "oscuro" antes.
-    mockMatchMediaPrefersDark(false);
-    window.localStorage.setItem(MANTINE_COLOR_SCHEME_STORAGE_KEY, "dark");
-    renderNavbarWithAutoScheme();
-
-    expect(screen.getByText("Modo claro")).toBeInTheDocument();
-
-    await user.click(screen.getByText("Modo claro"));
-
-    expect(screen.getByText("Modo oscuro")).toBeInTheDocument();
   });
 });
