@@ -172,11 +172,11 @@ describe("AppHeader — menú del usuario (SHG-FE-134)", () => {
       "href",
       "/usuarios/42",
     );
-    expect(screen.getByRole("menuitem", { name: "Modo oscuro" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Modo oscuro" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: /cerrar sesión/i })).toBeInTheDocument();
   });
 
-  it("el toggle alterna el tema y cambia su rótulo en un solo click", async () => {
+  it("el Switch refleja el esquema, alterna con un click y el menú sigue abierto", async () => {
     const user = userEvent.setup();
     mockMatchMediaPrefersDark(true);
     mockUseAuth.mockReturnValue({
@@ -185,10 +185,17 @@ describe("AppHeader — menú del usuario (SHG-FE-134)", () => {
     renderHeaderWithAutoScheme();
     await abrirMenu(user);
 
-    await user.click(screen.getByRole("menuitem", { name: "Modo claro" }));
+    const fila = () => screen.getByRole("menuitemcheckbox", { name: "Modo oscuro" });
+    expect(fila()).toHaveAttribute("aria-checked", "true");
 
-    expect(screen.getByRole("menuitem", { name: "Modo oscuro" })).toBeInTheDocument();
-    expect(screen.queryByRole("menuitem", { name: "Modo claro" })).not.toBeInTheDocument();
+    await user.click(fila());
+
+    expect(fila()).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("menu")).toBeVisible();
+
+    await user.click(fila());
+
+    expect(fila()).toHaveAttribute("aria-checked", "true");
   });
 
   it("respeta una preferencia guardada 'dark' aunque el SO sea claro", async () => {
@@ -200,7 +207,10 @@ describe("AppHeader — menú del usuario (SHG-FE-134)", () => {
     renderHeaderWithAutoScheme();
     await abrirMenu(user);
 
-    expect(screen.getByRole("menuitem", { name: "Modo claro" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Modo oscuro" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
   });
 
   it("sin empresa no ofrece 'Mi perfil' pero sí el toggle de tema y 'Cerrar sesión'", async () => {
@@ -212,7 +222,7 @@ describe("AppHeader — menú del usuario (SHG-FE-134)", () => {
     await abrirMenu(user);
 
     expect(screen.queryByRole("menuitem", { name: /mi perfil/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Modo oscuro" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Modo oscuro" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: /cerrar sesión/i })).toBeInTheDocument();
   });
 });

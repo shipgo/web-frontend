@@ -74,10 +74,13 @@ describe("AppNavbar", () => {
     expect(screen.queryByText("Mi perfil")).not.toBeInTheDocument();
     expect(screen.queryByText("Modo claro")).not.toBeInTheDocument();
     expect(screen.queryByText("Modo oscuro")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /manual/i })).toHaveAttribute(
-      "href",
-      "https://shipgo.gitbook.io/manual",
-    );
+    const manual = screen.getByRole("link", { name: /manual/i });
+    expect(manual).toHaveAttribute("href", "https://shipgo.gitbook.io/manual");
+    // "Manual" queda fuera del área con scroll; los ítems de navegación, dentro.
+    expect(manual.closest(".mantine-ScrollArea-viewport")).toBeNull();
+    expect(
+      screen.getByRole("link", { name: /usuarios/i }).closest(".mantine-ScrollArea-viewport"),
+    ).not.toBeNull();
   });
 
   it("en el perfil propio 'Usuarios' no queda activo; en /usuarios sí", () => {

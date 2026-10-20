@@ -105,7 +105,9 @@ const AppNavbar = () => {
                 label={label}
                 component={Link}
                 leftSection={icon}
-                active={location.startsWith(to) && location !== perfilPath}
+                // El perfil propio (/usuarios/:id) cuelga de /usuarios pero se abre
+              // desde el menú del avatar: "Usuarios" no debe marcarse ahí.
+              active={location.startsWith(to) && location !== perfilPath}
               />
             ))}
           </>

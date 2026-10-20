@@ -8,6 +8,7 @@ import {
   Menu,
   rem,
   Stack,
+  Switch,
   Text,
 } from "@mantine/core";
 import { spotlight } from "@mantine/spotlight";
@@ -33,6 +34,9 @@ import { useToggleColorScheme } from "@hooks/useToggleColorScheme";
 
 import NavigationSpotlight from "./NavigationSpotlight";
 
+// `Menu.Item` fuerza `role="menuitem"` (que no admite `aria-checked`).
+const setMenuItemCheckbox = (el) => el?.setAttribute("role", "menuitemcheckbox");
+
 const AppHeader = () => {
   const { user } = useAuth();
   const { logout } = useAuthStore();
@@ -51,6 +55,7 @@ const AppHeader = () => {
     }
   };
 
+  const esOscuro = computedColorScheme === "dark";
   const fullName = nombreCompleto(user, "Usuario");
   const initials = iniciales(user) || "U";
   const role = rolLabel(user.authorities?.[0]?.name || user.role);
@@ -134,18 +139,42 @@ const AppHeader = () => {
                   Mi perfil
                 </Menu.Item>
               )}
+              {/* SHG-FE-134: la fila entera es el único destino de clic/teclado
+                  (`menuitemcheckbox` + `aria-checked`; Menu.Item fija
+                  role="menuitem" y no admite `aria-checked`, por eso se corrige por ref); el Switch es sólo visual
+                  (aria-hidden, fuera del tab order, sin eventos de puntero) para no
+                  anidar un input focusable dentro de un menuitem. */}
               <Menu.Item
+                ref={setMenuItemCheckbox}
+                aria-checked={esOscuro}
                 closeMenuOnClick={false}
                 onClick={handleToggleColorScheme}
-                leftSection={
-                  computedColorScheme === "dark" ? (
-                    <IconSun style={{ width: rem(14), height: rem(14) }} />
-                  ) : (
-                    <IconMoonStars style={{ width: rem(14), height: rem(14) }} />
-                  )
+                rightSection={
+                  <Switch
+                    readOnly
+                    size="md"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    checked={esOscuro}
+                    onChange={() => {}}
+                    style={{ pointerEvents: "none" }}
+                    thumbIcon={
+                      esOscuro ? (
+                        <IconMoonStars
+                          size={12}
+                          color="var(--mantine-color-blue-6)"
+                        />
+                      ) : (
+                        <IconSun
+                          size={12}
+                          color="var(--mantine-color-yellow-6)"
+                        />
+                      )
+                    }
+                  />
                 }
               >
-                {computedColorScheme === "dark" ? "Modo claro" : "Modo oscuro"}
+                Modo oscuro
               </Menu.Item>
               <Menu.Divider />
               <Menu.Item
