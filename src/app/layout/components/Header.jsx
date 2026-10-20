@@ -12,7 +12,15 @@ import {
 } from "@mantine/core";
 import { spotlight } from "@mantine/spotlight";
 
-import { IconLogout, IconSearch } from "@tabler/icons-react";
+import { Link } from "wouter";
+
+import {
+  IconLogout,
+  IconMoonStars,
+  IconSearch,
+  IconSun,
+  IconUser,
+} from "@tabler/icons-react";
 
 import { useAuth } from "@contexts/auth";
 import { useAuthStore } from "@stores/auth.store";
@@ -21,12 +29,14 @@ import { OperatingSucursalSelector } from "@components";
 import { necesitaOnboardingEmpresa } from "@domain/empresa";
 import { rolLabel } from "@domain/roles";
 import { iniciales, nombreCompleto } from "@domain/usuario";
+import { useToggleColorScheme } from "@hooks/useToggleColorScheme";
 
 import NavigationSpotlight from "./NavigationSpotlight";
 
 const AppHeader = () => {
   const { user } = useAuth();
   const { logout } = useAuthStore();
+  const { computedColorScheme, handleToggleColorScheme } = useToggleColorScheme();
 
   // Si no hay usuario, no renderizar el header (o renderizar versión simplificada)
   if (!user) {
@@ -79,7 +89,7 @@ const AppHeader = () => {
         <Group ml="auto">
           {!sinEmpresa && <NotificacionesBell />}
 
-          <Menu position="bottom-end" withArrow width={175}>
+          <Menu position="bottom-end" withArrow width={210}>
             <Menu.Target>
               <Button
                 pr="0"
@@ -112,6 +122,32 @@ const AppHeader = () => {
             </Menu.Target>
 
             <Menu.Dropdown>
+              {/* SHG-FE-134: sin empresa la ruta del perfil no se renderiza. */}
+              {!sinEmpresa && (
+                <Menu.Item
+                  component={Link}
+                  to={`/usuarios/${user.id}`}
+                  leftSection={
+                    <IconUser style={{ width: rem(14), height: rem(14) }} />
+                  }
+                >
+                  Mi perfil
+                </Menu.Item>
+              )}
+              <Menu.Item
+                closeMenuOnClick={false}
+                onClick={handleToggleColorScheme}
+                leftSection={
+                  computedColorScheme === "dark" ? (
+                    <IconSun style={{ width: rem(14), height: rem(14) }} />
+                  ) : (
+                    <IconMoonStars style={{ width: rem(14), height: rem(14) }} />
+                  )
+                }
+              >
+                {computedColorScheme === "dark" ? "Modo claro" : "Modo oscuro"}
+              </Menu.Item>
+              <Menu.Divider />
               <Menu.Item
                 color="red"
                 onClick={handleLogout}
