@@ -60,6 +60,34 @@ describe("SeccionDetalles — SHG-FE-052 (aviso de sucursal de origen para SUPER
     expect(screen.getByText(/Sucursal Norte/)).toBeInTheDocument();
   });
 
+  it("SHG-FE-135: el aviso usa lenguaje de usuario, sin 'backend' ni 'pendiente'", () => {
+    mockUser = { sucursal: { nombre: "Sucursal Centro" } };
+    renderSeccionDetalles({
+      isSuperUser: true,
+      activeSucursal: { id: 2, nombre: "Sucursal Norte" },
+    });
+
+    const alerta = screen
+      .getByText(/sucursal de origen del viaje/i)
+      .closest("[role='alert']");
+    expect(alerta).toHaveTextContent(
+      "El viaje se crea con la sucursal de tu usuario (Sucursal Centro), aunque hayas elegido otra sucursal (Sucursal Norte) en el encabezado.",
+    );
+    expect(alerta).not.toHaveTextContent(/backend|pendiente/i);
+  });
+
+  it("SHG-FE-135: sin sucursal activa la frase sigue teniendo sentido", () => {
+    mockUser = { sucursal: { nombre: "Sucursal Centro" } };
+    renderSeccionDetalles({ isSuperUser: true, activeSucursal: null });
+
+    const alerta = screen
+      .getByText(/sucursal de origen del viaje/i)
+      .closest("[role='alert']");
+    expect(alerta).toHaveTextContent(
+      "El viaje se crea con la sucursal de tu usuario (Sucursal Centro), aunque elijas otra sucursal en el encabezado.",
+    );
+  });
+
   it("SUPERUSER sin sucursal propia: ya no muestra el aviso de 'pendiente de soporte de backend' (SHG-FE-116)", () => {
     mockUser = { sucursal: null };
     renderSeccionDetalles({ isSuperUser: true, activeSucursal: null });

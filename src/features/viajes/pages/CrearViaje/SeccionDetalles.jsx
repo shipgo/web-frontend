@@ -120,12 +120,12 @@ const SeccionDetalles = () => {
             icon={<IconAlertTriangle size={16} />}
             title="Sucursal de origen del viaje"
           >
-            El viaje se crea con la sucursal de tu propio usuario (
-            <strong>{sucursalPropia.nombre}</strong>). La sucursal operativa que
-            elegiste en el selector del header
-            {activeSucursal ? ` (${activeSucursal.nombre})` : ""} todavía no se
-            puede usar acá — el backend no acepta elegir la sucursal de origen al
-            crear un viaje (pendiente).
+            El viaje se crea con la sucursal de tu usuario (
+            <strong>{sucursalPropia.nombre}</strong>)
+            {activeSucursal
+              ? `, aunque hayas elegido otra sucursal (${activeSucursal.nombre}) en el encabezado`
+              : ", aunque elijas otra sucursal en el encabezado"}
+            .
           </Alert>
         )}
       </Stack>
