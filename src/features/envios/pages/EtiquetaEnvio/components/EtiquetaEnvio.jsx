@@ -28,7 +28,7 @@ const textoDestino = (envio) => {
  * Reusable para impresión masiva (una etiqueta por página). Asume
  * `envio.codigoSeguimiento` presente.
  */
-const EtiquetaEnvio = ({ envio }) => {
+const EtiquetaEnvio = ({ envio, testId = 'etiqueta-envio' }) => {
   const destinatario = `${envio.nombre ?? ''} ${envio.apellido ?? ''}`.trim();
   const origen = envio.sucursalOrigen?.nombre;
 
@@ -39,7 +39,7 @@ const EtiquetaEnvio = ({ envio }) => {
   ].filter(Boolean);
 
   return (
-    <div className="etiqueta-envio" data-testid="etiqueta-envio">
+    <div className="etiqueta-envio" data-testid={testId}>
       <div className="etiqueta-envio__qr">
         <QRCode
           value={envio.codigoSeguimiento}

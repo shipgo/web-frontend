@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useParams } from 'wouter';
 import { Alert, Box, Button } from '@mantine/core';
 import { IconArrowLeft, IconInfoCircle, IconPrinter } from '@tabler/icons-react';
@@ -103,6 +104,16 @@ const EtiquetaEnvioPage = () => {
           </>
         )}
       </ScreenContainer>
+      {/* Copia sólo-impresión bajo <body>: el CSS de impresión oculta (display:
+          none) el resto de los hijos de body, incluido el shell y el Box de la
+          vista previa (con overflow), para que no queden páginas en blanco. */}
+      {tieneCodigo &&
+        createPortal(
+          <div className="etiqueta-print-root">
+            <EtiquetaEnvio envio={envio} testId="etiqueta-envio-impresion" />
+          </div>,
+          document.body,
+        )}
     </PageContainer>
   );
 };

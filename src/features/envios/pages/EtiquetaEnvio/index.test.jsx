@@ -11,6 +11,10 @@ vi.mock('@api', () => ({
   },
 }));
 
+vi.mock('react-qr-code', () => ({
+  default: ({ value }) => <svg data-testid="qr" data-value={value} />,
+}));
+
 import { envioApi } from '@api';
 import EtiquetaEnvio from './index';
 
@@ -47,7 +51,8 @@ describe('EtiquetaEnvio', () => {
     const etiqueta = await screen.findByTestId('etiqueta-envio');
     expect(envioApi.getById).toHaveBeenCalledWith('9');
     expect(within(etiqueta).getByText('SHG-ABC123')).toBeInTheDocument();
-    expect(etiqueta.querySelector('svg')).toBeInTheDocument();
+    expect(within(etiqueta).getByTestId('qr')).toHaveAttribute('data-value', 'SHG-ABC123');
+    expect(screen.getByTestId('etiqueta-envio-impresion')).toBeInTheDocument();
     expect(within(etiqueta).getByText('Juan García')).toBeInTheDocument();
     expect(within(etiqueta).getByText(/Av\. Colón 1234/)).toBeInTheDocument();
     expect(within(etiqueta).getByText('Sucursal Norte')).toBeInTheDocument();
