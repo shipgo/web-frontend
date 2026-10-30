@@ -303,6 +303,32 @@ describe('ListaEnvios', () => {
     expect(screen.queryByRole('button', { name: 'Importar' })).not.toBeInTheDocument();
   });
 
+  describe('"Imprimir etiqueta" (SHG-FE-136)', () => {
+    it('navega a /envios/:id/etiqueta', async () => {
+      envioApi.get.mockResolvedValue({ content: [ENVIO_EN_SUCURSAL], totalElements: 1, totalPages: 1 });
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+      await user.click(await screen.findByRole('button', { name: 'Acciones de SHG-DEV-0001' }));
+
+      await user.click(await screen.findByRole('menuitem', { name: 'Imprimir etiqueta' }, { timeout: 3000 }));
+
+      await waitFor(() => expect(window.location.pathname).toBe(`/envios/${ENVIO_EN_SUCURSAL.id}/etiqueta`));
+    });
+
+    it('deshabilitada si el envío no tiene código de seguimiento', async () => {
+      envioApi.get.mockResolvedValue({
+        content: [{ ...ENVIO_EN_SUCURSAL, codigoSeguimiento: null }],
+        totalElements: 1,
+        totalPages: 1,
+      });
+      const user = userEvent.setup();
+      renderWithProviders(<ListaEnvios />);
+      await user.click(await screen.findByRole('button', { name: /^Acciones de/ }));
+      const item = await screen.findByRole('menuitem', { name: 'Imprimir etiqueta' }, { timeout: 3000 });
+      expect(item).toHaveAttribute('data-disabled');
+    });
+  });
+
   describe('"Editar" según editable (SHG-FE-125)', () => {
     it.each([
       [false, true],

@@ -4,6 +4,7 @@ import {
   IconEdit,
   IconFileDescription,
   IconMapSearch,
+  IconPrinter,
   IconTrash,
 } from '@tabler/icons-react';
 
@@ -48,7 +49,7 @@ const getLocalizarAction = (envio, onLocalizar) => {
   };
 };
 
-const getActionsForRow = (envio, { onEditar, onVerDetalles, onEliminar, onLocalizar }) => {
+const getActionsForRow = (envio, { onEditar, onVerDetalles, onEliminar, onLocalizar, onImprimirEtiqueta }) => {
 
   return [
     {
@@ -56,6 +57,13 @@ const getActionsForRow = (envio, { onEditar, onVerDetalles, onEliminar, onLocali
       items: [
         getLocalizarAction(envio, onLocalizar),
         { icon: <IconFileDescription size={18} />, label: 'Ver detalles', onClick: onVerDetalles },
+        {
+          icon: <IconPrinter size={18} />,
+          label: 'Imprimir etiqueta',
+          disabled: !envio.codigoSeguimiento,
+          tooltip: envio.codigoSeguimiento ? undefined : 'Este envío no tiene código de seguimiento.',
+          onClick: onImprimirEtiqueta,
+        },
       ],
     },
     {
@@ -162,6 +170,7 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRe
                 <RowActionsMenu
                   actions={getActionsForRow(envio, {
                     onVerDetalles: () => navigate(`~/envios/${id}`),
+                    onImprimirEtiqueta: () => navigate(`~/envios/${id}/etiqueta`),
                     onEditar: () => navigate(`~/envios/editar/${id}`),
                     onEliminar: () => confirmDelete(envio),
                     // Ruta absoluta (`~`): `/mapa` no está anidado bajo

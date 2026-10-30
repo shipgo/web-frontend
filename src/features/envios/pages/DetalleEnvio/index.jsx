@@ -32,6 +32,7 @@ import {
   IconMapPin,
   IconPackage,
   IconPhone,
+  IconPrinter,
   IconRoute,
   IconTruckDelivery,
   IconUser,
@@ -223,6 +224,15 @@ const DetalleEnvio = () => {
           </Group>
         }
       >
+        {envio.codigoSeguimiento && (
+          <Button
+            variant="default"
+            leftSection={<IconPrinter size={18} />}
+            onClick={() => navigate(`~/envios/${id}/etiqueta`)}
+          >
+            Imprimir etiqueta
+          </Button>
+        )}
         {canEdit && (
           <Button
             leftSection={<IconEdit size={18} />}
