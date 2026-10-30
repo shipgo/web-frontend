@@ -1,0 +1,84 @@
+/* Etiqueta de envío (SHG-FE-136): 100x150 mm, siempre blanco y negro. */
+.etiqueta-envio {
+  box-sizing: border-box;
+  width: 100mm;
+  height: 150mm;
+  padding: 6mm;
+  background: #fff;
+  color: #000;
+  border: 1px solid #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4mm;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+
+.etiqueta-envio__qr {
+  background: #fff;
+  padding: 2mm;
+}
+
+.etiqueta-envio__codigo {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 7mm;
+  font-weight: 700;
+  letter-spacing: 0.3mm;
+  text-align: center;
+  word-break: break-all;
+}
+
+.etiqueta-envio__datos {
+  width: 100%;
+  border-top: 0.4mm solid #000;
+  padding-top: 3mm;
+  display: flex;
+  flex-direction: column;
+  gap: 2mm;
+  font-size: 3.6mm;
+}
+
+.etiqueta-envio__label {
+  font-size: 2.8mm;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.etiqueta-envio__valor {
+  font-weight: 500;
+  word-break: break-word;
+}
+
+@page {
+  size: 100mm 150mm;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .etiqueta-envio,
+  .etiqueta-envio * {
+    visibility: visible !important;
+  }
+
+  .etiqueta-envio {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border: none;
+    break-after: auto;
+    page-break-after: auto;
+  }
+}

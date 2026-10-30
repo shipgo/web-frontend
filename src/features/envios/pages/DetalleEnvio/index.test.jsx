@@ -77,6 +77,22 @@ describe("DetalleEnvio", () => {
     notifications.cleanQueue();
   });
 
+  it("'Imprimir etiqueta' navega a /envios/:id/etiqueta (SHG-FE-136)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    await user.click(await screen.findByRole("button", { name: /Imprimir etiqueta/ }));
+    await waitFor(() => expect(window.location.pathname).toBe("/envios/9/etiqueta"));
+  });
+
+  it("sin codigoSeguimiento no ofrece 'Imprimir etiqueta' (SHG-FE-136)", async () => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, codigoSeguimiento: null });
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    await screen.findByText("Juan García");
+    expect(screen.queryByRole("button", { name: /Imprimir etiqueta/ })).not.toBeInTheDocument();
+  });
+
   it("renders sender, receiver, destino and package info from the API response", async () => {
     renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
       route: "/envios/9",
