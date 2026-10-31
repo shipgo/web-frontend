@@ -1,4 +1,5 @@
 import { restclient } from '@config/restclient';
+import { FUNCION_NO_DISPONIBLE } from '@copy/common';
 
 /**
  * @typedef {Object} PageParams
@@ -129,8 +130,11 @@ export const createReadOnlyApi = (baseUrl) => ({
  * @returns {() => never}
  */
 export const notImplemented = (beTask, detalle) => () => {
-  throw new Error(
+  // El detalle técnico va a la consola; el mensaje del error es el que puede
+  // llegar a un toast (WORDING.md §2).
+  console.error(
     `[api] Método no disponible: requiere el endpoint de ${beTask} — ${detalle}. ` +
       'Todavía no existe en ENDPOINTS.md; no llamar hasta que la tarea backend esté done.',
   );
+  throw new Error(FUNCION_NO_DISPONIBLE);
 };

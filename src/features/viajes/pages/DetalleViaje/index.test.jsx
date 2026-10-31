@@ -291,7 +291,7 @@ describe('DetalleViaje', () => {
       const dialog = await screen.findByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Sí, finalizar' }));
 
-      expect(await screen.findByText('No se puede completar la acción')).toBeInTheDocument();
+      expect(await screen.findByText('Acción no disponible')).toBeInTheDocument();
       expect(screen.getByText('El viaje no está en camino')).toBeInTheDocument();
     });
   });
@@ -399,7 +399,7 @@ describe('DetalleViaje', () => {
       const dialog = await screen.findByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
 
-      expect(await screen.findByText('No se puede completar la acción')).toBeInTheDocument();
+      expect(await screen.findByText('Acción no disponible')).toBeInTheDocument();
       expect(screen.getByText('El chofer ya tiene otro viaje en camino')).toBeInTheDocument();
       await waitFor(() => expect(viajeApi.getById).toHaveBeenCalledTimes(2));
     });
@@ -432,7 +432,7 @@ describe('DetalleViaje', () => {
       const dialog = await screen.findByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
 
-      expect(await screen.findByText('Error')).toBeInTheDocument();
+      expect(await screen.findByText('No se pudo completar la acción')).toBeInTheDocument();
       expect(viajeApi.getById).toHaveBeenCalledTimes(1);
     });
   });

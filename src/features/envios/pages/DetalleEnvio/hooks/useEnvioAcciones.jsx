@@ -18,14 +18,16 @@ import FalloEntregaModalBody from '../components/FalloEntregaModalBody';
  * - `403` → rol sin permiso para la acción → toast de error puntual.
  * - Resto → error genérico (`console.error` + toast).
  */
-const handleAccionError = (error, accionLabel) => {
+const handleAccionError = (error, accionLabel, estadosPermitidos) => {
   const status = error.response?.status;
   const backendMessage = error.response?.data?.message;
 
   if (status === 409) {
     notifications.show({
-      title: 'No se puede completar la acción',
-      message: backendMessage || `El envío no está en un estado que permita ${accionLabel}`,
+      title: 'Acción no disponible',
+      message:
+        backendMessage ||
+        `Solo se puede ${accionLabel} cuando el envío está ${estadosPermitidos}.`,
       color: 'yellow',
       icon: <IconAlertTriangle />,
     });
@@ -34,8 +36,8 @@ const handleAccionError = (error, accionLabel) => {
 
   if (status === 403) {
     notifications.show({
-      title: 'Sin permisos',
-      message: backendMessage || `No tenés permisos para ${accionLabel}`,
+      title: 'No tenés permiso',
+      message: backendMessage || 'No tenés permiso para hacer esto.',
       color: 'red',
       icon: <IconX />,
     });
@@ -44,8 +46,8 @@ const handleAccionError = (error, accionLabel) => {
 
   console.error(`Error al ${accionLabel}:`, error);
   notifications.show({
-    title: 'Error',
-    message: backendMessage || `No se pudo completar la acción: ${accionLabel}`,
+    title: 'No se pudo completar la acción',
+    message: backendMessage || `No se pudo ${accionLabel}. Probá de nuevo en unos minutos.`,
     color: 'red',
     icon: <IconX />,
   });
@@ -73,7 +75,7 @@ export const useEnvioAcciones = (id, { onSuccess } = {}) => {
             modals.closeAll();
             notifications.show({
               title: 'Envío entregado',
-              message: `El envío #${id} fue marcado como entregado`,
+              message: `El envío #${id} quedó como Entregado.`,
               color: 'green',
               icon: <IconCheck />,
             });
@@ -83,7 +85,7 @@ export const useEnvioAcciones = (id, { onSuccess } = {}) => {
           // abierto (`EntregarModalBody` no lo cierra en error), acá sólo se
           // reutiliza el toast estándar del resto de las acciones del panel.
           onErrorInesperado={(_message, error) =>
-            handleAccionError(error, 'marcar el envío como entregado')
+            handleAccionError(error, 'marcar el envío como entregado', 'En vehículo o En camino')
           }
         />
       ),
@@ -95,20 +97,20 @@ export const useEnvioAcciones = (id, { onSuccess } = {}) => {
     try {
       await envioApi.falloEntrega(id, { motivo });
       notifications.show({
-        title: 'Fallo de entrega registrado',
-        message: `El envío #${id} fue marcado como rechazado`,
+        title: 'Entrega fallida registrada',
+        message: `El envío #${id} quedó como No entregado.`,
         color: 'green',
         icon: <IconCheck />,
       });
       onSuccess?.();
     } catch (error) {
-      handleAccionError(error, 'registrar el fallo de entrega');
+      handleAccionError(error, 'registrar la entrega fallida', 'En vehículo o En camino');
     }
   };
 
   const confirmFalloEntrega = () => {
     modals.open({
-      title: 'Marcar fallo de entrega',
+      title: 'Registrar entrega fallida',
       centered: true,
       children: (
         <FalloEntregaModalBody id={id} onConfirmar={ejecutarFalloEntrega} onVolver={() => modals.closeAll()} />
@@ -133,14 +135,14 @@ export const useEnvioAcciones = (id, { onSuccess } = {}) => {
             modals.closeAll();
             notifications.show({
               title: 'Retiro confirmado',
-              message: `El envío #${id} fue marcado como entregado`,
+              message: `El envío #${id} quedó como Entregado.`,
               color: 'green',
               icon: <IconCheck />,
             });
             onSuccess?.();
           }}
           onErrorInesperado={(_message, error) =>
-            handleAccionError(error, 'confirmar el retiro del envío')
+            handleAccionError(error, 'confirmar el retiro del envío', 'En sucursal')
           }
         />
       ),

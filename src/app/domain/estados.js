@@ -14,7 +14,7 @@ export const ESTADO_ENVIO = {
   en_vehiculo: { label: 'En vehículo', color: 'indigo' },
   en_camino: { label: 'En camino', color: 'orange' },
   entregado: { label: 'Entregado', color: 'green' },
-  rechazado: { label: 'Rechazado', color: 'red' },
+  rechazado: { label: 'No entregado', color: 'red' },
 };
 
 export const ESTADO_VIAJE = {

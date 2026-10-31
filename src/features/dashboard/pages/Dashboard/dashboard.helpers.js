@@ -15,8 +15,8 @@ export const QUICK_FILTERS = [
   { label: 'Últimos 7 días', getRange: () => [dayjs().subtract(6, 'day'), dayjs()] },
   { label: 'Últimos 15 días', getRange: () => [dayjs().subtract(14, 'day'), dayjs()] },
   { label: 'Último mes', getRange: () => [dayjs().subtract(1, 'month'), dayjs()] },
-  { label: '3 meses', getRange: () => [dayjs().subtract(3, 'month'), dayjs()] },
-  { label: '6 meses', getRange: () => [dayjs().subtract(6, 'month'), dayjs()] },
+  { label: 'Últimos 3 meses', getRange: () => [dayjs().subtract(3, 'month'), dayjs()] },
+  { label: 'Últimos 6 meses', getRange: () => [dayjs().subtract(6, 'month'), dayjs()] },
 ];
 
 export const DEFAULT_QUICK_FILTER = QUICK_FILTERS[0].label;

@@ -20,7 +20,7 @@ const EnvioNoEditable = ({ id, estado }) => {
   const { label, color, textColor } = estadoBadge("envio", estado);
   // `SHG-FE-125`: `editable: false` cubre terminales, en viaje y "ya viajó".
   const motivo = esEstadoTerminal("envio", estado)
-    ? 'No se pueden editar envíos en estado "Entregado" o "Rechazado".'
+    ? 'No se pueden editar envíos en estado "Entregado" o "No entregado".'
     : "Este envío está o estuvo en un viaje y no se puede modificar.";
 
   return (

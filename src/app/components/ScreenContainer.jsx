@@ -2,6 +2,8 @@ import { cloneElement } from 'react';
 import { IconFilesOff, IconAlertTriangle } from '@tabler/icons-react';
 import { Loader, EmptyState, Button, Card } from '@mantine/core';
 
+import { PANTALLA } from '@copy/common';
+
 import RecursoNoEncontrado from './RecursoNoEncontrado';
 
 const Wrapper = ({ children, className, styleProps }) => (
@@ -54,9 +56,9 @@ const ScreenContainer = ({
           <EmptyState.Indicator>
             <IconAlertTriangle size={50} color='var(--mantine-color-dimmed)' />
           </EmptyState.Indicator>
-          <EmptyState.Title>{onError.title ?? 'Oops'}</EmptyState.Title>
+          <EmptyState.Title>{onError.title ?? PANTALLA.errorTitulo}</EmptyState.Title>
           <EmptyState.Description>
-            {onError.description ?? 'Parece ser que ocurrió un error'}
+            {onError.description ?? PANTALLA.errorDescripcion}
           </EmptyState.Description>
           {onError.onClick && (
             <EmptyState.Actions>
@@ -81,9 +83,9 @@ const ScreenContainer = ({
               <IconFilesOff size={50} color='var(--mantine-color-dimmed)' />
             )}
           </EmptyState.Indicator>
-          <EmptyState.Title>{onEmptyData.title ?? 'Sin datos'}</EmptyState.Title>
+          <EmptyState.Title>{onEmptyData.title ?? PANTALLA.vacioTitulo}</EmptyState.Title>
           <EmptyState.Description>
-            {onEmptyData.description ?? 'Parece ser que no hay información que mostrar'}
+            {onEmptyData.description ?? PANTALLA.vacioDescripcion}
           </EmptyState.Description>
         </Wrapper>
       )
@@ -97,10 +99,9 @@ const ScreenContainer = ({
           <EmptyState.Indicator>
             <IconFilesOff size={50} color='var(--mantine-color-dimmed)' />
           </EmptyState.Indicator>
-          <EmptyState.Title>{onEmptyFiltersData.title ?? 'Sin datos'}</EmptyState.Title>
+          <EmptyState.Title>{onEmptyFiltersData.title ?? PANTALLA.sinResultadosTitulo}</EmptyState.Title>
           <EmptyState.Description>
-            {onEmptyFiltersData.description ??
-              'Parece ser que no hay información que mostrar con estos filtros'}
+            {onEmptyFiltersData.description ?? PANTALLA.sinResultadosDescripcion}
           </EmptyState.Description>
           {onEmptyFiltersData.onClick && (
             <EmptyState.Actions>

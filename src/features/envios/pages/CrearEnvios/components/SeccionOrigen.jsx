@@ -320,15 +320,15 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 {...form.getInputProps("emailReceptor")}
                 required
                 type="email"
-                label="Email del receptor"
-                placeholder="receptor@ejemplo.com"
+                label="Email del destinatario"
+                placeholder="destinatario@ejemplo.com"
               />
             </Grid.Col>
             {esRetiroEnSucursal ? (
               <Grid.Col span={12}>
                 <Select
                   label="Sucursal de retiro"
-                  description="El receptor va a poder retirar el envío en esta sucursal"
+                  description="El destinatario va a poder retirar el envío en esta sucursal."
                   placeholder="Seleccioná una sucursal"
                   data={sucursalesOptions}
                   searchable

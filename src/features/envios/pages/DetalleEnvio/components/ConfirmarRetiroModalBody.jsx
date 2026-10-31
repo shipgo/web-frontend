@@ -41,9 +41,9 @@ const ConfirmarRetiroModalBody = ({ id, onRetirado, onErrorInesperado, onVolver 
   const form = useForm({
     initialValues: { dniReceptor: '', palabraEntregaIngresada: '' },
     validate: {
-      dniReceptor: (value) => (value.trim() ? null : 'El DNI de quien recibe es obligatorio'),
+      dniReceptor: (value) => (value.trim() ? null : 'Ingresá el DNI de quien retira.'),
       palabraEntregaIngresada: (value) =>
-        value.trim() ? null : 'La palabra de entrega es obligatoria',
+        value.trim() ? null : 'Ingresá la palabra de entrega.',
     },
   });
 
@@ -64,7 +64,7 @@ const ConfirmarRetiroModalBody = ({ id, onRetirado, onErrorInesperado, onVolver 
       }
 
       const message = applyApiError(form, error, {
-        fallbackMessage: 'No se pudo confirmar el retiro del envío.',
+        fallbackMessage: 'No se pudo confirmar el retiro del envío. Probá de nuevo.',
       });
       onErrorInesperado?.(message, error);
     } finally {
@@ -76,8 +76,8 @@ const ConfirmarRetiroModalBody = ({ id, onRetirado, onErrorInesperado, onVolver 
     <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
       <Stack gap="sm">
         <Text size="sm">
-          Confirmá el retiro del envío <strong>#{id}</strong> pidiéndole al destinatario su DNI y
-          la palabra de entrega. El estado pasará a "Entregado".
+          Confirmá el retiro del envío <strong>#{id}</strong>. Pedile al destinatario su DNI y la
+          palabra de entrega.
         </Text>
         <TextInput
           label="DNI de quien retira"
@@ -87,7 +87,7 @@ const ConfirmarRetiroModalBody = ({ id, onRetirado, onErrorInesperado, onVolver 
         />
         <TextInput
           label="Palabra de entrega"
-          description="Pedísela de palabra al destinatario."
+          description="Pedile al destinatario que te la diga."
           placeholder="Ej: AB23K9"
           required
           {...form.getInputProps('palabraEntregaIngresada')}

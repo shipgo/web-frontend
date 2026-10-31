@@ -113,7 +113,7 @@ const DashboardPage = () => {
           isLoading={resumenLoading}
           isError={resumenError}
           onRetry={resumenQuery.refetch}
-          tooltip="Envíos dados de alta en el período seleccionado."
+          tooltip="Envíos creados en el período seleccionado."
         />
         <KpiCard
           title="Viajes activos"
@@ -128,14 +128,14 @@ const DashboardPage = () => {
           isLoading={resumenLoading}
           isError={resumenError}
           onRetry={resumenQuery.refetch}
-          tooltip="Viajes en carga o en camino: ya salieron o están operando."
+          tooltip="Viajes que ya están en carga o en camino. Abajo se suman los planificados y los finalizados del período."
         />
         <KpiCard
           title="Incidencias"
           value={kpis ? kpis.incidencias.value : '—'}
           subtitle={
             kpis
-              ? `${kpis.incidencias.viajesConProblemas} viajes · ${kpis.incidencias.enviosRechazados} envíos rechazados`
+              ? `${kpis.incidencias.viajesConProblemas} viajes · ${kpis.incidencias.enviosRechazados} envíos no entregados`
               : ''
           }
           icon={<IconAlertTriangle />}
@@ -143,14 +143,14 @@ const DashboardPage = () => {
           isLoading={resumenLoading}
           isError={resumenError}
           onRetry={resumenQuery.refetch}
-          tooltip="Viajes con problemas + envíos rechazados dentro del período."
+          tooltip="Viajes con problemas y envíos no entregados en el período."
         />
         <KpiCard
           title="Entregas a tiempo"
           value={kpis ? pct(kpis.entregasATiempo.porcentaje) : '—'}
           subtitle={
             kpis
-              ? `${kpis.entregasATiempo.aTiempo} de ${kpis.entregasATiempo.base} entregas con viaje`
+              ? `${kpis.entregasATiempo.aTiempo} de ${kpis.entregasATiempo.base} entregas llegaron en el horario planificado`
               : ''
           }
           icon={<IconClockCheck />}
@@ -168,7 +168,7 @@ const DashboardPage = () => {
           isLoading={resumenLoading}
           isError={resumenError}
           onRetry={resumenQuery.refetch}
-          tooltip="Envíos entregados en fecha sobre el total de entregados con viaje asociado en el período."
+          tooltip="Entregas dentro del horario planificado del viaje, sobre el total de entregas con viaje."
         />
       </SimpleGrid>
 

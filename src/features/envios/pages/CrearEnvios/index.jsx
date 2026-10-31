@@ -120,13 +120,10 @@ const CrearEnvios = () => {
               color="red"
               variant="light"
               icon={<IconAlertTriangle size={16} />}
-              title="No podés crear envíos todavía"
+              title="Todavía no podés crear envíos"
             >
-              Tu usuario de SUPERUSER no tiene una sucursal propia asignada.
-              El backend no permite hoy elegir una sucursal de origen
-              alternativa al crear un envío (falla con un error interno) —
-              pendiente de soporte de backend. Pedile a un ADMIN que lo cargue,
-              o esperá a que se resuelva.
+              Tu usuario no tiene una sucursal asignada. Pedile a un
+              administrador que te asigne una.
             </Alert>
           )}
           <SeccionOrigen />

@@ -15,7 +15,7 @@ const SucursalChart = ({ series, periodoLabel, isLoading, isError, onRetry }) =>
   return (
     <ChartCard
       title="Envíos por sucursal"
-      tooltip="Envíos dados de alta en el período, agrupados por sucursal de origen."
+      tooltip="Envíos creados en el período, agrupados por sucursal de origen."
       icon={<IconBuildingWarehouse />}
       color="violet"
       subtitle={periodoLabel}

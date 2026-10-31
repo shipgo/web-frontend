@@ -15,7 +15,7 @@ import {
  *
  * Reemplaza al viejo `TamanoCargaDonut` ("tamaño de carga"): `CONTRACTS.md §2`
  * eliminó `tamano` / dimensiones del modelo de Envío en el MVP, así que ese widget
- * quedó sin dato de backend. El backend expone en su lugar el conteo de líneas de
+ * quedó sin dato de backend. El backend expone en su lugar el conteo de paquetes de
  * `detalleEnvio` por categoría.
  */
 const CategoriaDonut = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
@@ -25,7 +25,7 @@ const CategoriaDonut = ({ series, periodoLabel, isLoading, isError, onRetry }) =
   return (
     <ChartCard
       title="Envíos por categoría"
-      tooltip="Distribución de las líneas de detalle de los envíos del período, por categoría de carga."
+      tooltip="Paquetes del período por categoría."
       icon={<IconPackage />}
       color="teal"
       subtitle={periodoLabel}
@@ -37,7 +37,7 @@ const CategoriaDonut = ({ series, periodoLabel, isLoading, isError, onRetry }) =
       <Stack gap="md" pt="sm">
         <DonutChart
           data={data}
-          chartLabel={`${total} líneas`}
+          chartLabel={`${total} paquetes`}
           size={160}
           thickness={24}
           mx="auto"
