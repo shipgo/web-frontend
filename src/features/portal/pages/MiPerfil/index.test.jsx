@@ -137,7 +137,7 @@ describe('MiPerfilPage', () => {
         data: {
           statusCode: 400,
           message: 'Validación fallida',
-          fields: [{ field: 'telefono', error: 'Ingresá el teléfono.' }],
+          fields: [{ field: 'telefono', error: 'El teléfono es requerido' }],
         },
       },
     });
@@ -145,7 +145,7 @@ describe('MiPerfilPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-    expect(await screen.findByText('Ingresá el teléfono.')).toBeInTheDocument();
+    expect(await screen.findByText('El teléfono es requerido')).toBeInTheDocument();
     expect(mockGetUserInfo).not.toHaveBeenCalled();
   });
 

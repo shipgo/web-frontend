@@ -22,9 +22,11 @@
  *   parseo viejo de `CrearEnvios`).
  */
 
-const DEFAULT_MESSAGE = 'Algo salió mal. Probá de nuevo en unos minutos.';
+import { ERROR_GENERICO, REINTENTAR_MAS_TARDE } from '@copy/common';
+
+const DEFAULT_MESSAGE = ERROR_GENERICO;
 const FORBIDDEN_MESSAGE = 'No tenés permiso para hacer esto.';
-const SERVER_ERROR_MESSAGE = 'Algo salió mal. Probá de nuevo en unos minutos.';
+const SERVER_ERROR_MESSAGE = ERROR_GENERICO;
 const VALIDATION_FALLBACK_MESSAGE = 'Revisá los campos marcados.';
 // SHG-FE-131: `503` por contención de locks (SHG-BE-118) que siguió después de
 // los reintentos automáticos del interceptor (`@config/retry503`).
@@ -151,12 +153,13 @@ export const parseApiError = (err, options = {}) => {
   } else if (status != null && status >= 500) {
     message = SERVER_ERROR_MESSAGE;
   } else {
+    // Con errores por campo y sin `message`, la persona tiene que corregir
+    // campos: el aviso de validación gana al fallback de la pantalla.
     message =
       pickMessage(data) ||
-      options.fallbackMessage ||
       (Object.keys(fieldErrors).length > 0
         ? VALIDATION_FALLBACK_MESSAGE
-        : DEFAULT_MESSAGE);
+        : options.fallbackMessage || DEFAULT_MESSAGE);
   }
 
   return { fieldErrors, message, status };
@@ -186,8 +189,7 @@ export const applyApiError = (form, err, options = {}) => {
   return message;
 };
 
-const RATE_LIMITED_MESSAGE =
-  'Demasiados intentos. Probá de nuevo en unos minutos.';
+const RATE_LIMITED_MESSAGE = `Demasiados intentos. ${REINTENTAR_MAS_TARDE}`;
 
 /**
  * ¿Es el 429 por límite de intentos (SHG-CONTRACT-013)? Se distingue por

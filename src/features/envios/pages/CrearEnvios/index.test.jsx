@@ -174,7 +174,7 @@ describe("CrearEnvios", () => {
   };
 
   const agregarPaquete = async (user) => {
-    await user.click(screen.getByRole("button", { name: /añadir paquete/i }));
+    await user.click(screen.getByRole("button", { name: /agregar paquete/i }));
 
     // Mantine's Modal mounts its content after its enter transition tick.
     const modal = await screen.findByRole("dialog");
@@ -416,10 +416,10 @@ describe("CrearEnvios", () => {
         data: {
           message: "Validación fallida",
           fields: [
-            { field: "nombre", error: "Ingresá el nombre." },
+            { field: "nombre", error: "El nombre es requerido" },
             {
               field: "destino.numeroCalle",
-              error: "El número de la calle es requerido",
+              error: "El número de calle es requerido",
             },
           ],
         },
@@ -441,10 +441,10 @@ describe("CrearEnvios", () => {
     // Verificamos que ambos field-errors se resaltaron en el DOM.
     // Sin `stripPrefix: "destino"`, el campo anidado no se pelaría y no aparecería aquí.
     expect(
-      await screen.findByText("Ingresá el nombre."),
+      await screen.findByText("El nombre es requerido"),
     ).toBeInTheDocument();
     expect(
-      await screen.findByText("El número de la calle es requerido"),
+      await screen.findByText("El número de calle es requerido"),
     ).toBeInTheDocument();
   });
 
