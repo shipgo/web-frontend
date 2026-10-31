@@ -91,11 +91,11 @@ const OnboardingEmpresa = () => {
 
         const message = applyApiError(form, remapEmpresaFieldErrors(error), {
           stripPrefix: ["sucursal.puntoEntrega", "sucursal"],
-          fallbackMessage: "No se pudo crear la empresa",
+          fallbackMessage: "Probá de nuevo en unos minutos.",
         });
 
         notifications.show({
-          title: "Error",
+          title: "No se pudo crear la empresa",
           message,
           color: "red",
           icon: <IconX />,

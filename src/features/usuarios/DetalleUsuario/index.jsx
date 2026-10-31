@@ -31,8 +31,8 @@ const DetalleUsuario = () => {
       } catch (error) {
         console.error("Error cargando usuario:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar la información del usuario",
+          title: "No se pudo cargar la información del usuario",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
         });
         navigate("~/usuarios");
@@ -81,7 +81,7 @@ const DetalleUsuario = () => {
             leftSection={<IconKey size={18} />}
             onClick={() => confirmReset(usuario)}
           >
-            Resetear contraseña
+            Restablecer contraseña
           </Button>
         )}
         {canManageUsuario(currentUser, usuario) && (

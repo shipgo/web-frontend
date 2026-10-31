@@ -95,10 +95,10 @@ const MiPerfilPage = () => {
       }
     } catch (error) {
       const message = applyApiError(form, error, {
-        fallbackMessage: 'No se pudieron guardar los cambios. Intentá nuevamente.',
+        fallbackMessage: "Probá de nuevo en unos minutos.",
       });
       notifications.show({
-        title: 'Error',
+        title: 'No se pudieron guardar los cambios',
         message,
         color: 'red',
         icon: <IconX />,

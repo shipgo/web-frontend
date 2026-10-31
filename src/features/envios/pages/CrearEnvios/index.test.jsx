@@ -150,7 +150,7 @@ describe("CrearEnvios", () => {
     await user.type(screen.getByLabelText(/^nombre/i), "Juan");
     await user.type(screen.getByLabelText(/apellido/i), "García");
     await user.type(screen.getByLabelText(/email del remitente/i), "remitente@test.com");
-    await user.type(screen.getByLabelText(/email del receptor/i), "receptor@test.com");
+    await user.type(screen.getByLabelText(/email del destinatario/i), "receptor@test.com");
     await user.type(screen.getByLabelText(/^prefijo/i), "351");
     await user.type(screen.getByLabelText(/^teléfono/i), "1234567");
   };
@@ -456,7 +456,7 @@ describe("CrearEnvios", () => {
       await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
 
       expect(
-        screen.queryByText(/no podés crear envíos todavía/i),
+        screen.queryByText(/todavía no podés crear envíos/i),
       ).not.toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /registrar envío/i }),
@@ -470,7 +470,7 @@ describe("CrearEnvios", () => {
       await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
 
       expect(
-        await screen.findByText(/no podés crear envíos todavía/i),
+        await screen.findByText(/todavía no podés crear envíos/i),
       ).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /registrar envío/i }),
@@ -488,7 +488,7 @@ describe("CrearEnvios", () => {
       await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
 
       expect(
-        screen.queryByText(/no podés crear envíos todavía/i),
+        screen.queryByText(/todavía no podés crear envíos/i),
       ).not.toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /registrar envío/i }),

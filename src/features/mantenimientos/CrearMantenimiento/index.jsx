@@ -32,8 +32,8 @@ const CrearMantenimiento = () => {
         await mantenimientoApi.save(payload);
 
         notifications.show({
-          title: "Mantenimiento registrado",
-          message: "El mantenimiento se registró correctamente",
+          title: "Mantenimiento creado",
+          message: "El mantenimiento se creó correctamente.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -43,11 +43,11 @@ const CrearMantenimiento = () => {
         console.error("Error creando mantenimiento:", error);
 
         const message = applyApiError(form, error, {
-          fallbackMessage: "No se pudo registrar el mantenimiento",
+          fallbackMessage: "Probá de nuevo en unos minutos.",
         });
 
         notifications.show({
-          title: "Error",
+          title: "No se pudo crear el mantenimiento",
           message,
           color: "red",
           icon: <IconX />,

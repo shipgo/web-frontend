@@ -192,9 +192,9 @@ const ListadoEnviosPendientes = ({
       onError={{
         show: isError,
         onClick: refetch,
-        title: "Error al cargar los envíos",
+        title: "No pudimos cargar los envíos",
         description:
-          "Hubo un error al cargar los envíos pendientes, por favor intenta nuevamente",
+          "Intentá de nuevo en unos minutos.",
       }}
       onEmptyData={{
         show: !isPending && !isError && envios.length === 0,

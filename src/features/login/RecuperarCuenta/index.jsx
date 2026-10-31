@@ -77,7 +77,7 @@ const RecuperarCuenta = () => {
   if (enviado) {
     return (
       <AuthCardShell title="Revisá tu correo">
-        <Alert color="green" icon={<IconCheck size={18} />} title="Pedido enviado">
+        <Alert color="green" icon={<IconCheck size={18} />} title="Listo">
           Si el email está registrado, te enviamos un enlace para restablecer la
           contraseña. Revisá también la carpeta de spam.
         </Alert>
@@ -94,7 +94,7 @@ const RecuperarCuenta = () => {
   return (
     <AuthCardShell
       title="Recuperá tu cuenta"
-      subtitle="Ingresá tu email y te enviaremos un enlace para crear una nueva contraseña."
+      subtitle="Ingresá tu email y te enviamos un enlace para crear una nueva contraseña."
     >
       <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
         <Stack gap="lg">

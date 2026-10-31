@@ -29,8 +29,8 @@ export const useDeleteModelo = (onSuccess) => {
           await modeloApi.delete(modelo.id);
 
           notifications.show({
-            title: "Éxito",
-            message: "Modelo eliminado correctamente",
+            title: "Modelo eliminado",
+            message: "El modelo se eliminó correctamente.",
             color: "green",
             icon: <IconCheck />,
           });
@@ -41,10 +41,9 @@ export const useDeleteModelo = (onSuccess) => {
         } catch (error) {
           console.error("Error eliminando modelo:", error);
           notifications.show({
-            title: "Error",
+            title: "No se pudo eliminar el modelo",
             message:
-              error.response?.data?.message || "No se pudo eliminar el modelo",
-            color: "red",
+              error.response?.data?.message || "Probá de nuevo en unos minutos.",
             icon: <IconX />,
           });
         }

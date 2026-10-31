@@ -59,8 +59,8 @@ const SeleccionSucursalModal = ({
       onError={{
         show: isError,
         onClick: refetch,
-        title: "Error al cargar las sucursales",
-        description: "Ocurrió un error al cargar las sucursales",
+        title: "No pudimos cargar las sucursales",
+        description: "Intentá de nuevo en unos minutos.",
       }}
     >
       <Stack component="form" onSubmit={onSubmit(handleSubmit)}>
@@ -68,9 +68,9 @@ const SeleccionSucursalModal = ({
           {...getInputProps("sucursal")}
           searchable
           data={options}
-          label="Sucursal a transferir"
+          label="Sucursal de entrega"
           placeholder="Seleccioná una sucursal"
-          description={`Vas a transferir ${selectedPackagesAmount} paquete${selectedPackagesAmount > 1 ? "s" : ""} a esta sucursal`}
+          description={`Vas a dejar ${selectedPackagesAmount} ${selectedPackagesAmount > 1 ? "envíos" : "envío"} en esta sucursal.`}
         />
 
         <Group gap="xs">

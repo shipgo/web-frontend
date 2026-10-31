@@ -17,7 +17,7 @@ export const useDeleteUsuario = (onSuccess) => {
       const fullName = nombreCompleto(usuario);
 
       modals.openConfirmModal({
-        title: "Eliminar Usuario",
+        title: "Eliminar usuario",
         centered: true,
         children: (
           <Text size="sm">
@@ -46,10 +46,10 @@ export const useDeleteUsuario = (onSuccess) => {
           } catch (error) {
             console.error("Error eliminando usuario:", error);
             notifications.show({
-              title: "Error",
+              title: "No se pudo eliminar el usuario",
               message: parseApiError(error, {
                 backendForbiddenMessage: true,
-                fallbackMessage: "No se pudo eliminar el usuario",
+                fallbackMessage: "Probá de nuevo en unos minutos.",
               }).message,
               color: "red",
               icon: <IconX />,

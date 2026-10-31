@@ -13,7 +13,7 @@ import { ROLES_WEB } from '@domain/roles';
 
 const ITEMS = [
   {
-    title: 'Gestionar',
+    title: 'Operación',
     color: 'blue',
     options: [
       {
@@ -51,7 +51,7 @@ const ITEMS = [
     ],
   },
   {
-    title: 'Administrar',
+    title: 'Administración',
     options: [
       {
         title: 'Usuarios',

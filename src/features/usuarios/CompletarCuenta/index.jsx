@@ -119,10 +119,10 @@ const CompletarCuenta = () => {
         console.error("Error completando la cuenta:", error);
         const message = applyApiError(form, error, {
           backendForbiddenMessage: true,
-          fallbackMessage: "No se pudieron guardar tus datos",
+          fallbackMessage: "Probá de nuevo en unos minutos.",
         });
         notifications.show({
-          title: "Error",
+          title: "No se pudieron guardar tus datos",
           message,
           color: "red",
           icon: <IconX />,

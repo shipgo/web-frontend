@@ -39,8 +39,8 @@ const DetalleMantenimiento = () => {
         }
         console.error("Error cargando mantenimiento:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar la información del mantenimiento",
+          title: "No se pudo cargar la información del mantenimiento",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
           icon: <IconX />,
         });

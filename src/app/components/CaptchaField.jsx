@@ -53,7 +53,7 @@ const CaptchaField = ({ captcha }) => {
 
       {status === "error" ? (
         <Text size="sm" c="red">
-          No pudimos validar la verificación. Intentá de nuevo.
+          No pudimos completar la verificación. Intentá de nuevo.
         </Text>
       ) : null}
 

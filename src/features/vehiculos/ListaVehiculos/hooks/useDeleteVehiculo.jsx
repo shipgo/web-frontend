@@ -20,7 +20,7 @@ export const useDeleteVehiculo = (onSuccess) => {
         "este vehículo";
 
       modals.openConfirmModal({
-        title: "Eliminar Vehículo",
+        title: "Eliminar vehículo",
         centered: true,
         children: (
           <Text size="sm">
@@ -49,10 +49,10 @@ export const useDeleteVehiculo = (onSuccess) => {
           } catch (error) {
             console.error("Error eliminando vehículo:", error);
             notifications.show({
-              title: "Error",
+              title: "No se pudo eliminar el vehículo",
               message:
                 error.response?.data?.message ||
-                "No se pudo eliminar el vehículo",
+                "Probá de nuevo en unos minutos.",
               color: "red",
               icon: <IconX />,
             });

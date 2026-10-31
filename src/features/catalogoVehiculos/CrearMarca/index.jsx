@@ -29,8 +29,8 @@ const CrearMarca = () => {
         await marcaApi.save({ nombre: values.nombre });
 
         notifications.show({
-          title: "Éxito",
-          message: "Marca creada correctamente",
+          title: "Marca creada",
+          message: "La marca se creó correctamente.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -39,9 +39,9 @@ const CrearMarca = () => {
       } catch (error) {
         console.error("Error creando marca:", error);
         notifications.show({
-          title: "Error",
+          title: "No se pudo crear la marca",
           message: applyApiError(form, error, {
-            fallbackMessage: "No se pudo crear la marca",
+            fallbackMessage: "Probá de nuevo en unos minutos.",
           }),
           color: "red",
           icon: <IconX />,

@@ -25,8 +25,8 @@ const DetalleSucursal = () => {
       } catch (error) {
         console.error("Error cargando sucursal:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar la información de la sucursal",
+          title: "No se pudo cargar la información de la sucursal",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
           icon: <IconX />,
         });

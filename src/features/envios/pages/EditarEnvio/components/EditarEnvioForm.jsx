@@ -53,8 +53,8 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
       await envioApi.update(id, payload);
 
       notifications.show({
-        title: "Éxito",
-        message: "El envío fue actualizado correctamente",
+        title: "El envío fue actualizado",
+        message: "El el envío fue se actualizó correctamente.",
         color: "green",
         icon: <IconCheck />,
       });
@@ -64,14 +64,14 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
       console.error("Error actualizando envío:", error);
 
       const message = applyApiError(form, error, {
-        fallbackMessage: "No se pudo actualizar el envío",
+        fallbackMessage: "Probá de nuevo en unos minutos.",
       });
       // 409 (`editable: false`, `SHG-BE-112`: el envío cambió de estado con el form abierto):
       // el mensaje del backend queda visible también dentro del form.
       if (error?.response?.status === 409) setErrorConflicto(message);
 
       notifications.show({
-        title: "Error",
+        title: "No se pudo actualizar el envío",
         message,
         color: "red",
         icon: <IconX />,

@@ -27,6 +27,7 @@ import { notifications } from "@mantine/notifications";
 import PageFooter from "@components/PageFooter";
 import { vehiculoApi } from "@api";
 import { tipoMantenimientoApi } from "../api/mantenimientos.api";
+import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -80,13 +81,11 @@ const MantenimientoForm = ({
     }
 
     modals.openConfirmModal({
-      title: isEdit ? "Cancelar edición" : "Cancelar creación",
+      title: SALIR_SIN_GUARDAR.titulo,
       children: (
-        <Text size="sm">
-          Tenés cambios sin guardar. ¿Seguro que querés salir?
-        </Text>
+        <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
-      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      labels: { confirm: SALIR_SIN_GUARDAR.salir, cancel: SALIR_SIN_GUARDAR.seguir },
       confirmProps: { color: "red" },
       cancelProps: { variant: "subtle" },
       groupProps: { gap: "xs" },
@@ -128,8 +127,8 @@ const MantenimientoForm = ({
       } catch (error) {
         console.error("Error cargando catálogos:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar los datos necesarios",
+          title: "No se pudieron cargar los datos necesarios",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
         });
       } finally {
@@ -160,7 +159,7 @@ const MantenimientoForm = ({
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <TextInput
-                  label="Nombre del Mecánico"
+                  label="Nombre del mecánico"
                   placeholder="Ingresá el nombre"
                   leftSection={<IconUser size={18} />}
                   required
@@ -168,7 +167,7 @@ const MantenimientoForm = ({
                 />
 
                 <TextInput
-                  label="Apellido del Mecánico"
+                  label="Apellido del mecánico"
                   placeholder="Ingresá el apellido"
                   leftSection={<IconUser size={18} />}
                   required
@@ -200,7 +199,7 @@ const MantenimientoForm = ({
                 />
 
                 <Select
-                  label="Tipo de Mantenimiento"
+                  label="Tipo de mantenimiento"
                   placeholder="Seleccioná el tipo"
                   data={tiposMantenimiento}
                   searchable
@@ -214,7 +213,7 @@ const MantenimientoForm = ({
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <DateTimePicker
                   label="Desde"
-                  placeholder="Seleccioná inicio"
+                  placeholder="Fecha y hora de inicio"
                   leftSection={<IconCalendar size={18} />}
                   valueFormat="DD/MM/YYYY HH:mm"
                   minDate={isEdit ? undefined : new Date()}
@@ -224,7 +223,7 @@ const MantenimientoForm = ({
 
                 <DateTimePicker
                   label="Hasta"
-                  placeholder="Seleccioná fin"
+                  placeholder="Fecha y hora de fin"
                   leftSection={<IconCalendar size={18} />}
                   valueFormat="DD/MM/YYYY HH:mm"
                   minDate={form.values.fechaHoraMantenimiento ?? (isEdit ? undefined : new Date())}
@@ -239,7 +238,7 @@ const MantenimientoForm = ({
 
               <Textarea
                 label="Descripción"
-                placeholder="Describe los detalles del mantenimiento..."
+                placeholder="Describí los detalles del mantenimiento..."
                 leftSection={<IconFileDescription size={18} />}
                 minRows={4}
                 maxRows={6}
@@ -262,7 +261,7 @@ const MantenimientoForm = ({
             Cancelar
           </Button>
           <Button type="submit" loading={loading}>
-            {isEdit ? "Guardar cambios" : "Registrar mantenimiento"}
+            {isEdit ? "Guardar cambios" : "Crear mantenimiento"}
           </Button>
         </PageFooter>
       </form>

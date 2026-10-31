@@ -49,8 +49,8 @@ const KpiCard = ({
             onLoading={{ show: isLoading }}
             onError={{
               show: !isLoading && isError,
-              title: 'Error',
-              description: 'No se pudo cargar este dato.',
+              title: 'No pudimos cargar este dato',
+              description: 'Intentá de nuevo en unos minutos.',
               onClick: onRetry,
             }}
             styleProps={{ bg: 'transparent', mih: '64px', shadow: 'none' }}

@@ -68,8 +68,8 @@ const EditarVehiculo = () => {
         }
         console.error("Error cargando vehículo:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar el vehículo",
+          title: "No se pudo cargar el vehículo",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
           icon: <IconX />,
         });
@@ -118,9 +118,9 @@ const EditarVehiculo = () => {
     } catch (error) {
       console.error("Error actualizando vehículo:", error);
       notifications.show({
-        title: "Error",
+        title: "No se pudo actualizar el vehículo",
         message: applyApiError(form, error, {
-          fallbackMessage: "No se pudo actualizar el vehículo",
+          fallbackMessage: "Probá de nuevo en unos minutos.",
         }),
         color: "red",
         icon: <IconX />,

@@ -23,5 +23,5 @@ export const ENVIOS_CSV_COLUMNS = [
   { header: 'Localidad', value: (e) => e.destino?.localidad?.nombre },
   { header: 'Provincia', value: (e) => e.destino?.localidad?.provincia?.nombre },
   { header: 'Estado', value: (e) => estadoLabel('envio', e.estado) },
-  { header: 'Fecha de alta', value: (e) => toLocalDateTime(fechaAlta(e)) },
+  { header: 'Fecha de creación', value: (e) => toLocalDateTime(fechaAlta(e)) },
 ];

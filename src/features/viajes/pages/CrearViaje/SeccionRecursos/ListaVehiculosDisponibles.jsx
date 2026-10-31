@@ -63,9 +63,9 @@ const ListaVehiculosDisponibles = ({
             onError={{
               show: isError,
               onClick: refetch,
-              title: "Error al cargar los vehículos",
+              title: "No pudimos cargar los vehículos",
               description:
-                "Hubo un error al cargar los vehículos disponibles, por favor intenta nuevamente",
+                "Intentá de nuevo en unos minutos.",
             }}
             onEmptyData={{
               show: !isFetching && !isError && vehiculos.length === 0,
@@ -73,8 +73,8 @@ const ListaVehiculosDisponibles = ({
                 ? "No hay vehículos disponibles"
                 : "Seleccioná las fechas del viaje",
               description: fechasSeleccionadas
-                ? "No hay vehículos disponibles para la ventana de fechas seleccionada"
-                : "Completá la fecha de salida y llegada planificadas en \"Detalles del viaje\" para ver los vehículos disponibles",
+                ? "No hay vehículos disponibles en las fechas elegidas."
+                : "Completá la salida y la llegada planificadas en \"Detalles del viaje\" para ver los vehículos disponibles.",
             }}
           />
         ),
@@ -83,7 +83,7 @@ const ListaVehiculosDisponibles = ({
 
           return (
             <Center h="72px">
-              <Text c="dimmed">No hay más vehículos disponibles</Text>
+              <Text c="dimmed">No hay más vehículos disponibles.</Text>
             </Center>
           );
         },

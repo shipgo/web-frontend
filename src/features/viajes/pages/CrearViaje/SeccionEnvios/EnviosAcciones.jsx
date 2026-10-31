@@ -16,7 +16,7 @@ const EnviosAcciones = ({ selectedPackages, onSelectedAction }) => {
   const openSeleccionSucursalModal = () =>
     modals.open({
       modalId: "seleccion-sucursal",
-      title: "Transferir paquetes",
+      title: "Entrega en sucursal",
       children: (
         <SeleccionSucursalModal
           selectedPackagesAmount={selectedPackagesAmount}
@@ -52,10 +52,10 @@ const EnviosAcciones = ({ selectedPackages, onSelectedAction }) => {
 
       <Menu.Dropdown>
         <Menu.Item onClick={onEntregaLocalAction}>
-          Entrega a destino final
+          Entrega al destinatario
         </Menu.Item>
         <Menu.Item onClick={openSeleccionSucursalModal}>
-          Transferencia a sucursal
+          Entrega en sucursal
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>

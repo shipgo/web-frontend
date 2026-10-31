@@ -143,7 +143,7 @@ describe("CambiarPasswordCard", () => {
     await user.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
 
     expect(
-      (await screen.findAllByText("No se pudo cambiar la contraseña. Intentá nuevamente.")).length,
+      (await screen.findAllByText("Probá de nuevo en unos minutos.")).length,
     ).toBeGreaterThan(0);
   });
 

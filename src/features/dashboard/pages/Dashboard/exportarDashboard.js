@@ -68,8 +68,8 @@ export const exportarDashboardPDF = async ({ filtros, params, resumen, series } 
       id: notifId,
       loading: false,
       color: 'red',
-      title: 'Error al exportar',
-      message: 'No se pudo generar el PDF del dashboard.',
+      title: 'No se pudo exportar',
+      message: 'No pudimos generar el PDF del dashboard.',
       autoClose: 4000,
       withCloseButton: true,
     });

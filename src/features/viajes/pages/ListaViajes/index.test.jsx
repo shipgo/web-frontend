@@ -302,14 +302,14 @@ describe("ListaViajes", () => {
       const dialog = await screen.findByRole("dialog");
       await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
 
-      expect(await screen.findByText("No se puede completar la acción")).toBeInTheDocument();
+      expect(await screen.findByText("Acción no disponible")).toBeInTheDocument();
       expect(screen.getByText("El viaje ya está en curso")).toBeInTheDocument();
       // Un 409 es "no se pudo, todavía no es un estado válido": no hay razón
       // para revalidar el listado (a diferencia del cancelar exitoso).
       expect(viajeApi.get).toHaveBeenCalledTimes(1);
     });
 
-    it('"Cancelar viaje" maneja un 403 del backend igual que el detalle (toast de "Sin permisos", sin refetch)', async () => {
+    it('"Cancelar viaje" maneja un 403 del backend igual que el detalle (toast de "Acción no permitida", sin refetch)', async () => {
       // Mismo `handleAccionError` que `DetalleViaje` (SHG-FE-012): un 403 es
       // "rol sin permiso para la acción", no una transición inválida — toast
       // puntual de error, no de warning, y tampoco refetch (nada cambió).
@@ -328,7 +328,7 @@ describe("ListaViajes", () => {
       const dialog = await screen.findByRole("dialog");
       await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
 
-      expect(await screen.findByText("Sin permisos")).toBeInTheDocument();
+      expect(await screen.findByText("Acción no permitida")).toBeInTheDocument();
       expect(screen.getByText("No tiene permisos para cancelar este viaje")).toBeInTheDocument();
       expect(viajeApi.get).toHaveBeenCalledTimes(1);
     });

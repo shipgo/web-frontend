@@ -52,7 +52,7 @@ export const useDeleteMantenimiento = (onSuccess) => {
               title: "No se puede eliminar",
               message:
                 backendMessage ||
-                `El mantenimiento ${identificador} no se puede eliminar en este momento`,
+                `No se puede eliminar el mantenimiento ${identificador} en este momento.`,
               color: "yellow",
               icon: <IconAlertTriangle />,
             });
@@ -62,7 +62,7 @@ export const useDeleteMantenimiento = (onSuccess) => {
           if (status === 404) {
             notifications.show({
               title: "Mantenimiento no encontrado",
-              message: backendMessage || `El mantenimiento ${identificador} ya no existe`,
+              message: backendMessage || 'No encontramos el mantenimiento.',
               color: "red",
               icon: <IconX />,
             });
@@ -71,8 +71,8 @@ export const useDeleteMantenimiento = (onSuccess) => {
 
           console.error("Error eliminando mantenimiento:", error);
           notifications.show({
-            title: "Error",
-            message: backendMessage || "No se pudo eliminar el mantenimiento",
+            title: "No se pudo eliminar el mantenimiento",
+            message: backendMessage || "Probá de nuevo en unos minutos.",
             color: "red",
             icon: <IconX />,
           });

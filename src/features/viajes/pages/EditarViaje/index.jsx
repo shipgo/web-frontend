@@ -131,11 +131,11 @@ const EditarViaje = () => {
         // "viaje." — el helper los alinea a los nombres planos del form.
         const message = applyApiError(form, error, {
           stripPrefix: "viaje",
-          fallbackMessage: "No se pudo actualizar el viaje",
+          fallbackMessage: "Probá de nuevo en unos minutos.",
         });
 
         notifications.show({
-          title: "Error",
+          title: "No se pudo actualizar el viaje",
           message,
           color: "red",
           icon: <IconX />,
@@ -159,7 +159,7 @@ const EditarViaje = () => {
       <PageBreadcrumbsHeader
         entidad="Viajes"
         accion="Editar viaje"
-        descripcion="Modificá los envíos, los recorridos, el vehículo, los choferes y las fechas planificadas del viaje"
+        descripcion="Modificá los envíos, el vehículo, los choferes y las fechas planificadas del viaje."
       />
 
       <ScreenContainer
@@ -205,7 +205,7 @@ const EditarViaje = () => {
                       Este viaje no se puede editar en su estado actual
                     </Text>
                     <Text c="dimmed" size="sm">
-                      Sólo se pueden editar viajes en estado &quot;Creado&quot; o
+                      Solo se pueden editar viajes en estado &quot;Creado&quot; o
                       &quot;Planificado&quot;.
                     </Text>
                   </Box>

@@ -51,7 +51,7 @@ const fillMinimalForm = async (user) => {
   const fechaInput = screen.getByLabelText(/fecha de nacimiento/i);
   await user.type(fechaInput, "15/09/2000");
 
-  await selectOption(user, "Tipo de Documento", "DNI");
+  await selectOption(user, "Tipo de documento", "DNI");
   await user.type(screen.getByLabelText(exactLabel("dni")), "30111222");
   await selectOption(user, "Sexo", "Masculino");
 

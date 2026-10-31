@@ -59,15 +59,15 @@ const SeccionResumen = () => {
         styleProps={{ h: "400" }}
         onLoading={{
           show: isPending,
-          title: "Calculando ruta sugerida...",
+          title: "Calculando la ruta...",
           description:
-            "Esto puede tardar unos segundos. Por favor, no cierres ni recargues la página.",
+            "Puede tardar unos segundos. No cierres la página.",
         }}
         onError={{
           show: isError,
-          title: "Error al calcular la ruta",
+          title: "No pudimos calcular la ruta",
           description:
-            "Ocurrió un error al calcular el trayecto. Intentá nuevamente.",
+            "Intentá de nuevo en unos minutos.",
           onClick: handleRouteCalculation,
         }}
       >

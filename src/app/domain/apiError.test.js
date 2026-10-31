@@ -191,7 +191,7 @@ describe('parseApiError — 403', () => {
       statusCode: 403,
       message: 'No tiene permisos para acceder a este recurso',
     });
-    expect(parseApiError(err).message).toBe('No tenés permisos para esta acción.');
+    expect(parseApiError(err).message).toBe('No tenés permiso para hacer esto.');
   });
 });
 
@@ -206,7 +206,7 @@ describe('parseApiError — 403 con backendForbiddenMessage', () => {
   it('sin message cae al texto fijo', () => {
     const err = axiosError(403, { statusCode: 403 });
     expect(parseApiError(err, { backendForbiddenMessage: true }).message).toBe(
-      'No tenés permisos para esta acción.',
+      'No tenés permiso para hacer esto.',
     );
   });
 });

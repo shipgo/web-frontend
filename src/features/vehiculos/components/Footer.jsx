@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import PageFooter from "@components/PageFooter";
 
 import { useVehiculoFormContext } from "../context/VehiculoFormContext";
+import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 /**
  * Acciones del formulario de vehículos. Usa el `PageFooter` canónico
@@ -25,13 +26,11 @@ const Footer = ({ onSubmit, isSubmitting, submitLabel = "Guardar cambios" }) => 
     }
 
     modals.openConfirmModal({
-      title: "Cambios sin guardar",
+      title: SALIR_SIN_GUARDAR.titulo,
       children: (
-        <Text size="sm">
-          Tenés cambios sin guardar. ¿Seguro que querés salir?
-        </Text>
+        <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
-      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      labels: { confirm: SALIR_SIN_GUARDAR.salir, cancel: SALIR_SIN_GUARDAR.seguir },
       confirmProps: { color: "red" },
       cancelProps: { variant: "subtle" },
       groupProps: { gap: "xs" },

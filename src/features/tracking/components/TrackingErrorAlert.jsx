@@ -23,9 +23,9 @@ const CONFIG = {
   captcha_invalid: {
     color: 'red',
     icon: IconShieldExclamation,
-    title: 'No pudimos verificar que sos una persona',
+    title: 'No pudimos completar la verificación de seguridad',
     message:
-      'La verificación de seguridad venció o no es válida. Resolvela de nuevo y volvé a consultar.',
+      'La verificación venció o no es válida. Completala de nuevo y volvé a consultar.',
   },
   network: {
     color: 'red',

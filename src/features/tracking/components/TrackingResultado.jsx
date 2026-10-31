@@ -145,7 +145,7 @@ const TrackingResultado = ({ data }) => {
             </Group>
             <TrackingUbicacionMapa ubicacion={data.ultimaUbicacionAprox} />
             <Text size="xs" c="dimmed">
-              La ubicación es aproximada (~1 km) y sólo se muestra mientras el
+              La ubicación es aproximada (~1 km) y solo se muestra mientras el
               envío está en camino.
             </Text>
           </Stack>

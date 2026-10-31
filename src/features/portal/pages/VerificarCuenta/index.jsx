@@ -94,7 +94,7 @@ const VerificarCuentaPage = () => {
         ? {
             color: 'red',
             icon: <IconAlertTriangle size={20} />,
-            title: 'Enlace inválido',
+            title: 'Enlace no válido',
             body: 'No encontramos una verificación para este enlace. Puede que ya lo hayas usado.',
           }
         : kind === 'expirado'
@@ -141,7 +141,7 @@ const VerificarCuentaPage = () => {
         Iniciar sesión
       </Button>
       <Text size="sm" c="dimmed">
-        ¿Sólo querés seguir un envío puntual?{' '}
+        ¿Solo querés seguir un envío puntual?{' '}
         <Anchor component={Link} href="/tracking">
           Seguí tu envío sin cuenta
         </Anchor>

@@ -64,8 +64,8 @@ export const useCsvExport = ({ fetchRows, columns, entidad, entidadLabel }) => {
     } catch (error) {
       console.error(`Error exportando ${entidad} a CSV:`, error);
       notifications.show({
-        title: 'Error al exportar',
-        message: `No se pudo generar el CSV de ${label}.`,
+        title: 'No se pudo exportar',
+        message: `No pudimos generar el CSV de ${label}.`,
         color: 'red',
       });
     } finally {

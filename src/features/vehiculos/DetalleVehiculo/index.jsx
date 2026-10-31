@@ -34,8 +34,8 @@ const DetalleVehiculo = () => {
         }
         console.error("Error cargando vehículo:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar la información del vehículo",
+          title: "No se pudo cargar la información del vehículo",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
         });
         navigate("~/vehiculos");

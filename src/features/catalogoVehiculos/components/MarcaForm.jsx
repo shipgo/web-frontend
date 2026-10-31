@@ -4,6 +4,7 @@ import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
+import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 /**
  * Formulario reutilizable de crear/editar Marca (`MarcaReqDTO { nombre }`,
@@ -36,13 +37,11 @@ const MarcaForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
     }
 
     modals.openConfirmModal({
-      title: "Cambios sin guardar",
+      title: SALIR_SIN_GUARDAR.titulo,
       children: (
-        <Text size="sm">
-          Tenés cambios sin guardar. ¿Seguro que querés salir?
-        </Text>
+        <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
-      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      labels: { confirm: SALIR_SIN_GUARDAR.salir, cancel: SALIR_SIN_GUARDAR.seguir },
       confirmProps: { color: "red" },
       cancelProps: { variant: "subtle" },
       groupProps: { gap: "xs" },

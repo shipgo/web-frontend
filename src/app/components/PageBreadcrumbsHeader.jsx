@@ -14,7 +14,7 @@ const HELP_URL = "https://shipgo.gitbook.io/manual";
 /**
  * Header canónico de las pantallas de formulario y de detalle en todo el sistema
  * (referencia: `CrearViaje` / `CrearEnvios`): breadcrumbs `Entidad / Acción` como
- * título de la página + bajada opcional + botón "Necesito ayuda". Compartido por
+ * título de la página + bajada opcional + botón "Ayuda". Compartido por
  * crear/editar/detalle de cada entidad para que el patrón no diverja.
  *
  * `entidadHref` es relativo al router anidado de la feature (`/viajes`, `/envios`,
@@ -28,7 +28,7 @@ const HELP_URL = "https://shipgo.gitbook.io/manual";
  * @param {string | import('react').ReactNode} [props.descripcion] - texto dimmed
  *   bajo el título, o un nodo propio (ej: badge de estado + código).
  * @param {import('react').ReactNode} [props.children] - acciones extra a la
- *   izquierda del botón "Necesito ayuda" (ej: "Editar", "Entregar").
+ *   izquierda del botón "Ayuda" (ej: "Editar", "Entregar").
  */
 const PageBreadcrumbsHeader = ({
   entidad,
@@ -61,7 +61,7 @@ const PageBreadcrumbsHeader = ({
     <Group ml="auto" gap="xs">
       {children}
       <Button variant="subtle" component="a" href={HELP_URL} target="_blank">
-        Necesito ayuda
+        Ayuda
       </Button>
     </Group>
   </Flex>

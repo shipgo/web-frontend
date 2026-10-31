@@ -60,8 +60,8 @@ export const cantidadRuedasValidaParaCategoria = (categoria, cantidadRuedas) =>
 /** Mensaje de error a mostrar según la categoría del tipo de vehículo elegido. */
 export const cantidadRuedasErrorMessage = (categoria) =>
   categoria === CATEGORIA_VEHICULO.MOTO
-    ? "Una moto debe tener exactamente 2 ruedas"
-    : "La cantidad de ruedas debe ser al menos 4 (salvo motos)";
+    ? "Una moto tiene que tener 2 ruedas."
+    : "Ingresá al menos 4 ruedas (las motos tienen 2).";
 
 const currentYear = new Date().getFullYear();
 
@@ -97,44 +97,44 @@ export const VEHICULO_SCHEMA = z
       .pipe(
         z
           .string()
-          .min(1, "El campo patente no puede estar vacío")
+          .min(1, "Ingresá la patente.")
           .regex(
             PATENTE_REGEX,
-            "Ingresá una patente válida (formato AA123BB o ABC123)",
+            "Ingresá una patente válida (formato AA123BB o ABC123).",
           ),
       ),
-    tipoVehiculoID: requiredSelect("Seleccioná un tipo de vehículo"),
-    marcaID: requiredSelect("Seleccioná una marca"),
-    modeloID: requiredSelect("Seleccioná un modelo"),
-    combustibleID: requiredSelect("Seleccioná un combustible"),
-    tipoRuedaID: requiredSelect("Seleccioná un tipo de rueda"),
+    tipoVehiculoID: requiredSelect("Elegí un tipo de vehículo."),
+    marcaID: requiredSelect("Elegí una marca."),
+    modeloID: requiredSelect("Elegí un modelo."),
+    combustibleID: requiredSelect("Elegí un combustible."),
+    tipoRuedaID: requiredSelect("Elegí un tipo de rueda."),
     anioCompra: numberField(
       z
-        .number({ error: "El campo año de compra no puede estar vacío" })
-        .gte(1900, "El año debe ser mayor a 1900")
-        .lte(currentYear, "El año no puede ser mayor al actual"),
+        .number({ error: "Ingresá el año de compra." })
+        .gte(1900, "El año tiene que ser 1900 o posterior.")
+        .lte(currentYear, "El año no puede ser posterior al actual."),
     ),
     kilometraje: numberField(
       z
-        .number({ error: "El campo kilometraje no puede estar vacío" })
-        .gte(0, "El kilometraje debe ser mayor o igual a 0"),
+        .number({ error: "Ingresá el kilometraje." })
+        .gte(0, "El kilometraje no puede ser negativo."),
     ),
     // Piso físico (`@Min(2)` de `VehiculoReqDTO`, `SHG-BE-040`) — la regla
     // real por categoría se aplica abajo, en el `superRefine`.
     cantidadRuedas: numberField(
       z
-        .number({ error: "El campo cantidad de ruedas no puede estar vacío" })
-        .gte(2, "La cantidad de ruedas debe ser al menos 2"),
+        .number({ error: "Ingresá la cantidad de ruedas." })
+        .gte(2, "Ingresá al menos 2 ruedas."),
     ),
     pesoMaximo: numberField(
       z
-        .number({ error: "El campo peso máximo no puede estar vacío" })
-        .gt(0, "El peso máximo debe ser mayor a 0"),
+        .number({ error: "Ingresá el peso máximo." })
+        .gt(0, "El peso máximo tiene que ser mayor a 0."),
     ),
     consumoPromedio: numberField(
       z
-        .number({ error: "El campo consumo promedio no puede estar vacío" })
-        .gte(0.1, "El consumo promedio debe ser mayor o igual a 0.1"),
+        .number({ error: "Ingresá el consumo promedio." })
+        .gte(0.1, "El consumo promedio tiene que ser de al menos 0,1."),
     ),
   })
   .superRefine((data, ctx) => {

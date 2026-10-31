@@ -6,7 +6,7 @@ import PageHeader from '@components/PageHeader';
 import ExportCsvButton from '@components/ExportCsvButton';
 
 const ListaViajesHeader = ({ onExportCsv, isExporting, exportDisabled }) => (
-  <PageHeader title="Viajes" subtitle="Listado de viajes cargados en el sistema">
+  <PageHeader title="Viajes" subtitle="Planificá y seguí tus viajes">
     <Button to="/crear" component={Link} leftSection={<IconMailPlus />}>
       Crear viaje
     </Button>

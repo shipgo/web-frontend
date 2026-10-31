@@ -42,7 +42,7 @@ const RecorridoCard = ({ recorrido }) => {
       <Stack gap="sm">
         <Group justify="space-between">
           <Group gap="xs">
-            <Text fw={600}>Recorrido #{recorrido.orden ?? '—'}</Text>
+            <Text fw={600}>Parada {recorrido.orden ?? '—'}</Text>
             {/* `c={estadoInfo.textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
                 en `@domain/estados` — sin esto, "En camino"/"Finalizado" no
                 llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
@@ -60,7 +60,7 @@ const RecorridoCard = ({ recorrido }) => {
 
         {envios.length === 0 ? (
           <Text size="sm" c="dimmed">
-            Este recorrido no tiene envíos cargados.
+            Esta parada no tiene envíos cargados.
           </Text>
         ) : (
           <Table striped highlightOnHover>
@@ -93,10 +93,10 @@ const RecorridosList = ({ recorridos = [] }) => {
   return (
     <Card>
       <Stack gap="md">
-        <Title order={4}>Recorridos</Title>
+        <Title order={4}>Paradas</Title>
         {ordenados.length === 0 ? (
           <Text size="sm" c="dimmed">
-            Este viaje no tiene recorridos cargados.
+            Este viaje no tiene paradas cargadas.
           </Text>
         ) : (
           <Stack gap="md">

@@ -6,6 +6,7 @@ import PageFooter from "@components/PageFooter";
 import { formatPeso } from "@domain/format";
 
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
+import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 const Footer = ({
   onSubmit,
@@ -23,13 +24,11 @@ const Footer = ({
       return;
     }
     modals.openConfirmModal({
-      title: "Cancelar envío",
+      title: SALIR_SIN_GUARDAR.titulo,
       children: (
-        <Text size="sm">
-          Tenés cambios sin guardar. ¿Seguro que querés salir?
-        </Text>
+        <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
-      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      labels: { confirm: SALIR_SIN_GUARDAR.salir, cancel: SALIR_SIN_GUARDAR.seguir },
       confirmProps: { color: "red" },
       cancelProps: { variant: "subtle" },
       groupProps: { gap: "xs" },

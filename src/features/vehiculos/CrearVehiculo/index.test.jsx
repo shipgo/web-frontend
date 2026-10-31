@@ -134,7 +134,7 @@ describe("CrearVehiculo", () => {
     await selectOption(user, /tipo de vehículo/i, "Moto");
 
     // Auto-ajustada por `VehiculoForm` al elegir un tipo de categoría moto
-    // (ver `onChange` de "Tipo de Vehículo").
+    // (ver `onChange` de "Tipo de vehículo").
     expect(screen.getByLabelText(/cantidad de ruedas/i)).toHaveValue("2");
 
     await selectOption(user, /^marca/i, "Toyota");

@@ -6,7 +6,7 @@ import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
 
-import { normalizarEstado } from '@domain/estados';
+import { estadoLabel, normalizarEstado } from '@domain/estados';
 import { viajeApi } from '@api';
 import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
@@ -20,6 +20,9 @@ import ListaViajesFiltros from './components/ListaViajesFiltros';
 
 import { useGetViajes } from './hooks/useGetViajes';
 import { VIAJES_CSV_COLUMNS } from './listaViajes.csv';
+import { listaEstados } from '@copy/common';
+
+const ESTADOS_LISTA = listaEstados({ singular: 'viaje', plural: 'viajes', genero: 'm' });
 
 const ListaViajes = () => {
   const { params, setPage, setFilters, clearFilters, refetch, viajesQuery, fetchExportRows, PAGE_LIMIT } =
@@ -77,7 +80,7 @@ const ListaViajes = () => {
       if (ESTADOS_ELIMINABLES.includes(normalizarEstado(item.estado))) {
         eliminables.push(item);
       } else {
-        excluidos.push({ item, reason: 'no se puede eliminar en su estado actual' });
+        excluidos.push({ item, reason: `no se puede eliminar porque está ${estadoLabel('viaje', item.estado)}` });
       }
     });
 
@@ -117,16 +120,16 @@ const ListaViajes = () => {
       <Card>
         <ScreenContainer
           onLoading={{ show: isLoading, description: 'Cargando viajes...' }}
-          onError={{ show: isError, onClick: refetch, description: 'Ocurrió un error al cargar los viajes' }}
+          onError={{ show: isError, onClick: refetch, title: ESTADOS_LISTA.error }}
           onEmptyData={{
             show: data.total === 0 && Object.keys(params.filters).length === 0,
-            title: 'Sin viajes que mostrar',
-            description: 'Parece que no cargaste ningún viaje todavía',
+            title: ESTADOS_LISTA.vacioTitulo,
+            description: ESTADOS_LISTA.vacioDescripcion,
           }}
           onEmptyFiltersData={{
             show: data.total === 0 && Object.keys(params.filters).length > 0,
-            title: 'Sin viajes que mostrar',
-            description: 'No se encontraron viajes con los filtros aplicados',
+            title: ESTADOS_LISTA.sinResultadosTitulo,
+            description: ESTADOS_LISTA.sinResultadosDescripcion,
             onClick: handleClearFilters,
           }}
         >

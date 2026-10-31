@@ -20,13 +20,13 @@ import {
 export { PASSWORD_MIN };
 
 export const REGISTRO_SCHEMA = z.object({
-  nombre: nombreRequerido('El nombre es requerido'),
-  apellido: nombreRequerido('El apellido es requerido'),
+  nombre: nombreRequerido('Ingresá el nombre.'),
+  apellido: nombreRequerido('Ingresá el apellido.'),
   email: emailRequerido(),
   telefono: telefonoRequerido(),
   password: z
     .string()
-    .min(PASSWORD_MIN, `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres`),
+    .min(PASSWORD_MIN, `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`),
 });
 
 export const REGISTRO_INITIAL_VALUES = {

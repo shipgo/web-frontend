@@ -112,8 +112,8 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
       )
       .catch(() => {
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las provincias",
+          title: "No se pudieron cargar las provincias",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
         });
       });
@@ -144,8 +144,8 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
       })
       .catch(() => {
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las localidades",
+          title: "No se pudieron cargar las localidades",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
         });
       });
@@ -507,7 +507,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                   pointerEvents: "none",
                 }}
               >
-                Hacé click en el mapa para ubicar el envío
+                Tocá o hacé clic en el mapa para ubicar el envío
               </Text>
             )}
             {geocodedCoords && !destinoBloqueado && (

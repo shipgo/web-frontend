@@ -118,13 +118,13 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true, mantenimiento = null }) 
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
             <InfoItem
               icon={IconCar}
-              label="Tipo de Vehículo"
+              label="Tipo de vehículo"
               value={tipoVehiculo}
               color="blue"
             />
             <InfoItem
               icon={IconCalendar}
-              label="Año de Compra"
+              label="Año de compra"
               value={vehiculo.anioCompra}
               color="cyan"
             />
@@ -161,7 +161,7 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true, mantenimiento = null }) 
                 />
                 <InfoItem
                   icon={IconGauge}
-                  label="Consumo Promedio"
+                  label="Consumo promedio"
                   value={
                     vehiculo.consumoPromedio
                       ? `${vehiculo.consumoPromedio} L/100km`
@@ -183,19 +183,19 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true, mantenimiento = null }) 
               <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
                 <InfoItem
                   icon={IconRuler}
-                  label="Tipo de Rueda"
+                  label="Tipo de rueda"
                   value={vehiculo.tipoRueda?.nombre || vehiculo.tipo_rueda?.nombre}
                   color="violet"
                 />
                 <InfoItem
                   icon={IconId}
-                  label="Cantidad de Ruedas"
+                  label="Cantidad de ruedas"
                   value={vehiculo.cantidadRuedas}
                   color="violet"
                 />
                 <InfoItem
                   icon={IconWeight}
-                  label="Peso Máximo"
+                  label="Peso máximo"
                   value={
                     vehiculo.pesoMaximo
                       ? formatPeso(vehiculo.pesoMaximo)
@@ -227,7 +227,7 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true, mantenimiento = null }) 
                   {(vehiculo.fechaCreacion || vehiculo.createdAt) && (
                     <InfoItem
                       icon={IconCalendar}
-                      label="Fecha de Registro"
+                      label="Fecha de registro"
                       value={toLocalDate(vehiculo.fechaCreacion || vehiculo.createdAt)}
                       color="green"
                     />

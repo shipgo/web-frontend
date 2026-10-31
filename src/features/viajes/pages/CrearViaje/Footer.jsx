@@ -12,6 +12,7 @@ import useEnviosStats from "./hooks/useEnviosStats";
 import { useCrearViaje } from "./hooks/useCrearViaje";
 import { useRefrescarRecursosTras409 } from "./hooks/useRefrescarRecursosTras409";
 import { buildViajeReqDTO } from "./utils";
+import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 const Footer = () => {
   const [, navigate] = useLocation();
@@ -41,14 +42,11 @@ const Footer = () => {
     }
 
     modals.openConfirmModal({
-      title: "Cancelar creación de viaje",
+      title: SALIR_SIN_GUARDAR.titulo,
       children: (
-        <Text size="sm">
-          Vas a perder todo lo cargado en este viaje. ¿Seguro que querés
-          salir?
-        </Text>
+        <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
-      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      labels: { confirm: SALIR_SIN_GUARDAR.salir, cancel: SALIR_SIN_GUARDAR.seguir },
       confirmProps: { color: "red" },
       cancelProps: { variant: "subtle" },
       groupProps: { gap: "xs" },
@@ -85,11 +83,11 @@ const Footer = () => {
         // "viaje." — el helper los alinea a los nombres planos del form.
         const message = applyApiError(form, error, {
           stripPrefix: "viaje",
-          fallbackMessage: "No se pudo crear el viaje. Intentá nuevamente.",
+          fallbackMessage: "Probá de nuevo en unos minutos.",
         });
         notifications.show({
           color: "red",
-          title: "Error al crear el viaje",
+          title: "No se pudo crear el viaje",
           message,
           icon: <IconX />,
         });
@@ -110,7 +108,7 @@ const Footer = () => {
         </Badge>
       )}
       <Text size="sm" c="dimmed" fw={500} mr="auto">
-        {totalStops > 0 && `${totalStops} Paradas en total`}
+        {totalStops > 0 && `${totalStops} ${totalStops === 1 ? 'parada' : 'paradas'} en total`}
       </Text>
       <Button
         color="red"

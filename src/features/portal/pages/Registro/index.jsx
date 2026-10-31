@@ -63,7 +63,7 @@ const RegistroPage = () => {
         captcha.reset();
         form.setErrors({
           email:
-            'No pudimos verificar la seguridad del formulario. Resolvé el captcha de nuevo e intentá otra vez.',
+            'No pudimos completar la verificación de seguridad. Completala de nuevo e intentá otra vez.',
         });
         return;
       }

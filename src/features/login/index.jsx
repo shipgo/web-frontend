@@ -66,8 +66,8 @@ const LoginPage = ({ variant = "operator" }) => {
     mode: "uncontrolled",
     initialValues: DEFAULT_FORM_VALUES,
     validate: {
-      username: isNotEmpty("Usuario requerido"),
-      password: isNotEmpty("Contraseña requerida"),
+      username: isNotEmpty("Ingresá tu usuario."),
+      password: isNotEmpty("Ingresá tu contraseña."),
     },
   });
 
@@ -125,9 +125,9 @@ const LoginPage = ({ variant = "operator" }) => {
         captcha.reset();
         notifications.show({
           color: "red",
-          title: "No pudimos verificar que sos una persona",
+          title: "No pudimos completar la verificación de seguridad",
           message:
-            "La verificación de seguridad venció o no es válida. Resolvela de nuevo e intentá otra vez.",
+            "La verificación venció o no es válida. Completala de nuevo e intentá otra vez.",
           icon: (
             <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
           ),
@@ -165,7 +165,7 @@ const LoginPage = ({ variant = "operator" }) => {
           : "Usuario y/o contraseña incorrectos",
         message: isUnverified
           ? apiMessage
-          : "Por favor, verificá los datos ingresados",
+          : "Revisá tus datos e intentá de nuevo.",
         icon: (
           <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
         ),
@@ -204,7 +204,7 @@ const LoginPage = ({ variant = "operator" }) => {
 
             <Stack gap={0}>
               <Anchor component={WouterLink} href="/" aria-label="ShipGo — inicio" w="300">
-                <Image src={logo} alt="ShipGo logo" w="300" fit="contain" />
+                <Image src={logo} alt="Logo de ShipGo" w="300" fit="contain" />
               </Anchor>
               <Title order={1}>{copy.title}</Title>
               <Text>{copy.subtitle}</Text>
@@ -229,7 +229,7 @@ const LoginPage = ({ variant = "operator" }) => {
                   autoComplete="current-password"
                   disabled={loading}
                   key={form.key("password")}
-                  placeholder="Introducí tu contraseña"
+                  placeholder="Ingresá tu contraseña"
                 />
               </Stack>
             </FocusTrap>
@@ -256,7 +256,7 @@ const LoginPage = ({ variant = "operator" }) => {
 
             <Group justify="center">
               <Anchor href="https://shipgo.gitbook.io/manual" target="_blank">
-                Necesito ayuda
+                Ayuda
               </Anchor>
               {/* A 390 px los links envuelven en dos filas y el divisor quedaba huérfano (SHG-FE-112). */}
               <Divider orientation="vertical" visibleFrom="sm" />

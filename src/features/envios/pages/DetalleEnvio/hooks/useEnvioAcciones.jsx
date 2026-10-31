@@ -36,7 +36,7 @@ const handleAccionError = (error, accionLabel, estadosPermitidos) => {
 
   if (status === 403) {
     notifications.show({
-      title: 'No tenés permiso',
+      title: 'Acción no permitida',
       message: backendMessage || 'No tenés permiso para hacer esto.',
       color: 'red',
       icon: <IconX />,

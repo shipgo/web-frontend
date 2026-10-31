@@ -87,7 +87,7 @@ const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onReanudar, onCa
               leftSection={<IconBan size={18} />}
               onClick={onCancelar}
             >
-              Cancelar
+              Cancelar viaje
             </Button>
           )}
         </Group>
@@ -104,7 +104,7 @@ const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onReanudar, onCa
           label="Vehículo"
           value={[viaje.vehiculo?.patente, viaje.vehiculo?.modelo?.nombre].filter(Boolean).join(' - ')}
         />
-        <InfoItem label="Chofer(es)" value={choferes.map(choferLabel).join(', ')} />
+        <InfoItem label="Choferes" value={choferes.map(choferLabel).join(', ')} />
         <InfoItem label="Responsable" value={choferLabel(viaje.responsable)} />
         <InfoItem label="Sucursal" value={viaje.sucursal?.nombre} />
       </SimpleGrid>

@@ -36,8 +36,8 @@ const EditarMarca = () => {
       } catch (error) {
         console.error("Error cargando marca:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar la marca",
+          title: "No se pudo cargar la marca",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
           icon: <IconX />,
         });
@@ -61,8 +61,8 @@ const EditarMarca = () => {
         await marcaApi.update(id, { nombre: values.nombre });
 
         notifications.show({
-          title: "Éxito",
-          message: "Marca actualizada correctamente",
+          title: "Marca actualizada",
+          message: "La marca se actualizó correctamente.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -71,9 +71,9 @@ const EditarMarca = () => {
       } catch (error) {
         console.error("Error actualizando marca:", error);
         notifications.show({
-          title: "Error",
+          title: "No se pudo actualizar la marca",
           message: applyApiError(form, error, {
-            fallbackMessage: "No se pudo actualizar la marca",
+            fallbackMessage: "Probá de nuevo en unos minutos.",
           }),
           color: "red",
           icon: <IconX />,

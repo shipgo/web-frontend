@@ -67,11 +67,11 @@ const EditarMantenimientoForm = ({ id, mantenimiento }) => {
         console.error("Error actualizando mantenimiento:", error);
 
         const message = applyApiError(form, error, {
-          fallbackMessage: "No se pudo actualizar el mantenimiento",
+          fallbackMessage: "Probá de nuevo en unos minutos.",
         });
 
         notifications.show({
-          title: "Error",
+          title: "No se pudo actualizar el mantenimiento",
           message,
           color: "red",
           icon: <IconX />,

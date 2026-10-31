@@ -17,6 +17,9 @@ import ListaEnviosTabla from './components/ListaEnviosTabla';
 
 import { useGetEnvios } from './hooks/useGetEnvios';
 import { ENVIOS_CSV_COLUMNS } from './listaEnvios.csv';
+import { listaEstados } from '@copy/common';
+
+const ESTADOS_LISTA = listaEstados({ singular: 'envío', plural: 'envíos', genero: 'm' });
 
 const ListaEnvios = () => {
   const { params, setPage, setFilters, clearFilters, refetch, enviosQuery, fetchExportRows, PAGE_LIMIT } =
@@ -97,16 +100,16 @@ const ListaEnvios = () => {
       <Card>
         <ScreenContainer
           onLoading={{ show: isLoading, description: 'Cargando envíos...' }}
-          onError={{ show: isError, onClick: refetch, description: 'Ocurrió un error al cargar los envíos' }}
+          onError={{ show: isError, onClick: refetch, title: ESTADOS_LISTA.error }}
           onEmptyData={{
             show: data.total === 0 && Object.keys(params.filters).length === 0,
-            title: 'Sin envíos que mostrar',
-            description: 'Parece que no cargaste ningún envío todavía',
+            title: ESTADOS_LISTA.vacioTitulo,
+            description: ESTADOS_LISTA.vacioDescripcion,
           }}
           onEmptyFiltersData={{
             show: data.total === 0 && Object.keys(params.filters).length > 0,
-            title: 'Sin resultados',
-            description: 'No se encontraron envíos con los filtros aplicados',
+            title: ESTADOS_LISTA.sinResultadosTitulo,
+            description: ESTADOS_LISTA.sinResultadosDescripcion,
             onClick: handleClearFilters,
           }}
         >

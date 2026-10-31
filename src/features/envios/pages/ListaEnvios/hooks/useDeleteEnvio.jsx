@@ -3,6 +3,7 @@ import { Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
 
+import { estadoLabel } from '@domain/estados';
 import { envioApi } from '@api';
 
 /**
@@ -37,7 +38,7 @@ export const useDeleteEnvio = (onSuccess) => {
 
           notifications.show({
             title: 'Envío eliminado',
-            message: `El envío ${identificador} fue eliminado correctamente`,
+            message: `El envío ${identificador} se eliminó correctamente.`,
             color: 'green',
             icon: <IconCheck />,
           });
@@ -51,7 +52,8 @@ export const useDeleteEnvio = (onSuccess) => {
             notifications.show({
               title: 'No se puede eliminar',
               message:
-                backendMessage || `El envío ${identificador} está en un estado que no permite eliminarlo`,
+                backendMessage ||
+                `No se puede eliminar el envío ${identificador} porque está ${estadoLabel('envio', envio.estado)}.`,
               color: 'yellow',
               icon: <IconAlertTriangle />,
             });
@@ -61,7 +63,7 @@ export const useDeleteEnvio = (onSuccess) => {
           if (status === 404) {
             notifications.show({
               title: 'Envío no encontrado',
-              message: backendMessage || `El envío ${identificador} ya no existe`,
+              message: backendMessage || 'No encontramos el envío.',
               color: 'red',
               icon: <IconX />,
             });
@@ -70,8 +72,8 @@ export const useDeleteEnvio = (onSuccess) => {
 
           console.error('Error eliminando envío:', error);
           notifications.show({
-            title: 'Error',
-            message: backendMessage || 'No se pudo eliminar el envío',
+            title: 'No se pudo eliminar el envío',
+            message: backendMessage || 'Probá de nuevo en unos minutos.',
             color: 'red',
             icon: <IconX />,
           });

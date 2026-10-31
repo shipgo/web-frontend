@@ -24,6 +24,7 @@ import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
 import { provinciaApi, localidadApi } from "@api";
+import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -99,13 +100,11 @@ const SucursalForm = ({
     }
 
     modals.openConfirmModal({
-      title: "Cambios sin guardar",
+      title: SALIR_SIN_GUARDAR.titulo,
       children: (
-        <Text size="sm">
-          Tenés cambios sin guardar. ¿Seguro que querés salir?
-        </Text>
+        <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
-      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      labels: { confirm: SALIR_SIN_GUARDAR.salir, cancel: SALIR_SIN_GUARDAR.seguir },
       confirmProps: { color: "red" },
       cancelProps: { variant: "subtle" },
       groupProps: { gap: "xs" },
@@ -129,8 +128,8 @@ const SucursalForm = ({
       } catch (error) {
         console.error("Error cargando provincias:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las provincias",
+          title: "No se pudieron cargar las provincias",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
         });
       } finally {
@@ -163,8 +162,8 @@ const SucursalForm = ({
       } catch (error) {
         console.error("Error cargando localidades:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las localidades",
+          title: "No se pudieron cargar las localidades",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
         });
       }

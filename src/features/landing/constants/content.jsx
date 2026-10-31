@@ -29,11 +29,11 @@ const unsplashUrl = (photoId, width = 1200) =>
   `https://images.unsplash.com/${photoId}?auto=format&fit=crop&q=80&w=${width}`;
 
 export const LANDING_HERO = {
-  eyebrow: 'Gestión logística todo en uno',
+  eyebrow: 'Gestión logística para tu flota',
   title: 'Enviá, viajá y hacé seguimiento, todo en un solo lugar',
   subtitle:
-    'ShipGo conecta a tu equipo operativo con tus clientes: cargá envíos, planificá viajes con tu flota y dejá que cualquiera rastree su paquete en tiempo real con un solo código, sin llamar a nadie.',
-  primaryCta: { label: 'Rastrear un envío', href: '#seguimiento' },
+    'ShipGo conecta a tu equipo operativo con tus clientes: cargá envíos, planificá viajes con tu flota y dejá que cualquiera siga su paquete en tiempo real con un solo código, sin llamar a nadie.',
+  primaryCta: { label: 'Seguir un envío', href: '#seguimiento' },
   secondaryCta: { label: 'Crear una cuenta', href: '/registro' },
   image: {
     src: unsplashUrl('photo-1566576721346-d4a3b4eaeb55', 1000),
@@ -68,7 +68,7 @@ export const LANDING_ACCESSES = [
   {
     id: 'customer-registro',
     icon: <IconUserPlus size={ICON_SIZE} />,
-    title: 'Querés crear una cuenta',
+    title: '¿Querés crear una cuenta?',
     description: 'Registrate como cliente y seguí todos tus envíos desde un solo lugar.',
     ctaLabel: 'Crear cuenta',
     href: '/registro',
@@ -76,7 +76,7 @@ export const LANDING_ACCESSES = [
   {
     id: 'tracking',
     icon: <IconMapPin size={ICON_SIZE} />,
-    title: 'Sólo querés rastrear un envío',
+    title: '¿Solo querés seguir un envío?',
     description: 'Ingresá tu código de seguimiento, sin necesidad de crear una cuenta.',
     ctaLabel: 'Ver seguimiento',
     href: '/tracking',
@@ -99,7 +99,7 @@ export const LANDING_VALUE_PROPS = [
   {
     id: 'tracking-vivo',
     icon: <IconMapPin size={ICON_SIZE} />,
-    title: 'Tracking en vivo',
+    title: 'Seguimiento en vivo',
     description: 'Tus clientes ven la ubicación y el estado de su envío en tiempo real.',
   },
 ];

@@ -32,8 +32,8 @@ export const useDeleteMarca = (onSuccess) => {
           await marcaApi.delete(marca.id);
 
           notifications.show({
-            title: "Éxito",
-            message: "Marca eliminada correctamente",
+            title: "Marca eliminada",
+            message: "La marca se eliminó correctamente.",
             color: "green",
             icon: <IconCheck />,
           });
@@ -44,10 +44,9 @@ export const useDeleteMarca = (onSuccess) => {
         } catch (error) {
           console.error("Error eliminando marca:", error);
           notifications.show({
-            title: "Error",
+            title: "No se pudo eliminar la marca",
             message:
-              error.response?.data?.message || "No se pudo eliminar la marca",
-            color: "red",
+              error.response?.data?.message || "Probá de nuevo en unos minutos.",
             icon: <IconX />,
           });
         }

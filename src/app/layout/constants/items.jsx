@@ -40,7 +40,7 @@ const ADMIN = [
   {
     // Marca/Modelo (SHG-FE-059, ENDPOINTS.md §11/§12): CRUD SU/AD, no
     // restringido a SUPERUSER como Sucursales/Empresa.
-    label: 'Marcas y Modelos',
+    label: 'Marcas y modelos',
     to: '/catalogo-vehiculos',
     icon: <IconTags size={18} />,
     roles: ROLES_WEB,

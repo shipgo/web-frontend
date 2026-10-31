@@ -40,8 +40,8 @@ const EditarModelo = () => {
       } catch (error) {
         console.error("Error cargando modelo:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar el modelo",
+          title: "No se pudo cargar el modelo",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
           icon: <IconX />,
         });
@@ -71,8 +71,8 @@ const EditarModelo = () => {
         await modeloApi.update(id, payload);
 
         notifications.show({
-          title: "Éxito",
-          message: "Modelo actualizado correctamente",
+          title: "Modelo actualizado",
+          message: "El modelo se actualizó correctamente.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -81,9 +81,9 @@ const EditarModelo = () => {
       } catch (error) {
         console.error("Error actualizando modelo:", error);
         notifications.show({
-          title: "Error",
+          title: "No se pudo actualizar el modelo",
           message: applyApiError(form, error, {
-            fallbackMessage: "No se pudo actualizar el modelo",
+            fallbackMessage: "Probá de nuevo en unos minutos.",
           }),
           color: "red",
           icon: <IconX />,

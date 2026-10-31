@@ -37,8 +37,8 @@ const CrearModelo = () => {
         await modeloApi.save(payload);
 
         notifications.show({
-          title: "Éxito",
-          message: "Modelo creado correctamente",
+          title: "Modelo creado",
+          message: "El modelo se creó correctamente.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -47,9 +47,9 @@ const CrearModelo = () => {
       } catch (error) {
         console.error("Error creando modelo:", error);
         notifications.show({
-          title: "Error",
+          title: "No se pudo crear el modelo",
           message: applyApiError(form, error, {
-            fallbackMessage: "No se pudo crear el modelo",
+            fallbackMessage: "Probá de nuevo en unos minutos.",
           }),
           color: "red",
           icon: <IconX />,

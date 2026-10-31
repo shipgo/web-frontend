@@ -23,7 +23,7 @@
  */
 
 const DEFAULT_MESSAGE = 'Ocurrió un error inesperado. Intentá nuevamente.';
-const FORBIDDEN_MESSAGE = 'No tenés permisos para esta acción.';
+const FORBIDDEN_MESSAGE = 'No tenés permiso para hacer esto.';
 const SERVER_ERROR_MESSAGE =
   'Ocurrió un error en el servidor. Intentá nuevamente en unos minutos.';
 const VALIDATION_FALLBACK_MESSAGE = 'Revisá los campos marcados.';

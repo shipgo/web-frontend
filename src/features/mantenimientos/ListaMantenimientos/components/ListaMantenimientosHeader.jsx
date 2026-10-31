@@ -8,10 +8,10 @@ import ExportCsvButton from "@components/ExportCsvButton";
 const ListaMantenimientosHeader = ({ onExportCsv, isExporting, exportDisabled }) => (
   <PageHeader
     title="Mantenimientos"
-    subtitle="Listado de mantenimientos registrados en el sistema"
+    subtitle="Seguí los mantenimientos de la flota"
   >
     <Button to="/crear" component={Link} leftSection={<IconPlus />}>
-      Registrar mantenimiento
+      Crear mantenimiento
     </Button>
     <ExportCsvButton
       onExport={onExportCsv}

@@ -65,9 +65,9 @@ const CrearVehiculo = () => {
     } catch (error) {
       console.error("Error creando vehículo:", error);
       notifications.show({
-        title: "Error",
+        title: "No se pudo crear el vehículo",
         message: applyApiError(form, error, {
-          fallbackMessage: "No se pudo crear el vehículo",
+          fallbackMessage: "Probá de nuevo en unos minutos.",
         }),
         color: "red",
         icon: <IconX />,

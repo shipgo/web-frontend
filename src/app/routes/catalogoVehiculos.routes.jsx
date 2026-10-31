@@ -14,7 +14,7 @@ import {
  * §11/§12). `/` redirige al listado de Marcas — el `Tabs` de
  * `CatalogoVehiculosHeader` alterna entre `/marcas` y `/modelos`.
  *
- * Tipo de Vehículo queda FUERA de alcance: el backend sólo expone GET
+ * Tipo de vehículo queda FUERA de alcance: el backend sólo expone GET
  * (`/api/tipoVehiculo`), sin `POST`/`PUT`/`DELETE` — su ABM necesita una
  * tarea de backend nueva antes de poder implementarse acá.
  */

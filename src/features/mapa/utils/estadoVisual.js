@@ -26,7 +26,7 @@ export const getEstadoVisualViaje = (viaje, ubicacionTimestamp) => {
     Date.now() > new Date(viaje.fechaHoraFinPlanificada).getTime();
 
   if (demorado) {
-    return { label: 'Demorado', color: 'orange', prioridad: 1, zIndex: 20 };
+    return { label: 'Retrasado', color: 'orange', prioridad: 1, zIndex: 20 };
   }
 
   return { label: 'A tiempo', color: 'green', prioridad: 2, zIndex: 10 };

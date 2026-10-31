@@ -65,10 +65,10 @@ export const useNotificaciones = ({ enabled = true } = {}) => {
     onError: (error) => {
       console.error('Error al vaciar las notificaciones:', error);
       notifications.show({
-        title: 'Error',
+        title: 'No se pudieron vaciar las notificaciones',
         message:
           error.response?.data?.message ||
-          'No se pudieron vaciar las notificaciones',
+          'Probá de nuevo en unos minutos.',
         color: 'red',
         icon: createElement(IconX),
       });

@@ -19,6 +19,7 @@ import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
 import { marcaApi } from "../api/catalogoVehiculos.api";
+import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 const currentYear = new Date().getFullYear();
 
@@ -53,8 +54,8 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
       } catch (error) {
         console.error("Error cargando marcas:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las marcas",
+          title: "No se pudieron cargar las marcas",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
         });
       } finally {
@@ -82,13 +83,11 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
     }
 
     modals.openConfirmModal({
-      title: "Cambios sin guardar",
+      title: SALIR_SIN_GUARDAR.titulo,
       children: (
-        <Text size="sm">
-          Tenés cambios sin guardar. ¿Seguro que querés salir?
-        </Text>
+        <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
-      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      labels: { confirm: SALIR_SIN_GUARDAR.salir, cancel: SALIR_SIN_GUARDAR.seguir },
       confirmProps: { color: "red" },
       cancelProps: { variant: "subtle" },
       groupProps: { gap: "xs" },

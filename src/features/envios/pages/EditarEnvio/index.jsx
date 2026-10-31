@@ -71,8 +71,8 @@ const EditarEnvio = () => {
       )
       .catch(() => {
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las categorías",
+          title: "No se pudieron cargar las categorías",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
           icon: <IconX />,
         });

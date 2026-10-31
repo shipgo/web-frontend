@@ -11,6 +11,9 @@ import ListaMarcasTabla from "./components/ListaMarcasTabla";
 
 import { useGetMarcas } from "./hooks/useGetMarcas";
 import { MARCAS_CSV_COLUMNS } from "./listaMarcas.csv";
+import { listaEstados } from '@copy/common';
+
+const ESTADOS_LISTA = listaEstados({ singular: 'marca', plural: 'marcas', genero: 'f' });
 
 const PAGE_LIMIT = 10;
 
@@ -40,7 +43,7 @@ const ListaMarcas = () => {
       <CatalogoVehiculosHeader
         active="marcas"
         title="Marcas"
-        subtitle="Listado de marcas de vehículo registradas"
+        subtitle="Administrá las marcas de vehículos"
         createLabel="Crear marca"
         createHref="/marcas/crear"
         onExportCsv={exportar}
@@ -56,17 +59,17 @@ const ListaMarcas = () => {
           onError={{
             show: isError,
             onClick: refetchMarcas,
-            description: "Ocurrió un error al cargar las marcas",
+            title: ESTADOS_LISTA.error,
           }}
           onEmptyData={{
             show: data.total === 0 && Object.keys(filters).length === 0,
-            title: "Sin marcas que mostrar",
-            description: "Parece que no hay marcas registradas todavía",
+            title: ESTADOS_LISTA.vacioTitulo,
+            description: ESTADOS_LISTA.vacioDescripcion,
           }}
           onEmptyFiltersData={{
             show: data.total === 0 && Object.keys(filters).length > 0,
-            title: "Sin resultados",
-            description: "No se encontraron marcas con los filtros aplicados",
+            title: ESTADOS_LISTA.sinResultadosTitulo,
+            description: ESTADOS_LISTA.sinResultadosDescripcion,
           }}
         >
           <ListaMarcasTabla items={data.results} onRefresh={refetchMarcas} />

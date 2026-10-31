@@ -59,7 +59,7 @@ const AppNavbar = () => {
           <>
             <NavLink
               to="/"
-              label="Home"
+              label="Inicio"
               component={Link}
               active={location === "/"}
               leftSection={<IconHome size={18} />}
@@ -78,7 +78,7 @@ const AppNavbar = () => {
         {pages.length > 0 && (
           <>
             <Text size="xs" fw="bold" m="12" tt="uppercase">
-              Gestionar
+              Operación
             </Text>
             {pages.map(({ label, to, icon }) => (
               <NavLink
@@ -96,7 +96,7 @@ const AppNavbar = () => {
         {admin.length > 0 && (
           <>
             <Text size="xs" fw="bold" m="12" tt="uppercase">
-              Administrar
+              Administración
             </Text>
             {admin.map(({ label, to, icon }) => (
               <NavLink

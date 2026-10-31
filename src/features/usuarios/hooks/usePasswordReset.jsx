@@ -21,8 +21,8 @@ export const usePasswordReset = () => {
   const confirmReset = useCallback((usuario) => {
     if (!usuario?.email) {
       notifications.show({
-        title: "Error",
-        message: "El usuario no tiene un email cargado",
+        title: "No se puede restablecer la contraseña",
+        message: "El usuario no tiene un email cargado.",
         color: "red",
         icon: <IconX />,
       });
@@ -32,12 +32,12 @@ export const usePasswordReset = () => {
     const fullName = nombreCompleto(usuario);
 
     modals.openConfirmModal({
-      title: "Resetear contraseña",
+      title: "Restablecer contraseña",
       centered: true,
       children: (
         <Text size="sm">
-          Se enviará un email a <strong>{usuario.email}</strong> con un enlace
-          para que <strong>{fullName}</strong> restablezca su contraseña.
+          Le vamos a enviar un email a <strong>{usuario.email}</strong> con un
+          enlace para que <strong>{fullName}</strong> restablezca su contraseña.
           ¿Confirmás el envío?
         </Text>
       ),
@@ -49,17 +49,17 @@ export const usePasswordReset = () => {
 
           notifications.show({
             title: "Email enviado",
-            message: `Se envió el email de restablecimiento a ${usuario.email}`,
+            message: `Enviamos el email de restablecimiento a ${usuario.email}.`,
             color: "green",
             icon: <IconCheck />,
           });
         } catch (error) {
           console.error("Error solicitando reset de contraseña:", error);
           notifications.show({
-            title: "Error",
+            title: "No se pudo enviar el email de restablecimiento",
             message:
               error.response?.data?.message ||
-              "No se pudo enviar el email de restablecimiento",
+              "Probá de nuevo en unos minutos.",
             color: "red",
             icon: <IconX />,
           });

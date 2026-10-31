@@ -17,6 +17,9 @@ import ListaVehiculosTabla from "./components/ListaVehiculosTabla";
 
 import { useGetVehiculos } from "./hooks/useGetVehiculos";
 import { VEHICULOS_CSV_COLUMNS } from "./listaVehiculos.csv";
+import { listaEstados } from '@copy/common';
+
+const ESTADOS_LISTA = listaEstados({ singular: 'vehículo', plural: 'vehículos', genero: 'm' });
 
 const PAGE_LIMIT = 10;
 
@@ -98,17 +101,17 @@ const ListaVehiculos = () => {
           onError={{
             show: isError,
             onClick: refetchVehiculos,
-            description: "Ocurrió un error al cargar los vehículos",
+            title: ESTADOS_LISTA.error,
           }}
           onEmptyData={{
             show: data.total === 0 && Object.keys(filters).length === 0,
-            title: "Sin vehículos que mostrar",
-            description: "Parece que no hay vehículos registrados todavía",
+            title: ESTADOS_LISTA.vacioTitulo,
+            description: ESTADOS_LISTA.vacioDescripcion,
           }}
           onEmptyFiltersData={{
             show: data.total === 0 && Object.keys(filters).length > 0,
-            title: "Sin resultados",
-            description: "No se encontraron vehículos con los filtros aplicados",
+            title: ESTADOS_LISTA.sinResultadosTitulo,
+            description: ESTADOS_LISTA.sinResultadosDescripcion,
           }}
         >
           <ListaVehiculosTabla

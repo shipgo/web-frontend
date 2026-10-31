@@ -31,8 +31,8 @@ export const useDeleteSucursal = (onSuccess) => {
           await sucursalApi.delete(sucursal.id);
 
           notifications.show({
-            title: "Éxito",
-            message: "Sucursal eliminada correctamente",
+            title: "Sucursal eliminada",
+            message: "La sucursal se eliminó correctamente.",
             color: "green",
             icon: <IconCheck />,
           });
@@ -43,10 +43,10 @@ export const useDeleteSucursal = (onSuccess) => {
         } catch (error) {
           console.error("Error eliminando sucursal:", error);
           notifications.show({
-            title: "Error",
+            title: "No se pudo eliminar la sucursal",
             message:
               error.response?.data?.message ||
-              "No se pudo eliminar la sucursal",
+              "Probá de nuevo en unos minutos.",
             color: "red",
             icon: <IconX />,
           });

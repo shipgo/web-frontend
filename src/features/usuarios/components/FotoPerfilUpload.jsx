@@ -53,10 +53,9 @@ const FotoPerfilUpload = ({ profile, fullName, onUploaded }) => {
     } catch (error) {
       console.error("Error subiendo foto de perfil:", error);
       notifications.show({
-        title: "Error",
+        title: "No se pudo subir la foto de perfil",
         message:
-          error.response?.data?.message || "No se pudo subir la foto de perfil",
-        color: "red",
+          error.response?.data?.message || "Probá de nuevo en unos minutos.",
       });
     } finally {
       setUploading(false);

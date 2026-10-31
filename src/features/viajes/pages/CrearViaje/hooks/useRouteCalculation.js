@@ -62,7 +62,7 @@ const useRouteCalculation = (origenCoords, groupCoords) => {
       if (waypoints.length < 2) {
         return Promise.reject(
           new Error(
-            "No hay suficientes paradas con coordenadas conocidas para calcular una ruta.",
+            "Faltan paradas con ubicación para calcular la ruta.",
           ),
         );
       }
@@ -77,10 +77,10 @@ const useRouteCalculation = (origenCoords, groupCoords) => {
     onError: (error) =>
       notifications.show({
         color: "red",
-        title: "Error al calcular la ruta",
+        title: "No se pudo calcular la ruta",
         message:
           error?.message ??
-          "Ocurrió un error al calcular el trayecto. Intentá nuevamente.",
+          "Probá de nuevo en unos minutos.",
       }),
   });
 

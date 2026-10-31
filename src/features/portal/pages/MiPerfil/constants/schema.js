@@ -13,8 +13,8 @@ import { nombreRequerido, telefonoRequerido } from '@domain/validation';
  * patrón que `REGISTRO_SCHEMA`.
  */
 export const MI_PERFIL_SCHEMA = z.object({
-  nombre: nombreRequerido('El nombre es requerido'),
-  apellido: nombreRequerido('El apellido es requerido'),
+  nombre: nombreRequerido('Ingresá el nombre.'),
+  apellido: nombreRequerido('Ingresá el apellido.'),
   telefono: telefonoRequerido(),
 });
 

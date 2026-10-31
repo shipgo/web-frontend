@@ -95,7 +95,7 @@ const ViajeRow = ({ item, isSelected, onToggle, onCancelSuccess }) => {
     // ese viaje (genérico: lo reusa también SHG-FE-097 desde Envíos).
     actions.push({
       icon: <IconMapSearch size={18} />,
-      label: 'Monitorear',
+      label: 'Ver en el mapa',
       onClick: () => navigate(`~/mapa?viaje=${item.id}`),
     });
   }
@@ -198,12 +198,12 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onCa
               onChange={onToggleAll}
             />
           </Table.Th>
-          <Table.Th>ID Viaje</Table.Th>
+          <Table.Th>ID del viaje</Table.Th>
           <Table.Th>Fecha planificada</Table.Th>
           <Table.Th>Estado</Table.Th>
           <Table.Th>Chofer</Table.Th>
           <Table.Th>Vehículo</Table.Th>
-          <Table.Th>Recorridos / Envíos</Table.Th>
+          <Table.Th>Paradas / Envíos</Table.Th>
           <Table.Th>Acciones</Table.Th>
         </Table.Tr>
       </Table.Thead>

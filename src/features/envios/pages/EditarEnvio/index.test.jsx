@@ -144,7 +144,7 @@ describe("EditarEnvio", () => {
     expect(screen.getByLabelText(/email del remitente/i)).toHaveValue(
       "remitente@test.com",
     );
-    expect(screen.getByLabelText(/email del receptor/i)).toHaveValue(
+    expect(screen.getByLabelText(/email del destinatario/i)).toHaveValue(
       "receptor@test.com",
     );
     expect(screen.getByLabelText(/^calle/i)).toHaveValue("Av. Colón");

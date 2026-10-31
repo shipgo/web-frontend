@@ -11,6 +11,9 @@ import ListaModelosTabla from "./components/ListaModelosTabla";
 
 import { useGetModelos } from "./hooks/useGetModelos";
 import { MODELOS_CSV_COLUMNS } from "./listaModelos.csv";
+import { listaEstados } from '@copy/common';
+
+const ESTADOS_LISTA = listaEstados({ singular: 'modelo', plural: 'modelos', genero: 'm' });
 
 const PAGE_LIMIT = 10;
 
@@ -40,7 +43,7 @@ const ListaModelos = () => {
       <CatalogoVehiculosHeader
         active="modelos"
         title="Modelos"
-        subtitle="Listado de modelos de vehículo registrados"
+        subtitle="Administrá los modelos de vehículos"
         createLabel="Crear modelo"
         createHref="/modelos/crear"
         onExportCsv={exportar}
@@ -56,17 +59,17 @@ const ListaModelos = () => {
           onError={{
             show: isError,
             onClick: refetchModelos,
-            description: "Ocurrió un error al cargar los modelos",
+            title: ESTADOS_LISTA.error,
           }}
           onEmptyData={{
             show: data.total === 0 && Object.keys(filters).length === 0,
-            title: "Sin modelos que mostrar",
-            description: "Parece que no hay modelos registrados todavía",
+            title: ESTADOS_LISTA.vacioTitulo,
+            description: ESTADOS_LISTA.vacioDescripcion,
           }}
           onEmptyFiltersData={{
             show: data.total === 0 && Object.keys(filters).length > 0,
-            title: "Sin resultados",
-            description: "No se encontraron modelos con los filtros aplicados",
+            title: ESTADOS_LISTA.sinResultadosTitulo,
+            description: ESTADOS_LISTA.sinResultadosDescripcion,
           }}
         >
           <ListaModelosTabla items={data.results} onRefresh={refetchModelos} />

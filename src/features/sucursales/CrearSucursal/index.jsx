@@ -43,8 +43,8 @@ const CrearSucursal = () => {
         await sucursalApi.save(payload);
 
         notifications.show({
-          title: "Éxito",
-          message: "Sucursal creada correctamente",
+          title: "Sucursal creada",
+          message: "La sucursal se creó correctamente.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -56,10 +56,10 @@ const CrearSucursal = () => {
         // `field` de Bean Validation vienen como "puntoEntrega.xxx" — el helper
         // los alinea a los nombres planos del form.
         notifications.show({
-          title: "Error",
+          title: "No se pudo crear la sucursal",
           message: applyApiError(form, error, {
             stripPrefix: "puntoEntrega",
-            fallbackMessage: "No se pudo crear la sucursal",
+            fallbackMessage: "Probá de nuevo en unos minutos.",
           }),
           color: "red",
           icon: <IconX />,

@@ -59,8 +59,8 @@ const CrearEnvios = () => {
       )
       .catch(() => {
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las categorías",
+          title: "No se pudieron cargar las categorías",
+          message: "Intentá de nuevo en unos minutos.",
           color: "red",
           icon: <IconX />,
         });
@@ -91,11 +91,11 @@ const CrearEnvios = () => {
 
       const message = applyApiError(form, error, {
         stripPrefix: "destino",
-        fallbackMessage: "No se pudo crear el envío",
+        fallbackMessage: "Probá de nuevo en unos minutos.",
       });
 
       notifications.show({
-        title: "Error",
+        title: "No se pudo crear el envío",
         message,
         color: "red",
         icon: <IconX />,

@@ -92,7 +92,7 @@ const DashboardPage = () => {
             href="https://shipgo.gitbook.io/manual"
             target="_blank"
           >
-            Necesito ayuda
+            Ayuda
           </Button>
         </Flex>
       </Flex>
