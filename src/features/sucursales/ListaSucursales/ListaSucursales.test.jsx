@@ -77,7 +77,7 @@ describe("ListaSucursales", () => {
     renderWithProviders(<ListaSucursales />);
 
     expect(
-      await screen.findByText("Sin sucursales que mostrar")
+      await screen.findByText("Todavía no hay sucursales")
     ).toBeInTheDocument();
   });
 });

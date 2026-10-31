@@ -96,7 +96,7 @@ describe("TrackingPublicoPage — captcha activado (SHG-FE-043)", () => {
     callback("cf-token-viejo");
 
     expect(
-      await screen.findByText(/no pudimos verificar que sos una persona/i),
+      await screen.findByText(/no pudimos completar la verificación de seguridad/i),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /reintentar/i }));

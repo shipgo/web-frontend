@@ -55,8 +55,8 @@ describe('HomePage', () => {
 
   it('muestra las secciones Gestionar, Administrar y Opciones para un ADMIN', () => {
     renderHome();
-    expect(screen.getByText('Gestionar')).toBeInTheDocument();
-    expect(screen.getByText('Administrar')).toBeInTheDocument();
+    expect(screen.getByText('Operación')).toBeInTheDocument();
+    expect(screen.getByText('Administración')).toBeInTheDocument();
     expect(screen.getByText('Opciones')).toBeInTheDocument();
   });
 });

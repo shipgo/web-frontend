@@ -131,7 +131,7 @@ describe("CompletarCuenta (SHG-FE-133)", () => {
     await user.click(await screen.findByRole("button", { name: /guardar y continuar/i }));
 
     expect(
-      await screen.findByText("El campo nombre no puede estar vacío"),
+      await screen.findByText("Ingresá el nombre."),
     ).toBeInTheDocument();
     expect(usuarioApi.update).not.toHaveBeenCalled();
   });

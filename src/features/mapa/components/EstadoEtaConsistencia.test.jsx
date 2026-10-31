@@ -39,21 +39,21 @@ const CASOS = [
     ultima: null,
     plan: '2026-01-20T15:00:00',
     estado: 'Sin señal',
-    fuentePanel: '(planificada)',
+    fuentePanel: '(según plan)',
   },
   {
     nombre: 'demorado',
     ultima: '2026-10-07T11:59:00Z',
     plan: '2026-01-20T15:00:00',
-    estado: 'Demorado',
-    fuentePanel: '(según ruta)',
+    estado: 'Retrasado',
+    fuentePanel: '(según la ruta)',
   },
   {
     nombre: 'a tiempo',
     ultima: '2026-10-07T11:59:00Z',
     plan: '2026-12-01T15:00:00',
     estado: 'A tiempo',
-    fuentePanel: '(según ruta)',
+    fuentePanel: '(según la ruta)',
   },
 ];
 
@@ -95,7 +95,7 @@ describe('estado y ETA: lista vs panel (SHG-FE-113)', () => {
 
       const lista = renderWithProviders(<MapListadoViajesItem viaje={viaje} isLast />);
       expect(screen.getAllByText(estado)).toHaveLength(1);
-      expect(lista.container.textContent).toContain('(planificada)');
+      expect(lista.container.textContent).toContain('(según plan)');
       lista.unmount();
 
       renderWithProviders(<MapDetalles />);

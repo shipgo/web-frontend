@@ -119,13 +119,13 @@ describe("EditarEnvio", () => {
     envioApi.update.mockResolvedValue({ id: 9 });
   });
 
-  it("usa el header canónico (breadcrumbs Envíos / Editar envío + Necesito ayuda)", async () => {
+  it("usa el header canónico (breadcrumbs Envíos / Editar envío + Ayuda)", async () => {
     renderEditarEnvio();
 
     expect(await screen.findByText("Editar envío")).toBeInTheDocument();
     expect(screen.getAllByText("Envíos").length).toBeGreaterThan(0);
     expect(
-      screen.getByRole("link", { name: /necesito ayuda/i }),
+      screen.getByRole("link", { name: /ayuda/i }),
     ).toBeInTheDocument();
   });
 

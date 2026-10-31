@@ -203,7 +203,7 @@ describe("EditarViaje", () => {
     expect(screen.getByText("Viajes")).toBeInTheDocument();
     expect(screen.getByText("Editar viaje")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /necesito ayuda/i })
+      screen.getByRole("link", { name: /ayuda/i })
     ).toHaveAttribute("href", "https://shipgo.gitbook.io/manual");
   });
 
@@ -506,7 +506,7 @@ describe("EditarViaje", () => {
 
     await waitFor(() => expect(viajeApi.update).toHaveBeenCalledTimes(1));
     expect(viajeApi.update.mock.calls[0][1].viaje.choferesID).toEqual([10]);
-    expect(screen.queryByText(/seleccioná al menos un chofer/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/elegí al menos un chofer/i)).not.toBeInTheDocument();
   });
 
   it("submits the edited vehículo/choferes/fechas while keeping the existing envíos grouping, without sending fechas reales", async () => {
@@ -583,7 +583,7 @@ describe("EditarViaje", () => {
     await user.click(
       await screen.findByRole("button", { name: /marcar envíos para/i }),
     );
-    await user.click(await screen.findByText(/entrega a destino final/i));
+    await user.click(await screen.findByText(/entrega al destinatario/i));
 
     // Pasa a "Envíos seleccionados" y desaparece de "pendientes" (el switch
     // "ocultar ya agregados" está activo por defecto, mismo comportamiento
@@ -789,7 +789,7 @@ describe("EditarViaje", () => {
       // la notificación de `handleInvalid` — de ahí `getAllByText`.
       await waitFor(() => {
         expect(
-          screen.getAllByText(/seleccioná un vehículo/i).length
+          screen.getAllByText(/elegí un vehículo/i).length
         ).toBeGreaterThan(0);
       });
       expect(viajeApi.update).not.toHaveBeenCalled();
@@ -824,7 +824,7 @@ describe("EditarViaje", () => {
 
       await waitFor(() => {
         expect(
-          screen.getAllByText(/seleccioná al menos un chofer/i).length
+          screen.getAllByText(/elegí al menos un chofer/i).length
         ).toBeGreaterThan(0);
       });
       expect(viajeApi.update).not.toHaveBeenCalled();
@@ -855,7 +855,7 @@ describe("EditarViaje", () => {
 
       await waitFor(() => {
         expect(
-          screen.getAllByText(/seleccioná la fecha de llegada planificada/i)
+          screen.getAllByText(/elegí la fecha de llegada planificada/i)
             .length
         ).toBeGreaterThan(0);
       });
@@ -944,7 +944,7 @@ describe("EditarViaje", () => {
       );
 
       expect(
-        await screen.findByText(/no se pueden crear recorridos sin destino/i)
+        await screen.findByText(/hay envíos sin destino/i)
       ).toBeInTheDocument();
       expect(screen.getAllByText(/SEED000400/).length).toBeGreaterThan(0);
       expect(viajeApi.update).not.toHaveBeenCalled();

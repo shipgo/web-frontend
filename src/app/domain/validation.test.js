@@ -27,21 +27,21 @@ describe('telefonoRequerido / prefijoRequerido (regla compartida SHG-FE-107)', (
   const pref = prefijoRequerido();
 
   it.each([
-    ['abc', 'El teléfono sólo puede tener números'],
-    ['12x', 'El teléfono sólo puede tener números'],
-    ['', 'El teléfono es requerido'],
-    ['12345', `El teléfono debe tener al menos ${TELEFONO_MIN} dígitos`],
-    ['1'.repeat(TELEFONO_MAX + 1), `El teléfono no puede tener más de ${TELEFONO_MAX} dígitos`],
+    ['abc', 'El teléfono solo puede tener números.'],
+    ['12x', 'El teléfono solo puede tener números.'],
+    ['', 'Ingresá el teléfono.'],
+    ['12345', `El teléfono debe tener al menos ${TELEFONO_MIN} dígitos.`],
+    ['1'.repeat(TELEFONO_MAX + 1), `El teléfono no puede tener más de ${TELEFONO_MAX} dígitos.`],
   ])('teléfono %j → %s', (value, message) => {
     expect(firstMessage(tel, value)).toBe(message);
   });
 
   it.each(['351 ', ' 351', '35 1'])('prefijo con espacios %j se rechaza (no se normaliza al validar)', (v) => {
-    expect(firstMessage(pref, v)).toBe('El prefijo sólo puede tener números');
+    expect(firstMessage(pref, v)).toBe('El prefijo solo puede tener números.');
   });
 
   it.each(['4111111 ', ' 4111111'])('teléfono con espacios %j se rechaza', (v) => {
-    expect(firstMessage(tel, v)).toBe('El teléfono sólo puede tener números');
+    expect(firstMessage(tel, v)).toBe('El teléfono solo puede tener números.');
   });
 
   it.each(['1234567', '3511234567', '1'.repeat(TELEFONO_MAX)])('teléfono válido %s', (v) => {
@@ -49,11 +49,11 @@ describe('telefonoRequerido / prefijoRequerido (regla compartida SHG-FE-107)', (
   });
 
   it.each([
-    ['abc', 'El prefijo sólo puede tener números'],
-    ['+54', 'El prefijo sólo puede tener números'],
-    ['', 'El prefijo es requerido'],
-    ['1', 'El prefijo debe tener al menos 2 dígitos'],
-    ['1'.repeat(PREFIJO_MAX + 1), `El prefijo no puede tener más de ${PREFIJO_MAX} dígitos`],
+    ['abc', 'El prefijo solo puede tener números.'],
+    ['+54', 'El prefijo solo puede tener números.'],
+    ['', 'Ingresá el prefijo.'],
+    ['1', 'El prefijo debe tener al menos 2 dígitos.'],
+    ['1'.repeat(PREFIJO_MAX + 1), `El prefijo no puede tener más de ${PREFIJO_MAX} dígitos.`],
   ])('prefijo %j → %s', (value, message) => {
     expect(firstMessage(pref, value)).toBe(message);
   });
@@ -63,9 +63,9 @@ describe('telefonoRequerido / prefijoRequerido (regla compartida SHG-FE-107)', (
   });
 
   it('email vacío dice "requerido" y mal formado dice "inválido"', () => {
-    const schema = z.object({ e: emailRequerido('El email es requerido') });
-    expect(firstMessage(schema, { e: '' })).toBe('El email es requerido');
-    expect(firstMessage(schema, { e: 'sin-arroba' })).toBe('Email inválido');
+    const schema = z.object({ e: emailRequerido('Ingresá el email.') });
+    expect(firstMessage(schema, { e: '' })).toBe('Ingresá el email.');
+    expect(firstMessage(schema, { e: 'sin-arroba' })).toBe('Ingresá un email válido.');
     expect(firstMessage(schema, { e: 'a@b.com' })).toBeNull();
   });
 });
@@ -99,8 +99,8 @@ describe('la regla se aplica en todos los schemas', () => {
   ])('%s: rechaza no numéricos y acepta válidos', (_n, schema, base, fields) => {
     expect(schema.safeParse(base).success).toBe(true);
     for (const field of fields) {
-      expect(messageFor(schema, base, field, 'abc')).toMatch(/sólo puede tener números/);
-      expect(messageFor(schema, base, field, '12x')).toMatch(/sólo puede tener números/);
+      expect(messageFor(schema, base, field, 'abc')).toMatch(/solo puede tener números/);
+      expect(messageFor(schema, base, field, '12x')).toMatch(/solo puede tener números/);
     }
   });
 
@@ -112,17 +112,17 @@ describe('la regla se aplica en todos los schemas', () => {
     ['envío', CREAR_ENVIO_SCHEMA, envio],
   ])('%s: un nombre de 300 caracteres se rechaza (max %i)', (_n, schema, base) => {
     expect(messageFor(schema, base, 'nombre', 'a'.repeat(300))).toBe(
-      `No puede superar los ${NOMBRE_MAX} caracteres`,
+      `No puede tener más de ${NOMBRE_MAX} caracteres.`,
     );
   });
 
-  it('CrearEnvios: email vacío dice "requerido", no "Email inválido"', () => {
+  it('CrearEnvios: email vacío dice "requerido", no "Ingresá un email válido."', () => {
     expect(messageFor(CREAR_ENVIO_SCHEMA, envio, 'emailRemitente', '')).toBe(
-      'El email del remitente es requerido',
+      'Ingresá el email del remitente.',
     );
     expect(messageFor(CREAR_ENVIO_SCHEMA, envio, 'emailReceptor', '')).toBe(
-      'El email del receptor es requerido',
+      'Ingresá el email del destinatario.',
     );
-    expect(messageFor(CREAR_ENVIO_SCHEMA, envio, 'emailReceptor', 'x')).toBe('Email inválido');
+    expect(messageFor(CREAR_ENVIO_SCHEMA, envio, 'emailReceptor', 'x')).toBe('Ingresá un email válido.');
   });
 });

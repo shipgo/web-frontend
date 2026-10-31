@@ -32,7 +32,7 @@ describe('getEstadoEtaViaje', () => {
     const r = getEstadoEtaViaje({ fechaHoraFinPlanificada: PLAN_VIEJA }, RECIENTE, {
       etaRuta: ETA_RUTA,
     });
-    expect(r.estado.label).toBe('Demorado');
+    expect(r.estado.label).toBe('Retrasado');
     expect(r.etaFuente).toBe('ruta');
     expect(r.eta).toBe(ETA_RUTA);
   });

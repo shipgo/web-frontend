@@ -142,7 +142,7 @@ const CambiarPasswordCard = () => {
           <PasswordInput
             {...form.getInputProps("confirmPassword")}
             key={form.key("confirmPassword")}
-            label="Repetí la contraseña."
+            label="Repetí la contraseña"
             autoComplete="new-password"
             disabled={loading}
           />

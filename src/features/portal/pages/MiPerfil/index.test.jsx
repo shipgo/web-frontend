@@ -137,7 +137,7 @@ describe('MiPerfilPage', () => {
         data: {
           statusCode: 400,
           message: 'Validación fallida',
-          fields: [{ field: 'telefono', error: 'El teléfono es requerido' }],
+          fields: [{ field: 'telefono', error: 'Ingresá el teléfono.' }],
         },
       },
     });
@@ -145,7 +145,7 @@ describe('MiPerfilPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-    expect(await screen.findByText('El teléfono es requerido')).toBeInTheDocument();
+    expect(await screen.findByText('Ingresá el teléfono.')).toBeInTheDocument();
     expect(mockGetUserInfo).not.toHaveBeenCalled();
   });
 
@@ -163,8 +163,8 @@ describe('MiPerfilPage', () => {
     await user.paste('a'.repeat(300));
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-    expect(await screen.findByText('El teléfono sólo puede tener números')).toBeInTheDocument();
-    expect(screen.getByText('No puede superar los 100 caracteres')).toBeInTheDocument();
+    expect(await screen.findByText('El teléfono solo puede tener números.')).toBeInTheDocument();
+    expect(screen.getByText('No puede tener más de 100 caracteres.')).toBeInTheDocument();
     expect(container.querySelector('form')).toHaveAttribute('novalidate');
     expect(mockUpdateMe).not.toHaveBeenCalled();
   });

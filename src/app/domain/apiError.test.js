@@ -25,7 +25,7 @@ describe('parseApiError — 400 de validación de campos (ApiFieldError, body pl
         field: 'emailRemitente',
         error: 'El campo emailRemitente no puede estar vacío.',
       },
-      { field: 'nombre', error: 'El campo nombre no puede estar vacío.' },
+      { field: 'nombre', error: 'Ingresá el nombre..' },
     ],
   });
 
@@ -34,7 +34,7 @@ describe('parseApiError — 400 de validación de campos (ApiFieldError, body pl
     expect(fieldErrors).toEqual({
       telefono: 'El campo telefono no puede estar vacío.',
       emailRemitente: 'El campo emailRemitente no puede estar vacío.',
-      nombre: 'El campo nombre no puede estar vacío.',
+      nombre: 'Ingresá el nombre..',
     });
   });
 
@@ -66,7 +66,7 @@ describe('parseApiError — body anidado (ViajeReqDTO.viaje / SucursalReqDTO.pun
     const err = axiosError(400, {
       message: 'Error en la validación de los campos.',
       fields: [
-        { field: 'nombre', error: 'El campo nombre no puede estar vacío.' },
+        { field: 'nombre', error: 'Ingresá el nombre..' },
         {
           field: 'puntoEntrega.numeroCalle',
           error: 'El campo numeroCalle no puede estar vacío.',
@@ -77,7 +77,7 @@ describe('parseApiError — body anidado (ViajeReqDTO.viaje / SucursalReqDTO.pun
     expect(
       parseApiError(err, { stripPrefix: 'puntoEntrega' }).fieldErrors,
     ).toEqual({
-      nombre: 'El campo nombre no puede estar vacío.',
+      nombre: 'Ingresá el nombre..',
       numeroCalle: 'El campo numeroCalle no puede estar vacío.',
     });
   });
@@ -119,10 +119,10 @@ describe('parseApiError — body anidado (ViajeReqDTO.viaje / SucursalReqDTO.pun
     const err = axiosError(400, {
       message: 'Validación fallida',
       fields: [
-        { field: 'nombre', error: 'El nombre es requerido.' },
+        { field: 'nombre', error: 'Ingresá el nombre..' },
         {
           field: 'destino.numeroCalle',
-          error: 'El número de calle es requerido.',
+          error: 'El número de la calle es requerido.',
         },
       ],
     });
@@ -130,8 +130,8 @@ describe('parseApiError — body anidado (ViajeReqDTO.viaje / SucursalReqDTO.pun
     expect(
       parseApiError(err, { stripPrefix: 'destino' }).fieldErrors,
     ).toEqual({
-      nombre: 'El nombre es requerido.',
-      numeroCalle: 'El número de calle es requerido.',
+      nombre: 'Ingresá el nombre..',
+      numeroCalle: 'El número de la calle es requerido.',
     });
   });
 

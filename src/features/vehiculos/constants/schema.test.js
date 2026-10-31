@@ -151,7 +151,7 @@ describe("VEHICULO_SCHEMA", () => {
       ).toBe(true);
     });
 
-    it("exige exactamente 2 ruedas cuando el tipoVehiculo es categoría moto", () => {
+    it("exige 2 ruedas cuando el tipoVehiculo es categoría moto", () => {
       setCategoriaPorTipoVehiculoId({ 1: "moto" });
 
       const conDosRuedas = VEHICULO_SCHEMA.safeParse({
@@ -167,7 +167,7 @@ describe("VEHICULO_SCHEMA", () => {
       expect(conCuatroRuedas.success).toBe(false);
       expect(conCuatroRuedas.error.issues[0].path).toEqual(["cantidadRuedas"]);
       expect(conCuatroRuedas.error.issues[0].message).toMatch(
-        /exactamente 2 ruedas/i,
+        /2 ruedas/i,
       );
 
       const conUnaRueda = VEHICULO_SCHEMA.safeParse({

@@ -149,7 +149,7 @@ describe("EditarVehiculo", () => {
       expect.objectContaining({ tipoVehiculoID: 10, cantidadRuedas: 2 })
     );
     expect(
-      screen.queryByText(/una moto debe tener exactamente 2 ruedas/i)
+      screen.queryByText(/una moto tiene que tener 2 ruedas/i)
     ).not.toBeInTheDocument();
   });
 });

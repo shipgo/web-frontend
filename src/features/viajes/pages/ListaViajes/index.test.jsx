@@ -98,7 +98,7 @@ describe("ListaViajes", () => {
 
     renderWithProviders(<ListaViajes />);
 
-    expect(await screen.findByText("Sin viajes que mostrar")).toBeInTheDocument();
+    expect(await screen.findByText("Todavía no hay viajes")).toBeInTheDocument();
   });
 
   it('estado "vacío con filtros" muestra un CTA que limpia los filtros y vuelve a pedir sin ellos', async () => {
@@ -333,14 +333,14 @@ describe("ListaViajes", () => {
       expect(viajeApi.get).toHaveBeenCalledTimes(1);
     });
 
-    it('"Monitorear" sólo aparece en estados con tracking (en_camino) y navega a /mapa?viaje=:id', async () => {
+    it('"Ver en el mapa" sólo aparece en estados con tracking (en_camino) y navega a /mapa?viaje=:id', async () => {
       const user = userEvent.setup();
       const VIAJE_EN_CAMINO = { ...VIAJE, estado: "en_camino" };
       viajeApi.get.mockResolvedValue({ content: [VIAJE_EN_CAMINO], totalElements: 1, totalPages: 1 });
 
       renderWithProviders(<ListaViajes />);
       await abrirMenuDelViaje(user, 42);
-      const monitorear = await encontrarMenuItem("Monitorear");
+      const monitorear = await encontrarMenuItem("Ver en el mapa");
 
       // En en_camino ya no es cancelable ni editable: no debería quedar
       // ninguna acción sin sentido (ver ESTADOS_CANCELABLES/VIAJE_ESTADOS_EDITABLES).
@@ -353,7 +353,7 @@ describe("ListaViajes", () => {
       expect(window.location.search).toBe("?viaje=42");
     });
 
-    it('"Monitorear" también aparece con_problemas (estado no terminal, sigue trackeable)', async () => {
+    it('"Ver en el mapa" también aparece con_problemas (estado no terminal, sigue trackeable)', async () => {
       const user = userEvent.setup();
       const VIAJE_CON_PROBLEMAS = { ...VIAJE, estado: "con_problemas" };
       viajeApi.get.mockResolvedValue({ content: [VIAJE_CON_PROBLEMAS], totalElements: 1, totalPages: 1 });
@@ -361,10 +361,10 @@ describe("ListaViajes", () => {
       renderWithProviders(<ListaViajes />);
       await abrirMenuDelViaje(user, 42);
 
-      expect(await encontrarMenuItem("Monitorear")).toBeInTheDocument();
+      expect(await encontrarMenuItem("Ver en el mapa")).toBeInTheDocument();
     });
 
-    it('"Monitorear" NO aparece en un viaje planificado (todavía no salió)', async () => {
+    it('"Ver en el mapa" NO aparece en un viaje planificado (todavía no salió)', async () => {
       const user = userEvent.setup();
       viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
 
@@ -372,9 +372,9 @@ describe("ListaViajes", () => {
       await abrirMenuDelViaje(user, 42);
 
       // Confirma apertura vía "Ver hoja de ruta" (siempre presente) antes de
-      // afirmar la ausencia de "Monitorear".
+      // afirmar la ausencia de "Ver en el mapa".
       expect(await encontrarMenuItem("Ver hoja de ruta")).toBeInTheDocument();
-      expect(screen.queryByRole("menuitem", { name: "Monitorear" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Ver en el mapa" })).not.toBeInTheDocument();
     });
 
     it('no quedan las acciones muertas "Reportar incidente" ni "Desvincular chofer" en ningún estado', async () => {
@@ -417,7 +417,7 @@ describe("ListaViajes", () => {
       const dialog = await screen.findByRole("dialog");
       // SHG-FE-106: informa qué no se va a eliminar antes de confirmar.
       expect(within(dialog).getByText(/Se eliminarán 1 viaje\./)).toBeInTheDocument();
-      expect(within(dialog).getByText(/Quedan afuera 1 viaje \(viaje #43: no se puede eliminar en su estado actual\)/)).toBeInTheDocument();
+      expect(within(dialog).getByText(/No se eliminarán 1 viaje \(viaje #43: no se puede eliminar porque está En camino\)/)).toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
 
       await waitFor(() => expect(viajeApi.delete).toHaveBeenCalledWith(42));
@@ -428,7 +428,7 @@ describe("ListaViajes", () => {
       expect(await screen.findByText("Eliminación parcial")).toBeInTheDocument();
       expect(screen.getByText(/Se eliminaron 1 de 2 viajes/)).toBeInTheDocument();
       // El motivo también sigue en el diálogo mientras se anima el cierre.
-      expect(screen.getAllByText(/viaje #43.*no se puede eliminar en su estado actual/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/viaje #43.*no se puede eliminar porque está En camino/).length).toBeGreaterThan(0);
 
       // Refresca y limpia la selección igual que cualquier otro resultado.
       await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(2));
@@ -447,7 +447,7 @@ describe("ListaViajes", () => {
       await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
 
       const dialog = await screen.findByRole("dialog");
-      expect(within(dialog).getByText(/viaje #44: no se puede eliminar en su estado actual/)).toBeInTheDocument();
+      expect(within(dialog).getByText(/viaje #44: no se puede eliminar porque está Con problemas/)).toBeInTheDocument();
       expect(within(dialog).queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
       expect(viajeApi.delete).not.toHaveBeenCalled();
     });
@@ -467,7 +467,7 @@ describe("ListaViajes", () => {
       await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
 
       const dialog = await screen.findByRole("dialog");
-      expect(within(dialog).getByText(/viaje #43: no se puede eliminar en su estado actual/)).toBeInTheDocument();
+      expect(within(dialog).getByText(/viaje #43: no se puede eliminar porque está En camino/)).toBeInTheDocument();
       expect(within(dialog).queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Entendido" }));
 

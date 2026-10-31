@@ -29,12 +29,12 @@ describe("ListaViajesFiltros", () => {
     });
   });
 
-  it("'Atrasados' manda estado=planificado + fechaHasta=ahora (no rango de día)", async () => {
+  it("'Retrasados' manda estado=planificado + fechaHasta=ahora (no rango de día)", async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
     renderWithProviders(<ListaViajesFiltros onFiltersChange={onFiltersChange} />);
 
-    await user.click(screen.getByText("Atrasados"));
+    await user.click(screen.getByText("Retrasados"));
 
     await waitFor(() => expect(onFiltersChange).toHaveBeenCalled());
 

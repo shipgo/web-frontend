@@ -237,7 +237,7 @@ describe("CrearEnvios", () => {
       await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
 
       expect(
-        screen.getByText(/hacé click en el mapa para ubicar el envío/i),
+        screen.getByText(/tocá o hacé clic en el mapa para ubicar el envío/i),
       ).toBeInTheDocument();
       expect(screen.queryByTestId("marker")).not.toBeInTheDocument();
 
@@ -245,7 +245,7 @@ describe("CrearEnvios", () => {
       await geocodeDireccion();
 
       expect(
-        screen.queryByText(/hacé click en el mapa para ubicar el envío/i),
+        screen.queryByText(/tocá o hacé clic en el mapa para ubicar el envío/i),
       ).not.toBeInTheDocument();
       expect(screen.getByTestId("marker")).toBeInTheDocument();
     });
@@ -322,7 +322,7 @@ describe("CrearEnvios", () => {
 
     expect(envioApi.save).not.toHaveBeenCalled();
     await screen.findByText(
-      "Elegí una sugerencia del buscador de direcciones para ubicar el envío en el mapa",
+      "Elegí una sugerencia del buscador de direcciones para ubicar el envío en el mapa.",
     );
   });
 
@@ -416,10 +416,10 @@ describe("CrearEnvios", () => {
         data: {
           message: "Validación fallida",
           fields: [
-            { field: "nombre", error: "El nombre es requerido" },
+            { field: "nombre", error: "Ingresá el nombre." },
             {
               field: "destino.numeroCalle",
-              error: "El número de calle es requerido",
+              error: "El número de la calle es requerido",
             },
           ],
         },
@@ -441,10 +441,10 @@ describe("CrearEnvios", () => {
     // Verificamos que ambos field-errors se resaltaron en el DOM.
     // Sin `stripPrefix: "destino"`, el campo anidado no se pelaría y no aparecería aquí.
     expect(
-      await screen.findByText("El nombre es requerido"),
+      await screen.findByText("Ingresá el nombre."),
     ).toBeInTheDocument();
     expect(
-      await screen.findByText("El número de calle es requerido"),
+      await screen.findByText("El número de la calle es requerido"),
     ).toBeInTheDocument();
   });
 
@@ -633,7 +633,7 @@ describe("CrearEnvios", () => {
       await user.click(screen.getByRole("button", { name: /registrar envío/i }));
 
       expect(envioApi.save).not.toHaveBeenCalled();
-      await screen.findByText("Seleccioná una sucursal de retiro");
+      await screen.findByText("Elegí una sucursal de retiro.");
     });
 
     it("volver a 'Entrega a domicilio' restaura el buscador de dirección + mapa", async () => {

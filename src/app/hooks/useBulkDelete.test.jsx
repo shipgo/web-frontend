@@ -147,7 +147,7 @@ describe('useBulkDelete', () => {
     // SHG-FE-106: el diálogo separa eliminables (2) de no eliminables (1) ANTES de confirmar.
     expect(within(dialog).getByText(/Se eliminarán 2 elementos\./)).toBeInTheDocument();
     expect(
-      within(dialog).getByText(/Quedan afuera 1 elemento \(Tres: no se puede eliminar en su estado actual\)/),
+      within(dialog).getByText(/No se eliminarán 1 elemento \(Tres: no se puede eliminar en su estado actual\)/),
     ).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
@@ -209,6 +209,6 @@ describe('useBulkDelete', () => {
     renderWithProviders(<Fem items={[{ id: 1, nombre: 'Centro' }]} excluded={excluded} />);
     await user.click(screen.getByRole('button', { name: 'Abrir' }));
     dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent('Se eliminarán 1 sucursal. Quedan afuera 1 sucursal (Norte: tiene usuarios activos).');
+    expect(dialog).toHaveTextContent('Se eliminarán 1 sucursal. No se eliminarán 1 sucursal (Norte: tiene usuarios activos).');
   });
 });

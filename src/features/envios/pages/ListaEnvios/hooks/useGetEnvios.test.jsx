@@ -48,7 +48,7 @@ describe("useGetEnvios — filtro `sucursal` desde el contexto operativo (SHG-FE
     expect(envioApi.get.mock.calls[0][0].sucursal).toBeUndefined();
   });
 
-  it("SUPERUSER con sucursal operativa activa: manda `sucursal=<id>`", async () => {
+  it("SUPERUSER con ver datos de la sucursal: manda `sucursal=<id>`", async () => {
     renderHook(() => useGetEnvios(), {
       wrapper: wrapperFor({ ...DEFAULT_OPERATING_CONTEXT, isSuperUser: true, activeSucursalId: 3 }),
     });

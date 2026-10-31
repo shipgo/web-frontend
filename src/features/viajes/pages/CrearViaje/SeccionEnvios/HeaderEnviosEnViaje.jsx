@@ -11,7 +11,7 @@ const HeaderEnviosEnViaje = () => {
       <TextInput
         mt="xs"
         flex={1}
-        placeholder="Buscá por código o por destino..."
+        placeholder="Buscá entre los envíos agregados..."
         rightSection={<IconSearch size={16} />}
       />
     </Card.Section>

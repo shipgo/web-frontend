@@ -23,7 +23,7 @@ describe('getEstadoVisualViaje', () => {
     );
   });
 
-  it('devuelve "Demorado" cuando ya pasó la fecha de llegada planificada y hay señal reciente', () => {
+  it('devuelve "Retrasado" cuando ya pasó la fecha de llegada planificada y hay señal reciente', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-01-01T12:00:00Z'));
 
@@ -31,7 +31,7 @@ describe('getEstadoVisualViaje', () => {
     const viaje = { fechaHoraFinPlanificada: '2026-01-01T11:00:00Z' };
 
     expect(getEstadoVisualViaje(viaje, ubicacionReciente)).toEqual(
-      expect.objectContaining({ label: 'Demorado', color: 'orange' }),
+      expect.objectContaining({ label: 'Retrasado', color: 'orange' }),
     );
   });
 

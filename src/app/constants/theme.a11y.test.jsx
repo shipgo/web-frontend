@@ -24,7 +24,7 @@ describe('THEME — nombres accesibles en español (SHG-FE-114)', () => {
       <Modal
         opened
         onClose={() => {}}
-        title="Resetear contraseña"
+        title="Restablecer contraseña"
         transitionProps={{ duration: 0 }}
       >
         contenido

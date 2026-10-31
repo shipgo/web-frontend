@@ -85,7 +85,7 @@ const SeccionDetalles = () => {
             {...llegadaProps}
             error={
               fechasInvertidas
-                ? "La llegada planificada debe ser posterior a la salida planificada"
+                ? "La llegada planificada debe ser posterior a la salida planificada."
                 : llegadaProps.error
             }
           />

@@ -62,7 +62,7 @@ describe("useGetViajes — scoping por sucursal (SHG-FE-052)", () => {
     expect(viajeApi.getAll).not.toHaveBeenCalled();
   });
 
-  it("SUPERUSER con sucursal operativa activa: usa GET /api/viaje/all, filtra por sucursal.id y pagina client-side", async () => {
+  it("SUPERUSER con ver datos de la sucursal: usa GET /api/viaje/all, filtra por sucursal.id y pagina client-side", async () => {
     viajeApi.getAll.mockResolvedValue([VIAJE_CENTRO, VIAJE_NORTE, VIAJE_NORTE_2]);
 
     const { result } = renderHook(() => useGetViajes(2), {

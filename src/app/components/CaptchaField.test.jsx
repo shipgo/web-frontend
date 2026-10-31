@@ -66,7 +66,7 @@ describe("CaptchaField", () => {
     renderWithProviders(
       <CaptchaField captcha={baseCaptcha({ status: "error" })} />,
     );
-    expect(screen.getByText(/no pudimos validar la verificación/i)).toBeInTheDocument();
+    expect(screen.getByText(/no pudimos completar la verificación/i)).toBeInTheDocument();
   });
 
   it("siempre monta el contenedor del widget (donde Cloudflare lo renderiza)", () => {

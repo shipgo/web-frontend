@@ -43,31 +43,31 @@ const renderDetalle = async (currentUser, target) => {
   await screen.findByText("Detalle de usuario", {}, { timeout: 5000 });
 };
 
-describe("DetalleUsuario — Resetear contraseña (SHG-FE-123)", () => {
+describe("DetalleUsuario — Restablecer contraseña (SHG-FE-123)", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("un ADMIN no lo ve sobre otro ADMIN", async () => {
     await renderDetalle(ADMIN, mk(2, "ROLE_ADMIN"));
-    expect(screen.queryByRole("button", { name: /Resetear contraseña/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Restablecer contraseña/ })).not.toBeInTheDocument();
   });
 
   it("un ADMIN no lo ve sobre el SUPERUSER", async () => {
     await renderDetalle(ADMIN, mk(3, "ROLE_SUPERUSER"));
-    expect(screen.queryByRole("button", { name: /Resetear contraseña/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Restablecer contraseña/ })).not.toBeInTheDocument();
   });
 
   it("un ADMIN lo ve sobre un chofer", async () => {
     await renderDetalle(ADMIN, mk(4, "ROLE_CHOFER"));
-    expect(screen.getByRole("button", { name: /Resetear contraseña/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Restablecer contraseña/ })).toBeInTheDocument();
   });
 
   it("un ADMIN lo ve sobre su propio usuario", async () => {
     await renderDetalle(ADMIN, mk(1, "ROLE_ADMIN"));
-    expect(screen.getByRole("button", { name: /Resetear contraseña/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Restablecer contraseña/ })).toBeInTheDocument();
   });
 
   it("un SUPERUSER lo ve sobre otro ADMIN", async () => {
     await renderDetalle(SUPERUSER, mk(2, "ROLE_ADMIN"));
-    expect(screen.getByRole("button", { name: /Resetear contraseña/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Restablecer contraseña/ })).toBeInTheDocument();
   });
 });

@@ -244,7 +244,7 @@ const SeccionRecursos = ({
           {...getInputProps("vehiculo")}
           error={getInputProps("vehiculo").error || avisoVehiculo}
           label="Vehículo"
-          placeholder="Seleccioná un vehículo"
+          placeholder="Elegí un vehículo."
           data={vehiculoOptions}
           value={values.vehiculo?.id?.toString() ?? null}
           onChange={handleVehiculoChange}

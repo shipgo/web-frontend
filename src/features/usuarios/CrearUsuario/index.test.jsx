@@ -60,10 +60,10 @@ const fillMinimalForm = async (user) => {
   await user.type(screen.getByLabelText(exactLabel("tel[eé]fono")), "1122334455");
 
   await user.type(
-    screen.getByLabelText(exactLabel("nombre de calle")),
+    screen.getByLabelText(exactLabel("nombre de la calle")),
     "Av. Siempreviva"
   );
-  await user.type(screen.getByLabelText(exactLabel("n[uú]mero de calle")), "742");
+  await user.type(screen.getByLabelText(exactLabel("n[uú]mero de la calle")), "742");
 
   await selectOption(user, "Provincia", "Córdoba");
   await waitFor(() =>
@@ -183,9 +183,9 @@ describe("CrearUsuario", () => {
     await user.click(screen.getByRole("button", { name: /crear usuario/i }));
 
     expect(
-      await screen.findByText("El campo username no puede estar vacío")
+      await screen.findByText("Ingresá el usuario.")
     ).toBeInTheDocument();
-    expect(screen.getByText("El campo email no puede estar vacío")).toBeInTheDocument();
+    expect(screen.getByText("Ingresá el email.")).toBeInTheDocument();
     expect(container.querySelector("form")).toHaveAttribute("novalidate");
     expect(usuarioApi.save).not.toHaveBeenCalled();
   });
@@ -199,8 +199,8 @@ describe("CrearUsuario", () => {
     await user.type(screen.getByLabelText(exactLabel("tel[eé]fono")), "12x");
     await user.click(screen.getByRole("button", { name: /crear usuario/i }));
 
-    expect(await screen.findByText("El prefijo sólo puede tener números")).toBeInTheDocument();
-    expect(screen.getByText("El teléfono sólo puede tener números")).toBeInTheDocument();
+    expect(await screen.findByText("El prefijo solo puede tener números.")).toBeInTheDocument();
+    expect(screen.getByText("El teléfono solo puede tener números.")).toBeInTheDocument();
     expect(usuarioApi.save).not.toHaveBeenCalled();
   });
 
@@ -240,7 +240,7 @@ describe("CrearUsuario", () => {
       await user.click(screen.getByRole("button", { name: /crear usuario/i }));
 
       expect(
-        await screen.findByText("Seleccioná una sucursal")
+        await screen.findByText("Elegí una sucursal.")
       ).toBeInTheDocument();
       expect(usuarioApi.save).not.toHaveBeenCalled();
     });

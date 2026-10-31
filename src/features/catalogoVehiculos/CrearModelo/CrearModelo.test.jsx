@@ -68,8 +68,8 @@ describe("CrearModelo", () => {
   });
 
   it.each([
-    ["1800", "El año debe ser mayor o igual a 1900"],
-    [String(new Date().getFullYear() + 5), `El año debe ser menor o igual a ${new Date().getFullYear() + 1}`],
+    ["1800", "El año tiene que ser 1900 o posterior."],
+    [String(new Date().getFullYear() + 5), `El año no puede ser posterior a ${new Date().getFullYear() + 1}.`],
   ])("año fuera de rango (%s): error inline, sin clamp silencioso y sin guardar (SHG-FE-107)", async (anio, mensaje) => {
     const user = userEvent.setup();
     renderWithProviders(<CrearModelo />);

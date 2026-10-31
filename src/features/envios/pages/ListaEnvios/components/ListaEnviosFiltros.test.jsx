@@ -29,12 +29,12 @@ describe("ListaEnviosFiltros", () => {
     expect(payload.fechaHasta).toBeUndefined();
   });
 
-  it('"Salen hoy" manda estado=en_sucursal + fechaDesde/fechaHasta = hoy', async () => {
+  it('"Creados hoy" manda estado=en_sucursal + fechaDesde/fechaHasta = hoy', async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
     renderWithProviders(<ListaEnviosFiltros onFiltersChange={onFiltersChange} />);
 
-    await user.click(screen.getByText("Salen hoy"));
+    await user.click(screen.getByText("Creados hoy"));
 
     await waitFor(() => expect(onFiltersChange).toHaveBeenCalled());
 
@@ -45,7 +45,7 @@ describe("ListaEnviosFiltros", () => {
     expect(payload.fechaHasta).toEqual({ label: "fechaHasta", values: today });
   });
 
-  it('"Salen hoy" a las 23:30 ART usa fecha local correcta (no UTC)', async () => {
+  it('"Creados hoy" a las 23:30 ART usa fecha local correcta (no UTC)', async () => {
     // Regresión SHG-FE-082: el test viejo usaba new Date().toISOString() (UTC),
     // que a las 23:30 ART es ya el día siguiente en UTC.
     // Verificamos que el nuevo test (usando dayjs().format()) calcula la fecha local.
@@ -57,7 +57,7 @@ describe("ListaEnviosFiltros", () => {
     const onFiltersChange = vi.fn();
     renderWithProviders(<ListaEnviosFiltros onFiltersChange={onFiltersChange} />);
 
-    await user.click(screen.getByText("Salen hoy"));
+    await user.click(screen.getByText("Creados hoy"));
 
     await waitFor(() => expect(onFiltersChange).toHaveBeenCalled());
 

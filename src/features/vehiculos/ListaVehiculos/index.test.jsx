@@ -72,7 +72,7 @@ describe("ListaVehiculos", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/sin vehículos que mostrar/i)
+        screen.getByText(/todavía no hay vehículos/i)
       ).toBeInTheDocument();
     });
   });

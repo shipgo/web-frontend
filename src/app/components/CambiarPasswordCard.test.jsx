@@ -167,7 +167,7 @@ describe("CambiarPasswordCard", () => {
     const { container } = renderWithProviders(<CambiarPasswordCard />);
     await user.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
 
-    expect(await screen.findByText("Ingresá tu contraseña actual")).toBeInTheDocument();
+    expect(await screen.findByText("Ingresá tu contraseña actual.")).toBeInTheDocument();
     expect(container.querySelector("form")).toHaveAttribute("novalidate");
     expect(mockChangePassword).not.toHaveBeenCalled();
   });

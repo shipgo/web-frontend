@@ -49,7 +49,7 @@ describe("useGetUsuarios — scoping por sucursal (SHG-FE-052)", () => {
     expect(usuarioApi.getAll).not.toHaveBeenCalled();
   });
 
-  it("SUPERUSER con sucursal operativa activa: usa GET /api/user/all, filtra por sucursal.id y pagina client-side", async () => {
+  it("SUPERUSER con ver datos de la sucursal: usa GET /api/user/all, filtra por sucursal.id y pagina client-side", async () => {
     usuarioApi.getAll.mockResolvedValue([USUARIO_CENTRO, USUARIO_NORTE]);
 
     const { result } = renderHook(() => useGetUsuarios(), {
