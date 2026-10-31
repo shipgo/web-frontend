@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 
 import { API_URLS } from "@constants/apiUrls";
 import { usuarioApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 // Mismos formatos que valida `FileService.isImage` en el backend — el chequeo
 // acá es sólo para evitar un roundtrip innecesario, el backend sigue siendo la
@@ -55,7 +56,7 @@ const FotoPerfilUpload = ({ profile, fullName, onUploaded }) => {
       notifications.show({
         title: "No se pudo subir la foto de perfil",
         message:
-          error.response?.data?.message || "Probá de nuevo en unos minutos.",
+          error.response?.data?.message || REINTENTAR_MAS_TARDE,
         color: "red",
       });
     } finally {

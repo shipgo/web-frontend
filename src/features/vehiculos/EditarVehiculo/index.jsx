@@ -11,6 +11,7 @@ import RecursoNoEncontrado from "@components/RecursoNoEncontrado";
 import { isNotFoundError } from "@utils/httpErrors";
 import { applyApiError } from "@domain/apiError";
 import { vehiculoApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import VehiculoForm from "../components/VehiculoForm";
 import Footer from "../components/Footer";
@@ -69,7 +70,7 @@ const EditarVehiculo = () => {
         console.error("Error cargando vehículo:", error);
         notifications.show({
           title: "No se pudo cargar el vehículo",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
           icon: <IconX />,
         });
@@ -120,7 +121,7 @@ const EditarVehiculo = () => {
       notifications.show({
         title: "No se pudo actualizar el vehículo",
         message: applyApiError(form, error, {
-          fallbackMessage: "Probá de nuevo en unos minutos.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         }),
         color: "red",
         icon: <IconX />,

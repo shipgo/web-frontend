@@ -10,6 +10,7 @@ import { usuarioApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
 import { canManageUsuario } from "../utils";
 import { nombreCompleto } from "@domain/usuario";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import UsuarioPerfil from "../components/UsuarioPerfil";
 import { usePasswordReset } from "../hooks/usePasswordReset";
 
@@ -32,7 +33,7 @@ const DetalleUsuario = () => {
         console.error("Error cargando usuario:", error);
         notifications.show({
           title: "No se pudo cargar la información del usuario",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
         navigate("~/usuarios");

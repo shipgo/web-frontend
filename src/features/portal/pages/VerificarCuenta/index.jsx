@@ -19,6 +19,7 @@ import {
 } from '@tabler/icons-react';
 
 import { registroApi } from '../../api/portal.api';
+import { REINTENTAR_MAS_TARDE } from '@copy/common';
 
 /**
  * Verificación de email del CUSTOMER (`/registro/verificar?token=...`).
@@ -108,7 +109,7 @@ const VerificarCuentaPage = () => {
               color: 'red',
               icon: <IconAlertTriangle size={20} />,
               title: 'No pudimos verificar tu cuenta',
-              body: 'Intentá de nuevo en unos minutos.',
+              body: REINTENTAR_MAS_TARDE,
             };
 
     return (

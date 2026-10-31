@@ -18,9 +18,8 @@ import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
+import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE, FORMULARIO_INVALIDO } from "@copy/common";
 import { marcaApi } from "../api/catalogoVehiculos.api";
-import { SALIR_SIN_GUARDAR } from '@copy/common';
-import { FORMULARIO_INVALIDO } from '@copy/common';
 
 const currentYear = new Date().getFullYear();
 
@@ -56,7 +55,7 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
         console.error("Error cargando marcas:", error);
         notifications.show({
           title: "No se pudieron cargar las marcas",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       } finally {

@@ -14,6 +14,7 @@ import { useAuth } from "@contexts/auth";
 import { useOperatingContext } from "@contexts/operatingContext";
 
 import { envioApi, categoriaApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { EnvioFormProvider, useEnvioForm } from "./contexts/CrearEnvioContext";
 import { CREAR_ENVIO_SCHEMA, INITIAL_VALUES } from "./constants/schema";
 import SeccionOrigen from "./components/SeccionOrigen";
@@ -60,7 +61,7 @@ const CrearEnvios = () => {
       .catch(() => {
         notifications.show({
           title: "No se pudieron cargar las categorías",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
           icon: <IconX />,
         });
@@ -91,7 +92,7 @@ const CrearEnvios = () => {
 
       const message = applyApiError(form, error, {
         stripPrefix: "destino",
-        fallbackMessage: "Probá de nuevo en unos minutos.",
+        fallbackMessage: REINTENTAR_MAS_TARDE,
       });
 
       notifications.show({

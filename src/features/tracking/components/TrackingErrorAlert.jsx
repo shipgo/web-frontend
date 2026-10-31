@@ -38,7 +38,7 @@ const CONFIG = {
     color: 'red',
     icon: IconAlertTriangle,
     title: 'Algo salió mal',
-    message: 'No pudimos consultar el envío. Intentá de nuevo en unos minutos.',
+    message: 'No pudimos consultar el envío. Probá de nuevo en unos minutos.',
   },
 };
 

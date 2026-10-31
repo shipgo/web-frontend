@@ -9,6 +9,7 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import RecursoNoEncontrado from "@components/RecursoNoEncontrado";
 import { isNotFoundError } from "@utils/httpErrors";
 import { vehiculoApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import VehiculoPerfil from "../components/VehiculoPerfil";
 
@@ -35,7 +36,7 @@ const DetalleVehiculo = () => {
         console.error("Error cargando vehículo:", error);
         notifications.show({
           title: "No se pudo cargar la información del vehículo",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
         navigate("~/vehiculos");

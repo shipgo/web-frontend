@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
 
 import { fetchMapboxDirections } from "@utils/mapboxDirections";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import { useFormContext } from "../contexts/EnviosFormContext";
 
@@ -80,7 +81,7 @@ const useRouteCalculation = (origenCoords, groupCoords) => {
         title: "No se pudo calcular la ruta",
         message:
           error?.message ??
-          "Probá de nuevo en unos minutos.",
+          REINTENTAR_MAS_TARDE,
       }),
   });
 

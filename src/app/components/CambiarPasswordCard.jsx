@@ -18,6 +18,7 @@ import { IconCheck, IconLock, IconX } from "@tabler/icons-react";
 import { applyApiError, getRateLimitMessage } from "@domain/apiError";
 import { PASSWORD_MIN } from "@domain/validation";
 import { useAuthStore } from "@stores/auth.store";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 const PASSWORD_INCORRECTA_MESSAGE = "La contraseña actual es incorrecta";
 
@@ -100,7 +101,7 @@ const CambiarPasswordCard = () => {
         form.setFieldError("oldPassword", message);
       } else {
         message = applyApiError(form, error, {
-          fallbackMessage: "Probá de nuevo en unos minutos.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
       }
       notifications.show({

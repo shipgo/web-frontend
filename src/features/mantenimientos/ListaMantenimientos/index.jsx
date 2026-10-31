@@ -10,6 +10,7 @@ import SelectionBanner from "@components/SelectionBanner";
 import { useBulkDelete } from "@hooks/useBulkDelete";
 import { useCsvExport } from "@hooks/useCsvExport";
 import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
+import { listaEstados } from "@copy/common";
 
 import { mantenimientoApi } from "../api/mantenimientos.api";
 
@@ -19,7 +20,6 @@ import ListaMantenimientosTabla from "./components/ListaMantenimientosTabla";
 
 import { useGetMantenimientos } from "./hooks/useGetMantenimientos";
 import { MANTENIMIENTOS_CSV_COLUMNS } from "./listaMantenimientos.csv";
-import { listaEstados } from '@copy/common';
 
 const ESTADOS_LISTA = listaEstados({ singular: 'mantenimiento', plural: 'mantenimientos', genero: 'm' });
 

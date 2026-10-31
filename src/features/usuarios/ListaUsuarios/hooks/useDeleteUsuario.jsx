@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import { usuarioApi } from "@api";
 import { nombreCompleto } from "@domain/usuario";
 import { parseApiError } from "@domain/apiError";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 /**
  * Hook para manejar la eliminación de usuarios con confirmación
@@ -49,7 +50,7 @@ export const useDeleteUsuario = (onSuccess) => {
               title: "No se pudo eliminar el usuario",
               message: parseApiError(error, {
                 backendForbiddenMessage: true,
-                fallbackMessage: "Probá de nuevo en unos minutos.",
+                fallbackMessage: REINTENTAR_MAS_TARDE,
               }).message,
               color: "red",
               icon: <IconX />,

@@ -17,6 +17,7 @@ import CambiarPasswordCard from "@components/CambiarPasswordCard";
 import { USUARIO_INITIAL_VALUES, buildUsuarioValidate } from "../constants/schema";
 import { toBackendDate, canManageUsuario } from "../utils";
 import { nombreCompleto } from "@domain/usuario";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 const EditarUsuario = () => {
   const { id } = useParams();
@@ -99,7 +100,7 @@ const EditarUsuario = () => {
         console.error("Error cargando usuario:", error);
         notifications.show({
           title: "No se pudo cargar el usuario",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
           icon: <IconX />,
         });
@@ -161,7 +162,7 @@ const EditarUsuario = () => {
 
         const message = applyApiError(form, error, {
           backendForbiddenMessage: true,
-          fallbackMessage: "Probá de nuevo en unos minutos.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
 
         notifications.show({

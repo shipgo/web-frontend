@@ -10,6 +10,7 @@ import { useAuthStore } from "@stores/auth.store";
 import { applyApiError } from "@domain/apiError";
 import { ROLE_SUPERUSER, hasRole } from "@domain/roles";
 import { usuarioApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import UsuarioForm from "../components/UsuarioForm";
 import { USUARIO_INITIAL_VALUES, buildUsuarioValidate } from "../constants/schema";
 import { toBackendDate } from "../utils";
@@ -72,7 +73,7 @@ const CrearUsuario = () => {
 
         const message = applyApiError(form, error, {
           backendForbiddenMessage: true,
-          fallbackMessage: "Probá de nuevo en unos minutos.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
 
         notifications.show({

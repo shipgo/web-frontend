@@ -3,9 +3,9 @@ import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 
 import PageFooter from "@components/PageFooter";
+import { FORMULARIO_INVALIDO } from "@copy/common";
 
 import { useFormContext } from "../CrearViaje/contexts/EnviosFormContext";
-import { FORMULARIO_INVALIDO } from '@copy/common';
 
 /**
  * Barra de acciones fija, mismo patrón que `CrearViaje/Footer.jsx`

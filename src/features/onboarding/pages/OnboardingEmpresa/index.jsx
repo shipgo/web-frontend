@@ -11,6 +11,7 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
 import { empresaApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import SucursalForm from "@features/sucursales/components/SucursalForm";
 import {
   EMPRESA_ONBOARDING_INITIAL_VALUES,
@@ -91,7 +92,7 @@ const OnboardingEmpresa = () => {
 
         const message = applyApiError(form, remapEmpresaFieldErrors(error), {
           stripPrefix: ["sucursal.puntoEntrega", "sucursal"],
-          fallbackMessage: "Probá de nuevo en unos minutos.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
 
         notifications.show({

@@ -8,6 +8,7 @@ import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
 import { sucursalApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import SucursalForm from "../components/SucursalForm";
 import { SUCURSAL_SCHEMA, SUCURSAL_INITIAL_VALUES } from "../constants/schema";
 
@@ -59,7 +60,7 @@ const CrearSucursal = () => {
           title: "No se pudo crear la sucursal",
           message: applyApiError(form, error, {
             stripPrefix: "puntoEntrega",
-            fallbackMessage: "Probá de nuevo en unos minutos.",
+            fallbackMessage: REINTENTAR_MAS_TARDE,
           }),
           color: "red",
           icon: <IconX />,

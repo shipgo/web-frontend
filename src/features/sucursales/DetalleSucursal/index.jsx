@@ -7,6 +7,7 @@ import { IconEdit, IconX } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { sucursalApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import SucursalPerfil from "../components/SucursalPerfil";
 
 const DetalleSucursal = () => {
@@ -26,7 +27,7 @@ const DetalleSucursal = () => {
         console.error("Error cargando sucursal:", error);
         notifications.show({
           title: "No se pudo cargar la información de la sucursal",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
           icon: <IconX />,
         });

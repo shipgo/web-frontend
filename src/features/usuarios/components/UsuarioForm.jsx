@@ -35,7 +35,7 @@ import {
   ROLE_CHOFER,
   ROLE_SUPERUSER,
 } from "@domain/roles";
-import { SALIR_SIN_GUARDAR } from '@copy/common';
+import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE } from "@copy/common";
 
 // Roles asignables desde el panel web (CONTRACTS.md §3): CHOFER/CARGA se dan de
 // alta acá pero solo operan desde la app; ROLE_CUSTOMER nunca se asigna desde acá
@@ -197,7 +197,7 @@ const UsuarioForm = ({
         console.error("Error cargando catálogos:", error);
         notifications.show({
           title: "No se pudieron cargar las opciones del formulario",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       } finally {
@@ -232,7 +232,7 @@ const UsuarioForm = ({
         console.error("Error cargando localidades:", error);
         notifications.show({
           title: "No se pudieron cargar las localidades",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       }
@@ -413,7 +413,7 @@ const UsuarioForm = ({
               />
               <Select
                 label="Localidad"
-                placeholder="Elegí primero una provincia"
+                placeholder="Seleccioná primero una provincia"
                 required
                 data={localidades}
                 searchable

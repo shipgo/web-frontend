@@ -39,7 +39,7 @@ const DetalleViaje = () => {
           onError={{
             show: isError && !notFound,
             title: 'No se pudo cargar el viaje',
-            description: 'No pudimos cargar el viaje. Intentá de nuevo en unos minutos.',
+            description: 'No pudimos cargar el viaje. Probá de nuevo en unos minutos.',
             onClick: refetch,
           }}
           onEmptyData={{

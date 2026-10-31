@@ -4,8 +4,7 @@ import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
-import { SALIR_SIN_GUARDAR } from '@copy/common';
-import { FORMULARIO_INVALIDO } from '@copy/common';
+import { SALIR_SIN_GUARDAR, FORMULARIO_INVALIDO } from "@copy/common";
 
 /**
  * Formulario reutilizable de crear/editar Marca (`MarcaReqDTO { nombre }`,

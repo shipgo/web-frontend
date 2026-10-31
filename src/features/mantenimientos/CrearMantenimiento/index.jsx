@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { mantenimientoApi } from "../api/mantenimientos.api";
 
 import MantenimientoForm from "../components/MantenimientoForm";
@@ -43,7 +44,7 @@ const CrearMantenimiento = () => {
         console.error("Error creando mantenimiento:", error);
 
         const message = applyApiError(form, error, {
-          fallbackMessage: "Probá de nuevo en unos minutos.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
 
         notifications.show({

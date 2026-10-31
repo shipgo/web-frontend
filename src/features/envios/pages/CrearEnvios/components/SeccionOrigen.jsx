@@ -24,6 +24,7 @@ import { Marker } from "react-map-gl/mapbox";
 import MapCard from "@features/mapa/components/MapCard";
 import ScreenContainer from "@components/ScreenContainer";
 import { provinciaApi, localidadApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { TIPO_ENTREGA, TIPO_ENTREGA_OPTIONS } from "@features/envios/constants";
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
 import { useAddressAutofill } from "../hooks/useAddressAutofill";
@@ -113,7 +114,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
       .catch(() => {
         notifications.show({
           title: "No se pudieron cargar las provincias",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       });
@@ -145,7 +146,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
       .catch(() => {
         notifications.show({
           title: "No se pudieron cargar las localidades",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       });
@@ -442,7 +443,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                     placeholder={
                       form.values.provinciaID
                         ? "Seleccioná una localidad"
-                        : "Elegí primero una provincia"
+                        : "Seleccioná primero una provincia"
                     }
                     data={localidades}
                     searchable

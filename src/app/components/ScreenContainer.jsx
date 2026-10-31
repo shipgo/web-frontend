@@ -2,9 +2,9 @@ import { cloneElement } from 'react';
 import { IconFilesOff, IconAlertTriangle } from '@tabler/icons-react';
 import { Loader, EmptyState, Button, Card } from '@mantine/core';
 
-import { PANTALLA } from '@copy/common';
 
 import RecursoNoEncontrado from './RecursoNoEncontrado';
+import { PANTALLA } from '@copy/common';
 
 const Wrapper = ({ children, className, styleProps }) => (
   <EmptyState

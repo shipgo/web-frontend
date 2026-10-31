@@ -11,6 +11,7 @@ import { applyApiError } from "@domain/apiError";
 import { ROLE_SUPERUSER, hasRole, rolesDe } from "@domain/roles";
 import { usuarioApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import UsuarioForm from "../components/UsuarioForm";
 import { USUARIO_INITIAL_VALUES, buildUsuarioValidate } from "../constants/schema";
 import { toBackendDate } from "../utils";
@@ -119,7 +120,7 @@ const CompletarCuenta = () => {
         console.error("Error completando la cuenta:", error);
         const message = applyApiError(form, error, {
           backendForbiddenMessage: true,
-          fallbackMessage: "Probá de nuevo en unos minutos.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
         notifications.show({
           title: "No se pudieron guardar tus datos",

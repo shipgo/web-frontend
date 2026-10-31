@@ -6,6 +6,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import { usuarioApi } from "@api";
 import { nombreCompleto } from "@domain/usuario";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 /**
  * Reset de contraseña (SU/AD) para un empleado desde el panel.
@@ -59,7 +60,7 @@ export const usePasswordReset = () => {
             title: "No se pudo enviar el email de restablecimiento",
             message:
               error.response?.data?.message ||
-              "Probá de nuevo en unos minutos.",
+              REINTENTAR_MAS_TARDE,
             color: "red",
             icon: <IconX />,
           });

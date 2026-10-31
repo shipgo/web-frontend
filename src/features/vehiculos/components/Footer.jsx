@@ -3,9 +3,9 @@ import { modals } from "@mantine/modals";
 import { useLocation } from "wouter";
 
 import PageFooter from "@components/PageFooter";
+import { SALIR_SIN_GUARDAR } from "@copy/common";
 
 import { useVehiculoFormContext } from "../context/VehiculoFormContext";
-import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 /**
  * Acciones del formulario de vehículos. Usa el `PageFooter` canónico

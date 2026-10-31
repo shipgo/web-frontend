@@ -6,6 +6,7 @@ import { Center, Text } from "@mantine/core";
 import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
 import { VirtuosoItem } from "@components/VirtuosoListA11y";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import ItemVehiculo from "./ItemVehiculo";
 import { useFormContext } from "../contexts/EnviosFormContext";
@@ -65,7 +66,7 @@ const ListaVehiculosDisponibles = ({
               onClick: refetch,
               title: "No pudimos cargar los vehículos",
               description:
-                "Intentá de nuevo en unos minutos.",
+                REINTENTAR_MAS_TARDE,
             }}
             onEmptyData={{
               show: !isFetching && !isError && vehiculos.length === 0,

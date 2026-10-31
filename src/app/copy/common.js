@@ -7,7 +7,7 @@
 /** Estados de pantalla genéricos (`ScreenContainer`). */
 export const PANTALLA = {
   errorTitulo: 'No pudimos cargar esta información',
-  errorDescripcion: 'Intentá de nuevo en unos minutos.',
+  errorDescripcion: 'Probá de nuevo en unos minutos.',
   errorDatoTitulo: 'No pudimos cargar este dato',
   vacioTitulo: 'Todavía no hay nada para mostrar',
   vacioDescripcion: 'Cuando haya información, la vas a ver acá.',
@@ -30,7 +30,10 @@ export const FORMULARIO_INVALIDO = {
 };
 
 /** Fallback cuando el backend no manda un mensaje legible. */
-export const ERROR_GENERICO = 'Algo salió mal. Probá de nuevo en unos minutos.';
+/** Cierre estándar de los mensajes de error recuperable. */
+export const REINTENTAR_MAS_TARDE = 'Probá de nuevo en unos minutos.';
+
+export const ERROR_GENERICO = `Algo salió mal. ${REINTENTAR_MAS_TARDE}`;
 
 /** Función de la API que todavía no existe (nunca se muestra el detalle técnico). */
 export const FUNCION_NO_DISPONIBLE = 'Esta función todavía no está disponible.';
@@ -43,18 +46,10 @@ export const listaEstados = ({ singular, plural, genero }) => {
   const f = genero === 'f';
   return {
     cargando: `Cargando ${plural}...`,
-    error: `No pudimos cargar ${f ? 'las' : 'los'} ${plural}.`,
+    error: `No pudimos cargar ${f ? 'las' : 'los'} ${plural}`,
     vacioTitulo: `Todavía no hay ${plural}`,
     vacioDescripcion: `Cuando crees ${f ? 'una' : 'uno'}, ${f ? 'la' : 'lo'} vas a ver acá.`,
     sinResultadosTitulo: 'Sin resultados',
     sinResultadosDescripcion: `${f ? 'Ninguna' : 'Ningún'} ${singular} coincide con los filtros.`,
   };
-};
-
-/** Mensajes de validación (Ingresá… / Elegí…). */
-export const validar = {
-  ingresa: (que) => `Ingresá ${que}.`,
-  elegi: (que) => `Elegí ${que}.`,
-  maximo: (que, max) => `${que} puede tener hasta ${max} caracteres.`,
-  emailInvalido: 'Ingresá un email válido.',
 };

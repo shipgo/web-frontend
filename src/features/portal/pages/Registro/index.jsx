@@ -72,7 +72,7 @@ const RegistroPage = () => {
       // sin `fields` (CONTRACT-005): lo mostramos como error del campo `email`.
       // Si el backend mandara `fields`, se respetan tal cual.
       const { fieldErrors, message } = parseApiError(error, {
-        fallbackMessage: 'No pudimos completar el registro. Intentá de nuevo en unos minutos.',
+        fallbackMessage: 'No pudimos completar el registro. Probá de nuevo en unos minutos.',
       });
       if (Object.keys(fieldErrors).length > 0) {
         form.setErrors(fieldErrors);

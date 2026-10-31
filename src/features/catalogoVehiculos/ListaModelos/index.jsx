@@ -4,6 +4,7 @@ import PageContainer from "@components/PageContainer";
 import ScreenContainer from "@components/ScreenContainer";
 
 import { useCsvExport } from "@hooks/useCsvExport";
+import { listaEstados } from "@copy/common";
 
 import CatalogoVehiculosHeader from "../components/CatalogoVehiculosHeader";
 import ListaModelosFiltros from "./components/ListaModelosFiltros";
@@ -11,7 +12,6 @@ import ListaModelosTabla from "./components/ListaModelosTabla";
 
 import { useGetModelos } from "./hooks/useGetModelos";
 import { MODELOS_CSV_COLUMNS } from "./listaModelos.csv";
-import { listaEstados } from '@copy/common';
 
 const ESTADOS_LISTA = listaEstados({ singular: 'modelo', plural: 'modelos', genero: 'm' });
 

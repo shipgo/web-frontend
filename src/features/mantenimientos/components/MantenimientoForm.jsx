@@ -26,8 +26,8 @@ import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
 import { vehiculoApi } from "@api";
+import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE } from "@copy/common";
 import { tipoMantenimientoApi } from "../api/mantenimientos.api";
-import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -128,7 +128,7 @@ const MantenimientoForm = ({
         console.error("Error cargando catálogos:", error);
         notifications.show({
           title: "No se pudieron cargar los datos necesarios",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       } finally {

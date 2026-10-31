@@ -19,8 +19,8 @@ import ListaUsuariosTabla from './components/ListaUsuariosTabla';
 import { useGetUsuarios } from './hooks/useGetUsuarios';
 import { canManageUsuario } from '../utils';
 import { nombreCompleto } from '@domain/usuario';
-import { USUARIOS_CSV_COLUMNS } from './listaUsuarios.csv';
 import { listaEstados } from '@copy/common';
+import { USUARIOS_CSV_COLUMNS } from './listaUsuarios.csv';
 
 const ESTADOS_LISTA = listaEstados({ singular: 'usuario', plural: 'usuarios', genero: 'm' });
 

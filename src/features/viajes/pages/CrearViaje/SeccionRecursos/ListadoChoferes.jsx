@@ -14,6 +14,7 @@ import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
 
 import { useAuth } from "@contexts/auth";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import ItemChofer from "./ItemChofer";
 import { useFormContext } from "../contexts/EnviosFormContext";
@@ -111,7 +112,7 @@ const ListadoChoferes = () => {
         onError={{
           show: isError,
           title: "No pudimos cargar los choferes",
-          description: "Intentá de nuevo en unos minutos.",
+          description: REINTENTAR_MAS_TARDE,
           onClick: refetch,
         }}
         onLoading={{

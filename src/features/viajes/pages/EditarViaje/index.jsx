@@ -11,6 +11,7 @@ import { isNotFoundError } from "@utils/httpErrors";
 
 import { estadoBadge, normalizarEstado } from "@domain/estados";
 import { applyApiError } from "@domain/apiError";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import { VIAJE_ESTADOS_EDITABLES } from "../../constants";
 import { viajeApi } from "../../api/viajes.api";
@@ -131,7 +132,7 @@ const EditarViaje = () => {
         // "viaje." — el helper los alinea a los nombres planos del form.
         const message = applyApiError(form, error, {
           stripPrefix: "viaje",
-          fallbackMessage: "Probá de nuevo en unos minutos.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
 
         notifications.show({
@@ -173,7 +174,7 @@ const EditarViaje = () => {
         onError={{
           show: errorViaje && !loadingViaje,
           title: 'No se pudo cargar el viaje',
-          description: 'No pudimos cargar el viaje. Intentá de nuevo en unos minutos.',
+          description: 'No pudimos cargar el viaje. Probá de nuevo en unos minutos.',
           onClick: loadViaje,
         }}
         onEmptyData={{

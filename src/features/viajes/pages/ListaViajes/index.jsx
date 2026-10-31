@@ -11,6 +11,7 @@ import { viajeApi } from '@api';
 import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
 import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
+import { listaEstados } from '@copy/common';
 
 import { ESTADOS_ELIMINABLES } from '../DetalleViaje/acciones';
 
@@ -20,7 +21,6 @@ import ListaViajesFiltros from './components/ListaViajesFiltros';
 
 import { useGetViajes } from './hooks/useGetViajes';
 import { VIAJES_CSV_COLUMNS } from './listaViajes.csv';
-import { listaEstados } from '@copy/common';
 
 const ESTADOS_LISTA = listaEstados({ singular: 'viaje', plural: 'viajes', genero: 'm' });
 

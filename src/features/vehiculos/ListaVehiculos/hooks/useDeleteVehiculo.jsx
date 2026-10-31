@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import { vehiculoApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 /**
  * Hook para manejar la eliminación de vehículos con confirmación
@@ -52,7 +53,7 @@ export const useDeleteVehiculo = (onSuccess) => {
               title: "No se pudo eliminar el vehículo",
               message:
                 error.response?.data?.message ||
-                "Probá de nuevo en unos minutos.",
+                REINTENTAR_MAS_TARDE,
               color: "red",
               icon: <IconX />,
             });

@@ -7,6 +7,7 @@ import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
 import { VirtuosoItem } from "@components/VirtuosoListA11y";
 import { formatDireccion } from "@domain/format";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import { TIPO_ENTREGA } from "@features/envios/constants";
 import { formatDestinoEnvio } from "@features/envios/utils";
@@ -194,7 +195,7 @@ const ListadoEnviosPendientes = ({
         onClick: refetch,
         title: "No pudimos cargar los envíos",
         description:
-          "Intentá de nuevo en unos minutos.",
+          REINTENTAR_MAS_TARDE,
       }}
       onEmptyData={{
         show: !isPending && !isError && envios.length === 0,

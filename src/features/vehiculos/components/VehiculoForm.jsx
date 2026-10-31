@@ -25,6 +25,7 @@ import {
   CATEGORIA_VEHICULO,
   setCategoriaPorTipoVehiculoId,
 } from "../constants/schema";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -130,7 +131,7 @@ const VehiculoForm = () => {
         console.error("Error cargando catálogos:", error);
         notifications.show({
           title: "No se pudieron cargar las opciones del formulario",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       } finally {
@@ -165,7 +166,7 @@ const VehiculoForm = () => {
         console.error("Error cargando modelos:", error);
         notifications.show({
           title: "No se pudieron cargar los modelos",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       }
@@ -248,7 +249,7 @@ const VehiculoForm = () => {
             />
             <Select
               label="Modelo"
-              placeholder="Elegí primero una marca"
+              placeholder="Seleccioná primero una marca"
               required
               data={modelos}
               searchable
@@ -333,7 +334,7 @@ const VehiculoForm = () => {
               label="Cantidad de ruedas"
               placeholder={esMoto ? "2" : "Ej: 4"}
               // Sin `description` fija acá (a diferencia de "Peso máximo"
-              // abajo): el mensaje "debe tener exactamente 2 ruedas" ya lo
+              // abajo): el mensaje "Una moto tiene que tener 2 ruedas" ya lo
               // muestra el `error` de `VEHICULO_SCHEMA` cuando corresponde —
               // duplicarlo como `description` mostraría el mismo texto dos
               // veces a la vez (Mantine no oculta la descripción cuando hay

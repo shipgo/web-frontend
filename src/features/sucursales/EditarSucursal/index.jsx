@@ -9,6 +9,7 @@ import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
 import { sucursalApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import SucursalForm from "../components/SucursalForm";
 import { SUCURSAL_SCHEMA, SUCURSAL_INITIAL_VALUES } from "../constants/schema";
 
@@ -49,7 +50,7 @@ const EditarSucursal = () => {
         console.error("Error cargando sucursal:", error);
         notifications.show({
           title: "No se pudo cargar la sucursal",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
           icon: <IconX />,
         });
@@ -102,7 +103,7 @@ const EditarSucursal = () => {
           title: "No se pudo actualizar la sucursal",
           message: applyApiError(form, error, {
             stripPrefix: "puntoEntrega",
-            fallbackMessage: "Probá de nuevo en unos minutos.",
+            fallbackMessage: REINTENTAR_MAS_TARDE,
           }),
           color: "red",
           icon: <IconX />,

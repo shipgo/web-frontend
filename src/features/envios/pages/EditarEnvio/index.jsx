@@ -9,6 +9,7 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import ScreenContainer from "@components/ScreenContainer";
 import { isNotFoundError } from "@utils/httpErrors";
 import { envioApi, categoriaApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import EditarEnvioForm from "./components/EditarEnvioForm";
 import { esEnvioEditable } from "../../utils";
@@ -72,7 +73,7 @@ const EditarEnvio = () => {
       .catch(() => {
         notifications.show({
           title: "No se pudieron cargar las categorías",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
           icon: <IconX />,
         });
@@ -98,7 +99,7 @@ const EditarEnvio = () => {
         onError={{
           show: error && !loading,
           title: 'No se pudo cargar el envío',
-          description: 'No pudimos cargar el envío. Intentá de nuevo en unos minutos.',
+          description: 'No pudimos cargar el envío. Probá de nuevo en unos minutos.',
           onClick: loadEnvio,
         }}
         onEmptyData={{

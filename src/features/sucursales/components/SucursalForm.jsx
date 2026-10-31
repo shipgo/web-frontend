@@ -24,8 +24,7 @@ import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
 import { provinciaApi, localidadApi } from "@api";
-import { SALIR_SIN_GUARDAR } from '@copy/common';
-import { FORMULARIO_INVALIDO } from '@copy/common';
+import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE, FORMULARIO_INVALIDO } from "@copy/common";
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -130,7 +129,7 @@ const SucursalForm = ({
         console.error("Error cargando provincias:", error);
         notifications.show({
           title: "No se pudieron cargar las provincias",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       } finally {
@@ -164,7 +163,7 @@ const SucursalForm = ({
         console.error("Error cargando localidades:", error);
         notifications.show({
           title: "No se pudieron cargar las localidades",
-          message: "Intentá de nuevo en unos minutos.",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       }

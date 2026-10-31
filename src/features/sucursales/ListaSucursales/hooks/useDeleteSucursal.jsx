@@ -4,6 +4,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import { sucursalApi } from "../../api/sucursales.api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 export const useDeleteSucursal = (onSuccess) => {
   const openDeleteModal = (sucursal) => {
@@ -46,7 +47,7 @@ export const useDeleteSucursal = (onSuccess) => {
             title: "No se pudo eliminar la sucursal",
             message:
               error.response?.data?.message ||
-              "Probá de nuevo en unos minutos.",
+              REINTENTAR_MAS_TARDE,
             color: "red",
             icon: <IconX />,
           });

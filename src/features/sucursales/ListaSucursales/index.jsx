@@ -8,6 +8,7 @@ import SelectionBanner from "@components/SelectionBanner";
 
 import { useBulkDelete } from "@hooks/useBulkDelete";
 import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
+import { listaEstados } from "@copy/common";
 
 import { sucursalApi } from "../api/sucursales.api";
 
@@ -17,7 +18,6 @@ import ListaSucursalesTabla from "./components/ListaSucursalesTabla";
 
 import { useGetSucursales } from "./hooks/useGetSucursales";
 import { SUCURSALES_CSV_COLUMNS } from "./listaSucursales.csv";
-import { listaEstados } from '@copy/common';
 
 const ESTADOS_LISTA = listaEstados({ singular: 'sucursal', plural: 'sucursales', genero: 'f' });
 

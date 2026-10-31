@@ -10,6 +10,7 @@ import { envioApi } from '@api';
 import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
 import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
+import { listaEstados } from '@copy/common';
 
 import ListaEnviosHeader from './components/ListaEnviosHeader';
 import ListaEnviosFiltros from './components/ListaEnviosFiltros';
@@ -17,7 +18,6 @@ import ListaEnviosTabla from './components/ListaEnviosTabla';
 
 import { useGetEnvios } from './hooks/useGetEnvios';
 import { ENVIOS_CSV_COLUMNS } from './listaEnvios.csv';
-import { listaEstados } from '@copy/common';
 
 const ESTADOS_LISTA = listaEstados({ singular: 'envío', plural: 'envíos', genero: 'm' });
 

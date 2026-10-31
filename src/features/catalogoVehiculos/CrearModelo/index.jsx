@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { modeloApi } from "../api/catalogoVehiculos.api";
 import ModeloForm from "../components/ModeloForm";
 import { MODELO_SCHEMA, MODELO_INITIAL_VALUES } from "../constants/schema";
@@ -49,7 +50,7 @@ const CrearModelo = () => {
         notifications.show({
           title: "No se pudo crear el modelo",
           message: applyApiError(form, error, {
-            fallbackMessage: "Probá de nuevo en unos minutos.",
+            fallbackMessage: REINTENTAR_MAS_TARDE,
           }),
           color: "red",
           icon: <IconX />,

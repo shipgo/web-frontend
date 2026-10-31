@@ -4,9 +4,9 @@ import { useLocation } from "wouter";
 
 import PageFooter from "@components/PageFooter";
 import { formatPeso } from "@domain/format";
+import { SALIR_SIN_GUARDAR } from "@copy/common";
 
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
-import { SALIR_SIN_GUARDAR } from '@copy/common';
 
 const Footer = ({
   onSubmit,

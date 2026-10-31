@@ -10,6 +10,7 @@ import { vehiculoApi } from "@api";
 import { useBulkDelete } from "@hooks/useBulkDelete";
 import { useCsvExport } from "@hooks/useCsvExport";
 import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
+import { listaEstados } from "@copy/common";
 
 import ListaVehiculosHeader from "./components/ListaVehiculosHeader";
 import ListaVehiculosFiltros from "./components/ListaVehiculosFiltros";
@@ -17,7 +18,6 @@ import ListaVehiculosTabla from "./components/ListaVehiculosTabla";
 
 import { useGetVehiculos } from "./hooks/useGetVehiculos";
 import { VEHICULOS_CSV_COLUMNS } from "./listaVehiculos.csv";
-import { listaEstados } from '@copy/common';
 
 const ESTADOS_LISTA = listaEstados({ singular: 'vehículo', plural: 'vehículos', genero: 'm' });
 

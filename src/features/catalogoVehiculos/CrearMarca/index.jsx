@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { marcaApi } from "../api/catalogoVehiculos.api";
 import MarcaForm from "../components/MarcaForm";
 import { MARCA_SCHEMA, MARCA_INITIAL_VALUES } from "../constants/schema";
@@ -41,7 +42,7 @@ const CrearMarca = () => {
         notifications.show({
           title: "No se pudo crear la marca",
           message: applyApiError(form, error, {
-            fallbackMessage: "Probá de nuevo en unos minutos.",
+            fallbackMessage: REINTENTAR_MAS_TARDE,
           }),
           color: "red",
           icon: <IconX />,

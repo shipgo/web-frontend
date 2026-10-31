@@ -128,7 +128,7 @@ const DashboardPage = () => {
           isLoading={resumenLoading}
           isError={resumenError}
           onRetry={resumenQuery.refetch}
-          tooltip="Viajes que ya están en carga o en camino. Abajo se suman los planificados y los finalizados del período."
+          tooltip="Viajes en carga o en camino. Abajo, como referencia, los planificados y los finalizados del período."
         />
         <KpiCard
           title="Incidencias"

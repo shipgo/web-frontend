@@ -737,7 +737,7 @@ describe("EditarViaje", () => {
       });
 
       expect(await screen.findByText("No se pudo cargar el viaje")).toBeInTheDocument();
-      expect(screen.getByText("No pudimos cargar el viaje. Intentá de nuevo en unos minutos.")).toBeInTheDocument();
+      expect(screen.getByText("No pudimos cargar el viaje. Probá de nuevo en unos minutos.")).toBeInTheDocument();
 
       const reintentar = screen.getByRole("button", { name: /reintentar/i });
       expect(reintentar).toBeInTheDocument();

@@ -311,7 +311,7 @@ describe("EditarEnvio", () => {
 
     await waitFor(() => expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan"));
     expect(screen.getByLabelText(/^calle/i)).toBeEnabled();
-    expect(screen.getByRole("button", { name: /añadir paquete/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /agregar paquete/i })).toBeInTheDocument();
   });
 
   it("no permite editar un envío en estado terminal (entregado/rechazado)", async () => {
@@ -486,7 +486,7 @@ describe("EditarEnvio", () => {
       });
 
       expect(await screen.findByText("No se pudo cargar el envío")).toBeInTheDocument();
-      expect(screen.getByText("No pudimos cargar el envío. Intentá de nuevo en unos minutos.")).toBeInTheDocument();
+      expect(screen.getByText("No pudimos cargar el envío. Probá de nuevo en unos minutos.")).toBeInTheDocument();
 
       const reintentar = screen.getByRole("button", { name: /reintentar/i });
       expect(reintentar).toBeInTheDocument();

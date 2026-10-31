@@ -4,6 +4,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import { marcaApi } from "../../api/catalogoVehiculos.api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 /**
  * Confirmación + borrado de Marca (`DELETE /api/marca/{id}` — `ENDPOINTS.md`
@@ -46,7 +47,7 @@ export const useDeleteMarca = (onSuccess) => {
           notifications.show({
             title: "No se pudo eliminar la marca",
             message:
-              error.response?.data?.message || "Probá de nuevo en unos minutos.",
+              error.response?.data?.message || REINTENTAR_MAS_TARDE,
             color: "red",
             icon: <IconX />,
           });

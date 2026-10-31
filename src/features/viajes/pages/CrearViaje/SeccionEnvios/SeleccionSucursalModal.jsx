@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import ScreenContainer from "@components/ScreenContainer";
 import { sucursalApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 /**
  * `GET /api/sucursal/sucursalesRestantes` (SU/AD) — sucursales a las que se
@@ -60,7 +61,7 @@ const SeleccionSucursalModal = ({
         show: isError,
         onClick: refetch,
         title: "No pudimos cargar las sucursales",
-        description: "Intentá de nuevo en unos minutos.",
+        description: REINTENTAR_MAS_TARDE,
       }}
     >
       <Stack component="form" onSubmit={onSubmit(handleSubmit)}>

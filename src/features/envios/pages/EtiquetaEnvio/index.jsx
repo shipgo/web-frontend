@@ -62,7 +62,7 @@ const EtiquetaEnvioPage = () => {
         onError={{
           show: error && !loading,
           title: 'No se pudo cargar el envío',
-          description: 'No pudimos cargar el envío. Intentá de nuevo en unos minutos.',
+          description: 'No pudimos cargar el envío. Probá de nuevo en unos minutos.',
           onClick: loadEnvio,
         }}
         onEmptyData={{

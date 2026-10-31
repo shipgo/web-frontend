@@ -4,6 +4,7 @@ import { notifications } from "@mantine/notifications";
 import { IconAlertTriangle, IconCheck, IconX } from "@tabler/icons-react";
 
 import { mantenimientoApi } from "../../api/mantenimientos.api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 /**
  * Baja de mantenimiento con confirmación (`DELETE /api/mantenimiento/{id}` —
@@ -72,7 +73,7 @@ export const useDeleteMantenimiento = (onSuccess) => {
           console.error("Error eliminando mantenimiento:", error);
           notifications.show({
             title: "No se pudo eliminar el mantenimiento",
-            message: backendMessage || "Probá de nuevo en unos minutos.",
+            message: backendMessage || REINTENTAR_MAS_TARDE,
             color: "red",
             icon: <IconX />,
           });

@@ -6,14 +6,13 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageFooter from "@components/PageFooter";
 import { applyApiError } from "@domain/apiError";
+import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE, FORMULARIO_INVALIDO } from "@copy/common";
 
 import { useFormContext } from "./contexts/EnviosFormContext";
 import useEnviosStats from "./hooks/useEnviosStats";
 import { useCrearViaje } from "./hooks/useCrearViaje";
 import { useRefrescarRecursosTras409 } from "./hooks/useRefrescarRecursosTras409";
 import { buildViajeReqDTO } from "./utils";
-import { SALIR_SIN_GUARDAR } from '@copy/common';
-import { FORMULARIO_INVALIDO } from '@copy/common';
 
 const Footer = () => {
   const [, navigate] = useLocation();
@@ -84,7 +83,7 @@ const Footer = () => {
         // "viaje." — el helper los alinea a los nombres planos del form.
         const message = applyApiError(form, error, {
           stripPrefix: "viaje",
-          fallbackMessage: "Probá de nuevo en unos minutos.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
         notifications.show({
           color: "red",
