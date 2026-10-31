@@ -5,6 +5,7 @@ import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
 
 import { estadoLabel } from '@domain/estados';
 import { envioApi } from '@api';
+import { REINTENTAR_MAS_TARDE } from '@copy/common';
 
 /**
  * Hook para manejar la eliminación de envíos con confirmación.
@@ -53,7 +54,7 @@ export const useDeleteEnvio = (onSuccess) => {
               title: 'No se puede eliminar',
               message:
                 backendMessage ||
-                `No se puede eliminar el envío ${identificador} porque está ${estadoLabel('envio', envio.estado)}.`,
+                `No se puede eliminar el envío ${envio.codigoSeguimiento || `#${envio.id}`} porque está ${estadoLabel('envio', envio.estado)}.`,
               color: 'yellow',
               icon: <IconAlertTriangle />,
             });
@@ -73,7 +74,7 @@ export const useDeleteEnvio = (onSuccess) => {
           console.error('Error eliminando envío:', error);
           notifications.show({
             title: 'No se pudo eliminar el envío',
-            message: backendMessage || 'Probá de nuevo en unos minutos.',
+            message: backendMessage || REINTENTAR_MAS_TARDE,
             color: 'red',
             icon: <IconX />,
           });

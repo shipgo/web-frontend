@@ -416,8 +416,8 @@ describe("ListaViajes", () => {
 
       const dialog = await screen.findByRole("dialog");
       // SHG-FE-106: informa qué no se va a eliminar antes de confirmar.
-      expect(within(dialog).getByText(/Se eliminarán 1 viaje\./)).toBeInTheDocument();
-      expect(within(dialog).getByText(/No se eliminarán 1 viaje \(viaje #43: no se puede eliminar porque está En camino\)/)).toBeInTheDocument();
+      expect(within(dialog).getByText(/Vas a eliminar 1 viaje\./)).toBeInTheDocument();
+      expect(within(dialog).getByText(/No se va a eliminar 1 viaje \(viaje #43: no se puede eliminar porque está En camino\)/)).toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
 
       await waitFor(() => expect(viajeApi.delete).toHaveBeenCalledWith(42));

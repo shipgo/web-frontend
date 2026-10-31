@@ -109,7 +109,7 @@ export const useBulkDelete = ({ deleteFn, singular, plural, getLabel, onSettled 
           <Text size="sm">
             {excluded.length === 0
               ? `¿Estás seguro de que querés eliminar ${items.length} ${nounOf(items.length)}? Esta acción no se puede deshacer.`
-              : `Se eliminarán ${items.length} ${nounOf(items.length)}. No se eliminarán ${excluded.length} ${nounOf(excluded.length)} (${detalleExcluidos}). Esta acción no se puede deshacer.`}
+              : `Vas a eliminar ${items.length} ${nounOf(items.length)}. No se ${excluded.length === 1 ? 'va' : 'van'} a eliminar ${excluded.length} ${nounOf(excluded.length)} (${detalleExcluidos}). Esta acción no se puede deshacer.`}
           </Text>
         </Stack>
       ),
