@@ -56,7 +56,7 @@ const AgregarPaqueteModal = ({ categorias = [], onAdd }) => {
         onClick={open}
         c="var(--shg-button-text-primary)"
       >
-        Añadir paquete
+        Agregar paquete
       </Button>
       <Modal
         opened={opened}

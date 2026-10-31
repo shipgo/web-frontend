@@ -76,7 +76,7 @@ async function record(n, label, fn) {
 
 /** Helper genérico para los `Select` searchable de Mantine (v9): abre, tipea
  * para filtrar y clickea la opción. `root` puede ser la `page` o un `Locator`
- * (para escopar dentro de un modal, ej. el de "Añadir paquete").
+ * (para escopar dentro de un modal, ej. el de "Agregar paquete").
  *
  * Mantine mantiene montada (oculta vía CSS) la lista de opciones de CADA
  * `Select` de la pantalla incluso con el dropdown cerrado (mismo footgun que
@@ -149,7 +149,7 @@ async function geocodearDireccion(page, { query, provincia, localidad }) {
 }
 
 async function agregarPaquete(page, { categoria, peso, descripcion }) {
-  await page.getByRole("button", { name: "Añadir paquete" }).click();
+  await page.getByRole("button", { name: "Agregar paquete" }).click();
   const modal = page.getByRole("dialog");
   await modal.waitFor({ timeout: 10_000 });
 

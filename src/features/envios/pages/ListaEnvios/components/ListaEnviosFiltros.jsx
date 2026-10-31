@@ -19,7 +19,7 @@ const DEFAULT_VALUES = { search: '', destino: '', estado: [], date: [null, null]
 
 /**
  * Quick-filters → combinaciones reales de `EnvioFilter` (CONTRACTS.md §4 / SHG-BE-004):
- * - "Pendientes" y "Creados hoy" comparten `estado=en_sucursal`; "Creados hoy" además
+ * - "Pendientes" y "Pendientes de hoy" comparten `estado=en_sucursal`; "Pendientes de hoy" además
  *   acota `fechaDesde`/`fechaHasta` al día de hoy (fecha de alta).
  * - "En camino" usa el estado canónico `en_camino` directamente.
  */
@@ -29,7 +29,7 @@ const QUICK_FILTERS = [
     getValues: () => ({ ...DEFAULT_VALUES, estado: ['en_sucursal'] }),
   },
   {
-    label: 'Creados hoy',
+    label: 'Pendientes de hoy',
     getValues: () => ({
       ...DEFAULT_VALUES,
       estado: ['en_sucursal'],

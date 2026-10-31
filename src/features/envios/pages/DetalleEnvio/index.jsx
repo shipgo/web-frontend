@@ -485,7 +485,7 @@ const DetalleEnvio = () => {
                 Viaje
               </Text>
               <Text size="sm" c="dimmed">
-                Estado del viaje asignado a este envío
+                Estado de la parada de este envío
               </Text>
             </Box>
           </Group>
