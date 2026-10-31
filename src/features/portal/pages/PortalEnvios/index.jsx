@@ -125,7 +125,7 @@ const PortalEnviosPage = () => {
           onError={{
             show: isError && !isLoading,
             title: 'No pudimos cargar tus envíos',
-            description: 'Ocurrió un error al traer tus envíos. Intentá nuevamente en unos minutos.',
+            description: 'Intentá de nuevo en unos minutos.',
             onClick: () => refetch(),
           }}
           onEmptyData={{

@@ -13,6 +13,7 @@ import { useCrearViaje } from "./hooks/useCrearViaje";
 import { useRefrescarRecursosTras409 } from "./hooks/useRefrescarRecursosTras409";
 import { buildViajeReqDTO } from "./utils";
 import { SALIR_SIN_GUARDAR } from '@copy/common';
+import { FORMULARIO_INVALIDO } from '@copy/common';
 
 const Footer = () => {
   const [, navigate] = useLocation();
@@ -58,9 +59,9 @@ const Footer = () => {
     const firstError = Object.values(errors)[0];
     notifications.show({
       color: "red",
-      title: "Revisá el formulario",
+      title: FORMULARIO_INVALIDO.titulo,
       message:
-        firstError || "Completá los datos requeridos antes de crear el viaje",
+        firstError || FORMULARIO_INVALIDO.mensaje,
       icon: <IconX />,
     });
   };

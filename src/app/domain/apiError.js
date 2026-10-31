@@ -22,10 +22,9 @@
  *   parseo viejo de `CrearEnvios`).
  */
 
-const DEFAULT_MESSAGE = 'Ocurrió un error inesperado. Intentá nuevamente.';
+const DEFAULT_MESSAGE = 'Algo salió mal. Probá de nuevo en unos minutos.';
 const FORBIDDEN_MESSAGE = 'No tenés permiso para hacer esto.';
-const SERVER_ERROR_MESSAGE =
-  'Ocurrió un error en el servidor. Intentá nuevamente en unos minutos.';
+const SERVER_ERROR_MESSAGE = 'Algo salió mal. Probá de nuevo en unos minutos.';
 const VALIDATION_FALLBACK_MESSAGE = 'Revisá los campos marcados.';
 // SHG-FE-131: `503` por contención de locks (SHG-BE-118) que siguió después de
 // los reintentos automáticos del interceptor (`@config/retry503`).

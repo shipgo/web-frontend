@@ -108,7 +108,7 @@ const VerificarCuentaPage = () => {
               color: 'red',
               icon: <IconAlertTriangle size={20} />,
               title: 'No pudimos verificar tu cuenta',
-              body: 'Ocurrió un error al verificar tu cuenta. Intentá nuevamente en unos minutos.',
+              body: 'Intentá de nuevo en unos minutos.',
             };
 
     return (

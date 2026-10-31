@@ -173,7 +173,7 @@ const EditarViaje = () => {
         onError={{
           show: errorViaje && !loadingViaje,
           title: 'No se pudo cargar el viaje',
-          description: 'Ocurrió un error al obtener la información del viaje.',
+          description: 'No pudimos cargar el viaje. Intentá de nuevo en unos minutos.',
           onClick: loadViaje,
         }}
         onEmptyData={{

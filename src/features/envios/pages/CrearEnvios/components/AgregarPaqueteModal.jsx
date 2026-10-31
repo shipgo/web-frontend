@@ -61,7 +61,7 @@ const AgregarPaqueteModal = ({ categorias = [], onAdd }) => {
       <Modal
         opened={opened}
         onClose={handleClose}
-        title="Añadir paquete"
+        title="Agregar paquete"
         centered
         size="md"
       >

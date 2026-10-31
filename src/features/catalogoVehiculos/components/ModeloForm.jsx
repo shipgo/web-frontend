@@ -20,6 +20,7 @@ import { notifications } from "@mantine/notifications";
 import PageFooter from "@components/PageFooter";
 import { marcaApi } from "../api/catalogoVehiculos.api";
 import { SALIR_SIN_GUARDAR } from '@copy/common';
+import { FORMULARIO_INVALIDO } from '@copy/common';
 
 const currentYear = new Date().getFullYear();
 
@@ -70,8 +71,8 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
     const firstError = Object.values(errors).find(Boolean);
     notifications.show({
       color: "red",
-      title: "Revisá el formulario",
-      message: firstError || "Completá los datos requeridos",
+      title: FORMULARIO_INVALIDO.titulo,
+      message: firstError || FORMULARIO_INVALIDO.mensaje,
       icon: <IconX />,
     });
   };

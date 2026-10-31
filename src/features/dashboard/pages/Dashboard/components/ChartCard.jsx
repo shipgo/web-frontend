@@ -52,8 +52,8 @@ const ChartCard = ({
       onLoading={{ show: isLoading }}
       onError={{
         show: !isLoading && isError,
-        title: 'No se pudo cargar',
-        description: 'Ocurrió un error al traer los datos de esta sección.',
+        title: 'No pudimos cargar esta información',
+        description: 'Intentá de nuevo en unos minutos.',
         onClick: onRetry,
       }}
       onEmptyData={{

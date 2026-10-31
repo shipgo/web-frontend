@@ -63,7 +63,7 @@ const SeccionCarga = ({ categorias = [], bloqueada = false }) => {
             show: paquetes.length === 0,
             title: "Sin paquetes cargados",
             description:
-              'Usá el botón "Añadir paquete" para agregar paquetes al envío',
+              'Usá el botón "Agregar paquete" para agregar paquetes al envío',
           }}
         >
           <Table striped highlightOnHover>

@@ -109,7 +109,7 @@ describe("UsuarioForm — roles y sucursal (CONTRACTS.md §3)", () => {
     const listbox = await openRolesListbox(user);
     expect(listbox.queryByText("Administrador")).not.toBeInTheDocument();
     expect(listbox.getByText("Chofer")).toBeInTheDocument();
-    expect(listbox.getByText("Carga")).toBeInTheDocument();
+    expect(listbox.getByText("Operario de carga")).toBeInTheDocument();
     expect(listbox.queryByText("Superusuario")).not.toBeInTheDocument();
     expect(listbox.queryByText("Cliente")).not.toBeInTheDocument();
 

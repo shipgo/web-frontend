@@ -25,6 +25,7 @@ import { notifications } from "@mantine/notifications";
 import PageFooter from "@components/PageFooter";
 import { provinciaApi, localidadApi } from "@api";
 import { SALIR_SIN_GUARDAR } from '@copy/common';
+import { FORMULARIO_INVALIDO } from '@copy/common';
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -85,8 +86,8 @@ const SucursalForm = ({
     const firstError = Object.values(errors).find(Boolean);
     notifications.show({
       color: "red",
-      title: "Revisá el formulario",
-      message: firstError || "Completá los datos requeridos",
+      title: FORMULARIO_INVALIDO.titulo,
+      message: firstError || FORMULARIO_INVALIDO.mensaje,
       icon: <IconX />,
     });
   };

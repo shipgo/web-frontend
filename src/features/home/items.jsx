@@ -42,7 +42,7 @@ const ITEMS = [
       },
       {
         title: 'Dashboard',
-        description: 'Métricas y resumen operativo del día',
+        description: 'Métricas y resumen de tus envíos y viajes',
         icon: <IconChartBar size={28} />,
         color: 'violet',
         to: '/dashboard',

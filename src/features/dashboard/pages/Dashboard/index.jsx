@@ -64,7 +64,7 @@ const DashboardPage = () => {
       <Flex justify="space-between" align="flex-end" wrap="wrap" gap="md">
         <Stack gap="0">
           <Title order={2}>Dashboard</Title>
-          <Text c="dimmed">Resumen operativo · {periodoLabel}</Text>
+          <Text c="dimmed">Resumen · {periodoLabel}</Text>
         </Stack>
         <Flex gap="xs">
           {/* `c="var(--shg-button-text-primary)"`: ver ese token en

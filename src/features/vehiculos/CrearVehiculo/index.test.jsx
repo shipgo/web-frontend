@@ -213,10 +213,10 @@ describe("CrearVehiculo", () => {
 
     await waitFor(() => {
       expect(
-        // Error inline + toast "Revisá el formulario" con el mismo mensaje.
+        // Error inline + toast "Revisá los datos ingresados" con el mismo mensaje.
         screen.getAllByText(/una moto tiene que tener 2 ruedas/i),
       ).toHaveLength(2);
-      expect(screen.getByText("Revisá el formulario")).toBeInTheDocument();
+      expect(screen.getByText("Revisá los datos ingresados")).toBeInTheDocument();
     });
 
     expect(vehiculoApi.save).not.toHaveBeenCalled();

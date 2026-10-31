@@ -98,7 +98,7 @@ const EditarEnvio = () => {
         onError={{
           show: error && !loading,
           title: 'No se pudo cargar el envío',
-          description: 'Ocurrió un error al obtener la información del envío.',
+          description: 'No pudimos cargar el envío. Intentá de nuevo en unos minutos.',
           onClick: loadEnvio,
         }}
         onEmptyData={{

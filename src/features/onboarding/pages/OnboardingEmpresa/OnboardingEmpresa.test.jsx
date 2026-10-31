@@ -148,7 +148,7 @@ describe("OnboardingEmpresa (SHG-FE-116)", () => {
     expect(
       await screen.findByText("Ingresá el nombre de la empresa."),
     ).toBeInTheDocument();
-    // (el toast "Revisá el formulario" repite el primer error: por eso getAllBy)
+    // (el toast "Revisá los datos ingresados" repite el primer error: por eso getAllBy)
     expect(screen.getAllByText("Ingresá el nombre.").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Ingresá el prefijo.").length).toBeGreaterThan(0);
     expect(mockSave).not.toHaveBeenCalled();

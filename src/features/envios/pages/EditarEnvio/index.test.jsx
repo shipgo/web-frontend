@@ -486,7 +486,7 @@ describe("EditarEnvio", () => {
       });
 
       expect(await screen.findByText("No se pudo cargar el envío")).toBeInTheDocument();
-      expect(screen.getByText("Ocurrió un error al obtener la información del envío.")).toBeInTheDocument();
+      expect(screen.getByText("No pudimos cargar el envío. Intentá de nuevo en unos minutos.")).toBeInTheDocument();
 
       const reintentar = screen.getByRole("button", { name: /reintentar/i });
       expect(reintentar).toBeInTheDocument();

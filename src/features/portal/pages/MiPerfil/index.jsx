@@ -121,7 +121,7 @@ const MiPerfilPage = () => {
           onError={{
             show: isError && !isLoading,
             title: 'No pudimos cargar tu perfil',
-            description: 'Ocurrió un error al traer tus datos. Intentá nuevamente en unos minutos.',
+            description: 'Intentá de nuevo en unos minutos.',
             onClick: () => refetch(),
           }}
         >

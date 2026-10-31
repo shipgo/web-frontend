@@ -53,8 +53,8 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
       await envioApi.update(id, payload);
 
       notifications.show({
-        title: "El envío fue actualizado",
-        message: "El el envío fue se actualizó correctamente.",
+        title: "Envío actualizado",
+        message: "El envío se actualizó correctamente.",
         color: "green",
         icon: <IconCheck />,
       });

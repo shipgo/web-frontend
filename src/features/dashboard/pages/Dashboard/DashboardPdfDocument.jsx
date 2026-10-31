@@ -203,13 +203,13 @@ const DashboardPdfDocument = ({ filtros, params, resumen, series }) => {
     <Document
       title={`Dashboard ShipGo · ${periodo}`}
       author="ShipGo"
-      subject="Resumen operativo del dashboard"
+      subject="Resumen del dashboard"
     >
       <Page size="A4" style={styles.page}>
         <View style={styles.header} fixed>
           <View>
             <Text style={styles.brand}>ShipGo</Text>
-            <Text style={styles.brandSub}>Resumen operativo del dashboard</Text>
+            <Text style={styles.brandSub}>Resumen del dashboard</Text>
           </View>
           <View style={styles.metaBox}>
             <Text style={styles.metaStrong}>{periodo}</Text>
