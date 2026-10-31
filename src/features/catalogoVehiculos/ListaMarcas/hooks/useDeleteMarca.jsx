@@ -47,6 +47,7 @@ export const useDeleteMarca = (onSuccess) => {
             title: "No se pudo eliminar la marca",
             message:
               error.response?.data?.message || "Probá de nuevo en unos minutos.",
+            color: "red",
             icon: <IconX />,
           });
         }

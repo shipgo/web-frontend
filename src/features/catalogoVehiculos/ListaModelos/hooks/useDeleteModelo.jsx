@@ -44,6 +44,7 @@ export const useDeleteModelo = (onSuccess) => {
             title: "No se pudo eliminar el modelo",
             message:
               error.response?.data?.message || "Probá de nuevo en unos minutos.",
+            color: "red",
             icon: <IconX />,
           });
         }
