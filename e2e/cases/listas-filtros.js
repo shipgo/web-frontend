@@ -258,7 +258,7 @@ export async function run({ browser, logger }) {
       await filas.first().waitFor({ timeout: 15_000 });
 
       const headers = await page.locator("table thead th").allInnerTexts();
-      const columnasEsperadas = ["Código", "Remitente", "Destino", "Fecha de alta", "Estado", "Acciones"];
+      const columnasEsperadas = ["Código", "Remitente", "Destino", "Fecha de creación", "Estado", "Acciones"];
       const faltantes = columnasEsperadas.filter((c) => !headers.some((h) => h.includes(c)));
       if (faltantes.length > 0) {
         throw new Error(`Faltan columnas en ListaEnvios: ${faltantes.join(", ")} (vino: ${headers.join(" | ")})`);
@@ -378,7 +378,7 @@ export async function run({ browser, logger }) {
         });
         await page.getByLabel("Buscar envío").fill("Diego");
         await seleccionarOpcionEstado(page, "Estado", "En sucursal");
-        await seleccionarRangoFechas(page, "Fecha de alta", {
+        await seleccionarRangoFechas(page, "Fecha de creación", {
           targetMonthISO: "2026-01-01",
           desdeDia: 1,
           hastaDia: 31,

@@ -12,6 +12,7 @@ import {
 import { IconInfoCircle } from '@tabler/icons-react';
 
 import ScreenContainer from '@components/ScreenContainer';
+import { PANTALLA } from '@copy/common';
 
 const KpiCard = ({
   title,
@@ -49,7 +50,7 @@ const KpiCard = ({
             onLoading={{ show: isLoading }}
             onError={{
               show: !isLoading && isError,
-              title: 'No pudimos cargar este dato',
+              title: PANTALLA.errorDatoTitulo,
               description: 'Intentá de nuevo en unos minutos.',
               onClick: onRetry,
             }}

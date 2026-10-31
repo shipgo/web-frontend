@@ -1,5 +1,6 @@
 import config from "../lib/config.js";
 import { loginAs } from "../lib/auth.js";
+import { PANTALLA } from "../../src/app/copy/common.js";
 
 /**
  * SHG-QA-012 — E2E web: Dashboard (`/dashboard`).
@@ -105,7 +106,7 @@ const cardPorTitulo = (page, titulo) =>
 /**
  * Verifica que ningún widget haya quedado en estado de error / cargando para
  * siempre (`ScreenContainer`, `@components/ScreenContainer.jsx`): KpiCard usa
- * el título "Error", ChartCard usa "No se pudo cargar". No exige ausencia de
+ * el título `PANTALLA.errorDatoTitulo`, ChartCard usa `PANTALLA.errorTitulo`. No exige ausencia de
  * "Sin datos" — para un alcance chico (ej. admin2/Norte, caso 3) algún widget
  * puede legítimamente no tener datos en el período, eso no es un bug.
  */
@@ -114,10 +115,10 @@ async function assertSinErrores(page) {
   if (await page.locator(".mantine-Loader-root").count()) {
     problemas.push("quedó un Loader visible (algún widget no terminó de cargar)");
   }
-  if (await page.getByText("No se pudo cargar").count()) {
+  if (await page.getByText(PANTALLA.errorTitulo, { exact: true }).count()) {
     problemas.push("algún ChartCard quedó en estado de error");
   }
-  if (await page.getByText("Error", { exact: true }).count()) {
+  if (await page.getByText(PANTALLA.errorDatoTitulo, { exact: true }).count()) {
     problemas.push("algún KpiCard quedó en estado de error");
   }
   if (problemas.length > 0) throw new Error(problemas.join(" | "));
@@ -369,8 +370,8 @@ export async function run({ browser, logger }) {
 
         await seleccionarRangoDeSeed(page);
 
-        const descKpi = "No se pudo cargar este dato.";
-        const descChart = "Ocurrió un error al traer los datos de esta sección.";
+        const descKpi = PANTALLA.errorDatoTitulo;
+        const descChart = PANTALLA.errorTitulo;
         await page.getByText(descKpi).first().waitFor({ timeout: 15_000 });
         await logger.step(page, name, "caso4-error-forzado");
 
@@ -389,7 +390,7 @@ export async function run({ browser, logger }) {
         const volumenSigueOk = await cardPorTitulo(page, "Volumen de envíos").getByText(descChart).count();
         const categoriaSigueOk = await cardPorTitulo(page, "Envíos por categoría").getByText(descChart).count();
         const sucursalSigueOk = await cardPorTitulo(page, "Envíos por sucursal").getByText(descChart).count();
-        const desvioSigueOk = await cardPorTitulo(page, "Desvío de viajes finalizados").getByText(descChart).count();
+        const desvioSigueOk = await cardPorTitulo(page, "Retraso o adelanto de los viajes finalizados").getByText(descChart).count();
         if (volumenSigueOk || categoriaSigueOk || sucursalSigueOk || desvioSigueOk) {
           throw new Error("algún widget basado en /api/dashboard/series (no forzado) quedó en error también");
         }

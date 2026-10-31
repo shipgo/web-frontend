@@ -8,7 +8,7 @@ import { runAxe, blockingViolations, summarizeViolation } from "../lib/axe.js";
 /**
  * SHG-FE-041: audita con axe-core (WCAG 2.0 A/AA + 2.1 AA) las 12 rutas de las 6
  * pantallas MVP (9 originales de SHG-FE-041 + 3 agregadas en SHG-FE-045 para
- * ejercitar los botones de acción Entregar/Marcar fallo/Finalizar/Cancelar),
+ * ejercitar los botones de acción Entregar/Registrar entrega fallida/Finalizar/Cancelar),
  * con el backend real + seed real (no reinicia nada, reusa el stack que ya
  * esté corriendo — ver `ensureBackendUp`/`ensureWebUp` en `run.js`).
  *
@@ -73,7 +73,7 @@ const fetchJson = async (page, url) =>
  * El orden importa y es deliberado: para envío se prueba primero `entregado`
  * y para viaje `finalizado` (antes que `en_camino`) porque son terminales —
  * `DetalleEnvio`/`DetalleViajeHeader` no muestran ahí ninguno de los botones
- * de acción (`Entregar`/`Marcar fallo`/`Finalizar`, ver `acciones.js` de cada
+ * de acción (`Entregar`/`Registrar entrega fallida`/`Finalizar`, ver `acciones.js` de cada
  * pantalla). Un envío/viaje `en_camino` SÍ los muestra, y esos botones
  * (`<Button variant="light" color="green|red">`) tenían su propio problema de
  * contraste — real, pero DISTINTO del que corrige
@@ -205,7 +205,7 @@ export async function run({ browser, logger }) {
     allBlocking.push(...(await auditCurrentPage({ page, logger, caseName: name, routeLabel: "viajes-detalle" })));
 
     // --- /envios/:id y /viajes/:id en `en_camino`: ejercita los botones de
-    // acción (Entregar/Marcar fallo/Finalizar/Cancelar, `<Button
+    // acción (Entregar/Registrar entrega fallida/Finalizar/Cancelar, `<Button
     // variant="light" color="green|red">`) que los bloques de arriba evitan
     // a propósito preferiendo un estado terminal (ver comentario de
     // `fetchFirstId`). Este es el gap real que dejó SHG-FE-041 (corregido en

@@ -8,6 +8,7 @@
 export const PANTALLA = {
   errorTitulo: 'No pudimos cargar esta información',
   errorDescripcion: 'Intentá de nuevo en unos minutos.',
+  errorDatoTitulo: 'No pudimos cargar este dato',
   vacioTitulo: 'Todavía no hay nada para mostrar',
   vacioDescripcion: 'Cuando haya información, la vas a ver acá.',
   sinResultadosTitulo: 'Sin resultados',

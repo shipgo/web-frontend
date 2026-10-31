@@ -98,7 +98,7 @@ async function fillContacto(page, datos) {
   await page.getByLabel(/^nombre/i).fill(datos.nombre);
   await page.getByLabel(/apellido/i).fill(datos.apellido);
   await page.getByLabel(/email del remitente/i).fill(datos.emailRemitente);
-  await page.getByLabel(/email del receptor/i).fill(datos.emailReceptor);
+  await page.getByLabel(/email del destinatario/i).fill(datos.emailReceptor);
   await page.getByLabel(/^prefijo/i).fill(datos.prefijo);
   await page.getByLabel(/^teléfono/i).fill(datos.telefono);
 }
@@ -331,20 +331,20 @@ export async function run({ browser, logger }) {
         });
 
         await page.getByRole("button", { name: "Registrar envío" }).click();
-        await page.getByText("El nombre es requerido").waitFor({ timeout: 10_000 });
+        await page.getByText("Ingresá el nombre.").waitFor({ timeout: 10_000 });
         await logger.step(page, name, "caso2-errores-inline");
 
         const erroresEsperados = [
-          "El nombre es requerido",
-          "El apellido es requerido",
-          "Email inválido",
-          "El prefijo es requerido",
-          "El teléfono es requerido",
-          "La calle es requerida",
-          "Seleccioná una provincia",
-          "Seleccioná una localidad",
-          "Elegí una sugerencia del buscador de direcciones para ubicar el envío en el mapa",
-          "Agregá al menos un paquete",
+          "Ingresá el nombre.",
+          "Ingresá el apellido.",
+          "Ingresá un email válido.",
+          "Ingresá el prefijo.",
+          "Ingresá el teléfono.",
+          "Ingresá la calle.",
+          "Elegí una provincia.",
+          "Elegí una localidad.",
+          "Elegí una sugerencia del buscador de direcciones para ubicar el envío en el mapa.",
+          "Agregá al menos un paquete.",
         ];
         const faltantes = [];
         for (const texto of erroresEsperados) {
@@ -389,7 +389,7 @@ export async function run({ browser, logger }) {
         // Ambos sin "@": formato inválido (no vacíos, para aislar la validación de formato
         // de la de campo requerido, ya cubierta por el caso 2).
         await page.getByLabel(/email del remitente/i).fill("correo-remitente-invalido");
-        await page.getByLabel(/email del receptor/i).fill("otro-correo-invalido");
+        await page.getByLabel(/email del destinatario/i).fill("otro-correo-invalido");
 
         let requestDisparada = false;
         page.on("request", (req) => {
@@ -397,7 +397,7 @@ export async function run({ browser, logger }) {
         });
 
         await page.getByRole("button", { name: "Registrar envío" }).click();
-        await page.getByText("Email inválido").first().waitFor({ timeout: 10_000 });
+        await page.getByText("Ingresá un email válido.").first().waitFor({ timeout: 10_000 });
         await logger.step(page, name, "caso3-email-malformado");
 
         await page.waitForTimeout(500);
