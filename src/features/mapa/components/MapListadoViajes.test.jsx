@@ -94,6 +94,30 @@ describe('MapListadoViajes', () => {
     expect(screen.getByText('EF456GH')).toBeInTheDocument();
   });
 
+  it('el buscador ignora acentos: "mendez" encuentra a "Carlos Méndez" y "gomez" a "Laura Gómez" (SHG-FE-139)', async () => {
+    mockUseViajesConUbicacion.mockReturnValue({
+      viajes: [
+        viajeBase(),
+        viajeBase({ id: 2, patente: 'EF456GH', choferNombre: 'Laura Gómez', sucursalNombre: 'Rosario' }),
+      ],
+      isLoading: false,
+    });
+
+    renderWithProviders(<MapListadoViajes />);
+
+    const user = userEvent.setup();
+    const buscador = screen.getByPlaceholderText('Buscar por patente o chofer');
+
+    await user.type(buscador, 'mendez');
+    expect(screen.getByText('AB123CD')).toBeInTheDocument();
+    expect(screen.queryByText('EF456GH')).not.toBeInTheDocument();
+
+    await user.clear(buscador);
+    await user.type(buscador, 'GÓMEZ');
+    expect(screen.queryByText('AB123CD')).not.toBeInTheDocument();
+    expect(screen.getByText('EF456GH')).toBeInTheDocument();
+  });
+
   it('deriva las opciones de sucursal de los viajes reales', () => {
     mockUseViajesConUbicacion.mockReturnValue({
       viajes: [

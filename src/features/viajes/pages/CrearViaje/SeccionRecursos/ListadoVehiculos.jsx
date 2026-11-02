@@ -2,6 +2,8 @@ import { useState } from "react";
 
 import { Card } from "@mantine/core";
 
+import { coincideBusqueda } from "@utils/text";
+
 import SearchVehiculos from "./SearchVehiculos";
 import ListaVehiculosDisponibles from "./ListaVehiculosDisponibles";
 
@@ -9,17 +11,14 @@ import { useGetVehiculosDisponibles } from "../hooks/useGetVehiculosDisponibles"
 import { useGetVehiculosEnMantenimiento } from "../hooks/useGetVehiculosEnMantenimiento";
 import { useDisponibilidadParams } from "../hooks/useDisponibilidadParams";
 
-const filterVehiculos = (vehiculos, search) => {
-  if (!search) return vehiculos;
-  const term = search.trim().toLowerCase();
-  if (!term) return vehiculos;
-
-  return vehiculos.filter((vehiculo) =>
-    [vehiculo.patente, vehiculo.modelo?.nombre, vehiculo.modelo?.marca?.nombre]
-      .filter(Boolean)
-      .some((field) => field.toLowerCase().includes(term)),
+const filterVehiculos = (vehiculos, search) =>
+  vehiculos.filter((vehiculo) =>
+    coincideBusqueda(search, [
+      vehiculo.patente,
+      vehiculo.modelo?.nombre,
+      vehiculo.modelo?.marca?.nombre,
+    ]),
   );
-};
 
 const ListadoVehiculos = () => {
   const [searchValue, setSearchValue] = useState("");

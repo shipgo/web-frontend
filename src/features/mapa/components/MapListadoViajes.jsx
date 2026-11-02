@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Card, Center, Loader, TextInput, Select, Stack, ScrollArea, Text } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 
+import { coincideBusqueda } from '@utils/text';
+
 import { useSelectedViaje } from '../contexts/selectedViaje';
 import { useViajesConUbicacion } from '../hooks/useViajesConUbicacion';
 import { getEstadoVisualViaje } from '../utils/estadoVisual';
@@ -21,15 +23,10 @@ const MapListadoViajes = () => {
   }, [viajes]);
 
   const viajesFiltrados = useMemo(() => {
-    const q = search.trim().toLowerCase();
-
     return viajes
       .filter((v) => {
         const matchSucursal = sucursal === 'todas' || v.sucursalNombre === sucursal;
-        const matchSearch =
-          !q ||
-          v.patente.toLowerCase().includes(q) ||
-          v.choferNombre.toLowerCase().includes(q);
+        const matchSearch = coincideBusqueda(search, [v.patente, v.choferNombre]);
         return matchSucursal && matchSearch;
       })
       .sort((a, b) => {

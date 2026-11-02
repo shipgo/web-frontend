@@ -15,23 +15,17 @@ import SelectableItemList from "@components/SelectableItemList";
 
 import { useAuth } from "@contexts/auth";
 import { REINTENTAR_MAS_TARDE } from "@copy/common";
+import { coincideBusqueda } from "@utils/text";
 
 import ItemChofer from "./ItemChofer";
 import { useFormContext } from "../contexts/EnviosFormContext";
 import { useChoferesDisponibles } from "../hooks/useChoferesDisponibles";
 import { useDisponibilidadParams } from "../hooks/useDisponibilidadParams";
 
-const filterChoferes = (choferes, search) => {
-  if (!search) return choferes;
-  const term = search.trim().toLowerCase();
-  if (!term) return choferes;
-
-  return choferes.filter((chofer) =>
-    [chofer.nombre, chofer.apellido, chofer.email, chofer.telefono]
-      .filter(Boolean)
-      .some((field) => String(field).toLowerCase().includes(term)),
+const filterChoferes = (choferes, search) =>
+  choferes.filter((chofer) =>
+    coincideBusqueda(search, [chofer.nombre, chofer.apellido, chofer.email, chofer.telefono]),
   );
-};
 
 const ListadoChoferes = () => {
   const [searchValue, setSearchValue] = useState("");

@@ -8,6 +8,7 @@ import SelectableItemList from "@components/SelectableItemList";
 import { VirtuosoItem } from "@components/VirtuosoListA11y";
 import { formatDireccion } from "@domain/format";
 import { REINTENTAR_MAS_TARDE } from "@copy/common";
+import { coincideBusqueda } from "@utils/text";
 
 import { TIPO_ENTREGA } from "@features/envios/constants";
 import { formatDestinoEnvio } from "@features/envios/utils";
@@ -24,16 +25,12 @@ import { coordsDePunto } from "./utils";
  * para envíos de retiro, así que la búsqueda por destino también matchea el
  * nombre de la sucursal — no sólo la dirección de entrega a domicilio.
  */
-const matchesSearch = (envio, search) => {
-  if (!search) return true;
-  const term = search.trim().toLowerCase();
-  if (!term) return true;
-
-  const destino = formatDestinoEnvio(envio, { completa: true });
-  return [String(envio.id), envio.codigoSeguimiento, destino]
-    .filter(Boolean)
-    .some((field) => field.toLowerCase().includes(term));
-};
+const matchesSearch = (envio, search) =>
+  coincideBusqueda(search, [
+    envio.id,
+    envio.codigoSeguimiento,
+    formatDestinoEnvio(envio, { completa: true }),
+  ]);
 
 const ListadoEnviosPendientes = ({
   queryState,
