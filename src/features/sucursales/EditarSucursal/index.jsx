@@ -9,6 +9,7 @@ import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
 import { sucursalApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import SucursalForm from "../components/SucursalForm";
 import { SUCURSAL_SCHEMA, SUCURSAL_INITIAL_VALUES } from "../constants/schema";
 
@@ -48,8 +49,8 @@ const EditarSucursal = () => {
       } catch (error) {
         console.error("Error cargando sucursal:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar la sucursal",
+          title: "No se pudo cargar la sucursal",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
           icon: <IconX />,
         });
@@ -87,8 +88,8 @@ const EditarSucursal = () => {
         await sucursalApi.update(id, payload);
 
         notifications.show({
-          title: "Éxito",
-          message: "Sucursal actualizada correctamente",
+          title: "Sucursal actualizada",
+          message: "La sucursal se actualizó correctamente.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -99,10 +100,10 @@ const EditarSucursal = () => {
         // Ver nota en `CrearSucursal`: los `field` vienen prefijados
         // "puntoEntrega." — el helper los alinea a los nombres planos del form.
         notifications.show({
-          title: "Error",
+          title: "No se pudo actualizar la sucursal",
           message: applyApiError(form, error, {
             stripPrefix: "puntoEntrega",
-            fallbackMessage: "No se pudo actualizar la sucursal",
+            fallbackMessage: REINTENTAR_MAS_TARDE,
           }),
           color: "red",
           icon: <IconX />,

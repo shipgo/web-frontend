@@ -185,7 +185,7 @@ const assertDarkModeActive = async (page) => {
  * token, `EditarViaje`/`MapDetalles`).
  */
 const IN_SCOPE_LABEL_RE =
-  /En camino|Entregado|Finalizado(?! c\/)|Entregar|Marcar fallo|Cancelar|En vehículo|Ver viaje|Volver al detalle|Ver detalle completo/;
+  /En camino|Entregado|Finalizado(?! c\/)|Entregar|Registrar entrega fallida|Cancelar|En vehículo|Ver viaje|Volver al detalle|Ver detalle completo/;
 
 /** Labels de badges/botones en alcance que axe-core evaluó y confirmó ≥4.5:1 en ESTA página. */
 const collectConfirmedPassingLabels = (results) => {

@@ -53,7 +53,7 @@ const QUICK_FILTERS = [
     }),
   },
   {
-    label: "Atrasados",
+    label: "Retrasados",
     // CONTRACTS.md §4: estado=planificado + fechaHasta=<ahora>. No es un rango de
     // día (necesita el instante exacto), así que se pisan los params que generaría
     // el campo `date` en lugar de derivarlos de él.
@@ -153,7 +153,7 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
           type="range"
           clearable
           label="Rango de fechas"
-          placeholder="Seleccioná un rango de fecha"
+          placeholder="Seleccioná un rango de fechas"
         />
 
         <MultiSelect

@@ -174,7 +174,7 @@ const DetalleEnvio = () => {
         onError={{
           show: error && !loading,
           title: 'No se pudo cargar el envío',
-          description: 'Ocurrió un error al obtener la información del envío.',
+          description: 'No pudimos cargar el envío. Probá de nuevo en unos minutos.',
           onClick: loadEnvio,
         }}
         onEmptyData={{
@@ -242,7 +242,7 @@ const DetalleEnvio = () => {
           </Button>
         )}
         {/* `c={BUTTON_ACTION_TEXT_COLOR.*}`: ver ese comentario en
-            `@domain/estados` — sin esto, "Entregar"/"Marcar fallo" no
+            `@domain/estados` — sin esto, "Entregar"/"Registrar entrega fallida" no
             llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-045). */}
         {canAccionarEstado && (
           <Button
@@ -263,7 +263,7 @@ const DetalleEnvio = () => {
             leftSection={<IconBan size={18} />}
             onClick={confirmFalloEntrega}
           >
-            Marcar fallo
+            Registrar entrega fallida
           </Button>
         )}
         {/* "Confirmar retiro" (SHG-FE-080 / SHG-CONTRACT-012): sólo para envíos
@@ -288,12 +288,12 @@ const DetalleEnvio = () => {
           color="red"
           variant="light"
           icon={<IconAlertTriangle size={18} />}
-          title="Envío rechazado"
+          title="Envío no entregado"
           data-testid="alerta-rechazo"
         >
           <Stack gap={2}>
             <Text size="sm">
-              Fecha del rechazo:{" "}
+              Fecha de la entrega fallida:{" "}
               {eventoRechazo ? formatFechaHora(fechaHistorial(eventoRechazo)) : "no registrada"}
             </Text>
             <Text size="sm">Motivo: {eventoRechazo?.motivo || "no registrado"}</Text>
@@ -341,7 +341,7 @@ const DetalleEnvio = () => {
             <IconUser size={24} />
             <Box>
               <Text size="lg" fw={600}>
-                Remitente y receptor
+                Remitente y destinatario
               </Text>
               <Text size="sm" c="dimmed">
                 Datos de contacto del envío
@@ -352,17 +352,17 @@ const DetalleEnvio = () => {
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             <InfoItem
               icon={<IconUser size={16} />}
-              label="Nombre completo"
+              label="Nombre del destinatario"
               value={`${envio.nombre ?? ""} ${envio.apellido ?? ""}`.trim()}
             />
             <InfoItem
               icon={<IconMail size={16} />}
-              label="Email remitente"
+              label="Email del remitente"
               value={envio.emailRemitente}
             />
             <InfoItem
               icon={<IconMail size={16} />}
-              label="Email receptor"
+              label="Email del destinatario"
               value={envio.emailReceptor}
             />
             <InfoItem
@@ -482,10 +482,10 @@ const DetalleEnvio = () => {
             <IconRoute size={24} />
             <Box>
               <Text size="lg" fw={600}>
-                Viaje / recorrido
+                Viaje
               </Text>
               <Text size="sm" c="dimmed">
-                Estado del recorrido asignado a este envío
+                Estado de la parada de este envío
               </Text>
             </Box>
           </Group>

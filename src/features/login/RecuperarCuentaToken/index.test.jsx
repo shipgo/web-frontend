@@ -68,7 +68,7 @@ describe("RecuperarCuentaToken", () => {
     await user.click(screen.getByRole("button", { name: "Guardar contraseña" }));
 
     expect(
-      await screen.findByText("Las contraseñas no coinciden")
+      await screen.findByText("Las contraseñas no coinciden.")
     ).toBeInTheDocument();
     expect(mockResetPassword).not.toHaveBeenCalled();
   });

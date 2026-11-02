@@ -13,13 +13,13 @@ describe("getHomeItems", () => {
   it("ADMIN ve Gestionar + Administrar + Opciones completos", () => {
     const items = getHomeItems(userAdmin);
 
-    expect(optionTitles(findSection(items, "Gestionar"))).toEqual([
+    expect(optionTitles(findSection(items, "Operación"))).toEqual([
       "Mapa",
       "Viajes",
       "Envíos",
       "Dashboard",
     ]);
-    expect(optionTitles(findSection(items, "Administrar"))).toEqual([
+    expect(optionTitles(findSection(items, "Administración"))).toEqual([
       "Usuarios",
       "Vehículos",
     ]);
@@ -31,7 +31,7 @@ describe("getHomeItems", () => {
 
   it("SUPERUSER ve las mismas opciones que ADMIN (todas son ROLES_WEB)", () => {
     const items = getHomeItems(userSuper);
-    expect(optionTitles(findSection(items, "Administrar"))).toEqual([
+    expect(optionTitles(findSection(items, "Administración"))).toEqual([
       "Usuarios",
       "Vehículos",
     ]);
@@ -40,8 +40,8 @@ describe("getHomeItems", () => {
   it("un usuario sin rol web no ve Gestionar ni Administrar", () => {
     const items = getHomeItems(userChofer);
 
-    expect(findSection(items, "Gestionar")).toBeUndefined();
-    expect(findSection(items, "Administrar")).toBeUndefined();
+    expect(findSection(items, "Operación")).toBeUndefined();
+    expect(findSection(items, "Administración")).toBeUndefined();
     // "Opciones" no tiene roles restringidos, así que sigue visible.
     expect(optionTitles(findSection(items, "Opciones"))).toEqual([
       "Manual",
@@ -51,6 +51,6 @@ describe("getHomeItems", () => {
 
   it("sin usuario no rompe y no muestra secciones restringidas", () => {
     const items = getHomeItems(null);
-    expect(findSection(items, "Gestionar")).toBeUndefined();
+    expect(findSection(items, "Operación")).toBeUndefined();
   });
 });

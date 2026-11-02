@@ -64,7 +64,7 @@ describe("ListaMantenimientos", () => {
     renderWithProviders(<ListaMantenimientos />);
 
     expect(
-      await screen.findByText("Sin mantenimientos que mostrar"),
+      await screen.findByText("Todavía no hay mantenimientos"),
     ).toBeInTheDocument();
   });
 

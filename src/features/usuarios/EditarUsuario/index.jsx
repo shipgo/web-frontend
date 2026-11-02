@@ -17,6 +17,7 @@ import CambiarPasswordCard from "@components/CambiarPasswordCard";
 import { USUARIO_INITIAL_VALUES, buildUsuarioValidate } from "../constants/schema";
 import { toBackendDate, canManageUsuario } from "../utils";
 import { nombreCompleto } from "@domain/usuario";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 const EditarUsuario = () => {
   const { id } = useParams();
@@ -51,8 +52,8 @@ const EditarUsuario = () => {
         // daría 404). Entrando por URL no se muestra un form que no puede guardar.
         if (!canManageUsuario(currentUser, userData)) {
           notifications.show({
-            title: "Sin permisos",
-            message: "No tenés permisos para editar a este usuario",
+            title: "Acción no permitida",
+            message: "No tenés permiso para editar a este usuario.",
             color: "red",
             icon: <IconX />,
           });
@@ -98,8 +99,8 @@ const EditarUsuario = () => {
       } catch (error) {
         console.error("Error cargando usuario:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar el usuario",
+          title: "No se pudo cargar el usuario",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
           icon: <IconX />,
         });
@@ -161,11 +162,11 @@ const EditarUsuario = () => {
 
         const message = applyApiError(form, error, {
           backendForbiddenMessage: true,
-          fallbackMessage: "No se pudo actualizar el usuario",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
 
         notifications.show({
-          title: "Error",
+          title: "No se pudo actualizar el usuario",
           message,
           color: "red",
           icon: <IconX />,
@@ -231,7 +232,7 @@ const EditarUsuario = () => {
 
       {/* Cambio de contraseña propio (SHG-FE-023): sólo sobre tu propio perfil.
           `POST /api/changePassword` exige la contraseña actual — es distinto del
-          "Resetear contraseña" admin→otro de `DetalleUsuario` (SHG-FE-017). */}
+          "Restablecer contraseña" admin→otro de `DetalleUsuario` (SHG-FE-017). */}
       {isSelf && <CambiarPasswordCard />}
     </PageContainer>
   );

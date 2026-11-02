@@ -25,7 +25,7 @@ const numberField = (schema) =>
   );
 
 export const MARCA_SCHEMA = z.object({
-  nombre: nombreRequerido("Ingresá el nombre"),
+  nombre: nombreRequerido("Ingresá el nombre."),
 });
 
 export const MARCA_INITIAL_VALUES = {
@@ -39,14 +39,14 @@ export const MARCA_INITIAL_VALUES = {
  * automotriz) igual que `anioCompra` en `vehiculos/constants/schema.js`.
  */
 export const MODELO_SCHEMA = z.object({
-  nombre: nombreRequerido("Ingresá el nombre"),
-  marcaID: requiredSelect("Seleccioná una marca"),
+  nombre: nombreRequerido("Ingresá el nombre."),
+  marcaID: requiredSelect("Elegí una marca."),
   anio: numberField(
     z
-      .number({ error: "Ingresá el año" })
-      .int("El año debe ser un número entero")
-      .gte(1900, "El año debe ser mayor o igual a 1900")
-      .lte(currentYear + 1, `El año debe ser menor o igual a ${currentYear + 1}`),
+      .number({ error: "Ingresá el año." })
+      .int("El año tiene que ser un número entero.")
+      .gte(1900, "El año tiene que ser 1900 o posterior.")
+      .lte(currentYear + 1, `El año no puede ser posterior a ${currentYear + 1}.`),
   ),
 });
 

@@ -17,6 +17,7 @@ import ScreenContainer from '@components/ScreenContainer';
 import { estadoBadge } from '@domain/estados';
 import { formatFecha, EMPTY } from '@domain/format';
 import { PORTAL_HOME_PATH } from '@domain/roles';
+import { REINTENTAR_MAS_TARDE } from '@copy/common';
 
 import { useMisEnvios } from './hooks/useMisEnvios';
 
@@ -125,7 +126,7 @@ const PortalEnviosPage = () => {
           onError={{
             show: isError && !isLoading,
             title: 'No pudimos cargar tus envíos',
-            description: 'Ocurrió un error al traer tus envíos. Intentá nuevamente en unos minutos.',
+            description: REINTENTAR_MAS_TARDE,
             onClick: () => refetch(),
           }}
           onEmptyData={{

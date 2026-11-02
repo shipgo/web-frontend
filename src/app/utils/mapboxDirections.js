@@ -40,7 +40,7 @@ export const fetchMapboxDirections = async (waypoints) => {
 
   const [route] = data.routes ?? [];
   if (!route) {
-    throw new Error("Mapbox no encontró una ruta para esas paradas.");
+    throw new Error("No pudimos calcular una ruta para esas paradas.");
   }
 
   return {

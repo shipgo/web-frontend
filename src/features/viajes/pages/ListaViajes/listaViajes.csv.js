@@ -29,6 +29,6 @@ export const VIAJES_CSV_COLUMNS = [
   { header: 'Fin planificado', value: (v) => toLocalDateTime(v.fechaHoraFinPlanificada) },
   { header: 'Chofer', value: choferViaje },
   { header: 'Vehículo', value: (v) => v.vehiculo?.patente ?? 'Sin vehículo' },
-  { header: 'Recorridos', value: cantidadRecorridos },
+  { header: 'Paradas', value: cantidadRecorridos },
   { header: 'Envíos', value: cantidadEnvios },
 ];

@@ -10,6 +10,7 @@ import SelectionBanner from "@components/SelectionBanner";
 import { useBulkDelete } from "@hooks/useBulkDelete";
 import { useCsvExport } from "@hooks/useCsvExport";
 import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
+import { listaEstados } from "@copy/common";
 
 import { mantenimientoApi } from "../api/mantenimientos.api";
 
@@ -19,6 +20,8 @@ import ListaMantenimientosTabla from "./components/ListaMantenimientosTabla";
 
 import { useGetMantenimientos } from "./hooks/useGetMantenimientos";
 import { MANTENIMIENTOS_CSV_COLUMNS } from "./listaMantenimientos.csv";
+
+const ESTADOS_LISTA = listaEstados({ singular: 'mantenimiento', plural: 'mantenimientos', genero: 'm' });
 
 const PAGE_LIMIT = 10;
 
@@ -122,17 +125,17 @@ const ListaMantenimientos = () => {
           onError={{
             show: isError,
             onClick: refetchMantenimientos,
-            description: "Ocurrió un error al cargar los mantenimientos",
+            title: ESTADOS_LISTA.error,
           }}
           onEmptyData={{
             show: data.total === 0 && Object.keys(filters).length === 0,
-            title: "Sin mantenimientos que mostrar",
-            description: "Parece que no hay mantenimientos registrados todavía",
+            title: ESTADOS_LISTA.vacioTitulo,
+            description: ESTADOS_LISTA.vacioDescripcion,
           }}
           onEmptyFiltersData={{
             show: data.total === 0 && Object.keys(filters).length > 0,
-            title: "Sin resultados",
-            description: "No se encontraron mantenimientos con los filtros aplicados",
+            title: ESTADOS_LISTA.sinResultadosTitulo,
+            description: ESTADOS_LISTA.sinResultadosDescripcion,
           }}
         >
           <ListaMantenimientosTabla

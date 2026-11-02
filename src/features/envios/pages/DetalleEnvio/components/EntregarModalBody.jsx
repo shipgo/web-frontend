@@ -36,7 +36,7 @@ const EntregarModalBody = ({ id, onEntregado, onErrorInesperado, onVolver }) => 
   const form = useForm({
     initialValues: { dniReceptor: '', palabraEntregaIngresada: '' },
     validate: {
-      dniReceptor: (value) => (value.trim() ? null : 'El DNI de quien recibe es obligatorio'),
+      dniReceptor: (value) => (value.trim() ? null : 'Ingresá el DNI de quien recibe.'),
     },
   });
 
@@ -58,7 +58,7 @@ const EntregarModalBody = ({ id, onEntregado, onErrorInesperado, onVolver }) => 
       }
 
       const message = applyApiError(form, error, {
-        fallbackMessage: 'No se pudo marcar el envío como entregado.',
+        fallbackMessage: 'No se pudo marcar el envío como entregado. Probá de nuevo.',
       });
       // `applyApiError` ya marca los campos con `ApiFieldError` (ej. `dniReceptor`
       // faltante); los errores sin campo asociado (403/409/5xx/red) se avisan
@@ -73,8 +73,7 @@ const EntregarModalBody = ({ id, onEntregado, onErrorInesperado, onVolver }) => 
     <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
       <Stack gap="sm">
         <Text size="sm">
-          ¿Confirmás que el envío <strong>#{id}</strong> fue entregado? El estado pasará a
-          "Entregado".
+          ¿Confirmás que el envío <strong>#{id}</strong> fue entregado?
         </Text>
         <TextInput
           label="DNI de quien recibe"
@@ -84,7 +83,7 @@ const EntregarModalBody = ({ id, onEntregado, onErrorInesperado, onVolver }) => 
         />
         <TextInput
           label="Palabra de entrega"
-          description="Opcional — pedísela de palabra al destinatario si la tiene a mano."
+          description="Opcional. Si el destinatario la tiene, ingresala."
           placeholder="Ej: AB23K9"
           {...form.getInputProps('palabraEntregaIngresada')}
         />

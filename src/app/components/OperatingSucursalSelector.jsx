@@ -29,7 +29,7 @@ const OperatingSucursalSelector = () => {
 
   return (
     <Select
-      aria-label="Sucursal operativa activa"
+      aria-label="Ver datos de la sucursal"
       placeholder="Todas las sucursales"
       leftSection={<IconBuildingWarehouse size={16} />}
       w={220}

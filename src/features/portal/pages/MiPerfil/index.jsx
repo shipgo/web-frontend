@@ -24,6 +24,7 @@ import { useAuthStore } from '@stores/auth.store';
 // (ver JSDoc del componente) — habilitado para CUSTOMER desde `SHG-BE-074`,
 // junto con el `PUT /api/customer/me` de esta pantalla.
 import CambiarPasswordCard from '@components/CambiarPasswordCard';
+import { REINTENTAR_MAS_TARDE } from '@copy/common';
 
 import { portalApi } from '../../api/portal.api';
 import { useMiPerfil, MI_PERFIL_QUERY_KEY } from './hooks/useMiPerfil';
@@ -95,10 +96,10 @@ const MiPerfilPage = () => {
       }
     } catch (error) {
       const message = applyApiError(form, error, {
-        fallbackMessage: 'No se pudieron guardar los cambios. Intentá nuevamente.',
+        fallbackMessage: REINTENTAR_MAS_TARDE,
       });
       notifications.show({
-        title: 'Error',
+        title: 'No se pudieron guardar los cambios',
         message,
         color: 'red',
         icon: <IconX />,
@@ -121,7 +122,7 @@ const MiPerfilPage = () => {
           onError={{
             show: isError && !isLoading,
             title: 'No pudimos cargar tu perfil',
-            description: 'Ocurrió un error al traer tus datos. Intentá nuevamente en unos minutos.',
+            description: REINTENTAR_MAS_TARDE,
             onClick: () => refetch(),
           }}
         >

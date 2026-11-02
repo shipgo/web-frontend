@@ -29,14 +29,14 @@ const fechaValida = (value) => value != null && dayjs(value).isValid();
 export const buildMantenimientoSchema = ({ inicioOriginal = null } = {}) =>
   z
     .object({
-      nombreMecanico: nombreRequerido('Ingresá el nombre del mecánico'),
-      apellidoMecanico: nombreRequerido('Ingresá el apellido del mecánico'),
-      vehiculoID: z.string().min(1, 'Seleccioná un vehículo'),
-      tipoMantenimientoID: z.string().min(1, 'Seleccioná un tipo de mantenimiento'),
+      nombreMecanico: nombreRequerido('Ingresá el nombre del mecánico.'),
+      apellidoMecanico: nombreRequerido('Ingresá el apellido del mecánico.'),
+      vehiculoID: z.string().min(1, 'Elegí un vehículo.'),
+      tipoMantenimientoID: z.string().min(1, 'Elegí un tipo de mantenimiento.'),
       fechaHoraMantenimiento: z
         .any()
-        .refine(fechaValida, 'Seleccioná la fecha y hora de inicio'),
-      fechaHoraFin: z.any().refine(fechaValida, 'Seleccioná la fecha y hora de fin'),
+        .refine(fechaValida, 'Elegí la fecha y hora de inicio.'),
+      fechaHoraFin: z.any().refine(fechaValida, 'Elegí la fecha y hora de fin.'),
       descripcion: textoOpcional(255).optional(),
     })
     .superRefine((values, ctx) => {
@@ -54,7 +54,7 @@ export const buildMantenimientoSchema = ({ inicioOriginal = null } = {}) =>
           ctx.addIssue({
             code: 'custom',
             path: ['fechaHoraMantenimiento'],
-            message: 'El inicio no puede estar en el pasado',
+            message: 'El inicio no puede ser en el pasado.',
           });
         }
       }
@@ -63,7 +63,7 @@ export const buildMantenimientoSchema = ({ inicioOriginal = null } = {}) =>
         ctx.addIssue({
           code: 'custom',
           path: ['fechaHoraFin'],
-          message: 'El fin debe ser posterior al inicio',
+          message: 'El fin tiene que ser posterior al inicio.',
         });
       }
     });

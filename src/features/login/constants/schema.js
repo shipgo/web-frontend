@@ -18,8 +18,8 @@ export const RECUPERAR_EMAIL_SCHEMA = z.object({
   userEmail: z
     .string()
     .trim()
-    .min(1, "Ingresá tu email")
-    .refine((v) => EMAIL_RE.test(v), "El email no es válido"),
+    .min(1, "Ingresá tu email.")
+    .refine((v) => EMAIL_RE.test(v), "Ingresá un email válido."),
 });
 
 export const RECUPERAR_EMAIL_INITIAL_VALUES = { userEmail: "" };
@@ -29,12 +29,12 @@ export const NUEVA_PASSWORD_SCHEMA = z
   .object({
     newPassword: z
       .string()
-      .min(PASSWORD_MIN, `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres`),
-    confirmPassword: z.string().min(1, "Repetí la contraseña"),
+      .min(PASSWORD_MIN, `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`),
+    confirmPassword: z.string().min(1, "Repetí la contraseña."),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     path: ["confirmPassword"],
-    message: "Las contraseñas no coinciden",
+    message: "Las contraseñas no coinciden.",
   });
 
 export const NUEVA_PASSWORD_INITIAL_VALUES = {

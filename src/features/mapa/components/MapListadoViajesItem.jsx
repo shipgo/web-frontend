@@ -67,7 +67,7 @@ const MapListadoViajesItem = ({ viaje, isLast }) => {
         <Group gap="xs" mt={4}>
           <Text size="xs" c="dimmed">
             Llegada estimada: {eta ? formatFechaHora(eta) : '—'}
-            {etaFuente === 'planificada' ? ' (planificada)' : ''}
+            {etaFuente === 'planificada' ? ' (según plan)' : ''}
           </Text>
         </Group>
       </Box>

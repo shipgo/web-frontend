@@ -4,6 +4,7 @@ import { notifications } from '@mantine/notifications';
 import { IconX } from '@tabler/icons-react';
 
 import { notificacionesApi } from '@api';
+import { REINTENTAR_MAS_TARDE } from '@copy/common';
 
 import {
   NOTIFICACIONES_QUERY_KEY,
@@ -65,10 +66,10 @@ export const useNotificaciones = ({ enabled = true } = {}) => {
     onError: (error) => {
       console.error('Error al vaciar las notificaciones:', error);
       notifications.show({
-        title: 'Error',
+        title: 'No se pudieron vaciar las notificaciones',
         message:
           error.response?.data?.message ||
-          'No se pudieron vaciar las notificaciones',
+          REINTENTAR_MAS_TARDE,
         color: 'red',
         icon: createElement(IconX),
       });

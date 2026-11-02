@@ -23,22 +23,22 @@ const CONFIG = {
   captcha_invalid: {
     color: 'red',
     icon: IconShieldExclamation,
-    title: 'No pudimos verificar que sos una persona',
+    title: 'No pudimos completar la verificación de seguridad',
     message:
-      'La verificación de seguridad venció o no es válida. Resolvela de nuevo y volvé a consultar.',
+      'La verificación venció o no es válida. Completala de nuevo y volvé a consultar.',
   },
   network: {
     color: 'red',
     icon: IconAlertTriangle,
     title: 'No pudimos conectar',
     message:
-      'Hubo un problema de conexión con el servidor. Revisá tu conexión e intentá otra vez.',
+      'No pudimos conectar con el servidor. Revisá tu conexión e intentá otra vez.',
   },
   unknown: {
     color: 'red',
     icon: IconAlertTriangle,
     title: 'Algo salió mal',
-    message: 'No pudimos consultar el envío. Intentá nuevamente en unos minutos.',
+    message: 'No pudimos consultar el envío. Probá de nuevo en unos minutos.',
   },
 };
 

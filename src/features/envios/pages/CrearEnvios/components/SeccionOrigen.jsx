@@ -24,6 +24,7 @@ import { Marker } from "react-map-gl/mapbox";
 import MapCard from "@features/mapa/components/MapCard";
 import ScreenContainer from "@components/ScreenContainer";
 import { provinciaApi, localidadApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { TIPO_ENTREGA, TIPO_ENTREGA_OPTIONS } from "@features/envios/constants";
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
 import { useAddressAutofill } from "../hooks/useAddressAutofill";
@@ -112,8 +113,8 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
       )
       .catch(() => {
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las provincias",
+          title: "No se pudieron cargar las provincias",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       });
@@ -144,8 +145,8 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
       })
       .catch(() => {
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las localidades",
+          title: "No se pudieron cargar las localidades",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       });
@@ -320,15 +321,15 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 {...form.getInputProps("emailReceptor")}
                 required
                 type="email"
-                label="Email del receptor"
-                placeholder="receptor@ejemplo.com"
+                label="Email del destinatario"
+                placeholder="destinatario@ejemplo.com"
               />
             </Grid.Col>
             {esRetiroEnSucursal ? (
               <Grid.Col span={12}>
                 <Select
                   label="Sucursal de retiro"
-                  description="El receptor va a poder retirar el envío en esta sucursal"
+                  description="El destinatario va a poder retirar el envío en esta sucursal."
                   placeholder="Seleccioná una sucursal"
                   data={sucursalesOptions}
                   searchable
@@ -442,7 +443,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                     placeholder={
                       form.values.provinciaID
                         ? "Seleccioná una localidad"
-                        : "Elegí primero una provincia"
+                        : "Seleccioná primero una provincia"
                     }
                     data={localidades}
                     searchable
@@ -507,7 +508,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                   pointerEvents: "none",
                 }}
               >
-                Hacé click en el mapa para ubicar el envío
+                Tocá o hacé clic en el mapa para ubicar el envío
               </Text>
             )}
             {geocodedCoords && !destinoBloqueado && (

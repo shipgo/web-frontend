@@ -18,6 +18,7 @@ import { IconCheck, IconLock, IconX } from "@tabler/icons-react";
 import { applyApiError, getRateLimitMessage } from "@domain/apiError";
 import { PASSWORD_MIN } from "@domain/validation";
 import { useAuthStore } from "@stores/auth.store";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 const PASSWORD_INCORRECTA_MESSAGE = "La contraseña actual es incorrecta";
 
@@ -41,18 +42,18 @@ const isPasswordIncorrecta = (error) =>
  */
 const CAMBIAR_PASSWORD_SCHEMA = z
   .object({
-    oldPassword: z.string().min(1, "Ingresá tu contraseña actual"),
+    oldPassword: z.string().min(1, "Ingresá tu contraseña actual."),
     newPassword: z
       .string()
       .min(
         PASSWORD_MIN,
-        `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres`,
+        `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`,
       ),
-    confirmPassword: z.string().min(1, "Repetí la contraseña"),
+    confirmPassword: z.string().min(1, "Repetí la contraseña."),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     path: ["confirmPassword"],
-    message: "Las contraseñas no coinciden",
+    message: "Las contraseñas no coinciden.",
   })
   .refine((data) => data.oldPassword !== data.newPassword, {
     path: ["newPassword"],
@@ -89,7 +90,7 @@ const CambiarPasswordCard = () => {
     } catch (error) {
       console.error("Error cambiando contraseña:", error);
       let message;
-      let title = "Error";
+      let title = "No se pudo cambiar la contraseña";
       const rateLimitMessage = getRateLimitMessage(error);
       if (rateLimitMessage) {
         // 429 por límite de intentos: esperar, no marcar la contraseña como mala.
@@ -100,7 +101,7 @@ const CambiarPasswordCard = () => {
         form.setFieldError("oldPassword", message);
       } else {
         message = applyApiError(form, error, {
-          fallbackMessage: "No se pudo cambiar la contraseña. Intentá nuevamente.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
       }
       notifications.show({
@@ -121,7 +122,7 @@ const CambiarPasswordCard = () => {
           <Title order={4}>Cambiar contraseña</Title>
         </Group>
         <Text size="sm" c="dimmed">
-          Al cambiarla se cerrará la sesión y tendrás que volver a iniciarla.
+          Al cambiarla vas a tener que volver a iniciar sesión.
         </Text>
 
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">

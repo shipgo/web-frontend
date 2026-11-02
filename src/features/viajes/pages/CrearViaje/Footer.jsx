@@ -6,6 +6,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageFooter from "@components/PageFooter";
 import { applyApiError } from "@domain/apiError";
+import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE, FORMULARIO_INVALIDO } from "@copy/common";
 
 import { useFormContext } from "./contexts/EnviosFormContext";
 import useEnviosStats from "./hooks/useEnviosStats";
@@ -41,14 +42,11 @@ const Footer = () => {
     }
 
     modals.openConfirmModal({
-      title: "Cancelar creación de viaje",
+      title: SALIR_SIN_GUARDAR.titulo,
       children: (
-        <Text size="sm">
-          Vas a perder todo lo cargado en este viaje. ¿Seguro que querés
-          salir?
-        </Text>
+        <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
-      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      labels: { confirm: SALIR_SIN_GUARDAR.salir, cancel: SALIR_SIN_GUARDAR.seguir },
       confirmProps: { color: "red" },
       cancelProps: { variant: "subtle" },
       groupProps: { gap: "xs" },
@@ -60,9 +58,9 @@ const Footer = () => {
     const firstError = Object.values(errors)[0];
     notifications.show({
       color: "red",
-      title: "Revisá el formulario",
+      title: FORMULARIO_INVALIDO.titulo,
       message:
-        firstError || "Completá los datos requeridos antes de crear el viaje",
+        firstError || FORMULARIO_INVALIDO.mensaje,
       icon: <IconX />,
     });
   };
@@ -85,11 +83,11 @@ const Footer = () => {
         // "viaje." — el helper los alinea a los nombres planos del form.
         const message = applyApiError(form, error, {
           stripPrefix: "viaje",
-          fallbackMessage: "No se pudo crear el viaje. Intentá nuevamente.",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
         notifications.show({
           color: "red",
-          title: "Error al crear el viaje",
+          title: "No se pudo crear el viaje",
           message,
           icon: <IconX />,
         });
@@ -110,7 +108,7 @@ const Footer = () => {
         </Badge>
       )}
       <Text size="sm" c="dimmed" fw={500} mr="auto">
-        {totalStops > 0 && `${totalStops} Paradas en total`}
+        {totalStops > 0 && `${totalStops} ${totalStops === 1 ? 'parada' : 'paradas'} en total`}
       </Text>
       <Button
         color="red"

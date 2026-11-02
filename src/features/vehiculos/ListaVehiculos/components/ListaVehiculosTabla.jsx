@@ -27,7 +27,7 @@ const ACTIONS = [
     name: "Detalles",
     items: [
       { icon: <IconFileDescription size={18} />, label: "Ver detalles" },
-      { icon: <IconTool size={18} />, label: "Historial mantenimiento" },
+      { icon: <IconTool size={18} />, label: "Historial de mantenimiento" },
     ],
   },
   {
@@ -236,7 +236,7 @@ const ListaVehiculosTabla = ({
                                 handleEdit(item.id);
                               } else if (label === "Ver detalles") {
                                 handleViewDetails(item.id);
-                              } else if (label === "Historial mantenimiento") {
+                              } else if (label === "Historial de mantenimiento") {
                                 handleHistorialMantenimiento(item.patente);
                               } else if (label === "Eliminar") {
                                 handleDelete(item);

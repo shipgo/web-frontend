@@ -23,7 +23,7 @@ describe("RecuperarCuenta", () => {
     await user.type(screen.getByLabelText("Email"), "no-es-un-email");
     await user.click(screen.getByRole("button", { name: "Enviar enlace" }));
 
-    expect(await screen.findByText("El email no es válido")).toBeInTheDocument();
+    expect(await screen.findByText("Ingresá un email válido.")).toBeInTheDocument();
     expect(mockVerifyEmail).not.toHaveBeenCalled();
   });
 

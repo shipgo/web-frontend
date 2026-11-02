@@ -40,27 +40,27 @@ describe("USUARIO_SCHEMA", () => {
 
   it("reporta cada campo requerido vacío con el mismo mensaje que el validate manual anterior", () => {
     const e = errores(USUARIO_INITIAL_VALUES);
-    expect(e.username).toBe("El campo username no puede estar vacío");
-    expect(e.nombre).toBe("El campo nombre no puede estar vacío");
-    expect(e.apellido).toBe("El campo apellido no puede estar vacío");
+    expect(e.username).toBe("Ingresá el usuario.");
+    expect(e.nombre).toBe("Ingresá el nombre.");
+    expect(e.apellido).toBe("Ingresá el apellido.");
     expect(e.fechaNacimiento).toBe(
-      "El campo fecha de nacimiento no puede estar vacío",
+      "Elegí la fecha de nacimiento.",
     );
-    expect(e.prefijo).toBe("El campo prefijo no puede estar vacío");
-    expect(e.telefono).toBe("El campo teléfono no puede estar vacío");
-    expect(e.nombreCalle).toBe("El campo nombre de calle no puede estar vacío");
-    expect(e.numeroCalle).toBe("El campo número de calle no puede estar vacío");
-    expect(e.email).toBe("El campo email no puede estar vacío");
-    expect(e.authorities).toBe("Seleccioná al menos un rol");
-    expect(e.dni).toBe("El campo DNI no puede estar vacío");
-    expect(e.tipoDocumentoID).toBe("Seleccioná un tipo de documento");
-    expect(e.sexoID).toBe("Seleccioná un sexo");
-    expect(e.localidadID).toBe("Seleccioná una localidad");
+    expect(e.prefijo).toBe("Ingresá el prefijo.");
+    expect(e.telefono).toBe("Ingresá el teléfono.");
+    expect(e.nombreCalle).toBe("Ingresá el nombre de la calle.");
+    expect(e.numeroCalle).toBe("Ingresá el número de la calle.");
+    expect(e.email).toBe("Ingresá el email.");
+    expect(e.authorities).toBe("Elegí al menos un rol.");
+    expect(e.dni).toBe("Ingresá el DNI.");
+    expect(e.tipoDocumentoID).toBe("Elegí un tipo de documento.");
+    expect(e.sexoID).toBe("Elegí un sexo.");
+    expect(e.localidadID).toBe("Elegí una localidad.");
   });
 
   it("valida el formato del email", () => {
     expect(errores({ ...VALID, email: "no-es-un-email" }).email).toBe(
-      "El email no es válido",
+      "Ingresá un email válido.",
     );
   });
 
@@ -83,7 +83,7 @@ describe("USUARIO_SCHEMA", () => {
 describe("buildUsuarioValidate (SHG-FE-116: sucursal obligatoria para SUPERUSER, crear y editar)", () => {
   it("SUPERUSER sin sucursal → error en sucursalID", () => {
     const errors = buildUsuarioValidate(true)({ ...USUARIO_INITIAL_VALUES, sucursalID: null });
-    expect(errors.sucursalID).toBe("Seleccioná una sucursal");
+    expect(errors.sucursalID).toBe("Elegí una sucursal.");
   });
 
   it("SUPERUSER con sucursal → sin error de sucursalID", () => {

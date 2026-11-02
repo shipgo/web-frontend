@@ -25,6 +25,7 @@ import {
   CATEGORIA_VEHICULO,
   setCategoriaPorTipoVehiculoId,
 } from "../constants/schema";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 const normalizeText = (text) => {
   if (!text || typeof text !== "string") return "";
@@ -129,8 +130,8 @@ const VehiculoForm = () => {
       } catch (error) {
         console.error("Error cargando catálogos:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar los catálogos necesarios",
+          title: "No se pudieron cargar las opciones del formulario",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       } finally {
@@ -164,8 +165,8 @@ const VehiculoForm = () => {
       } catch (error) {
         console.error("Error cargando modelos:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar los modelos",
+          title: "No se pudieron cargar los modelos",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       }
@@ -203,8 +204,8 @@ const VehiculoForm = () => {
               }
             />
             <Select
-              label="Tipo de Vehículo"
-              placeholder="Seleccione"
+              label="Tipo de vehículo"
+              placeholder="Seleccioná una opción"
               required
               data={tiposVehiculo}
               searchable
@@ -235,7 +236,7 @@ const VehiculoForm = () => {
             />
             <Select
               label="Marca"
-              placeholder="Seleccione"
+              placeholder="Seleccioná una opción"
               required
               data={marcas}
               searchable
@@ -248,7 +249,7 @@ const VehiculoForm = () => {
             />
             <Select
               label="Modelo"
-              placeholder="Seleccione primero una marca"
+              placeholder="Seleccioná primero una marca"
               required
               data={modelos}
               searchable
@@ -257,7 +258,7 @@ const VehiculoForm = () => {
               {...form.getInputProps("modeloID")}
             />
             <NumberInput
-              label="Año de Compra"
+              label="Año de compra"
               placeholder="Ej: 2020"
               required
               min={1900}
@@ -289,7 +290,7 @@ const VehiculoForm = () => {
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
             <Select
               label="Combustible"
-              placeholder="Seleccione"
+              placeholder="Seleccioná una opción"
               required
               data={combustibles}
               searchable
@@ -297,7 +298,7 @@ const VehiculoForm = () => {
               {...form.getInputProps("combustibleID")}
             />
             <NumberInput
-              label="Consumo Promedio"
+              label="Consumo promedio"
               placeholder="Ej: 8.5"
               required
               min={0.1}
@@ -321,8 +322,8 @@ const VehiculoForm = () => {
 
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
             <Select
-              label="Tipo de Rueda"
-              placeholder="Seleccione"
+              label="Tipo de rueda"
+              placeholder="Seleccioná una opción"
               required
               data={tiposRueda}
               searchable
@@ -330,10 +331,10 @@ const VehiculoForm = () => {
               {...form.getInputProps("tipoRuedaID")}
             />
             <NumberInput
-              label="Cantidad de Ruedas"
+              label="Cantidad de ruedas"
               placeholder={esMoto ? "2" : "Ej: 4"}
-              // Sin `description` fija acá (a diferencia de "Peso Máximo"
-              // abajo): el mensaje "debe tener exactamente 2 ruedas" ya lo
+              // Sin `description` fija acá (a diferencia de "Peso máximo"
+              // abajo): el mensaje "Una moto tiene que tener 2 ruedas" ya lo
               // muestra el `error` de `VEHICULO_SCHEMA` cuando corresponde —
               // duplicarlo como `description` mostraría el mismo texto dos
               // veces a la vez (Mantine no oculta la descripción cuando hay
@@ -351,7 +352,7 @@ const VehiculoForm = () => {
               {...form.getInputProps("cantidadRuedas")}
             />
             <NumberInput
-              label="Peso Máximo"
+              label="Peso máximo"
               placeholder="Ej: 1500"
               // Backend exige el campo igual para motos (no hay límite de
               // carga modelado para esa categoría, SHG-BE-040) — se aclara
@@ -359,7 +360,7 @@ const VehiculoForm = () => {
               // entender que hay un tope real cuando no lo hay.
               description={
                 esMoto
-                  ? "No hay un límite de carga real para motos: usá un valor de referencia"
+                  ? "Para motos, indicá un valor de referencia."
                   : undefined
               }
               required

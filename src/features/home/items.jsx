@@ -13,7 +13,7 @@ import { ROLES_WEB } from '@domain/roles';
 
 const ITEMS = [
   {
-    title: 'Gestionar',
+    title: 'Operación',
     color: 'blue',
     options: [
       {
@@ -42,7 +42,7 @@ const ITEMS = [
       },
       {
         title: 'Dashboard',
-        description: 'Métricas y resumen operativo del día',
+        description: 'Métricas y resumen de tus envíos y viajes',
         icon: <IconChartBar size={28} />,
         color: 'violet',
         to: '/dashboard',
@@ -51,7 +51,7 @@ const ITEMS = [
     ],
   },
   {
-    title: 'Administrar',
+    title: 'Administración',
     options: [
       {
         title: 'Usuarios',

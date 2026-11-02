@@ -10,6 +10,7 @@ import { usuarioApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
 import { canManageUsuario } from "../utils";
 import { nombreCompleto } from "@domain/usuario";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import UsuarioPerfil from "../components/UsuarioPerfil";
 import { usePasswordReset } from "../hooks/usePasswordReset";
 
@@ -31,8 +32,8 @@ const DetalleUsuario = () => {
       } catch (error) {
         console.error("Error cargando usuario:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar la información del usuario",
+          title: "No se pudo cargar la información del usuario",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
         navigate("~/usuarios");
@@ -81,7 +82,7 @@ const DetalleUsuario = () => {
             leftSection={<IconKey size={18} />}
             onClick={() => confirmReset(usuario)}
           >
-            Resetear contraseña
+            Restablecer contraseña
           </Button>
         )}
         {canManageUsuario(currentUser, usuario) && (

@@ -89,7 +89,7 @@ describe('MapDetalles', () => {
 
     expect(screen.queryByText('Sin datos de ruta')).not.toBeInTheDocument();
     // Con señal y ruta, la ETA rotula su fuente (SHG-FE-113).
-    expect(screen.getByText(/\(según ruta\)$/)).toBeInTheDocument();
+    expect(screen.getByText(/\(según la ruta\)$/)).toBeInTheDocument();
   });
 
   it('muestra el mismo estado en vivo que la lista (SHG-FE-113): sin señal no dice "En camino" ni usa la ETA de ruta', () => {
@@ -108,7 +108,7 @@ describe('MapDetalles', () => {
 
     expect(screen.getByText('Sin señal')).toBeInTheDocument();
     expect(screen.queryByText('En camino')).not.toBeInTheDocument();
-    expect(screen.getByText('20/01/2026 15:00 (planificada)')).toBeInTheDocument();
+    expect(screen.getByText('20/01/2026 15:00 (según plan)')).toBeInTheDocument();
   });
 
   describe('velocidad (SHG-FE-119)', () => {

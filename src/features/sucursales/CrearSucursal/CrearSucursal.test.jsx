@@ -152,16 +152,16 @@ describe("CrearSucursal", () => {
     await waitFor(() => expect(mockGetAllProvincias).toHaveBeenCalled());
 
     await user.click(screen.getByRole("button", { name: /crear sucursal/i }));
-    expect(await screen.findByText("Ingresá el nombre")).toBeInTheDocument();
-    expect(screen.getByText("Ingresá el prefijo")).toBeInTheDocument();
-    expect(screen.getByText("Ingresá el teléfono")).toBeInTheDocument();
+    expect(await screen.findByText("Ingresá el nombre.")).toBeInTheDocument();
+    expect(screen.getByText("Ingresá el prefijo.")).toBeInTheDocument();
+    expect(screen.getByText("Ingresá el teléfono.")).toBeInTheDocument();
     expect(container.querySelector("form")).toHaveAttribute("novalidate");
 
     await user.type(screen.getByLabelText(/^Prefijo/), "abc");
     await user.type(screen.getByLabelText(/^Teléfono/), "12x");
     await user.click(screen.getByRole("button", { name: /crear sucursal/i }));
-    expect(await screen.findByText("El prefijo sólo puede tener números")).toBeInTheDocument();
-    expect(screen.getByText("El teléfono sólo puede tener números")).toBeInTheDocument();
+    expect(await screen.findByText("El prefijo solo puede tener números.")).toBeInTheDocument();
+    expect(screen.getByText("El teléfono solo puede tener números.")).toBeInTheDocument();
     expect(mockSave).not.toHaveBeenCalled();
   });
 });

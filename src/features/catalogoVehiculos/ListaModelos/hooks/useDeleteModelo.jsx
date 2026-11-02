@@ -4,6 +4,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import { modeloApi } from "../../api/catalogoVehiculos.api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 /**
  * Confirmación + borrado de Modelo (`DELETE /api/modelo/{id}` —
@@ -29,8 +30,8 @@ export const useDeleteModelo = (onSuccess) => {
           await modeloApi.delete(modelo.id);
 
           notifications.show({
-            title: "Éxito",
-            message: "Modelo eliminado correctamente",
+            title: "Modelo eliminado",
+            message: "El modelo se eliminó correctamente.",
             color: "green",
             icon: <IconCheck />,
           });
@@ -41,9 +42,9 @@ export const useDeleteModelo = (onSuccess) => {
         } catch (error) {
           console.error("Error eliminando modelo:", error);
           notifications.show({
-            title: "Error",
+            title: "No se pudo eliminar el modelo",
             message:
-              error.response?.data?.message || "No se pudo eliminar el modelo",
+              error.response?.data?.message || REINTENTAR_MAS_TARDE,
             color: "red",
             icon: <IconX />,
           });

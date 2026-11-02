@@ -4,7 +4,7 @@ import ExportCsvButton from '@components/ExportCsvButton';
 import ListaUsuariosCrearUser from './ListaUsuariosCrearUser';
 
 const ListaUsuariosHeader = ({ onExportCsv, isExporting, exportDisabled }) => (
-  <PageHeader title="Usuarios" subtitle="Listado de usuarios del sistema">
+  <PageHeader title="Usuarios" subtitle="Administrá los usuarios de la plataforma">
     <ListaUsuariosCrearUser />
     <ExportCsvButton
       onExport={onExportCsv}

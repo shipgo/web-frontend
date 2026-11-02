@@ -4,6 +4,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import { marcaApi } from "../../api/catalogoVehiculos.api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 /**
  * Confirmación + borrado de Marca (`DELETE /api/marca/{id}` — `ENDPOINTS.md`
@@ -32,8 +33,8 @@ export const useDeleteMarca = (onSuccess) => {
           await marcaApi.delete(marca.id);
 
           notifications.show({
-            title: "Éxito",
-            message: "Marca eliminada correctamente",
+            title: "Marca eliminada",
+            message: "La marca se eliminó correctamente.",
             color: "green",
             icon: <IconCheck />,
           });
@@ -44,9 +45,9 @@ export const useDeleteMarca = (onSuccess) => {
         } catch (error) {
           console.error("Error eliminando marca:", error);
           notifications.show({
-            title: "Error",
+            title: "No se pudo eliminar la marca",
             message:
-              error.response?.data?.message || "No se pudo eliminar la marca",
+              error.response?.data?.message || REINTENTAR_MAS_TARDE,
             color: "red",
             icon: <IconX />,
           });

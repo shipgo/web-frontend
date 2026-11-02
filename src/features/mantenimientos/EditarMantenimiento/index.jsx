@@ -8,6 +8,7 @@ import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import RecursoNoEncontrado from "@components/RecursoNoEncontrado";
 import { isNotFoundError } from "@utils/httpErrors";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { mantenimientoApi } from "../api/mantenimientos.api";
 
 import EditarMantenimientoForm from "./components/EditarMantenimientoForm";
@@ -44,8 +45,8 @@ const EditarMantenimiento = () => {
         }
         console.error("Error cargando mantenimiento:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudo cargar el mantenimiento",
+          title: "No se pudo cargar el mantenimiento",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
           icon: <IconX />,
         });

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button, Group, Stack, Text, Textarea } from '@mantine/core';
 
 /**
- * Contenido del modal de confirmación de "Marcar fallo de entrega" (`SHG-FE-007`).
+ * Contenido del modal de confirmación de "Registrar entrega fallida" (`SHG-FE-007`).
  * A diferencia de "Cancelar viaje" (`SHG-FE-012`), acá el `motivo` es
  * **obligatorio** (`FalloEntregaEnvioReqDTO.motivo` `@NotEmpty`): el botón de
  * confirmación no envía nada hasta que el usuario escriba algo.
@@ -25,7 +25,7 @@ const FalloEntregaModalBody = ({ id, onConfirmar, onVolver }) => {
   return (
     <Stack gap="sm">
       <Text size="sm">
-        ¿Confirmás que el envío <strong>#{id}</strong> no pudo ser entregado? Esta acción no se puede
+        ¿Confirmás que el envío <strong>#{id}</strong> no se pudo entregar? Esta acción no se puede
         deshacer.
       </Text>
       <Textarea
@@ -35,14 +35,14 @@ const FalloEntregaModalBody = ({ id, onConfirmar, onVolver }) => {
         rows={2}
         value={motivo}
         onChange={(event) => setMotivo(event.currentTarget.value)}
-        error={tocado && motivoVacio ? 'El motivo es obligatorio' : null}
+        error={tocado && motivoVacio ? 'Ingresá el motivo.' : null}
       />
       <Group justify="flex-end">
         <Button variant="default" onClick={onVolver}>
           Volver
         </Button>
         <Button color="red" onClick={handleConfirmar}>
-          Marcar fallo de entrega
+          Registrar entrega fallida
         </Button>
       </Group>
     </Stack>

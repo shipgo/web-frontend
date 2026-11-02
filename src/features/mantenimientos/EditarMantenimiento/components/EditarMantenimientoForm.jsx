@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { mantenimientoApi } from "../../api/mantenimientos.api";
 
 import MantenimientoForm from "../../components/MantenimientoForm";
@@ -67,11 +68,11 @@ const EditarMantenimientoForm = ({ id, mantenimiento }) => {
         console.error("Error actualizando mantenimiento:", error);
 
         const message = applyApiError(form, error, {
-          fallbackMessage: "No se pudo actualizar el mantenimiento",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
 
         notifications.show({
-          title: "Error",
+          title: "No se pudo actualizar el mantenimiento",
           message,
           color: "red",
           icon: <IconX />,

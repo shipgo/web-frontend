@@ -7,6 +7,7 @@ import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
 import { VirtuosoItem } from "@components/VirtuosoListA11y";
 import { formatDireccion } from "@domain/format";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { coincideBusqueda } from "@utils/text";
 
 import { TIPO_ENTREGA } from "@features/envios/constants";
@@ -189,9 +190,9 @@ const ListadoEnviosPendientes = ({
       onError={{
         show: isError,
         onClick: refetch,
-        title: "Error al cargar los envíos",
+        title: "No pudimos cargar los envíos",
         description:
-          "Hubo un error al cargar los envíos pendientes, por favor intenta nuevamente",
+          REINTENTAR_MAS_TARDE,
       }}
       onEmptyData={{
         show: !isPending && !isError && envios.length === 0,

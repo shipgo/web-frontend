@@ -116,7 +116,7 @@ describe("CrearVehiculo", () => {
   });
 
   // SHG-FE-056 (companion de SHG-BE-040): el catálogo de `tipoVehiculo` suma
-  // categoría "moto", que exige exactamente 2 ruedas en vez del mínimo 4 de
+  // categoría "moto", que exige 2 ruedas en vez del mínimo 4 de
   // "automotor".
   it("selecting a moto tipoVehiculo auto-adjusts cantidadRuedas to 2 and submits it", async () => {
     const user = userEvent.setup();
@@ -134,7 +134,7 @@ describe("CrearVehiculo", () => {
     await selectOption(user, /tipo de vehículo/i, "Moto");
 
     // Auto-ajustada por `VehiculoForm` al elegir un tipo de categoría moto
-    // (ver `onChange` de "Tipo de Vehículo").
+    // (ver `onChange` de "Tipo de vehículo").
     expect(screen.getByLabelText(/cantidad de ruedas/i)).toHaveValue("2");
 
     await selectOption(user, /^marca/i, "Toyota");
@@ -213,10 +213,10 @@ describe("CrearVehiculo", () => {
 
     await waitFor(() => {
       expect(
-        // Error inline + toast "Revisá el formulario" con el mismo mensaje.
-        screen.getAllByText(/una moto debe tener exactamente 2 ruedas/i),
+        // Error inline + toast "Revisá los datos ingresados" con el mismo mensaje.
+        screen.getAllByText(/una moto tiene que tener 2 ruedas/i),
       ).toHaveLength(2);
-      expect(screen.getByText("Revisá el formulario")).toBeInTheDocument();
+      expect(screen.getByText("Revisá los datos ingresados")).toBeInTheDocument();
     });
 
     expect(vehiculoApi.save).not.toHaveBeenCalled();

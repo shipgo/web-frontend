@@ -18,7 +18,7 @@ const FleetDonut = ({ resumen, isLoading, isError, onRetry }) => {
   return (
     <ChartCard
       title="Estado de la flota"
-      tooltip="Distribución de los vehículos del alcance por estado, al día de hoy."
+      tooltip="Vehículos por estado, hoy."
       icon={<IconTruck />}
       color="blue"
       subtitle="Estado actual"
@@ -30,7 +30,7 @@ const FleetDonut = ({ resumen, isLoading, isError, onRetry }) => {
       <Stack gap="md" pt="sm">
         <DonutChart
           data={data}
-          chartLabel={`${total} unidades`}
+          chartLabel={`${total} vehículos`}
           size={200}
           thickness={30}
           mx="auto"

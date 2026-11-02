@@ -11,14 +11,14 @@ describe('CSV con hora local de Argentina', () => {
     const envio = {
       historialEstado: [{ estado: 'creado', fechaHoraInicio: '2026-10-07T23:30:15.123' }],
     };
-    expect(col(ENVIOS_CSV_COLUMNS, 'Fecha de alta').value(envio)).toBe('07/10/2026 23:30');
+    expect(col(ENVIOS_CSV_COLUMNS, 'Fecha de creación').value(envio)).toBe('07/10/2026 23:30');
   });
 
   it('envíos: cruce de medianoche y 9 dígitos de fracción', () => {
     const envio = {
       historialEstado: [{ estado: 'creado', fechaHoraInicio: '2026-10-08T00:00:00.000000000' }],
     };
-    expect(col(ENVIOS_CSV_COLUMNS, 'Fecha de alta').value(envio)).toBe('08/10/2026 00:00');
+    expect(col(ENVIOS_CSV_COLUMNS, 'Fecha de creación').value(envio)).toBe('08/10/2026 00:00');
   });
 
   it('viajes: inicio y fin planificados al cruzar el día', () => {

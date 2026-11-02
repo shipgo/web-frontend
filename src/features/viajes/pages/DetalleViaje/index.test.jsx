@@ -98,7 +98,7 @@ describe('DetalleViaje', () => {
 
     // Header canónico: breadcrumbs `Viajes / Detalle de viaje` + botón de ayuda.
     expect(screen.getByText('Detalle de viaje')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /necesito ayuda/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /ayuda/i })).toHaveAttribute(
       'href',
       'https://shipgo.gitbook.io/manual',
     );
@@ -109,7 +109,7 @@ describe('DetalleViaje', () => {
     expect(screen.getByText('Ana Gomez')).toBeInTheDocument();
     expect(screen.getAllByText('Sucursal Centro').length).toBeGreaterThan(0);
 
-    expect(screen.getByText('Recorrido #1')).toBeInTheDocument();
+    expect(screen.getByText('Parada 1')).toBeInTheDocument();
     expect(screen.getByText('ABC123')).toBeInTheDocument();
     expect(screen.getByText('Pedro Ruiz')).toBeInTheDocument();
 
@@ -204,7 +204,7 @@ describe('DetalleViaje', () => {
         route: '/viajes/42',
       });
 
-      await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+      await user.click(await screen.findByRole('button', { name: 'Cancelar viaje' }));
 
       const dialog = await screen.findByRole('dialog');
       await user.type(within(dialog).getByLabelText('Motivo (opcional)'), 'Vehículo con desperfecto');
@@ -226,7 +226,7 @@ describe('DetalleViaje', () => {
         route: '/viajes/42',
       });
 
-      await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+      await user.click(await screen.findByRole('button', { name: 'Cancelar viaje' }));
       const dialog = await screen.findByRole('dialog');
       const boton = within(dialog).getByRole('button', { name: 'Cancelar viaje' });
       await user.dblClick(boton);
@@ -266,7 +266,7 @@ describe('DetalleViaje', () => {
         route: '/viajes/42',
       });
 
-      await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+      await user.click(await screen.findByRole('button', { name: 'Cancelar viaje' }));
 
       const dialog = await screen.findByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Cancelar viaje' }));
@@ -291,7 +291,7 @@ describe('DetalleViaje', () => {
       const dialog = await screen.findByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Sí, finalizar' }));
 
-      expect(await screen.findByText('No se puede completar la acción')).toBeInTheDocument();
+      expect(await screen.findByText('Acción no disponible')).toBeInTheDocument();
       expect(screen.getByText('El viaje no está en camino')).toBeInTheDocument();
     });
   });
@@ -326,7 +326,7 @@ describe('DetalleViaje', () => {
         viajeApi.cancelar.mockResolvedValue({ ...VIAJE_CON_PROBLEMAS, estado: 'cancelado' });
         render();
 
-        await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+        await user.click(await screen.findByRole('button', { name: 'Cancelar viaje' }));
         const dialog = await screen.findByRole('dialog');
         await user.click(within(dialog).getByRole('button', { name: 'Cancelar viaje' }));
 
@@ -399,7 +399,7 @@ describe('DetalleViaje', () => {
       const dialog = await screen.findByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
 
-      expect(await screen.findByText('No se puede completar la acción')).toBeInTheDocument();
+      expect(await screen.findByText('Acción no disponible')).toBeInTheDocument();
       expect(screen.getByText('El chofer ya tiene otro viaje en camino')).toBeInTheDocument();
       await waitFor(() => expect(viajeApi.getById).toHaveBeenCalledTimes(2));
     });
@@ -432,7 +432,7 @@ describe('DetalleViaje', () => {
       const dialog = await screen.findByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
 
-      expect(await screen.findByText('Error')).toBeInTheDocument();
+      expect(await screen.findByText('No se pudo completar la acción')).toBeInTheDocument();
       expect(viajeApi.getById).toHaveBeenCalledTimes(1);
     });
   });
@@ -475,7 +475,7 @@ describe('DetalleViaje', () => {
         route: '/viajes/42',
       });
 
-      expect(await screen.findByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: 'Cancelar viaje' })).toBeInTheDocument();
       expect(screen.getAllByText('Listo para salir').length).toBeGreaterThan(0);
       expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
     });

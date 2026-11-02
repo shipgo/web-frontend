@@ -20,7 +20,7 @@ const HomePage = () => {
   return (
     <PageContainer>
       <Stack gap={4}>
-        <Title order={2}>Bienvenido</Title>
+        <Title order={2}>Hola</Title>
         <Text c='dimmed'>¿Qué querés hacer hoy?</Text>
       </Stack>
 

@@ -6,6 +6,7 @@ import { Center, Text } from "@mantine/core";
 import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
 import { VirtuosoItem } from "@components/VirtuosoListA11y";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import ItemVehiculo from "./ItemVehiculo";
 import { useFormContext } from "../contexts/EnviosFormContext";
@@ -63,9 +64,9 @@ const ListaVehiculosDisponibles = ({
             onError={{
               show: isError,
               onClick: refetch,
-              title: "Error al cargar los vehículos",
+              title: "No pudimos cargar los vehículos",
               description:
-                "Hubo un error al cargar los vehículos disponibles, por favor intenta nuevamente",
+                REINTENTAR_MAS_TARDE,
             }}
             onEmptyData={{
               show: !isFetching && !isError && vehiculos.length === 0,
@@ -73,8 +74,8 @@ const ListaVehiculosDisponibles = ({
                 ? "No hay vehículos disponibles"
                 : "Seleccioná las fechas del viaje",
               description: fechasSeleccionadas
-                ? "No hay vehículos disponibles para la ventana de fechas seleccionada"
-                : "Completá la fecha de salida y llegada planificadas en \"Detalles del viaje\" para ver los vehículos disponibles",
+                ? "No hay vehículos disponibles en las fechas elegidas."
+                : "Completá la salida y la llegada planificadas en \"Detalles del viaje\" para ver los vehículos disponibles.",
             }}
           />
         ),
@@ -83,7 +84,7 @@ const ListaVehiculosDisponibles = ({
 
           return (
             <Center h="72px">
-              <Text c="dimmed">No hay más vehículos disponibles</Text>
+              <Text c="dimmed">No hay más vehículos disponibles.</Text>
             </Center>
           );
         },

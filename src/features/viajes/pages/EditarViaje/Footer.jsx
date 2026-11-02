@@ -3,6 +3,7 @@ import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 
 import PageFooter from "@components/PageFooter";
+import { FORMULARIO_INVALIDO } from "@copy/common";
 
 import { useFormContext } from "../CrearViaje/contexts/EnviosFormContext";
 
@@ -18,9 +19,9 @@ const Footer = ({ loading, onSubmit, onCancel, guardarDeshabilitado = false }) =
     const firstError = Object.values(errors)[0];
     notifications.show({
       color: "red",
-      title: "Revisá el formulario",
+      title: FORMULARIO_INVALIDO.titulo,
       message:
-        firstError || "Completá los datos requeridos antes de guardar el viaje",
+        firstError || FORMULARIO_INVALIDO.mensaje,
       icon: <IconX />,
     });
   };

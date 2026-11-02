@@ -2,6 +2,7 @@ import { Card, Group, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
 
 import ScreenContainer from '@components/ScreenContainer';
+import { PANTALLA } from '@copy/common';
 
 /**
  * Contenedor común de las cards de charts del dashboard: header (ícono + título +
@@ -52,8 +53,8 @@ const ChartCard = ({
       onLoading={{ show: isLoading }}
       onError={{
         show: !isLoading && isError,
-        title: 'No se pudo cargar',
-        description: 'Ocurrió un error al traer los datos de esta sección.',
+        title: PANTALLA.errorTitulo,
+        description: PANTALLA.errorDescripcion,
         onClick: onRetry,
       }}
       onEmptyData={{

@@ -14,7 +14,7 @@ const describeFailure = (error) => {
   const status = error?.response?.status;
   const fallbackMessage =
     status === 409
-      ? 'no está en un estado que permite eliminarlo'
+      ? 'no se puede eliminar por su estado'
       : status === 404
         ? 'ya no existe'
         : 'no se pudo eliminar';
@@ -109,7 +109,7 @@ export const useBulkDelete = ({ deleteFn, singular, plural, getLabel, onSettled 
           <Text size="sm">
             {excluded.length === 0
               ? `¿Estás seguro de que querés eliminar ${items.length} ${nounOf(items.length)}? Esta acción no se puede deshacer.`
-              : `Se eliminarán ${items.length} ${nounOf(items.length)}. Quedan afuera ${excluded.length} ${nounOf(excluded.length)} (${detalleExcluidos}). Esta acción no se puede deshacer.`}
+              : `Vas a eliminar ${items.length} ${nounOf(items.length)}. No se ${excluded.length === 1 ? 'va' : 'van'} a eliminar ${excluded.length} ${nounOf(excluded.length)} (${detalleExcluidos}). Esta acción no se puede deshacer.`}
           </Text>
         </Stack>
       ),

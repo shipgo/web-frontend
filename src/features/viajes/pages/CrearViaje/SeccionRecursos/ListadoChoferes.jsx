@@ -14,6 +14,7 @@ import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
 
 import { useAuth } from "@contexts/auth";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { coincideBusqueda } from "@utils/text";
 
 import ItemChofer from "./ItemChofer";
@@ -92,7 +93,7 @@ const ListadoChoferes = () => {
           <TextInput
             flex={1}
             rightSection={<IconSearch size={16} />}
-            placeholder="Buscá por nombre, mail o teléfono..."
+            placeholder="Buscá por nombre, email o teléfono..."
             onChange={(event) => setSearchValue(event.target.value)}
           />
         </Group>
@@ -104,8 +105,8 @@ const ListadoChoferes = () => {
         }}
         onError={{
           show: isError,
-          title: "Error al cargar los choferes",
-          description: "Error al cargar los choferes disponibles",
+          title: "No pudimos cargar los choferes",
+          description: REINTENTAR_MAS_TARDE,
           onClick: refetch,
         }}
         onLoading={{
@@ -118,8 +119,8 @@ const ListadoChoferes = () => {
             ? "No hay choferes disponibles"
             : "Seleccioná las fechas del viaje",
           description: fechasSeleccionadas
-            ? "No hay choferes disponibles para la ventana de fechas seleccionada"
-            : "Completá la fecha de salida y llegada planificadas en \"Detalles del viaje\" para ver los choferes disponibles",
+            ? "No hay choferes disponibles en las fechas elegidas."
+            : "Completá la salida y la llegada planificadas en \"Detalles del viaje\" para ver los choferes disponibles.",
         }}
       >
         <ScrollArea p="0" m="0" flex={1} component="ul">

@@ -1,10 +1,6 @@
 import { restclient } from '@config/restclient';
 import { API_URLS } from '@constants/apiUrls';
-import {
-  createCrudApi,
-  createReadOnlyApi,
-  notImplemented,
-} from './base.api';
+import { createCrudApi, createReadOnlyApi } from './base.api';
 
 /**
  * API de Categorías — `/api/categoria` (ENDPOINTS.md §16). CRUD completo.
@@ -235,18 +231,6 @@ export const empresaApi = {
 
   // No existe listado ni `GET /api/empresa/{id}` de propósito general (el
   // modelo es 1 empresa por instalación) — sólo `getMia()` de arriba.
-  getAll: notImplemented(
-    'SHG-BE-022',
-    'GET de empresa (listado) para el panel SUPERUSER — usar getMia()',
-  ),
-  get: notImplemented(
-    'SHG-BE-022',
-    'GET de empresa (listado paginado) para el panel SUPERUSER — usar getMia()',
-  ),
-  getById: notImplemented(
-    'SHG-BE-022',
-    'GET /api/empresa/{id} (detalle de empresa) — usar getMia()',
-  ),
 
   /**
    * `POST /api/empresa` — crea empresa + sucursal inicial. Devuelve `UserDTO`.

@@ -133,7 +133,7 @@ describe("EditarViaje/SeccionRecursos — disponibilidad en la ventana (SHG-FE-1
     expect(choferesElegidos()).toEqual(["Juan Perez", "Maria Gomez"]);
 
     await user.click(screen.getByRole("button", { name: "validar" }));
-    expect(await screen.findByText("Seleccioná un vehículo")).toBeInTheDocument();
+    expect(await screen.findByText("Elegí un vehículo.")).toBeInTheDocument();
   });
 
   it("si el vehículo pasa a estar en mantenimiento en la ventana nueva, lo quita y lo deja deshabilitado", async () => {

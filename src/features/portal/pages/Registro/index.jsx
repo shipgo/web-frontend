@@ -63,7 +63,7 @@ const RegistroPage = () => {
         captcha.reset();
         form.setErrors({
           email:
-            'No pudimos verificar la seguridad del formulario. Resolvé el captcha de nuevo e intentá otra vez.',
+            'No pudimos completar la verificación de seguridad. Completala de nuevo e intentá otra vez.',
         });
         return;
       }
@@ -72,7 +72,7 @@ const RegistroPage = () => {
       // sin `fields` (CONTRACT-005): lo mostramos como error del campo `email`.
       // Si el backend mandara `fields`, se respetan tal cual.
       const { fieldErrors, message } = parseApiError(error, {
-        fallbackMessage: 'No se pudo completar el registro. Intentá nuevamente.',
+        fallbackMessage: 'No pudimos completar el registro. Probá de nuevo en unos minutos.',
       });
       if (Object.keys(fieldErrors).length > 0) {
         form.setErrors(fieldErrors);

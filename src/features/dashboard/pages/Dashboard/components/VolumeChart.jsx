@@ -14,7 +14,7 @@ const VolumeChart = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
   return (
     <ChartCard
       title="Volumen de envíos"
-      tooltip="Envíos dados de alta por día en el período seleccionado."
+      tooltip="Envíos creados por día en el período seleccionado."
       icon={<IconChartBar />}
       color="blue"
       subtitle={periodoLabel}

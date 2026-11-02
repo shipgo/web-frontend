@@ -9,7 +9,7 @@ import ExportCsvButton from '@components/ExportCsvButton';
 // muerto, relevamiento UI 2026-09-25). La importación de envíos por CSV
 // queda fuera de alcance (issue #203).
 const ListaEnviosHeader = ({ onExportCsv, isExporting, exportDisabled }) => (
-  <PageHeader title="Envíos" subtitle="Listado de envíos cargados en el sistema">
+  <PageHeader title="Envíos" subtitle="Seguí y administrá tus envíos">
     <Button to="/crear" component={Link} leftSection={<IconMailPlus />}>
       Crear envío
     </Button>

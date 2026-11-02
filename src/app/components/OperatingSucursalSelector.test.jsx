@@ -18,7 +18,7 @@ describe("OperatingSucursalSelector (SHG-FE-052)", () => {
     renderSelector({ isSuperUser: false, sucursales: [], activeSucursalId: null });
 
     expect(
-      screen.queryByRole("combobox", { name: /sucursal operativa activa/i }),
+      screen.queryByRole("combobox", { name: /ver datos de la sucursal/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -53,7 +53,7 @@ describe("OperatingSucursalSelector (SHG-FE-052)", () => {
     });
 
     const combobox = screen.getByRole("combobox", {
-      name: /sucursal operativa activa/i,
+      name: /ver datos de la sucursal/i,
     });
     await user.click(combobox);
     await user.click(await screen.findByText("Norte"));

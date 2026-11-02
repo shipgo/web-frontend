@@ -4,6 +4,7 @@ import { notifications } from "@mantine/notifications";
 import { IconAlertTriangle, IconCheck, IconX } from "@tabler/icons-react";
 
 import { mantenimientoApi } from "../../api/mantenimientos.api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 /**
  * Baja de mantenimiento con confirmación (`DELETE /api/mantenimiento/{id}` —
@@ -52,7 +53,7 @@ export const useDeleteMantenimiento = (onSuccess) => {
               title: "No se puede eliminar",
               message:
                 backendMessage ||
-                `El mantenimiento ${identificador} no se puede eliminar en este momento`,
+                `No se puede eliminar el mantenimiento ${identificador} en este momento.`,
               color: "yellow",
               icon: <IconAlertTriangle />,
             });
@@ -62,7 +63,7 @@ export const useDeleteMantenimiento = (onSuccess) => {
           if (status === 404) {
             notifications.show({
               title: "Mantenimiento no encontrado",
-              message: backendMessage || `El mantenimiento ${identificador} ya no existe`,
+              message: backendMessage || 'No encontramos el mantenimiento.',
               color: "red",
               icon: <IconX />,
             });
@@ -71,8 +72,8 @@ export const useDeleteMantenimiento = (onSuccess) => {
 
           console.error("Error eliminando mantenimiento:", error);
           notifications.show({
-            title: "Error",
-            message: backendMessage || "No se pudo eliminar el mantenimiento",
+            title: "No se pudo eliminar el mantenimiento",
+            message: backendMessage || REINTENTAR_MAS_TARDE,
             color: "red",
             icon: <IconX />,
           });

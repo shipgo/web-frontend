@@ -19,6 +19,7 @@ import {
 } from '@tabler/icons-react';
 
 import { registroApi } from '../../api/portal.api';
+import { REINTENTAR_MAS_TARDE } from '@copy/common';
 
 /**
  * Verificación de email del CUSTOMER (`/registro/verificar?token=...`).
@@ -94,7 +95,7 @@ const VerificarCuentaPage = () => {
         ? {
             color: 'red',
             icon: <IconAlertTriangle size={20} />,
-            title: 'Enlace inválido',
+            title: 'Enlace no válido',
             body: 'No encontramos una verificación para este enlace. Puede que ya lo hayas usado.',
           }
         : kind === 'expirado'
@@ -108,7 +109,7 @@ const VerificarCuentaPage = () => {
               color: 'red',
               icon: <IconAlertTriangle size={20} />,
               title: 'No pudimos verificar tu cuenta',
-              body: 'Ocurrió un error al verificar tu cuenta. Intentá nuevamente en unos minutos.',
+              body: REINTENTAR_MAS_TARDE,
             };
 
     return (
@@ -141,7 +142,7 @@ const VerificarCuentaPage = () => {
         Iniciar sesión
       </Button>
       <Text size="sm" c="dimmed">
-        ¿Sólo querés seguir un envío puntual?{' '}
+        ¿Solo querés seguir un envío puntual?{' '}
         <Anchor component={Link} href="/tracking">
           Seguí tu envío sin cuenta
         </Anchor>

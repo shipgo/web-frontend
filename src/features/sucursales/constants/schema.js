@@ -24,26 +24,26 @@ import {
  * informa un valor.
  */
 export const SUCURSAL_SCHEMA = z.object({
-  nombre: nombreRequerido("Ingresá el nombre"),
+  nombre: nombreRequerido("Ingresá el nombre."),
   email: textoOpcional()
     .refine(
       (value) => value === "" || /^\S+@\S+\.\S+$/.test(value),
-      "El email no es válido"
+      "Ingresá un email válido."
     ),
-  prefijo: prefijoRequerido("Ingresá el prefijo"),
-  telefono: telefonoRequerido("Ingresá el teléfono"),
-  nombreCalle: textoRequerido("Ingresá la calle"),
-  numeroCalle: textoRequerido("Ingresá el número"),
+  prefijo: prefijoRequerido("Ingresá el prefijo."),
+  telefono: telefonoRequerido("Ingresá el teléfono."),
+  nombreCalle: textoRequerido("Ingresá la calle."),
+  numeroCalle: textoRequerido("Ingresá el número."),
   provinciaID: z
     .string()
-    .min(1, "Seleccioná una provincia")
+    .min(1, "Elegí una provincia.")
     .nullable()
-    .refine((value) => !!value, "Seleccioná una provincia"),
+    .refine((value) => !!value, "Elegí una provincia."),
   localidadID: z
     .string()
-    .min(1, "Seleccioná una localidad")
+    .min(1, "Elegí una localidad.")
     .nullable()
-    .refine((value) => !!value, "Seleccioná una localidad"),
+    .refine((value) => !!value, "Elegí una localidad."),
 });
 
 export const SUCURSAL_INITIAL_VALUES = {

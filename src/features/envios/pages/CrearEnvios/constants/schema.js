@@ -38,8 +38,8 @@ const positiveNumberString = (requiredMsg, invalidMsg) =>
     .refine((val) => !isNaN(Number(val)) && Number(val) > 0, invalidMsg);
 
 export const PAQUETE_SCHEMA = z.object({
-  categoriaID: z.string().min(1, 'Seleccioná una categoría'),
-  peso: positiveNumberString('El peso es requerido', 'Debe ser mayor a 0'),
+  categoriaID: z.string().min(1, 'Elegí una categoría.'),
+  peso: positiveNumberString('Ingresá el peso.', 'El peso tiene que ser mayor a 0.'),
   descripcion: z.string().optional(),
 });
 
@@ -51,10 +51,10 @@ export const PAQUETE_INITIAL_VALUES = {
 
 export const CREAR_ENVIO_SCHEMA = z
   .object({
-    nombre: nombreRequerido('El nombre es requerido'),
-    apellido: nombreRequerido('El apellido es requerido'),
-    emailRemitente: emailRequerido('El email del remitente es requerido'),
-    emailReceptor: emailRequerido('El email del receptor es requerido'),
+    nombre: nombreRequerido('Ingresá el nombre.'),
+    apellido: nombreRequerido('Ingresá el apellido.'),
+    emailRemitente: emailRequerido('Ingresá el email del remitente.'),
+    emailReceptor: emailRequerido('Ingresá el email del destinatario.'),
     prefijo: prefijoRequerido(),
     telefono: telefonoRequerido(),
     tipoEntrega: z
@@ -68,7 +68,7 @@ export const CREAR_ENVIO_SCHEMA = z
     provinciaID: z.string().optional(),
     localidadID: z.string().optional(),
     coordenadas: z.object({ lat: z.number(), lng: z.number() }).nullable().optional(),
-    detalleEnvios: z.array(z.any()).min(1, 'Agregá al menos un paquete'),
+    detalleEnvios: z.array(z.any()).min(1, 'Agregá al menos un paquete.'),
   })
   .superRefine((values, ctx) => {
     const tipoEntrega = values.tipoEntrega ?? TIPO_ENTREGA_DEFAULT;
@@ -78,7 +78,7 @@ export const CREAR_ENVIO_SCHEMA = z
         ctx.addIssue({
           code: 'custom',
           path: ['sucursalEntregaID'],
-          message: 'Seleccioná una sucursal de retiro',
+          message: 'Elegí una sucursal de retiro.',
         });
       }
       return;
@@ -88,21 +88,21 @@ export const CREAR_ENVIO_SCHEMA = z
       ctx.addIssue({
         code: 'custom',
         path: ['nombreCalle'],
-        message: 'La calle es requerida',
+        message: 'Ingresá la calle.',
       });
     }
     if (!values.provinciaID) {
       ctx.addIssue({
         code: 'custom',
         path: ['provinciaID'],
-        message: 'Seleccioná una provincia',
+        message: 'Elegí una provincia.',
       });
     }
     if (!values.localidadID) {
       ctx.addIssue({
         code: 'custom',
         path: ['localidadID'],
-        message: 'Seleccioná una localidad',
+        message: 'Elegí una localidad.',
       });
     }
     if (!values.coordenadas) {
@@ -110,7 +110,7 @@ export const CREAR_ENVIO_SCHEMA = z
         code: 'custom',
         path: ['coordenadas'],
         message:
-          'Elegí una sugerencia del buscador de direcciones para ubicar el envío en el mapa',
+          'Elegí una sugerencia del buscador de direcciones para ubicar el envío en el mapa.',
       });
     }
   });

@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { mantenimientoApi } from "../api/mantenimientos.api";
 
 import MantenimientoForm from "../components/MantenimientoForm";
@@ -32,8 +33,8 @@ const CrearMantenimiento = () => {
         await mantenimientoApi.save(payload);
 
         notifications.show({
-          title: "Mantenimiento registrado",
-          message: "El mantenimiento se registró correctamente",
+          title: "Mantenimiento creado",
+          message: "El mantenimiento se creó correctamente.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -43,11 +44,11 @@ const CrearMantenimiento = () => {
         console.error("Error creando mantenimiento:", error);
 
         const message = applyApiError(form, error, {
-          fallbackMessage: "No se pudo registrar el mantenimiento",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         });
 
         notifications.show({
-          title: "Error",
+          title: "No se pudo crear el mantenimiento",
           message,
           color: "red",
           icon: <IconX />,

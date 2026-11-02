@@ -14,11 +14,11 @@ const DesvioChart = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
 
   return (
     <ChartCard
-      title="Desvío de viajes finalizados"
-      tooltip="Diferencia entre la hora de fin real y la planificada de cada viaje finalizado. Positivo = terminó tarde."
+      title="Retraso o adelanto de los viajes finalizados"
+      tooltip="Minutos respecto de lo planificado (positivo = terminó tarde)."
       icon={<IconRoute />}
       color="orange"
-      subtitle={`Minutos de desvío · ${periodoLabel}`}
+      subtitle={`Minutos · ${periodoLabel}`}
       isLoading={isLoading}
       isError={isError}
       isEmpty={!data.length}
@@ -29,7 +29,7 @@ const DesvioChart = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
         h={280}
         data={data}
         dataKey="viaje"
-        series={[{ name: 'desvio', color: 'orange.5', label: 'Desvío' }]}
+        series={[{ name: 'desvio', color: 'orange.5', label: 'Minutos' }]}
         valueFormatter={(value) => `${value} min`}
       />
     </ChartCard>

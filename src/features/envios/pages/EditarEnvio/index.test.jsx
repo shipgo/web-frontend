@@ -119,13 +119,13 @@ describe("EditarEnvio", () => {
     envioApi.update.mockResolvedValue({ id: 9 });
   });
 
-  it("usa el header canónico (breadcrumbs Envíos / Editar envío + Necesito ayuda)", async () => {
+  it("usa el header canónico (breadcrumbs Envíos / Editar envío + Ayuda)", async () => {
     renderEditarEnvio();
 
     expect(await screen.findByText("Editar envío")).toBeInTheDocument();
     expect(screen.getAllByText("Envíos").length).toBeGreaterThan(0);
     expect(
-      screen.getByRole("link", { name: /necesito ayuda/i }),
+      screen.getByRole("link", { name: /ayuda/i }),
     ).toBeInTheDocument();
   });
 
@@ -144,7 +144,7 @@ describe("EditarEnvio", () => {
     expect(screen.getByLabelText(/email del remitente/i)).toHaveValue(
       "remitente@test.com",
     );
-    expect(screen.getByLabelText(/email del receptor/i)).toHaveValue(
+    expect(screen.getByLabelText(/email del destinatario/i)).toHaveValue(
       "receptor@test.com",
     );
     expect(screen.getByLabelText(/^calle/i)).toHaveValue("Av. Colón");
@@ -311,7 +311,7 @@ describe("EditarEnvio", () => {
 
     await waitFor(() => expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan"));
     expect(screen.getByLabelText(/^calle/i)).toBeEnabled();
-    expect(screen.getByRole("button", { name: /añadir paquete/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /agregar paquete/i })).toBeInTheDocument();
   });
 
   it("no permite editar un envío en estado terminal (entregado/rechazado)", async () => {
@@ -486,7 +486,7 @@ describe("EditarEnvio", () => {
       });
 
       expect(await screen.findByText("No se pudo cargar el envío")).toBeInTheDocument();
-      expect(screen.getByText("Ocurrió un error al obtener la información del envío.")).toBeInTheDocument();
+      expect(screen.getByText("No pudimos cargar el envío. Probá de nuevo en unos minutos.")).toBeInTheDocument();
 
       const reintentar = screen.getByRole("button", { name: /reintentar/i });
       expect(reintentar).toBeInTheDocument();

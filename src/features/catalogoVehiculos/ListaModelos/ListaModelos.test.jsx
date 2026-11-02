@@ -76,7 +76,7 @@ describe("ListaModelos", () => {
 
     renderWithProviders(<ListaModelos />);
 
-    expect(await screen.findByText("Sin modelos que mostrar")).toBeInTheDocument();
+    expect(await screen.findByText("Todavía no hay modelos")).toBeInTheDocument();
   });
 
   it("exports to CSV with MODELOS_CSV_COLUMNS when clicking Exportar CSV", async () => {

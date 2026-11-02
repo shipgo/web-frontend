@@ -34,17 +34,17 @@ const getLocalizarAction = (envio, onLocalizar) => {
   if (trackeable) {
     return {
       icon: <IconMapSearch size={18} />,
-      label: 'Localizar',
+      label: 'Ver en el mapa',
       onClick: () => onLocalizar(viajeAsociado.id),
     };
   }
 
   return {
     icon: <IconMapSearch size={18} />,
-    label: 'Localizar',
+    label: 'Ver en el mapa',
     disabled: true,
     tooltip: viajeAsociado
-      ? 'El viaje asociado no está en camino en este momento.'
+      ? 'Disponible cuando el envío esté en camino.'
       : 'Este envío todavía no fue asignado a un viaje.',
   };
 };
@@ -99,7 +99,7 @@ const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRe
           <Table.Th>Código</Table.Th>
           <Table.Th>Remitente</Table.Th>
           <Table.Th>Destino</Table.Th>
-          <Table.Th>Fecha de alta</Table.Th>
+          <Table.Th>Fecha de creación</Table.Th>
           <Table.Th>Estado</Table.Th>
           <Table.Th>Acciones</Table.Th>
         </Table.Tr>

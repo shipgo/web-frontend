@@ -16,14 +16,16 @@ import CancelarViajeModalBody from '../components/CancelarViajeModalBody';
  * - `403` → rol sin permiso para la acción → toast de error puntual.
  * - Resto → error genérico (`console.error` + toast).
  */
-const handleAccionError = (error, accionLabel) => {
+const handleAccionError = (error, accionLabel, estadosPermitidos) => {
   const status = error.response?.status;
   const backendMessage = error.response?.data?.message;
 
   if (status === 409) {
     notifications.show({
-      title: 'No se puede completar la acción',
-      message: backendMessage || `El viaje no está en un estado que permita ${accionLabel}`,
+      title: 'Acción no disponible',
+      message:
+        backendMessage ||
+        `Solo se puede ${accionLabel} cuando el viaje está ${estadosPermitidos}.`,
       color: 'yellow',
       icon: <IconAlertTriangle />,
     });
@@ -32,8 +34,8 @@ const handleAccionError = (error, accionLabel) => {
 
   if (status === 403) {
     notifications.show({
-      title: 'Sin permisos',
-      message: backendMessage || `No tenés permisos para ${accionLabel}`,
+      title: 'Acción no permitida',
+      message: backendMessage || 'No tenés permiso para hacer esto.',
       color: 'red',
       icon: <IconX />,
     });
@@ -42,8 +44,8 @@ const handleAccionError = (error, accionLabel) => {
 
   console.error(`Error al ${accionLabel}:`, error);
   notifications.show({
-    title: 'Error',
-    message: backendMessage || `No se pudo completar la acción: ${accionLabel}`,
+    title: 'No se pudo completar la acción',
+    message: backendMessage || `No se pudo ${accionLabel}. Probá de nuevo en unos minutos.`,
     color: 'red',
     icon: <IconX />,
   });
@@ -68,7 +70,7 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
       centered: true,
       children: (
         <Text size="sm">
-          ¿Confirmás que el viaje #{id} se reanuda? El estado pasará a "En camino".
+          ¿Querés reanudar el viaje #{id}?
         </Text>
       ),
       labels: { confirm: 'Sí, reanudar', cancel: 'Volver' },
@@ -88,7 +90,7 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
           });
           onSuccess?.();
         } catch (error) {
-          handleAccionError(error, 'reanudar el viaje');
+          handleAccionError(error, 'reanudar el viaje', 'Con problemas');
           // 409: el estado en pantalla puede estar viejo (otro usuario o el
           // chofer ya lo reanudó, o el chofer tiene otro viaje en camino).
           // 404: el viaje no existe o quedó fuera del alcance; releer muestra "no encontrado".
@@ -110,8 +112,7 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
       centered: true,
       children: (
         <Text size="sm">
-          ¿Confirmás la finalización del viaje #{id}? Usá esta opción sólo para cierres de emergencia; el
-          estado pasará a "Finalizado".
+          Finalizar un viaje en camino es solo para emergencias. ¿Querés finalizar el viaje #{id}?
         </Text>
       ),
       labels: { confirm: 'Sí, finalizar', cancel: 'Volver' },
@@ -125,13 +126,13 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
           await viajeApi.finalizar(id);
           notifications.show({
             title: 'Viaje finalizado',
-            message: `El viaje #${id} fue finalizado correctamente`,
+            message: `El viaje #${id} quedó Finalizado.`,
             color: 'green',
             icon: <IconCheck />,
           });
           onSuccess?.();
         } catch (error) {
-          handleAccionError(error, 'finalizar el viaje');
+          handleAccionError(error, 'finalizar el viaje', 'En camino');
         } finally {
           modals.close(modalId);
         }
@@ -146,7 +147,7 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
       await viajeApi.cancelar(id, { motivo: motivo?.trim() || undefined });
       notifications.show({
         title: 'Viaje cancelado',
-        message: `El viaje #${id} fue cancelado correctamente`,
+        message: `El viaje #${id} quedó Cancelado.`,
         color: 'green',
         icon: <IconCheck />,
       });
@@ -154,7 +155,7 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
       onSuccess?.();
     } catch (error) {
       modals.closeAll();
-      handleAccionError(error, 'cancelar el viaje');
+      handleAccionError(error, 'cancelar el viaje', 'Creado, Planificado, En carga, Listo para salir o Con problemas');
     }
   };
 

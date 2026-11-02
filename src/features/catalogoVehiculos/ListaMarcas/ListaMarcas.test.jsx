@@ -62,7 +62,7 @@ describe("ListaMarcas", () => {
 
     renderWithProviders(<ListaMarcas />);
 
-    expect(await screen.findByText("Sin marcas que mostrar")).toBeInTheDocument();
+    expect(await screen.findByText("Todavía no hay marcas")).toBeInTheDocument();
   });
 
   it("shows both tabs, with Marcas active", async () => {

@@ -146,11 +146,11 @@ describe("OnboardingEmpresa (SHG-FE-116)", () => {
     await user.click(screen.getByRole("button", { name: /crear empresa/i }));
 
     expect(
-      await screen.findByText("Ingresá el nombre de la empresa"),
+      await screen.findByText("Ingresá el nombre de la empresa."),
     ).toBeInTheDocument();
-    // (el toast "Revisá el formulario" repite el primer error: por eso getAllBy)
-    expect(screen.getAllByText("Ingresá el nombre").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Ingresá el prefijo").length).toBeGreaterThan(0);
+    // (el toast "Revisá los datos ingresados" repite el primer error: por eso getAllBy)
+    expect(screen.getAllByText("Ingresá el nombre.").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Ingresá el prefijo.").length).toBeGreaterThan(0);
     expect(mockSave).not.toHaveBeenCalled();
   });
 
@@ -248,7 +248,7 @@ describe("OnboardingEmpresa (SHG-FE-116)", () => {
 
       await waitFor(() => expect(getUserInfo).toHaveBeenCalledTimes(1));
       expect(window.location.pathname).toBe("/usuarios");
-      expect((await screen.findAllByText("Error")).length).toBeGreaterThan(0);
+      expect((await screen.findAllByText("No se pudo crear la empresa")).length).toBeGreaterThan(0);
       await waitFor(() =>
         expect(screen.getByRole("button", { name: /crear empresa/i })).toBeEnabled(),
       );

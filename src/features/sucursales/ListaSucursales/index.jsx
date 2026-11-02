@@ -8,6 +8,7 @@ import SelectionBanner from "@components/SelectionBanner";
 
 import { useBulkDelete } from "@hooks/useBulkDelete";
 import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
+import { listaEstados } from "@copy/common";
 
 import { sucursalApi } from "../api/sucursales.api";
 
@@ -17,6 +18,8 @@ import ListaSucursalesTabla from "./components/ListaSucursalesTabla";
 
 import { useGetSucursales } from "./hooks/useGetSucursales";
 import { SUCURSALES_CSV_COLUMNS } from "./listaSucursales.csv";
+
+const ESTADOS_LISTA = listaEstados({ singular: 'sucursal', plural: 'sucursales', genero: 'f' });
 
 const PAGE_LIMIT = 10;
 
@@ -86,17 +89,17 @@ const ListaSucursales = () => {
           onError={{
             show: isError,
             onClick: refetchSucursales,
-            description: "Ocurrió un error al cargar las sucursales",
+            title: ESTADOS_LISTA.error,
           }}
           onEmptyData={{
             show: data.total === 0 && Object.keys(filters).length === 0,
-            title: "Sin sucursales que mostrar",
-            description: "Parece que no hay sucursales registradas todavía",
+            title: ESTADOS_LISTA.vacioTitulo,
+            description: ESTADOS_LISTA.vacioDescripcion,
           }}
           onEmptyFiltersData={{
             show: data.total === 0 && Object.keys(filters).length > 0,
-            title: "Sin resultados",
-            description: "No se encontraron sucursales con los filtros aplicados",
+            title: ESTADOS_LISTA.sinResultadosTitulo,
+            description: ESTADOS_LISTA.sinResultadosDescripcion,
           }}
         >
           <ListaSucursalesTabla

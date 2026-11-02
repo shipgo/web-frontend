@@ -32,27 +32,27 @@ const valorRequerido = (mensaje) =>
   z.any().refine((v) => v !== null && v !== undefined && v !== '', mensaje);
 
 export const USUARIO_SCHEMA = z.object({
-  username: textoRequerido('El campo username no puede estar vacío'),
-  nombre: nombreRequerido('El campo nombre no puede estar vacío'),
-  apellido: nombreRequerido('El campo apellido no puede estar vacío'),
+  username: textoRequerido('Ingresá el usuario.'),
+  nombre: nombreRequerido('Ingresá el nombre.'),
+  apellido: nombreRequerido('Ingresá el apellido.'),
   fechaNacimiento: valorRequerido(
-    'El campo fecha de nacimiento no puede estar vacío',
+    'Elegí la fecha de nacimiento.',
   ),
-  prefijo: prefijoRequerido('El campo prefijo no puede estar vacío'),
-  telefono: telefonoRequerido('El campo teléfono no puede estar vacío'),
-  nombreCalle: textoRequerido('El campo nombre de calle no puede estar vacío'),
-  numeroCalle: textoRequerido('El campo número de calle no puede estar vacío'),
+  prefijo: prefijoRequerido('Ingresá el prefijo.'),
+  telefono: telefonoRequerido('Ingresá el teléfono.'),
+  nombreCalle: textoRequerido('Ingresá el nombre de la calle.'),
+  numeroCalle: textoRequerido('Ingresá el número de la calle.'),
   email: z
     .string()
     .trim()
-    .min(1, 'El campo email no puede estar vacío')
-    .max(TEXTO_MAX, `No puede superar los ${TEXTO_MAX} caracteres`)
-    .refine((v) => EMAIL_RE.test(v), 'El email no es válido'),
-  authorities: z.array(z.string()).min(1, 'Seleccioná al menos un rol'),
-  dni: textoRequerido('El campo DNI no puede estar vacío'),
-  tipoDocumentoID: valorRequerido('Seleccioná un tipo de documento'),
-  sexoID: valorRequerido('Seleccioná un sexo'),
-  localidadID: valorRequerido('Seleccioná una localidad'),
+    .min(1, 'Ingresá el email.')
+    .max(TEXTO_MAX, `No puede tener más de ${TEXTO_MAX} caracteres.`)
+    .refine((v) => EMAIL_RE.test(v), 'Ingresá un email válido.'),
+  authorities: z.array(z.string()).min(1, 'Elegí al menos un rol.'),
+  dni: textoRequerido('Ingresá el DNI.'),
+  tipoDocumentoID: valorRequerido('Elegí un tipo de documento.'),
+  sexoID: valorRequerido('Elegí un sexo.'),
+  localidadID: valorRequerido('Elegí una localidad.'),
   provinciaID: z.any().optional(),
   sucursalID: z.any().optional(),
 });
@@ -86,7 +86,7 @@ export const buildUsuarioValidate = (isSuper) => {
   return (values) => {
     const errors = base(values);
     if (isSuper && !values.sucursalID) {
-      return { ...errors, sucursalID: 'Seleccioná una sucursal' };
+      return { ...errors, sucursalID: 'Elegí una sucursal.' };
     }
     return errors;
   };

@@ -49,14 +49,14 @@ const completarForm = async (user) => {
 
   await user.type(screen.getByLabelText(/^Nombre\b(?! de)/), "Nicolás");
   await user.type(screen.getByLabelText(/^Apellido/), "Nuevo");
-  await user.type(screen.getByLabelText(/^Fecha de Nacimiento/), "15/09/1990");
-  await elegirOpcion(user, /^Tipo de Documento/, "DNI");
+  await user.type(screen.getByLabelText(/^Fecha de nacimiento/), "15/09/1990");
+  await elegirOpcion(user, /^Tipo de documento/, "DNI");
   await user.type(screen.getByLabelText(/^DNI/), "30111222");
   await elegirOpcion(user, /^Sexo/, "Masculino");
   await user.type(screen.getByLabelText(/^Prefijo/), "351");
   await user.type(screen.getByLabelText(/^Teléfono/), "4222222");
-  await user.type(screen.getByLabelText(/^Nombre de Calle/), "Av. Colón");
-  await user.type(screen.getByLabelText(/^Número de Calle/), "500");
+  await user.type(screen.getByLabelText(/^Nombre de la calle/), "Av. Colón");
+  await user.type(screen.getByLabelText(/^Número de la calle/), "500");
   await elegirOpcion(user, /^Provincia/, "Córdoba");
   await waitFor(() => expect(locationApi.getLocalidadesByProvincia).toHaveBeenCalled());
   await elegirOpcion(user, /^Localidad/, "Córdoba Capital");
@@ -131,7 +131,7 @@ describe("CompletarCuenta (SHG-FE-133)", () => {
     await user.click(await screen.findByRole("button", { name: /guardar y continuar/i }));
 
     expect(
-      await screen.findByText("El campo nombre no puede estar vacío"),
+      await screen.findByText("Ingresá el nombre."),
     ).toBeInTheDocument();
     expect(usuarioApi.update).not.toHaveBeenCalled();
   });

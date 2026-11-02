@@ -355,7 +355,7 @@ describe("DetalleEnvio", () => {
       });
 
       expect(await screen.findByText("No se pudo cargar el envío")).toBeInTheDocument();
-      expect(screen.getByText("Ocurrió un error al obtener la información del envío.")).toBeInTheDocument();
+      expect(screen.getByText("No pudimos cargar el envío. Probá de nuevo en unos minutos.")).toBeInTheDocument();
 
       const reintentar = screen.getByRole("button", { name: /reintentar/i });
       expect(reintentar).toBeInTheDocument();
@@ -407,7 +407,7 @@ describe("DetalleEnvio", () => {
 
       await screen.findByText("Juan García");
       expect(screen.queryByRole("button", { name: /entregar/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /marcar fallo/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /registrar entrega fallida/i })).not.toBeInTheDocument();
     });
 
     it("no muestra los botones de acción si el estado no es en_camino/en_vehiculo", async () => {
@@ -419,7 +419,7 @@ describe("DetalleEnvio", () => {
 
       await screen.findByText("Juan García");
       expect(screen.queryByRole("button", { name: /entregar/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /marcar fallo/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /registrar entrega fallida/i })).not.toBeInTheDocument();
     });
 
     it("muestra los botones habilitados para un ADMIN con el envío en_camino", async () => {
@@ -429,7 +429,7 @@ describe("DetalleEnvio", () => {
 
       const entregarBtn = await screen.findByRole("button", { name: /entregar/i });
       expect(entregarBtn).toBeEnabled();
-      expect(screen.getByRole("button", { name: /marcar fallo/i })).toBeEnabled();
+      expect(screen.getByRole("button", { name: /registrar entrega fallida/i })).toBeEnabled();
     });
 
     it("entrega el envío con dniReceptor tras confirmar y refetchea el detalle (SHG-FE-058)", async () => {
@@ -491,7 +491,7 @@ describe("DetalleEnvio", () => {
       await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
 
       expect(
-        within(dialog).getByText("El DNI de quien recibe es obligatorio"),
+        within(dialog).getByText("Ingresá el DNI de quien recibe."),
       ).toBeInTheDocument();
       // Antes de SHG-FE-058 esto disparaba `entregar(id)` sin body → 400 real
       // contra `EntregaEnvioReqDTO.dniReceptor` (`@NotEmpty`, `SHG-BE-042`).
@@ -571,12 +571,12 @@ describe("DetalleEnvio", () => {
         route: "/envios/9",
       });
 
-      await user.click(await screen.findByRole("button", { name: /marcar fallo/i }));
+      await user.click(await screen.findByRole("button", { name: /registrar entrega fallida/i }));
 
       const dialog = await screen.findByRole("dialog");
-      await user.click(within(dialog).getByRole("button", { name: "Marcar fallo de entrega" }));
+      await user.click(within(dialog).getByRole("button", { name: "Registrar entrega fallida" }));
 
-      expect(within(dialog).getByText("El motivo es obligatorio")).toBeInTheDocument();
+      expect(within(dialog).getByText("Ingresá el motivo.")).toBeInTheDocument();
       expect(envioApi.falloEntrega).not.toHaveBeenCalled();
     });
 
@@ -588,16 +588,16 @@ describe("DetalleEnvio", () => {
         route: "/envios/9",
       });
 
-      await user.click(await screen.findByRole("button", { name: /marcar fallo/i }));
+      await user.click(await screen.findByRole("button", { name: /registrar entrega fallida/i }));
 
       const dialog = await screen.findByRole("dialog");
       await user.type(within(dialog).getByLabelText(/motivo/i), "Destinatario ausente");
-      await user.click(within(dialog).getByRole("button", { name: "Marcar fallo de entrega" }));
+      await user.click(within(dialog).getByRole("button", { name: "Registrar entrega fallida" }));
 
       await waitFor(() => {
         expect(envioApi.falloEntrega).toHaveBeenCalledWith("9", { motivo: "Destinatario ausente" });
       });
-      expect(await screen.findByText("Fallo de entrega registrado")).toBeInTheDocument();
+      expect(await screen.findByText("Entrega fallida registrada")).toBeInTheDocument();
       await waitFor(() => {
         expect(envioApi.getById).toHaveBeenCalledTimes(2);
       });
@@ -619,7 +619,7 @@ describe("DetalleEnvio", () => {
       await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
       await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
 
-      expect(await screen.findByText("No se puede completar la acción")).toBeInTheDocument();
+      expect(await screen.findByText("Acción no disponible")).toBeInTheDocument();
       expect(screen.getByText("El envío no está en camino")).toBeInTheDocument();
     });
   });
@@ -647,9 +647,9 @@ describe("DetalleEnvio", () => {
       });
 
       expect(await screen.findByRole("button", { name: /confirmar retiro/i })).toBeInTheDocument();
-      // Rango de estados disjunto de Entregar/Marcar fallo (en_camino/en_vehiculo).
+      // Rango de estados disjunto de Entregar/Registrar entrega fallida (en_camino/en_vehiculo).
       expect(screen.queryByRole("button", { name: "Entregar" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /marcar fallo/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /registrar entrega fallida/i })).not.toBeInTheDocument();
     });
 
     it('no muestra "Confirmar retiro" si el envío es en_sucursal pero tipoEntrega=domicilio', async () => {
@@ -711,8 +711,8 @@ describe("DetalleEnvio", () => {
       const dialog = await screen.findByRole("dialog");
       await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
 
-      expect(within(dialog).getByText("El DNI de quien recibe es obligatorio")).toBeInTheDocument();
-      expect(within(dialog).getByText("La palabra de entrega es obligatoria")).toBeInTheDocument();
+      expect(within(dialog).getByText("Ingresá el DNI de quien retira.")).toBeInTheDocument();
+      expect(within(dialog).getByText("Ingresá la palabra de entrega.")).toBeInTheDocument();
       expect(envioApi.entregar).not.toHaveBeenCalled();
     });
 

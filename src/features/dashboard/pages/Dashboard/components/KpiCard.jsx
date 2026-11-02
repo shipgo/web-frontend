@@ -12,6 +12,7 @@ import {
 import { IconInfoCircle } from '@tabler/icons-react';
 
 import ScreenContainer from '@components/ScreenContainer';
+import { PANTALLA, REINTENTAR_MAS_TARDE } from '@copy/common';
 
 const KpiCard = ({
   title,
@@ -49,8 +50,8 @@ const KpiCard = ({
             onLoading={{ show: isLoading }}
             onError={{
               show: !isLoading && isError,
-              title: 'Error',
-              description: 'No se pudo cargar este dato.',
+              title: PANTALLA.errorDatoTitulo,
+              description: REINTENTAR_MAS_TARDE,
               onClick: onRetry,
             }}
             styleProps={{ bg: 'transparent', mih: '64px', shadow: 'none' }}

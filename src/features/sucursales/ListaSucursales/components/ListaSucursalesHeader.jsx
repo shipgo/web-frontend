@@ -7,7 +7,7 @@ import PageHeader from "@components/PageHeader";
 const ListaSucursalesHeader = () => (
   <PageHeader
     title="Sucursales"
-    subtitle="Listado de sucursales registradas en el sistema"
+    subtitle="Administrá tus sucursales"
   >
     <Button to="/crear" component={Link} leftSection={<IconPlus />}>
       Crear sucursal

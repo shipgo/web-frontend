@@ -203,13 +203,13 @@ const DashboardPdfDocument = ({ filtros, params, resumen, series }) => {
     <Document
       title={`Dashboard ShipGo · ${periodo}`}
       author="ShipGo"
-      subject="Resumen operativo del dashboard"
+      subject="Resumen del dashboard"
     >
       <Page size="A4" style={styles.page}>
         <View style={styles.header} fixed>
           <View>
             <Text style={styles.brand}>ShipGo</Text>
-            <Text style={styles.brandSub}>Resumen operativo del dashboard</Text>
+            <Text style={styles.brandSub}>Resumen del dashboard</Text>
           </View>
           <View style={styles.metaBox}>
             <Text style={styles.metaStrong}>{periodo}</Text>
@@ -243,7 +243,7 @@ const DashboardPdfDocument = ({ filtros, params, resumen, series }) => {
             value={kpis ? String(kpis.incidencias.value) : '—'}
             hint={
               kpis
-                ? `${kpis.incidencias.viajesConProblemas} viajes · ${kpis.incidencias.enviosRechazados} envíos rechazados`
+                ? `${kpis.incidencias.viajesConProblemas} viajes · ${kpis.incidencias.enviosRechazados} envíos no entregados`
                 : undefined
             }
           />
@@ -252,7 +252,7 @@ const DashboardPdfDocument = ({ filtros, params, resumen, series }) => {
             value={kpis ? pct(kpis.entregasATiempo.porcentaje) : '—'}
             hint={
               kpis
-                ? `${kpis.entregasATiempo.aTiempo} de ${kpis.entregasATiempo.base} entregas con viaje`
+                ? `${kpis.entregasATiempo.aTiempo} de ${kpis.entregasATiempo.base} entregas llegaron en el horario planificado`
                 : undefined
             }
           />
@@ -307,11 +307,11 @@ const DashboardPdfDocument = ({ filtros, params, resumen, series }) => {
           rows={flotaDonut}
         />
 
-        <Text style={styles.sectionTitle}>Desvío de viajes finalizados</Text>
+        <Text style={styles.sectionTitle}>Retraso o adelanto de los viajes finalizados</Text>
         <DataTable
           columns={[
             { key: 'viaje', header: 'Viaje' },
-            { key: 'desvio', header: 'Desvío', align: 'right' },
+            { key: 'desvio', header: 'Minutos', align: 'right' },
           ]}
           rows={desvios}
           emptyLabel="Sin viajes finalizados en el período"

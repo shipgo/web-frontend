@@ -28,7 +28,7 @@ export const PASSWORD_MIN = 8;
 const SOLO_DIGITOS = /^\d+$/;
 
 /** Mensaje "X no puede superar N caracteres". */
-const maxMsg = (max) => `No puede superar los ${max} caracteres`;
+const maxMsg = (max) => `No puede tener más de ${max} caracteres.`;
 
 /**
  * Texto obligatorio (con `trim`) y largo acotado.
@@ -54,22 +54,22 @@ const digitos = (requiredMsg, label, min, max) =>
   z
     .string()
     .min(1, requiredMsg)
-    .regex(SOLO_DIGITOS, `${label} sólo puede tener números`)
-    .min(min, `${label} debe tener al menos ${min} dígitos`)
-    .max(max, `${label} no puede tener más de ${max} dígitos`);
+    .regex(SOLO_DIGITOS, `${label} solo puede tener números.`)
+    .min(min, `${label} debe tener al menos ${min} dígitos.`)
+    .max(max, `${label} no puede tener más de ${max} dígitos.`);
 
 /** Prefijo telefónico obligatorio: sólo dígitos, `PREFIJO_MIN`..`PREFIJO_MAX`. */
-export const prefijoRequerido = (requiredMsg = 'El prefijo es requerido') =>
+export const prefijoRequerido = (requiredMsg = 'Ingresá el prefijo.') =>
   digitos(requiredMsg, 'El prefijo', PREFIJO_MIN, PREFIJO_MAX);
 
 /** Teléfono obligatorio: sólo dígitos, `TELEFONO_MIN`..`TELEFONO_MAX`. */
-export const telefonoRequerido = (requiredMsg = 'El teléfono es requerido') =>
+export const telefonoRequerido = (requiredMsg = 'Ingresá el teléfono.') =>
   digitos(requiredMsg, 'El teléfono', TELEFONO_MIN, TELEFONO_MAX);
 
 /** Email obligatorio: vacío → "requerido", mal formado → "inválido". */
 export const emailRequerido = (
-  requiredMsg = 'El email es requerido',
-  invalidMsg = 'Email inválido',
+  requiredMsg = 'Ingresá el email.',
+  invalidMsg = 'Ingresá un email válido.',
 ) =>
   z
     .string()

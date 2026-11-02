@@ -137,7 +137,7 @@ const ListaVehiculosFiltros = ({ disabled, onFiltersChange }) => {
           {...form.getInputProps("tipoVehiculo")}
           flex={1}
           label="Tipo de vehículo"
-          placeholder="Seleccionar tipo"
+          placeholder="Seleccioná un tipo"
           data={tiposVehiculo}
           searchable
           clearable
@@ -147,7 +147,7 @@ const ListaVehiculosFiltros = ({ disabled, onFiltersChange }) => {
           {...form.getInputProps("combustible")}
           flex={1}
           label="Combustible"
-          placeholder="Seleccionar combustible"
+          placeholder="Seleccioná un combustible"
           data={combustibles}
           searchable
           clearable

@@ -191,7 +191,7 @@ describe('parseApiError — 403', () => {
       statusCode: 403,
       message: 'No tiene permisos para acceder a este recurso',
     });
-    expect(parseApiError(err).message).toBe('No tenés permisos para esta acción.');
+    expect(parseApiError(err).message).toBe('No tenés permiso para hacer esto.');
   });
 });
 
@@ -206,7 +206,7 @@ describe('parseApiError — 403 con backendForbiddenMessage', () => {
   it('sin message cae al texto fijo', () => {
     const err = axiosError(403, { statusCode: 403 });
     expect(parseApiError(err, { backendForbiddenMessage: true }).message).toBe(
-      'No tenés permisos para esta acción.',
+      'No tenés permiso para hacer esto.',
     );
   });
 });
@@ -219,7 +219,7 @@ describe('parseApiError — 5xx', () => {
     });
     const { message } = parseApiError(err);
     expect(message).toBe(
-      'Ocurrió un error en el servidor. Intentá nuevamente en unos minutos.',
+      'Algo salió mal. Probá de nuevo en unos minutos.',
     );
   });
 
@@ -231,7 +231,7 @@ describe('parseApiError — 5xx', () => {
       path: '/api/envio',
     });
     expect(parseApiError(err).message).toBe(
-      'Ocurrió un error en el servidor. Intentá nuevamente en unos minutos.',
+      'Algo salió mal. Probá de nuevo en unos minutos.',
     );
   });
 });
@@ -258,7 +258,7 @@ describe('parseApiError — 503 de lock tras los reintentos (SHG-FE-131)', () =>
 
   it('los otros 5xx siguen con el mensaje genérico de servidor', () => {
     expect(parseApiError(axiosError(502, { message: 'x' })).message).toBe(
-      'Ocurrió un error en el servidor. Intentá nuevamente en unos minutos.',
+      'Algo salió mal. Probá de nuevo en unos minutos.',
     );
   });
 });
@@ -276,7 +276,7 @@ describe('parseApiError — sin respuesta / fallback', () => {
 
   it('sin message del backend y sin fallback: mensaje genérico por defecto', () => {
     expect(parseApiError(axiosError(400, {})).message).toBe(
-      'Ocurrió un error inesperado. Intentá nuevamente.',
+      'Algo salió mal. Probá de nuevo en unos minutos.',
     );
   });
 

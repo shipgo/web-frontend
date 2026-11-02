@@ -7,6 +7,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { modeloApi } from "../api/catalogoVehiculos.api";
 import ModeloForm from "../components/ModeloForm";
 import { MODELO_SCHEMA, MODELO_INITIAL_VALUES } from "../constants/schema";
@@ -37,8 +38,8 @@ const CrearModelo = () => {
         await modeloApi.save(payload);
 
         notifications.show({
-          title: "Éxito",
-          message: "Modelo creado correctamente",
+          title: "Modelo creado",
+          message: "El modelo se creó correctamente.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -47,9 +48,9 @@ const CrearModelo = () => {
       } catch (error) {
         console.error("Error creando modelo:", error);
         notifications.show({
-          title: "Error",
+          title: "No se pudo crear el modelo",
           message: applyApiError(form, error, {
-            fallbackMessage: "No se pudo crear el modelo",
+            fallbackMessage: REINTENTAR_MAS_TARDE,
           }),
           color: "red",
           icon: <IconX />,

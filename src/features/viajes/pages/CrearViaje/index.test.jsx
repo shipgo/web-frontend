@@ -308,7 +308,7 @@ const seleccionarEnvioParaEntregaLocal = async (
   await user.click(
     await screen.findByRole("button", { name: /marcar envíos para/i }),
   );
-  await user.click(await screen.findByText(/entrega a destino final/i));
+  await user.click(await screen.findByText(/entrega al destinatario/i));
 };
 
 const setearFechasValidas = () => {
@@ -385,7 +385,7 @@ describe("CrearViaje", () => {
     expect(await screen.findByText("SHG-DEV-0001")).toBeInTheDocument();
   });
 
-  it("mueve un envío seleccionado a 'Envíos seleccionados' al elegir entrega a destino final", async () => {
+  it("mueve un envío seleccionado a 'Envíos seleccionados' al elegir entrega al destinatario", async () => {
     const user = userEvent.setup();
     renderWithProviders(<CrearViaje />);
 
@@ -395,7 +395,7 @@ describe("CrearViaje", () => {
     await user.click(
       await screen.findByRole("button", { name: /marcar envíos para/i }),
     );
-    await user.click(await screen.findByText(/entrega a destino final/i));
+    await user.click(await screen.findByText(/entrega al destinatario/i));
 
     await waitFor(() => {
       expect(
@@ -416,7 +416,7 @@ describe("CrearViaje", () => {
 
     await waitFor(() => {
       expect(
-        screen.getAllByText(/seleccioná la fecha de salida planificada/i)
+        screen.getAllByText(/elegí la fecha de salida planificada/i)
           .length,
       ).toBeGreaterThan(0);
     });
@@ -543,13 +543,13 @@ describe("CrearViaje", () => {
     const user = userEvent.setup();
     renderWithProviders(<CrearViaje />);
 
-    // 1. envío: entrega a destino final
+    // 1. envío: entrega al destinatario
     const item = await screen.findByText("SHG-DEV-0001");
     await user.click(item);
     await user.click(
       await screen.findByRole("button", { name: /marcar envíos para/i }),
     );
-    await user.click(await screen.findByText(/entrega a destino final/i));
+    await user.click(await screen.findByText(/entrega al destinatario/i));
 
     // 2. fechas planificadas (habilita las queries de disponibilidad)
     fireEvent.change(screen.getByLabelText(/salida planificada/i), {
@@ -625,7 +625,7 @@ describe("CrearViaje", () => {
     await user.click(
       await screen.findByRole("button", { name: /marcar envíos para/i }),
     );
-    await user.click(await screen.findByText(/entrega a destino final/i));
+    await user.click(await screen.findByText(/entrega al destinatario/i));
 
     fireEvent.change(screen.getByLabelText(/salida planificada/i), {
       target: { value: "2026-09-10T08:00" },
@@ -675,7 +675,7 @@ describe("CrearViaje", () => {
       await user.click(
         await screen.findByRole("button", { name: /marcar envíos para/i }),
       );
-      await user.click(await screen.findByText(/entrega a destino final/i));
+      await user.click(await screen.findByText(/entrega al destinatario/i));
 
       fireEvent.change(screen.getByLabelText(/salida planificada/i), {
         target: { value: "2026-09-10T08:00" },
@@ -763,7 +763,7 @@ describe("CrearViaje", () => {
       await user.click(
         await screen.findByRole("button", { name: /marcar envíos para/i }),
       );
-      await user.click(await screen.findByText(/entrega a destino final/i));
+      await user.click(await screen.findByText(/entrega al destinatario/i));
     };
 
     // 1º acción: sólo el envío 200 (destino 5) → crea el recorrido "local_5".
@@ -836,11 +836,11 @@ describe("CrearViaje", () => {
     await user.click(
       await screen.findByRole("button", { name: /marcar envíos para/i }),
     );
-    await user.click(await screen.findByText(/transferencia a sucursal/i));
+    await user.click(await screen.findByText(/entrega en sucursal/i));
 
     const modal = await screen.findByRole("dialog");
     const sucursalSelect = await within(modal).findByRole("combobox", {
-      name: /sucursal a transferir/i,
+      name: /sucursal de entrega/i,
     });
     await waitFor(() => expect(sucursalSelect).not.toBeDisabled());
     await user.click(sucursalSelect);
@@ -935,7 +935,7 @@ describe("CrearViaje", () => {
     });
   });
 
-  describe("'Entrega a destino final' con envíos de retiro en sucursal (SHG-FE-086)", () => {
+  describe("'Entrega al destinatario' con envíos de retiro en sucursal (SHG-FE-086)", () => {
     // Bug: antes de este fix, un envío de retiro se agrupaba por
     // `envio.destino?.id` (siempre `undefined` para retiro) junto con
     // CUALQUIER otro retiro seleccionado, armando un recorrido sin destino
@@ -982,7 +982,7 @@ describe("CrearViaje", () => {
       await user.click(
         await screen.findByRole("button", { name: /marcar envíos para/i }),
       );
-      await user.click(await screen.findByText(/entrega a destino final/i));
+      await user.click(await screen.findByText(/entrega al destinatario/i));
 
       await completarYCrearViaje(user);
 
@@ -1001,7 +1001,7 @@ describe("CrearViaje", () => {
       await user.click(
         await screen.findByRole("button", { name: /marcar envíos para/i }),
       );
-      await user.click(await screen.findByText(/entrega a destino final/i));
+      await user.click(await screen.findByText(/entrega al destinatario/i));
 
       await completarYCrearViaje(user);
 
@@ -1025,7 +1025,7 @@ describe("CrearViaje", () => {
       await user.click(
         await screen.findByRole("button", { name: /marcar envíos para/i }),
       );
-      await user.click(await screen.findByText(/entrega a destino final/i));
+      await user.click(await screen.findByText(/entrega al destinatario/i));
 
       await completarYCrearViaje(user);
 
@@ -1084,7 +1084,7 @@ describe("CrearViaje", () => {
       ]);
 
       const error = validate.enviosIncluidos(envioInvalido);
-      expect(error).toContain("No se pueden crear recorridos sin destino");
+      expect(error).toContain("Hay envíos sin destino");
       expect(error).toContain("SHG-INV-999");
     });
   });
@@ -1124,7 +1124,7 @@ describe("CrearViaje", () => {
       await user.click(screen.getByRole("button", { name: /crear viaje/i }));
 
       expect(
-        await screen.findByText(/seleccioná un vehículo/i),
+        await screen.findByText(/elegí un vehículo/i),
       ).toBeInTheDocument();
       expect(mockSaveViaje).not.toHaveBeenCalled();
     });
@@ -1144,7 +1144,7 @@ describe("CrearViaje", () => {
       await user.click(screen.getByRole("button", { name: /crear viaje/i }));
 
       expect(
-        await screen.findByText(/seleccioná al menos un chofer/i),
+        await screen.findByText(/elegí al menos un chofer/i),
       ).toBeInTheDocument();
       expect(mockSaveViaje).not.toHaveBeenCalled();
     });
@@ -1169,7 +1169,7 @@ describe("CrearViaje", () => {
       await user.click(screen.getByRole("button", { name: /crear viaje/i }));
 
       expect(
-        await screen.findByText(/seleccioná la fecha de llegada planificada/i),
+        await screen.findByText(/elegí la fecha de llegada planificada/i),
       ).toBeInTheDocument();
       expect(mockSaveViaje).not.toHaveBeenCalled();
     });
@@ -1236,7 +1236,7 @@ describe("CrearViaje", () => {
       await user.click(screen.getByRole("button", { name: /crear viaje/i }));
 
       expect(
-        await screen.findByText(/no se pueden crear recorridos sin destino/i),
+        await screen.findByText(/hay envíos sin destino/i),
       ).toBeInTheDocument();
       expect(screen.getAllByText(/SHG-INV-999/).length).toBeGreaterThan(0);
       expect(mockSaveViaje).not.toHaveBeenCalled();

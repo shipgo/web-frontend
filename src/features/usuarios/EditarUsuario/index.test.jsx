@@ -136,7 +136,7 @@ describe("EditarUsuario (SHG-FE-121)", () => {
 
     renderEditar(<EditarUsuario />, 9);
 
-    expect(await screen.findByText("No tenés permisos para editar a este usuario")).toBeInTheDocument();
+    expect(await screen.findByText("No tenés permiso para editar a este usuario.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /guardar cambios/i })).not.toBeInTheDocument();
     expect(usuarioApi.update).not.toHaveBeenCalled();
   });

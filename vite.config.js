@@ -40,6 +40,7 @@ export default defineConfig({
       { find: "@providers", replacement: "/src/app/providers" },
       { find: "@utils", replacement: "/src/app/utils" },
       { find: "@domain", replacement: "/src/app/domain" },
+      { find: "@copy", replacement: "/src/app/copy" },
       { find: "@features", replacement: "/src/features" },
       { find: "@api", replacement: "/src/app/api" },
       { find: "@stores", replacement: "/src/app/stores" },

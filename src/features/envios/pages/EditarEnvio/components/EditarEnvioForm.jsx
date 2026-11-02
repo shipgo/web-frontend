@@ -8,6 +8,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
 import { envioApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import {
   EnvioFormProvider,
@@ -53,8 +54,8 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
       await envioApi.update(id, payload);
 
       notifications.show({
-        title: "Éxito",
-        message: "El envío fue actualizado correctamente",
+        title: "Envío actualizado",
+        message: "El envío se actualizó correctamente.",
         color: "green",
         icon: <IconCheck />,
       });
@@ -64,14 +65,14 @@ const EditarEnvioForm = ({ id, envio, categorias }) => {
       console.error("Error actualizando envío:", error);
 
       const message = applyApiError(form, error, {
-        fallbackMessage: "No se pudo actualizar el envío",
+        fallbackMessage: REINTENTAR_MAS_TARDE,
       });
       // 409 (`editable: false`, `SHG-BE-112`: el envío cambió de estado con el form abierto):
       // el mensaje del backend queda visible también dentro del form.
       if (error?.response?.status === 409) setErrorConflicto(message);
 
       notifications.show({
-        title: "Error",
+        title: "No se pudo actualizar el envío",
         message,
         color: "red",
         icon: <IconX />,

@@ -117,20 +117,3 @@ export const createReadOnlyApi = (baseUrl) => ({
     return response.data;
   },
 });
-
-/**
- * Marca un método de la capa `api/` que necesita un endpoint de backend que
- * TODAVÍA NO EXISTE en `ENDPOINTS.md`. Devuelve una función que, al invocarse,
- * lanza un error explícito (en vez de pegarle a una ruta fantasma que da 404/403
- * silencioso). Ver `CONTRACTS.md §6`.
- *
- * @param {string} beTask - Tarea de backend que lo destraba (ej: 'SHG-BE-022').
- * @param {string} detalle - Qué haría el método / endpoint esperado.
- * @returns {() => never}
- */
-export const notImplemented = (beTask, detalle) => () => {
-  throw new Error(
-    `[api] Método no disponible: requiere el endpoint de ${beTask} — ${detalle}. ` +
-      'Todavía no existe en ENDPOINTS.md; no llamar hasta que la tarea backend esté done.',
-  );
-};

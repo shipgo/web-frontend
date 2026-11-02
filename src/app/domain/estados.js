@@ -14,7 +14,7 @@ export const ESTADO_ENVIO = {
   en_vehiculo: { label: 'En vehículo', color: 'indigo' },
   en_camino: { label: 'En camino', color: 'orange' },
   entregado: { label: 'Entregado', color: 'green' },
-  rechazado: { label: 'Rechazado', color: 'red' },
+  rechazado: { label: 'No entregado', color: 'red' },
 };
 
 export const ESTADO_VIAJE = {
@@ -32,7 +32,7 @@ export const ESTADO_RECORRIDO = {
   planificado: { label: 'Planificado', color: 'blue' },
   en_camino: { label: 'En camino', color: 'orange' },
   finalizado: { label: 'Finalizado', color: 'green' },
-  finalizado_con_problemas: { label: 'Finalizado c/problemas', color: 'orange' },
+  finalizado_con_problemas: { label: 'Finalizado con problemas', color: 'orange' },
 };
 
 export const ESTADO_VEHICULO = {

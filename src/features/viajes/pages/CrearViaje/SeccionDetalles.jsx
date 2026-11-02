@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { IconAlertTriangle, IconInfoCircle } from "@tabler/icons-react";
+import { IconInfoCircle } from "@tabler/icons-react";
 
 import { DateTimePicker } from "@mantine/dates";
 import {
@@ -85,7 +85,7 @@ const SeccionDetalles = () => {
             {...llegadaProps}
             error={
               fechasInvertidas
-                ? "La llegada planificada debe ser posterior a la salida planificada"
+                ? "La llegada planificada debe ser posterior a la salida planificada."
                 : llegadaProps.error
             }
           />
@@ -93,7 +93,7 @@ const SeccionDetalles = () => {
           <TextInput
             disabled
             label="Sucursal de origen"
-            description="La define tu usuario — no se puede cambiar acá"
+            description="Es la sucursal de tu usuario."
             value={sucursalPropia?.nombre ?? "—"}
             readOnly
           />
@@ -117,7 +117,7 @@ const SeccionDetalles = () => {
           <Alert
             variant="light"
             color="blue"
-            icon={<IconAlertTriangle size={16} />}
+            icon={<IconInfoCircle size={16} />}
             title="Sucursal de origen del viaje"
           >
             El viaje se crea con la sucursal de tu usuario (

@@ -116,7 +116,7 @@ describe('ListaEnvios', () => {
 
     renderWithProviders(<ListaEnvios />);
 
-    expect(await screen.findByText('Sin envíos que mostrar')).toBeInTheDocument();
+    expect(await screen.findByText('Todavía no hay envíos')).toBeInTheDocument();
   });
 
   it('estado "vacío con filtros" muestra un CTA que limpia los filtros y vuelve a pedir sin ellos', async () => {
@@ -350,7 +350,7 @@ describe('ListaEnvios', () => {
     });
   });
 
-  describe('"Localizar" (SHG-FE-097)', () => {
+  describe('"Ver en el mapa" (SHG-FE-097)', () => {
     // `MENU_ITEM_TIMEOUT`: mismo motivo que en `ListaViajes` (SHG-FE-096) — el
     // `Menu` de Mantine anima su apertura con un `setTimeout` real, que bajo
     // carga (suite corriendo en paralelo) puede tardar más que el default de
@@ -377,7 +377,7 @@ describe('ListaEnvios', () => {
       renderWithProviders(<ListaEnvios />);
       await abrirMenuDelEnvio(user, 'SHG-DEV-0001');
 
-      const localizar = await encontrarMenuItem('Localizar');
+      const localizar = await encontrarMenuItem('Ver en el mapa');
       expect(localizar).not.toHaveAttribute('data-disabled');
 
       await user.click(localizar);
@@ -386,7 +386,7 @@ describe('ListaEnvios', () => {
       expect(window.location.search).toBe('?viaje=99');
     });
 
-    it('también habilita "Localizar" cuando el viaje está con_problemas (sigue trackeable)', async () => {
+    it('también habilita "Ver en el mapa" cuando el viaje está con_problemas (sigue trackeable)', async () => {
       const envioConViajeConProblemas = {
         ...ENVIO_EN_SUCURSAL,
         detalleRecorridos: [
@@ -399,7 +399,7 @@ describe('ListaEnvios', () => {
       renderWithProviders(<ListaEnvios />);
       await abrirMenuDelEnvio(user, 'SHG-DEV-0001');
 
-      expect(await encontrarMenuItem('Localizar')).not.toHaveAttribute('data-disabled');
+      expect(await encontrarMenuItem('Ver en el mapa')).not.toHaveAttribute('data-disabled');
     });
 
     it('está deshabilitado con tooltip cuando el envío no tiene ningún viaje asociado', async () => {
@@ -409,7 +409,7 @@ describe('ListaEnvios', () => {
       renderWithProviders(<ListaEnvios />);
       await abrirMenuDelEnvio(user, 'SHG-DEV-0001');
 
-      const localizar = await encontrarMenuItem('Localizar');
+      const localizar = await encontrarMenuItem('Ver en el mapa');
       expect(localizar).toHaveAttribute('data-disabled');
 
       await user.hover(localizar);
@@ -429,11 +429,11 @@ describe('ListaEnvios', () => {
       renderWithProviders(<ListaEnvios />);
       await abrirMenuDelEnvio(user, 'SHG-DEV-0001');
 
-      const localizar = await encontrarMenuItem('Localizar');
+      const localizar = await encontrarMenuItem('Ver en el mapa');
       expect(localizar).toHaveAttribute('data-disabled');
 
       await user.hover(localizar);
-      expect(await screen.findByText('El viaje asociado no está en camino en este momento.')).toBeInTheDocument();
+      expect(await screen.findByText('Disponible cuando el envío esté en camino.')).toBeInTheDocument();
     });
   });
 

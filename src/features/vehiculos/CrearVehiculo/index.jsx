@@ -8,6 +8,7 @@ import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
 import { vehiculoApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import VehiculoForm from "../components/VehiculoForm";
 import Footer from "../components/Footer";
@@ -65,9 +66,9 @@ const CrearVehiculo = () => {
     } catch (error) {
       console.error("Error creando vehículo:", error);
       notifications.show({
-        title: "Error",
+        title: "No se pudo crear el vehículo",
         message: applyApiError(form, error, {
-          fallbackMessage: "No se pudo crear el vehículo",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
         }),
         color: "red",
         icon: <IconX />,

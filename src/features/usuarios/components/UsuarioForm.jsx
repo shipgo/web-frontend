@@ -35,6 +35,7 @@ import {
   ROLE_CHOFER,
   ROLE_SUPERUSER,
 } from "@domain/roles";
+import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE } from "@copy/common";
 
 // Roles asignables desde el panel web (CONTRACTS.md §3): CHOFER/CARGA se dan de
 // alta acá pero solo operan desde la app; ROLE_CUSTOMER nunca se asigna desde acá
@@ -100,13 +101,11 @@ const UsuarioForm = ({
       return;
     }
     modals.openConfirmModal({
-      title: isEdit ? "Cancelar edición" : "Cancelar creación",
+      title: SALIR_SIN_GUARDAR.titulo,
       children: (
-        <Text size="sm">
-          Tenés cambios sin guardar. ¿Seguro que querés salir?
-        </Text>
+        <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
-      labels: { confirm: "Sí, cancelar", cancel: "Seguir editando" },
+      labels: { confirm: SALIR_SIN_GUARDAR.salir, cancel: SALIR_SIN_GUARDAR.seguir },
       confirmProps: { color: "red" },
       cancelProps: { variant: "subtle" },
       groupProps: { gap: "xs" },
@@ -197,8 +196,8 @@ const UsuarioForm = ({
       } catch (error) {
         console.error("Error cargando catálogos:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar los catálogos necesarios",
+          title: "No se pudieron cargar las opciones del formulario",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       } finally {
@@ -232,8 +231,8 @@ const UsuarioForm = ({
       } catch (error) {
         console.error("Error cargando localidades:", error);
         notifications.show({
-          title: "Error",
-          message: "No se pudieron cargar las localidades",
+          title: "No se pudieron cargar las localidades",
+          message: REINTENTAR_MAS_TARDE,
           color: "red",
         });
       }
@@ -310,16 +309,16 @@ const UsuarioForm = ({
 
             <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
               <DateInput
-                label="Fecha de Nacimiento"
-                placeholder="Seleccione la fecha"
+                label="Fecha de nacimiento"
+                placeholder="Seleccioná la fecha"
                 required
                 valueFormat="DD/MM/YYYY"
                 maxDate={dayjs().format("YYYY-MM-DD")}
                 {...form.getInputProps("fechaNacimiento")}
               />
               <Select
-                label="Tipo de Documento"
-                placeholder="Seleccione"
+                label="Tipo de documento"
+                placeholder="Seleccioná una opción"
                 required
                 data={tiposDocumento}
                 searchable
@@ -334,7 +333,7 @@ const UsuarioForm = ({
               />
               <Select
                 label="Sexo"
-                placeholder="Seleccione"
+                placeholder="Seleccioná una opción"
                 required
                 data={sexos}
                 {...form.getInputProps("sexoID")}
@@ -385,13 +384,13 @@ const UsuarioForm = ({
 
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <TextInput
-                label="Nombre de Calle"
+                label="Nombre de la calle"
                 placeholder="Ej: Av. Corrientes"
                 required
                 {...form.getInputProps("nombreCalle")}
               />
               <TextInput
-                label="Número de Calle"
+                label="Número de la calle"
                 placeholder="Ej: 1234"
                 required
                 {...form.getInputProps("numeroCalle")}
@@ -401,7 +400,7 @@ const UsuarioForm = ({
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <Select
                 label="Provincia"
-                placeholder="Seleccione"
+                placeholder="Seleccioná una opción"
                 required
                 data={provincias}
                 searchable
@@ -414,7 +413,7 @@ const UsuarioForm = ({
               />
               <Select
                 label="Localidad"
-                placeholder="Seleccione primero una provincia"
+                placeholder="Seleccioná primero una provincia"
                 required
                 data={localidades}
                 searchable
@@ -437,7 +436,7 @@ const UsuarioForm = ({
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <MultiSelect
                 label="Roles"
-                placeholder="Seleccione los roles"
+                placeholder="Seleccioná los roles"
                 required
                 data={rolesData}
                 disabled={rolesBloqueados}
@@ -445,7 +444,7 @@ const UsuarioForm = ({
                   lockRolesAndSucursal
                     ? "No podés cambiar tus propios roles"
                     : rolesBloqueados
-                    ? "Sólo un superusuario puede cambiar este rol"
+                    ? "Solo un superusuario puede cambiar este rol"
                     : undefined
                 }
                 searchable

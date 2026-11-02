@@ -32,7 +32,7 @@ const AuthCardShell = ({ title, subtitle, children }) => (
             {/* SHG-FE-100: el logo no linkeaba a `/` acá (sí en `LoginPage`) —
                 mismo `Anchor` que usa el login para que sea consistente. */}
             <Anchor component={Link} href="/" aria-label="ShipGo — inicio" w={220}>
-              <Image src={logo} alt="ShipGo logo" w={220} fit="contain" />
+              <Image src={logo} alt="Logo de ShipGo" w={220} fit="contain" />
             </Anchor>
             <Title order={1}>{title}</Title>
             {subtitle ? <Text c="dimmed">{subtitle}</Text> : null}

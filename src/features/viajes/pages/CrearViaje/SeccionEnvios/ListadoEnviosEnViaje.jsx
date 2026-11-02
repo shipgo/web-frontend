@@ -71,7 +71,7 @@ const ListadoEnviosEnViaje = ({
             onEmptyData={{
               show: true,
               title: "No hay envíos seleccionados",
-              description: "Seleccioná los envíos que se incluirán en el viaje",
+              description: "Todavía no agregaste envíos. Elegilos de la lista de pendientes.",
             }}
           />
         ),

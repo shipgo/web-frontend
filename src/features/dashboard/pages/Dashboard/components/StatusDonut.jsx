@@ -17,7 +17,7 @@ const StatusDonut = ({ resumen, periodoLabel, isLoading, isError, onRetry }) => 
   return (
     <ChartCard
       title="Envíos por estado"
-      tooltip="Distribución de los envíos dados de alta en el período, por estado."
+      tooltip="Envíos creados en el período, por estado."
       icon={<IconChartDonut />}
       color="teal"
       subtitle={periodoLabel}

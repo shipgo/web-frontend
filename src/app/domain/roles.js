@@ -34,7 +34,7 @@ export const ROL = {
   [ROLE_SUPERUSER]: { label: 'Superusuario', color: 'grape' },
   [ROLE_ADMIN]: { label: 'Administrador', color: 'red' },
   [ROLE_CHOFER]: { label: 'Chofer', color: 'blue' },
-  [ROLE_CARGA]: { label: 'Carga', color: 'teal' },
+  [ROLE_CARGA]: { label: 'Operario de carga', color: 'teal' },
   [ROLE_CUSTOMER]: { label: 'Cliente', color: 'gray' },
 };
 

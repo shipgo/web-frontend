@@ -109,7 +109,7 @@ describe("UsuarioForm — roles y sucursal (CONTRACTS.md §3)", () => {
     const listbox = await openRolesListbox(user);
     expect(listbox.queryByText("Administrador")).not.toBeInTheDocument();
     expect(listbox.getByText("Chofer")).toBeInTheDocument();
-    expect(listbox.getByText("Carga")).toBeInTheDocument();
+    expect(listbox.getByText("Operario de carga")).toBeInTheDocument();
     expect(listbox.queryByText("Superusuario")).not.toBeInTheDocument();
     expect(listbox.queryByText("Cliente")).not.toBeInTheDocument();
 
@@ -160,7 +160,7 @@ describe("UsuarioForm — roles y sucursal (CONTRACTS.md §3)", () => {
 
     await waitFor(() => expect(authorityApi.getAll).toHaveBeenCalled());
     expect(await screen.findByText("Administrador")).toBeInTheDocument();
-    expect(screen.getByText(/sólo un superusuario puede cambiar este rol/i)).toBeInTheDocument();
+    expect(screen.getByText(/solo un superusuario puede cambiar este rol/i)).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /^roles/i })).toBeDisabled();
     expect(formRef.values.authorities).toEqual(["ROLE_ADMIN"]);
   });

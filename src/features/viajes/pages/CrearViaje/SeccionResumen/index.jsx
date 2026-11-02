@@ -2,6 +2,7 @@ import { Card, Stack, Group } from "@mantine/core";
 
 import ScreenContainer from "@components/ScreenContainer";
 import { useAuth } from "@contexts/auth";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import useRouteCalculation from "../hooks/useRouteCalculation";
 import { coordsDePunto, getGroupProperties, moverParada } from "../SeccionEnvios/utils";
@@ -59,15 +60,15 @@ const SeccionResumen = () => {
         styleProps={{ h: "400" }}
         onLoading={{
           show: isPending,
-          title: "Calculando ruta sugerida...",
+          title: "Calculando la ruta...",
           description:
-            "Esto puede tardar unos segundos. Por favor, no cierres ni recargues la página.",
+            "Puede tardar unos segundos. No cierres la página.",
         }}
         onError={{
           show: isError,
-          title: "Error al calcular la ruta",
+          title: "No pudimos calcular la ruta",
           description:
-            "Ocurrió un error al calcular el trayecto. Intentá nuevamente.",
+            REINTENTAR_MAS_TARDE,
           onClick: handleRouteCalculation,
         }}
       >
