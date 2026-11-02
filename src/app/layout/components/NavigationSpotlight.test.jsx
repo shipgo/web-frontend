@@ -83,6 +83,51 @@ describe("NavigationSpotlight", () => {
     expect(mockBuscar).not.toHaveBeenCalled();
   });
 
+  describe("filtro de secciones sin distinguir acentos (SHG-FE-138)", () => {
+    beforeEach(() => {
+      mockBuscar.mockResolvedValue(buscarResponseVacia);
+    });
+
+    it.each([
+      ["vehiculos", "Vehículos"],
+      ["vehículos", "Vehículos"],
+      ["VEHICULOS", "Vehículos"],
+      ["envios", "Envíos"],
+      ["ENVÍOS", "Envíos"],
+    ])("buscar %s encuentra la sección %s", async (consulta, seccion) => {
+      const user = userEvent.setup();
+      renderSpotlight(adminUser);
+
+      await user.type(screen.getByPlaceholderText(SEARCH_PLACEHOLDER), consulta);
+
+      expect(await screen.findByText(seccion)).toBeInTheDocument();
+      // El filtro deja sólo la sección buscada, no todas.
+      expect(screen.queryByText("Usuarios")).not.toBeInTheDocument();
+    });
+
+    it("una búsqueda con acento encuentra una sección cuyo nombre no lo tiene", async () => {
+      const user = userEvent.setup();
+      renderSpotlight(adminUser);
+
+      await user.type(screen.getByPlaceholderText(SEARCH_PLACEHOLDER), "úsuarios");
+
+      expect(await screen.findByText("Usuarios")).toBeInTheDocument();
+    });
+
+    it("los resultados dinámicos de /api/buscar no se re-filtran en el front", async () => {
+      const user = userEvent.setup();
+      mockBuscar.mockResolvedValue({
+        ...buscarResponseVacia,
+        usuarios: [{ tipo: "usuario", id: 3, label: "José Pérez", subtitle: "jperez" }],
+      });
+      renderSpotlight(adminUser);
+
+      await user.type(screen.getByPlaceholderText(SEARCH_PLACEHOLDER), "jose");
+
+      expect(await screen.findByText("José Pérez")).toBeInTheDocument();
+    });
+  });
+
   it("con menos de 2 caracteres no consulta /api/buscar", async () => {
     const user = userEvent.setup();
     renderSpotlight(adminUser);
