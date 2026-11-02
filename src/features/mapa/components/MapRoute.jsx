@@ -10,23 +10,8 @@ import { useGetRoute } from '../hooks/useGetRoute';
 import { useSelectedViaje } from '../contexts/selectedViaje';
 import { useViajesConUbicacion } from '../hooks/useViajesConUbicacion';
 import { getEstadoVisualViaje } from '../utils/estadoVisual';
+import { getRouteGradient } from '../utils/routeGradient';
 import { direccionDeRecorrido } from '../utils/recorridos';
-
-const getRouteGradient = (progress) => {
-  if (progress <= 0) {
-    return ['interpolate', ['linear'], ['line-progress'], 0, '#3b82f6', 1, '#3b82f6'];
-  }
-  if (progress >= 1) {
-    return ['interpolate', ['linear'], ['line-progress'], 0, '#868e96', 1, '#868e96'];
-  }
-  return [
-    'interpolate', ['linear'], ['line-progress'],
-    0, '#868e96',
-    Math.max(progress - 0.005, 0), '#868e96',
-    Math.min(progress + 0.005, 1), '#3b82f6',
-    1, '#3b82f6',
-  ];
-};
 
 const StopMarker = ({ parada, index, isDelivered, onClick }) => (
   <Marker
