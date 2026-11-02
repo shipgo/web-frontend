@@ -2,7 +2,7 @@
 // Cada método corresponde 1:1 a una fila de `planning/ENDPOINTS.md` (CONTRACTS.md §6).
 
 // Helpers base
-export { createCrudApi, createReadOnlyApi, notImplemented } from './base.api';
+export { createCrudApi, createReadOnlyApi } from './base.api';
 
 // Envíos
 export { envioApi, puntoEntregaApi } from './envio.api';

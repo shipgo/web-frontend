@@ -35,9 +35,6 @@ export const REINTENTAR_MAS_TARDE = 'Probá de nuevo en unos minutos.';
 
 export const ERROR_GENERICO = `Algo salió mal. ${REINTENTAR_MAS_TARDE}`;
 
-/** Función de la API que todavía no existe (nunca se muestra el detalle técnico). */
-export const FUNCION_NO_DISPONIBLE = 'Esta función todavía no está disponible.';
-
 /**
  * Estados de listado (`Lista*`): un solo patrón para todas.
  * @param {{ singular: string, plural: string, genero: 'm'|'f' }} entidad
