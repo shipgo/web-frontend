@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { renderWithProviders } from "../../../../../test/renderWithProviders";
 
@@ -48,5 +49,26 @@ describe("ListadoChoferes — sucursal del viaje (SHG-FE-132)", () => {
       ),
     );
     expect(await screen.findByText(/Juan/)).toBeInTheDocument();
+  });
+});
+
+describe("ListadoChoferes — buscador sin acentos (SHG-FE-139)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    usuarioApi.getChoferesDisponibles.mockResolvedValue([
+      { id: 11, nombre: "José", apellido: "Pérez" },
+      { id: 12, nombre: "Laura", apellido: "Gomez" },
+    ]);
+  });
+
+  it.each(["jose", "JOSÉ", "perez"])("buscar %s encuentra a José Pérez y oculta a Laura", async (consulta) => {
+    const user = userEvent.setup();
+    renderWithProviders(<Harness />);
+
+    await screen.findByText(/José/);
+    await user.type(screen.getByPlaceholderText("Buscá por nombre, mail o teléfono..."), consulta);
+
+    expect(screen.getByText(/José/)).toBeInTheDocument();
+    expect(screen.queryByText(/Laura/)).not.toBeInTheDocument();
   });
 });

@@ -12,3 +12,18 @@ export const normalizarBusqueda = (texto) =>
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase();
+
+/**
+ * Búsqueda de texto del lado del cliente: `true` si la consulta está vacía o si
+ * alguno de los `campos` la contiene, sin distinguir mayúsculas ni acentos
+ * (`jose` encuentra "José"). Los campos `null`/`undefined` no matchean.
+ *
+ * @param {string|null|undefined} consulta Lo que escribió la persona.
+ * @param {Array<string|number|null|undefined>} campos Textos donde buscar.
+ * @returns {boolean}
+ */
+export const coincideBusqueda = (consulta, campos) => {
+  const termino = normalizarBusqueda(consulta).trim();
+  if (!termino) return true;
+  return campos.some((campo) => campo != null && normalizarBusqueda(campo).includes(termino));
+};

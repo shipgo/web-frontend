@@ -913,6 +913,26 @@ describe("CrearViaje", () => {
       );
       expect(screen.getByText("SHG-DEV-0099")).toBeInTheDocument();
     });
+    it("la búsqueda por destino ignora acentos: 'villa maria' encuentra 'Villa María' (SHG-FE-139)", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<CrearViaje />);
+
+      await screen.findByText("SHG-DEV-0001");
+      await screen.findByText("SHG-DEV-0099");
+
+      await user.type(
+        screen.getByPlaceholderText(/buscá por código o por destino/i),
+        "villa maria",
+      );
+
+      await waitFor(
+        () => {
+          expect(screen.queryByText("SHG-DEV-0099")).not.toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
+      expect(screen.getByText("SHG-DEV-0001")).toBeInTheDocument();
+    });
   });
 
   describe("'Entrega a destino final' con envíos de retiro en sucursal (SHG-FE-086)", () => {
