@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@contexts/auth";
 import { hasAnyRole, isAdminOrSuper } from "@domain/roles";
 import { buscarApi } from "@api/buscar.api";
+import { normalizarBusqueda } from "@utils/text";
 
 import { ADMIN, PAGES } from "../constants/items";
 
@@ -38,14 +39,15 @@ const RESULT_GROUPS = [
 ];
 
 /**
- * Match de texto simple (case-insensitive, contains) contra `label`/
- * `description` — misma semántica que el filtro default de `@mantine/
- * spotlight` (no queda expuesto como export público del paquete en esta
- * versión, así que se replica acá).
+ * Match de texto simple (contains, sin distinguir mayúsculas ni acentos:
+ * `vehiculos` encuentra "Vehículos", SHG-FE-138) contra `label`/`description`.
+ * Es el mismo criterio que el filtro default de `@mantine/spotlight` (no queda
+ * expuesto como export público del paquete en esta versión, así que se replica
+ * acá), más la normalización de acentos.
  */
 const matchesQuery = (action, normalizedQuery) =>
-  action.label?.toLowerCase().includes(normalizedQuery) ||
-  action.description?.toLowerCase().includes(normalizedQuery);
+  normalizarBusqueda(action.label).includes(normalizedQuery) ||
+  normalizarBusqueda(action.description).includes(normalizedQuery);
 
 /**
  * Filtro custom del spotlight (SHG-FE-053): las acciones estáticas de
@@ -57,7 +59,7 @@ const matchesQuery = (action, normalizedQuery) =>
  * patente del vehículo, cuyo label es "Viaje #1").
  */
 const spotlightFilter = (query, actions) => {
-  const normalizedQuery = query.trim().toLowerCase();
+  const normalizedQuery = normalizarBusqueda(query.trim());
   if (!normalizedQuery) return actions;
   return actions.flatMap((entry) => {
     if (isActionsGroup(entry)) {
