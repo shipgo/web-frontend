@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Alert, Stack } from "@mantine/core";
+import { Stack } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconAlertTriangle, IconCheck, IconX } from "@tabler/icons-react";
+import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
@@ -10,8 +10,6 @@ import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { schemaResolver } from "@mantine/form";
 
 import { applyApiError } from "@domain/apiError";
-import { useAuth } from "@contexts/auth";
-import { useOperatingContext } from "@contexts/operatingContext";
 
 import { envioApi, categoriaApi } from "@api";
 import { REINTENTAR_MAS_TARDE } from "@copy/common";
@@ -26,23 +24,6 @@ const CrearEnvios = () => {
   const [, navigate] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categorias, setCategorias] = useState([]);
-
-  // SHG-FE-052 — bug de backend confirmado en vivo: `POST /api/envio` resuelve
-  // la sucursal de origen SIEMPRE server-side desde
-  // `getCurrentUser().getSucursal()` (`EnvioService.save` → `EstadoEnvioCreado
-  // .execute`, sin chequeo de null) y no acepta ningún id explícito del
-  // cliente. Un SUPERUSER sin sucursal propia (caso real del seed dev,
-  // usuario `super`) hace que ese `.getSucursal()` devuelva `null`, y el
-  // siguiente `.getPuntoEntrega()` encadenado tira `NullPointerException` →
-  // `500` (reproducido contra el backend real corriendo en dev). La
-  // "sucursal operativa" del selector del header tampoco sirve de nada acá:
-  // el backend la ignoraría igual. Mientras no exista soporte de backend
-  // (documentado para abrir la tarea, análoga a la que haría falta en
-  // `POST /api/viaje`), bloqueamos el submit para no dejar que el SUPERUSER
-  // dispare ese 500 a ciegas.
-  const { user } = useAuth();
-  const { isSuperUser } = useOperatingContext();
-  const sinSucursalPropia = isSuperUser && !user?.sucursal;
 
   const form = useEnvioForm({
     mode: "controlled",
@@ -69,8 +50,6 @@ const CrearEnvios = () => {
   }, []);
 
   const handleSubmit = form.onSubmit(async (values) => {
-    if (sinSucursalPropia) return;
-
     setIsSubmitting(true);
     try {
       const payload = buildEnvioReqDTO(values);
@@ -116,25 +95,10 @@ const CrearEnvios = () => {
 
       <EnvioFormProvider form={form}>
         <Stack>
-          {sinSucursalPropia && (
-            <Alert
-              color="red"
-              variant="light"
-              icon={<IconAlertTriangle size={16} />}
-              title="Todavía no podés crear envíos"
-            >
-              Tu usuario no tiene una sucursal asignada. Pedile a un
-              administrador que te asigne una.
-            </Alert>
-          )}
           <SeccionOrigen />
           <SeccionCarga categorias={categorias} />
         </Stack>
-        <Footer
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          disableSubmit={sinSucursalPropia}
-        />
+        <Footer onSubmit={handleSubmit} isSubmitting={isSubmitting} />
       </EnvioFormProvider>
     </PageContainer>
   );
