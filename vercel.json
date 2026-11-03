@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://macbook-pro-de-gianni.tailc278a3.ts.net/api/:path*"
+    },
+    {
       "source": "/:path*",
       "destination": "/index.html"
     }
