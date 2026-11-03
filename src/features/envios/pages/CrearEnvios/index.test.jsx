@@ -221,8 +221,8 @@ describe("CrearEnvios", () => {
 
       const interruptor = screen.getByRole("switch", { name: /generar palabra de entrega/i });
       expect(interruptor).toBeChecked();
-      expect(screen.getByText(/se la dicta al chofer/i)).toBeInTheDocument();
-      expect(screen.getByText(/la recibe por email y la ve en el seguimiento/i)).toBeInTheDocument();
+      expect(screen.getByText(/se envía por email con el código de seguimiento/i)).toBeInTheDocument();
+      expect(screen.getByText(/se la dicta al chofer al recibir el envío/i)).toBeInTheDocument();
     });
 
     it("con el interruptor por defecto manda generarPalabraEntrega: true", async () => {

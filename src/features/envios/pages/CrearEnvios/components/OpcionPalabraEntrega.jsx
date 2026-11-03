@@ -21,8 +21,8 @@ const OpcionPalabraEntrega = () => {
         <Box>
           <Title order={4}>Palabra de entrega</Title>
           <Text c="dimmed" size="sm" mb="sm">
-            El destinatario la recibe por email y la ve en el seguimiento. Se la dicta al chofer
-            cuando recibe el envío, para confirmar que es quien lo recibe.
+            Se envía por email con el código de seguimiento y se ve en el seguimiento. El
+            destinatario se la dicta al chofer al recibir el envío.
           </Text>
           <Switch
             label="Generar palabra de entrega"
