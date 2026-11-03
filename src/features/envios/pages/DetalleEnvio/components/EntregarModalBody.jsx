@@ -17,8 +17,13 @@ const DELIVERY_WORD_MISMATCH_CODE = 'delivery_word_mismatch';
  * - `dniReceptor`: obligatorio, texto libre (el backend no valida formato,
  *   sólo que no esté vacío).
  * - `palabraEntregaIngresada`: opcional — el operador la pide de palabra al
- *   destinatario si la tiene a mano. Nunca sabe de antemano si el envío la
- *   requiere: `palabraEntrega` no está en `EnvioDTO`, nunca se expone al staff.
+ *   destinatario si la tiene a mano. `palabraEntrega` no está en `EnvioDTO`
+ *   (nunca se expone al staff); sólo se sabe si el envío tiene palabra
+ *   gracias a `tienePalabraEntrega` (`SHG-CONTRACT-024`). Con `tienePalabraEntrega ===
+ *   false` (`SHG-CONTRACT-025`) el campo no se muestra ni se manda; con el
+ *   campo ausente se mantiene el comportamiento anterior (se ofrece). El
+ *   formato (dos palabras, ej. `LUNA-PERRO`) no se valida ni se transforma acá:
+ *   el backend ignora mayúsculas, tildes, guiones y espacios.
  *
  * La llamada a la API vive ACÁ (no en el hook) a propósito: si el backend
  * responde `delivery_word_mismatch` o un `ApiFieldError` de `dniReceptor`, el
@@ -30,7 +35,14 @@ const DELIVERY_WORD_MISMATCH_CODE = 'delivery_word_mismatch';
  * `palabraEntregaIngresada` (mismo mecanismo que `applyApiError` usa para
  * `ApiFieldError` — el mensaje del backend ya es claro por sí mismo).
  */
-const EntregarModalBody = ({ id, onEntregado, onErrorInesperado, onVolver }) => {
+const EntregarModalBody = ({
+  id,
+  tienePalabraEntrega,
+  onEntregado,
+  onErrorInesperado,
+  onVolver,
+}) => {
+  const pideLaPalabra = tienePalabraEntrega !== false;
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm({
@@ -44,7 +56,7 @@ const EntregarModalBody = ({ id, onEntregado, onErrorInesperado, onVolver }) => 
     setSubmitting(true);
     try {
       const body = { dniReceptor: values.dniReceptor.trim() };
-      if (values.palabraEntregaIngresada.trim()) {
+      if (pideLaPalabra && values.palabraEntregaIngresada.trim()) {
         body.palabraEntregaIngresada = values.palabraEntregaIngresada.trim();
       }
       await envioApi.entregar(id, body);
@@ -81,12 +93,14 @@ const EntregarModalBody = ({ id, onEntregado, onErrorInesperado, onVolver }) => 
           required
           {...form.getInputProps('dniReceptor')}
         />
-        <TextInput
-          label="Palabra de entrega"
-          description="Opcional. Si el destinatario la tiene, ingresala."
-          placeholder="Ej: AB23K9"
-          {...form.getInputProps('palabraEntregaIngresada')}
-        />
+        {pideLaPalabra && (
+          <TextInput
+            label="Palabra de entrega"
+            description="Opcional. Si el destinatario la tiene, ingresala."
+            placeholder="Ej: LUNA-PERRO"
+            {...form.getInputProps('palabraEntregaIngresada')}
+          />
+        )}
         <Group justify="flex-end">
           <Button variant="default" onClick={onVolver} disabled={submitting}>
             Volver

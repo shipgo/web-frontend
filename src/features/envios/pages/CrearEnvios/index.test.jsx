@@ -186,6 +186,7 @@ describe("CrearEnvios", () => {
       prefijo: "351",
       telefono: "1234567",
       tipoEntrega: "domicilio",
+      generarPalabraEntrega: true,
       destino: {
         nombreCalle: "Av. Colón",
         numeroCalle: "1234",
@@ -203,6 +204,66 @@ describe("CrearEnvios", () => {
     });
 
     await screen.findByText(/código de seguimiento: shg-dev-0009/i);
+  });
+
+  describe("SHG-FE-144/SHG-CONTRACT-025 — generar palabra de entrega", () => {
+    const completarYRegistrar = async (user) => {
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+      await fillRemitenteYReceptor(user);
+      await geocodeDireccion();
+      await agregarPaquete(user);
+      await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+      await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+    };
+
+    it("ofrece el interruptor activado por defecto, con una ayuda que explica para qué sirve", async () => {
+      renderCrearEnvios();
+
+      const interruptor = screen.getByRole("switch", { name: /generar palabra de entrega/i });
+      expect(interruptor).toBeChecked();
+      expect(screen.getByText(/se la dicta al chofer/i)).toBeInTheDocument();
+      expect(screen.getByText(/la recibe por email y la ve en el seguimiento/i)).toBeInTheDocument();
+    });
+
+    it("con el interruptor por defecto manda generarPalabraEntrega: true", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await completarYRegistrar(user);
+
+      expect(envioApi.save.mock.calls[0][0].generarPalabraEntrega).toBe(true);
+    });
+
+    it("al desactivarlo manda generarPalabraEntrega: false", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await user.click(screen.getByRole("switch", { name: /generar palabra de entrega/i }));
+      expect(screen.getByRole("switch", { name: /generar palabra de entrega/i })).not.toBeChecked();
+
+      await completarYRegistrar(user);
+
+      expect(envioApi.save.mock.calls[0][0].generarPalabraEntrega).toBe(false);
+    });
+
+    it("también lo manda en un envío de retiro en sucursal", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+      await fillRemitenteYReceptor(user);
+      await user.click(screen.getByRole("switch", { name: /generar palabra de entrega/i }));
+      await user.click(screen.getByRole("radio", { name: /retiro en sucursal/i }));
+      await selectOption(user, document.body, /sucursal de retiro/i, /sucursal centro/i);
+      await agregarPaquete(user);
+      await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+      await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+      expect(envioApi.save.mock.calls[0][0]).toMatchObject({
+        tipoEntrega: "sucursal",
+        generarPalabraEntrega: false,
+      });
+    });
   });
 
   describe("SHG-FE-078 — fijar el marcador en el mapa (drag/click) sin remontar", () => {
@@ -535,6 +596,7 @@ describe("CrearEnvios", () => {
         prefijo: "351",
         telefono: "1234567",
         tipoEntrega: "sucursal",
+        generarPalabraEntrega: true,
         sucursalEntregaId: 5,
         detalleEnvios: [
           {

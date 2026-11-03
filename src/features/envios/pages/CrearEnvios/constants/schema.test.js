@@ -23,6 +23,11 @@ describe("CREAR_ENVIO_SCHEMA", () => {
     expect(result.success).toBe(true);
   });
 
+  it("acepta generarPalabraEntrega booleano u omitido (SHG-CONTRACT-025)", () => {
+    expect(CREAR_ENVIO_SCHEMA.safeParse({ ...VALID_ENVIO, generarPalabraEntrega: false }).success).toBe(true);
+    expect(CREAR_ENVIO_SCHEMA.safeParse({ ...VALID_ENVIO, generarPalabraEntrega: true }).success).toBe(true);
+  });
+
   it("rechaza sin al menos un paquete", () => {
     const result = CREAR_ENVIO_SCHEMA.safeParse({
       ...VALID_ENVIO,

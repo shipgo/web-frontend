@@ -68,6 +68,9 @@ export const CREAR_ENVIO_SCHEMA = z
     provinciaID: z.string().optional(),
     localidadID: z.string().optional(),
     coordenadas: z.object({ lat: z.number(), lng: z.number() }).nullable().optional(),
+    // `SHG-CONTRACT-025`: sólo se usa en el alta (default `true`); `EditarEnvio`
+    // reusa este schema pero sus values no lo traen, de ahí el `optional()`.
+    generarPalabraEntrega: z.boolean().optional(),
     detalleEnvios: z.array(z.any()).min(1, 'Agregá al menos un paquete.'),
   })
   .superRefine((values, ctx) => {
@@ -131,5 +134,6 @@ export const INITIAL_VALUES = {
   provinciaID: '',
   localidadID: '',
   coordenadas: null,
+  generarPalabraEntrega: true,
   detalleEnvios: [],
 };

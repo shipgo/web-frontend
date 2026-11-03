@@ -120,6 +120,7 @@ const DetalleEnvio = () => {
 
   const { confirmEntregar, confirmFalloEntrega, confirmRetiroSucursal } = useEnvioAcciones(id, {
     onSuccess: loadEnvio,
+    tienePalabraEntrega: envio?.tienePalabraEntrega,
   });
 
   // Precompute derived values only if envio exists to avoid errors
