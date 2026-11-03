@@ -1,8 +1,80 @@
+import { Card } from '@mantine/core';
+import { useLocation, useParams } from 'wouter';
 
-const CrearViaje = () => {
+import PageContainer from '@components/PageContainer';
+import PageBreadcrumbsHeader from '@components/PageBreadcrumbsHeader';
+import ScreenContainer from '@components/ScreenContainer';
+import { isNotFoundError } from '@utils/httpErrors';
+
+import DetalleViajeHeader from './components/DetalleViajeHeader';
+import HistorialTimeline from './components/HistorialTimeline';
+import RecorridosList from './components/RecorridosList';
+import ViajeMapa from './components/ViajeMapa';
+import { useViajeAcciones } from './hooks/useViajeAcciones';
+import { useViajeDetalle } from './hooks/useViajeDetalle';
+
+const DetalleViaje = () => {
+  const { id } = useParams();
+  const [, navigate] = useLocation();
+  const { viajeQuery, ubicacionQuery, historialQuery } = useViajeDetalle(id);
+  const { data: viaje, isLoading, isError, error, refetch } = viajeQuery;
+  const notFound = isError && isNotFoundError(error);
+  const { confirmFinalizar, confirmReanudar, confirmCancelar } = useViajeAcciones(id, {
+    onSuccess: refetch,
+  });
+
   return (
-    <div>CrearViaje</div>
-  )
-}
+    <PageContainer>
+      <PageBreadcrumbsHeader entidad="Viajes" accion="Detalle de viaje" />
 
-export default CrearViaje
+      <Card>
+        <ScreenContainer
+          onLoading={{ show: isLoading, description: 'Cargando viaje...' }}
+          onNotFound={{
+            show: notFound,
+            recurso: 'Viaje',
+            listaHref: '~/viajes',
+            listaLabel: 'Volver a viajes',
+          }}
+          onError={{
+            show: isError && !notFound,
+            title: 'No se pudo cargar el viaje',
+            description: 'No pudimos cargar el viaje. Probá de nuevo en unos minutos.',
+            onClick: refetch,
+          }}
+          onEmptyData={{
+            show: !isLoading && !isError && !viaje,
+            title: 'Viaje no encontrado',
+            description: 'No encontramos información para este viaje.',
+          }}
+        >
+          {viaje && (
+            <DetalleViajeHeader
+              viaje={viaje}
+              id={id}
+              onEditar={() => navigate(`~/viajes/${id}/editar`)}
+              onFinalizar={confirmFinalizar}
+              onReanudar={confirmReanudar}
+              onCancelar={confirmCancelar}
+            />
+          )}
+        </ScreenContainer>
+      </Card>
+
+      {viaje && (
+        <>
+          <RecorridosList recorridos={viaje.recorridos} />
+          <HistorialTimeline historial={viaje.historialEstado} />
+          <ViajeMapa
+            recorridos={viaje.recorridos}
+            estado={viaje.estado}
+            ubicacion={ubicacionQuery.data}
+            historial={historialQuery.data}
+          />
+        </>
+      )}
+    </PageContainer>
+  );
+};
+
+export default DetalleViaje;

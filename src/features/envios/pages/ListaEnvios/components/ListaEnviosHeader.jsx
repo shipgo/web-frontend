@@ -1,20 +1,23 @@
 import { Link } from 'wouter';
 import { Button } from '@mantine/core';
-import { IconMailPlus, IconShare, IconUpload } from '@tabler/icons-react';
+import { IconMailPlus } from '@tabler/icons-react';
 
 import PageHeader from '@components/PageHeader';
+import ExportCsvButton from '@components/ExportCsvButton';
 
-const ListaEnviosHeader = () => (
-  <PageHeader title="Envíos" subtitle="Listado de envíos cargados en el sistema">
+// SHG-FE-097: se quitó el botón "Importar" — no tenía `onClick` (botón
+// muerto, relevamiento UI 2026-09-25). La importación de envíos por CSV
+// queda fuera de alcance (issue #203).
+const ListaEnviosHeader = ({ onExportCsv, isExporting, exportDisabled }) => (
+  <PageHeader title="Envíos" subtitle="Seguí y administrá tus envíos">
     <Button to="/crear" component={Link} leftSection={<IconMailPlus />}>
       Crear envío
     </Button>
-    <Button variant="subtle" leftSection={<IconUpload />}>
-      Importar
-    </Button>
-    <Button variant="subtle" leftSection={<IconShare />}>
-      Exportar
-    </Button>
+    <ExportCsvButton
+      onExport={onExportCsv}
+      loading={isExporting}
+      disabled={exportDisabled}
+    />
   </PageHeader>
 );
 

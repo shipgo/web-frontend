@@ -1,132 +1,195 @@
+import { useLocation } from 'wouter';
 import { Avatar, Badge, Checkbox, Group, Stack, Table, Text } from '@mantine/core';
 import {
   IconEdit,
   IconFileDescription,
   IconMapSearch,
-  IconMessageReport,
+  IconPrinter,
   IconTrash,
 } from '@tabler/icons-react';
 
 import { timeFromNow, toLocalDate } from '@utils/dates';
 import { RowActionsMenu } from '@components';
+import { ESTADOS_VIAJE_CON_TRACKING, estadoBadge, normalizarEstado } from '@domain/estados';
 
-const ACTIONS = [
-  {
-    name: 'Detalles',
-    items: [
-      { icon: <IconMapSearch size={18} />, label: 'Localizar' },
-      { icon: <IconFileDescription size={18} />, label: 'Ver detalles' },
-    ],
-  },
-  {
-    name: 'Opciones',
-    items: [
-      { icon: <IconMessageReport size={18} />, label: 'Reportar', color: 'orange' },
-      { icon: <IconEdit size={18} />, label: 'Editar', color: 'blue' },
-      { icon: <IconTrash size={18} />, label: 'Eliminar', color: 'red' },
-    ],
-  },
-];
+import { useDeleteEnvio } from '../hooks/useDeleteEnvio';
+import { esEnvioEditable, getViajeAsociado } from '../../../utils';
 
-const getActionsForRow = (estado) => {
-  const disabledByState = {
-    completado: ['Reportar', 'Editar', 'Eliminar', 'Localizar'],
-    en_camino: ['Editar', 'Eliminar'],
-    cancelado: ['Reportar', 'Editar', 'Eliminar', 'Localizar'],
+/** Fecha de alta = `historialEstado` con `estado === 'creado'` (CONTRACTS.md §4 / SHG-BE-004). */
+const getFechaAlta = (envio) =>
+  (envio.historialEstado ?? []).find((h) => h.estado === 'creado')?.fechaHoraInicio ?? null;
+
+/**
+ * "Localizar" (SHG-FE-097): habilitado sólo si el envío tiene un viaje
+ * asociado (`getViajeAsociado`) y ese viaje está en un estado trackeable
+ * (`ESTADOS_VIAJE_CON_TRACKING`, mismo criterio que "Monitorear" en
+ * `ListaViajesTabla`, SHG-FE-096). Si no, queda deshabilitado con un tooltip
+ * que explica por qué (envío sin viaje vs. viaje todavía no despachado / ya
+ * cerrado).
+ */
+const getLocalizarAction = (envio, onLocalizar) => {
+  const viajeAsociado = getViajeAsociado(envio);
+  const trackeable = !!viajeAsociado && ESTADOS_VIAJE_CON_TRACKING.includes(normalizarEstado(viajeAsociado.estado));
+
+  if (trackeable) {
+    return {
+      icon: <IconMapSearch size={18} />,
+      label: 'Ver en el mapa',
+      onClick: () => onLocalizar(viajeAsociado.id),
+    };
+  }
+
+  return {
+    icon: <IconMapSearch size={18} />,
+    label: 'Ver en el mapa',
+    disabled: true,
+    tooltip: viajeAsociado
+      ? 'Disponible cuando el envío esté en camino.'
+      : 'Este envío todavía no fue asignado a un viaje.',
   };
-
-  return ACTIONS.map((group) => ({
-    ...group,
-    items: group.items.map((item) => ({
-      ...item,
-      disabled: disabledByState[estado]?.includes(item.label),
-    })),
-  }));
 };
 
-const STATUS_COLORS = {
-  'en camino': 'blue',
-  completado: 'green',
-  pendiente: 'orange',
-  cancelado: 'red',
+const getActionsForRow = (envio, { onEditar, onVerDetalles, onEliminar, onLocalizar, onImprimirEtiqueta }) => {
+
+  return [
+    {
+      name: 'Detalles',
+      items: [
+        getLocalizarAction(envio, onLocalizar),
+        { icon: <IconFileDescription size={18} />, label: 'Ver detalles', onClick: onVerDetalles },
+        {
+          icon: <IconPrinter size={18} />,
+          label: 'Imprimir etiqueta',
+          disabled: !envio.codigoSeguimiento,
+          tooltip: envio.codigoSeguimiento ? undefined : 'Este envío no tiene código de seguimiento.',
+          onClick: onImprimirEtiqueta,
+        },
+      ],
+    },
+    {
+      name: 'Opciones',
+      items: [
+        { icon: <IconEdit size={18} />, label: 'Editar', color: 'blue', disabled: !esEnvioEditable(envio), onClick: onEditar },
+        { icon: <IconTrash size={18} />, label: 'Eliminar', color: 'red', onClick: onEliminar },
+      ],
+    },
+  ];
 };
 
-const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) => {
+const ListaEnviosTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onRefresh }) => {
+  const [, navigate] = useLocation();
+  const { confirmDelete } = useDeleteEnvio(onRefresh);
+
   const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
   const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
 
   return (
+    <Table.ScrollContainer minWidth={720}>
     <Table stickyHeader highlightOnHover verticalSpacing="xs" horizontalSpacing="xs">
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={40}>
             <Checkbox
+              aria-label="Seleccionar todos los envíos"
               checked={allSelected}
               indeterminate={indeterminate}
               onChange={onToggleAll}
             />
           </Table.Th>
           <Table.Th>Código</Table.Th>
-          <Table.Th>Fecha de registro</Table.Th>
-          <Table.Th>Estado</Table.Th>
+          <Table.Th>Remitente</Table.Th>
           <Table.Th>Destino</Table.Th>
-          <Table.Th>Chofer asignado</Table.Th>
+          <Table.Th>Fecha de creación</Table.Th>
+          <Table.Th>Estado</Table.Th>
           <Table.Th>Acciones</Table.Th>
         </Table.Tr>
       </Table.Thead>
 
       <Table.Tbody>
-        {items.map(({ id, codigo_envio, direccion, localidad, provincia, estado, fecha_registro, chofer_asignado }) => (
-          <Table.Tr key={id} bg={selectedIds.has(id) ? 'var(--mantine-color-blue-light)' : undefined}>
-            <Table.Td>
-              <Checkbox checked={selectedIds.has(id)} onChange={() => onToggle(id)} />
-            </Table.Td>
+        {items.map((envio) => {
+          const { id, codigoSeguimiento, nombre, apellido, estado } = envio;
+          const destino = envio.destino ?? {};
+          const localidad = destino.localidad ?? {};
+          const provincia = localidad.provincia ?? {};
+          const direccion = [destino.nombreCalle, destino.numeroCalle].filter(Boolean).join(' ');
+          const fechaAlta = getFechaAlta(envio);
+          const estadoInfo = estadoBadge('envio', estado);
 
-            <Table.Td>
-              <Text size="sm" ff="monospace">{codigo_envio}</Text>
-            </Table.Td>
+          return (
+            <Table.Tr key={id} bg={selectedIds.has(id) ? 'var(--mantine-color-blue-light)' : undefined}>
+              <Table.Td>
+                <Checkbox
+                  aria-label={`Seleccionar envío ${codigoSeguimiento}`}
+                  checked={selectedIds.has(id)}
+                  onChange={() => onToggle(id)}
+                />
+              </Table.Td>
 
-            <Table.Td>
-              <Stack gap="0">
-                <Text size="sm">{toLocalDate(fecha_registro)}</Text>
-                <Text size="xs" fw="bold">{timeFromNow(fecha_registro)}</Text>
-              </Stack>
-            </Table.Td>
+              <Table.Td>
+                <Text size="sm" ff="monospace">{codigoSeguimiento}</Text>
+              </Table.Td>
 
-            <Table.Td>
-              <Badge color={STATUS_COLORS[estado] ?? 'gray'} variant="light" radius="md">
-                {estado}
-              </Badge>
-            </Table.Td>
-
-            <Table.Td>
-              <Stack gap={0}>
-                <Text size="sm">{direccion}</Text>
-                <Text size="xs" fw={600}>{`${localidad}, ${provincia}`}</Text>
-              </Stack>
-            </Table.Td>
-
-            <Table.Td>
-              {chofer_asignado ? (
+              <Table.Td>
                 <Group gap="0.5rem">
-                  <Avatar src={chofer_asignado.perfil} size="sm" />
-                  <Stack gap={0}>
-                    <Text size="sm">{chofer_asignado.nombre}</Text>
-                    <Text size="xs" fw={600}>{chofer_asignado.vehiculo_asignado}</Text>
-                  </Stack>
+                  <Avatar radius="xl" size="sm" />
+                  <Text size="sm">{`${nombre ?? ''} ${apellido ?? ''}`.trim() || '-'}</Text>
                 </Group>
-              ) : (
-                <Text c="dimmed" size="sm">Sin asignar</Text>
-              )}
-            </Table.Td>
+              </Table.Td>
 
-            <Table.Td>
-              <RowActionsMenu actions={getActionsForRow(estado)} width={160} />
-            </Table.Td>
-          </Table.Tr>
-        ))}
+              <Table.Td>
+                <Stack gap={0}>
+                  <Text size="sm">{direccion || '-'}</Text>
+                  <Text size="xs" fw={600}>
+                    {[localidad.nombre, provincia.nombre].filter(Boolean).join(', ') || '-'}
+                  </Text>
+                </Stack>
+              </Table.Td>
+
+              <Table.Td>
+                {fechaAlta ? (
+                  <Stack gap="0">
+                    <Text size="sm">{toLocalDate(fechaAlta)}</Text>
+                    <Text size="xs" fw="bold">{timeFromNow(fechaAlta)}</Text>
+                  </Stack>
+                ) : (
+                  <Text size="sm" c="dimmed">-</Text>
+                )}
+              </Table.Td>
+
+              <Table.Td>
+                {/* `c={estadoInfo.textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE`
+                    en `@domain/estados` — sin esto, "En camino"/"Entregado" no
+                    llegan a 4.5:1 (axe-core `color-contrast`, SHG-FE-041).
+                    `undefined` para el resto de los estados, sin efecto. */}
+                <Badge color={estadoInfo.color} variant="light" radius="md" c={estadoInfo.textColor}>
+                  {estadoInfo.label}
+                </Badge>
+              </Table.Td>
+
+              <Table.Td>
+                <RowActionsMenu
+                  actions={getActionsForRow(envio, {
+                    onVerDetalles: () => navigate(`~/envios/${id}`),
+                    onImprimirEtiqueta: () => navigate(`~/envios/${id}/etiqueta`),
+                    onEditar: () => navigate(`~/envios/editar/${id}`),
+                    onEliminar: () => confirmDelete(envio),
+                    // Ruta absoluta (`~`): `/mapa` no está anidado bajo
+                    // `/envios` — misma navegación que "Monitorear" en
+                    // `ListaViajesTabla` (SHG-FE-096); el mapa lee `?viaje=`
+                    // y preselecciona/centra ese viaje
+                    // (`useSeleccionarViajeDeQueryParam`).
+                    onLocalizar: (viajeId) => navigate(`~/mapa?viaje=${viajeId}`),
+                  })}
+                  width={160}
+                  ariaLabel={`Acciones de ${codigoSeguimiento}`}
+                />
+              </Table.Td>
+            </Table.Tr>
+          );
+        })}
       </Table.Tbody>
     </Table>
+    </Table.ScrollContainer>
   );
 };
 

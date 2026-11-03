@@ -1,0 +1,168 @@
+import { useEffect } from "react";
+import { useSearch } from "wouter";
+import { Card, Flex, Pagination, Text } from "@mantine/core";
+import { useSet } from "@mantine/hooks";
+
+import PageContainer from "@components/PageContainer";
+import ScreenContainer from "@components/ScreenContainer";
+import SelectionBanner from "@components/SelectionBanner";
+
+import { useBulkDelete } from "@hooks/useBulkDelete";
+import { useCsvExport } from "@hooks/useCsvExport";
+import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
+import { listaEstados } from "@copy/common";
+
+import { mantenimientoApi } from "../api/mantenimientos.api";
+
+import ListaMantenimientosHeader from "./components/ListaMantenimientosHeader";
+import ListaMantenimientosFiltros from "./components/ListaMantenimientosFiltros";
+import ListaMantenimientosTabla from "./components/ListaMantenimientosTabla";
+
+import { useGetMantenimientos } from "./hooks/useGetMantenimientos";
+import { MANTENIMIENTOS_CSV_COLUMNS } from "./listaMantenimientos.csv";
+
+const ESTADOS_LISTA = listaEstados({ singular: 'mantenimiento', plural: 'mantenimientos', genero: 'm' });
+
+const PAGE_LIMIT = 10;
+
+const ListaMantenimientos = () => {
+  // "Historial mantenimiento" (SHG-FE-098) llega desde `ListaVehiculosTabla` /
+  // `DetalleVehiculo` como `/mantenimientos?patente=<patente>`. Se lee acá
+  // (una sola vez, al montar) para que el primer fetch salga ya filtrado en
+  // vez de pedir todo y recién después re-pedir con `patente` — evita el
+  // doble fetch que salía de aplicar el filtro en un `useEffect` posterior
+  // en `ListaMantenimientosFiltros`. Limitación conocida: si el query param
+  // cambia sin desmontar/remontar la pantalla (ej: navegar de un vehículo a
+  // otro sin volver a `/mantenimientos`), el filtro no se actualiza solo.
+  const patenteFromUrl = new URLSearchParams(useSearch()).get("patente")?.trim() || "";
+  const initialFilters = patenteFromUrl
+    ? { patente: { label: "patente", values: patenteFromUrl } }
+    : {};
+
+  const {
+    data,
+    isError,
+    isLoading,
+    refetchMantenimientos,
+    fetchExportRows,
+    setPage,
+    setFilters,
+    params: { filters, page },
+  } = useGetMantenimientos(PAGE_LIMIT, initialFilters);
+
+  const { exportar, isExporting } = useCsvExport({
+    fetchRows: fetchExportRows,
+    columns: MANTENIMIENTOS_CSV_COLUMNS,
+    entidad: "mantenimientos",
+    entidadLabel: "mantenimientos",
+  });
+
+  const selectedIds = useSet();
+
+  useEffect(() => {
+    selectedIds.clear();
+  }, [data.results]);
+
+  const { exportarSeleccionados } = useExportSelectedCsv({
+    columns: MANTENIMIENTOS_CSV_COLUMNS,
+    entidad: "mantenimientos-seleccionados",
+    entidadLabel: "mantenimientos",
+  });
+
+  const { confirmBulkDelete } = useBulkDelete({
+    deleteFn: (id) => mantenimientoApi.delete(id),
+    singular: "mantenimiento",
+    plural: "mantenimientos",
+    getLabel: (item) => {
+      const patente = item.vehiculo?.patente;
+      const tipo = item.tipoMantenimiento?.nombre;
+      return [tipo, patente].filter(Boolean).join(" · ") || `mantenimiento #${item.id}`;
+    },
+    onSettled: () => {
+      refetchMantenimientos();
+      selectedIds.clear();
+    },
+  });
+
+  const onToggle = (id) =>
+    selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+
+  const onToggleAll = () => {
+    if (data.results?.every((i) => selectedIds.has(i.id))) {
+      data.results.forEach((i) => selectedIds.delete(i.id));
+    } else {
+      data.results?.forEach((i) => selectedIds.add(i.id));
+    }
+  };
+
+  const showPagination = data.total > PAGE_LIMIT;
+
+  return (
+    <PageContainer>
+      <ListaMantenimientosHeader
+        onExportCsv={exportar}
+        isExporting={isExporting}
+        exportDisabled={isLoading || isError}
+      />
+
+      <ListaMantenimientosFiltros
+        onFiltersChange={setFilters}
+        initialPatente={patenteFromUrl}
+      />
+
+      <SelectionBanner
+        count={selectedIds.size}
+        singular="mantenimiento seleccionado"
+        plural="mantenimientos seleccionados"
+        onClear={() => selectedIds.clear()}
+        onExport={() => exportarSeleccionados(data.results, selectedIds)}
+        onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
+      />
+
+      <Card>
+        <ScreenContainer
+          onLoading={{ show: isLoading, description: "Cargando mantenimientos..." }}
+          onError={{
+            show: isError,
+            onClick: refetchMantenimientos,
+            title: ESTADOS_LISTA.error,
+          }}
+          onEmptyData={{
+            show: data.total === 0 && Object.keys(filters).length === 0,
+            title: ESTADOS_LISTA.vacioTitulo,
+            description: ESTADOS_LISTA.vacioDescripcion,
+          }}
+          onEmptyFiltersData={{
+            show: data.total === 0 && Object.keys(filters).length > 0,
+            title: ESTADOS_LISTA.sinResultadosTitulo,
+            description: ESTADOS_LISTA.sinResultadosDescripcion,
+          }}
+        >
+          <ListaMantenimientosTabla
+            items={data.results}
+            selectedIds={selectedIds}
+            onToggle={onToggle}
+            onToggleAll={onToggleAll}
+            onRefresh={refetchMantenimientos}
+          />
+        </ScreenContainer>
+      </Card>
+
+      <Flex align="center">
+        <Pagination
+          value={page}
+          onChange={setPage}
+          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+          disabled={!showPagination}
+        />
+        <Text c="dimmed" ml="auto">
+          {data.total > 0
+            ? `Mostrando ${(page - 1) * PAGE_LIMIT + 1} - ${Math.min(page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+            : "0 resultados"}
+        </Text>
+      </Flex>
+    </PageContainer>
+  );
+};
+
+export default ListaMantenimientos;

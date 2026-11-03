@@ -1,0 +1,55 @@
+import { useLocation } from "wouter";
+import { Badge, Button, Card, Stack, Text } from "@mantine/core";
+
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { esEstadoTerminal, estadoBadge } from "@domain/estados";
+
+/**
+ * Pantalla que reemplaza al form cuando el envío está en un estado terminal
+ * (`entregado`/`rechazado`, `esEstadoTerminal` de `@domain/estados`): la máquina
+ * de estados del backend ya no permite modificarlo, así que se bloquea la
+ * edición entera en vez de dejar que el `PUT` falle (`SHG-FE-004`). Mantiene el
+ * header canónico de `SHG-FE-031`.
+ *
+ * @param {Object} props
+ * @param {string} props.estado - estado actual del envío.
+ * @param {string} props.id - id del envío (vuelta al detalle).
+ */
+const EnvioNoEditable = ({ id, estado }) => {
+  const [, navigate] = useLocation();
+  const { label, color, textColor } = estadoBadge("envio", estado);
+  // `SHG-FE-125`: `editable: false` cubre terminales, en viaje y "ya viajó".
+  const motivo = esEstadoTerminal("envio", estado)
+    ? 'No se pueden editar envíos en estado "Entregado" o "No entregado".'
+    : "Este envío está o estuvo en un viaje y no se puede modificar.";
+
+  return (
+    <Stack>
+      <PageBreadcrumbsHeader
+        entidad="Envíos"
+        accion="Editar envío"
+        descripcion="Este envío no se puede editar en su estado actual"
+      />
+
+      <Card withBorder>
+        <Stack align="center" py="xl" gap="sm">
+          {/* `c={textColor}`: ver `BADGE_TEXT_CONTRAST_OVERRIDE` en
+              `@domain/estados` — sin esto, "Entregado" no llega a 4.5:1
+              (axe-core `color-contrast`, SHG-FE-041). `undefined` para el
+              resto de los estados, sin efecto. */}
+          <Badge color={color} size="lg" c={textColor}>
+            {label}
+          </Badge>
+          <Text c="dimmed" ta="center">
+            {motivo}
+          </Text>
+          <Button onClick={() => navigate(`~/envios/${id}`)} data-testid="volver-detalle">
+            Volver al detalle
+          </Button>
+        </Stack>
+      </Card>
+    </Stack>
+  );
+};
+
+export default EnvioNoEditable;

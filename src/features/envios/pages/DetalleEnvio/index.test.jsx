@@ -1,0 +1,858 @@
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { notifications } from "@mantine/notifications";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { Route } from "wouter";
+
+import { renderWithProviders } from "../../../../test/renderWithProviders";
+
+vi.mock("@api", () => ({
+  envioApi: {
+    getById: vi.fn(),
+    entregar: vi.fn(),
+    falloEntrega: vi.fn(),
+  },
+}));
+
+import { envioApi } from "@api";
+import { useAuthStore, Usuario } from "@stores/auth.store";
+import DetalleEnvio from "./index";
+
+const EXISTING_ENVIO = {
+  id: 9,
+  nombre: "Juan",
+  apellido: "García",
+  emailRemitente: "remitente@test.com",
+  emailReceptor: "receptor@test.com",
+  prefijo: "351",
+  telefono: "1234567",
+  estado: "en_camino",
+  codigoSeguimiento: "ABC123XYZ",
+  fechaEntrega: "2026-09-10",
+  sucursalOrigen: { id: 2, nombre: "Sucursal Norte" },
+  sucursal: { id: 1, nombre: "Sucursal Centro" },
+  destino: {
+    id: 3,
+    nombreCalle: "Av. Colón",
+    numeroCalle: "1234",
+    localidad: {
+      id: 5,
+      nombre: "Córdoba",
+      provincia: { id: 2, nombre: "Córdoba" },
+    },
+  },
+  detalleEnvios: [
+    { id: 11, categoria: { id: 1, nombre: "Documentación" }, descripcion: "Sobre", peso: 0.5 },
+  ],
+  historialEstado: [
+    { id: 1, estado: "creado", fechaHoraInicio: "2026-09-01T08:00:00" },
+    { id: 2, estado: "en_sucursal", fechaHoraInicio: "2026-09-01T09:00:00" },
+    { id: 3, estado: "en_camino", fechaHoraInicio: "2026-09-02T10:00:00" },
+  ],
+  detalleRecorridos: [
+    {
+      id: 50,
+      recorrido: {
+        id: 5,
+        estado: "en_camino",
+        orden: 1,
+        puntoEntrega: { nombreCalle: "Av. Colón", numeroCalle: "1234" },
+        viaje: { id: 77 },
+      },
+    },
+  ],
+};
+
+describe("DetalleEnvio", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    envioApi.getById.mockResolvedValue(EXISTING_ENVIO);
+    useAuthStore.setState({ user: null, isAuthenticated: false });
+    // El store de `@mantine/notifications` vive fuera del árbol de React (no
+    // se resetea al desmontar entre tests) — sin esto, toasts de tests
+    // anteriores (p. ej. "Envío entregado") se acumulan hasta el `limit`
+    // default de `<Notifications />` y un toast nuevo con texto distinto deja
+    // de renderizarse, aunque `notifications.show` sí se haya llamado.
+    notifications.clean();
+    notifications.cleanQueue();
+  });
+
+  it("'Imprimir etiqueta' navega a /envios/:id/etiqueta (SHG-FE-136)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    await user.click(await screen.findByRole("button", { name: /Imprimir etiqueta/ }));
+    await waitFor(() => expect(window.location.pathname).toBe("/envios/9/etiqueta"));
+  });
+
+  it("sin codigoSeguimiento no ofrece 'Imprimir etiqueta' (SHG-FE-136)", async () => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, codigoSeguimiento: null });
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    await screen.findByText("Juan García");
+    expect(screen.queryByRole("button", { name: /Imprimir etiqueta/ })).not.toBeInTheDocument();
+  });
+
+  it("renders sender, receiver, destino and package info from the API response", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    await waitFor(() => {
+      expect(envioApi.getById).toHaveBeenCalledWith("9");
+    });
+
+    expect(await screen.findByText("Juan García")).toBeInTheDocument();
+    expect(screen.getByText("remitente@test.com")).toBeInTheDocument();
+    expect(screen.getByText("receptor@test.com")).toBeInTheDocument();
+    expect(screen.getByText("351 1234567")).toBeInTheDocument();
+    expect(screen.getAllByText("Av. Colón 1234").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Córdoba").length).toBeGreaterThan(0);
+    expect(screen.getByText("Documentación")).toBeInTheDocument();
+    expect(screen.getByText("ABC123XYZ", { exact: false })).toBeInTheDocument();
+  });
+
+  it("rechazado: muestra fecha (DD/MM/YYYY 24 h) y motivo del rechazo (SHG-FE-113)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      estado: "rechazado",
+      historialEstado: [
+        ...EXISTING_ENVIO.historialEstado,
+        { id: 4, estado: "rechazado", fechaHoraInicio: "2026-09-03T14:30:00", motivo: "Receptor ausente" },
+      ],
+    });
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    const alerta = await screen.findByTestId("alerta-rechazo");
+    expect(within(alerta).getByText(/03\/09\/2026 14:30/)).toBeInTheDocument();
+    expect(within(alerta).getByText(/Receptor ausente/)).toBeInTheDocument();
+  });
+
+  it("rechazado sin motivo en el historial: no lo inventa, dice 'no registrado' (SHG-FE-113)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      estado: "rechazado",
+      historialEstado: [{ id: 4, estado: "rechazado", fechaHoraInicio: "2026-09-03T14:30:00" }],
+    });
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    const alerta = await screen.findByTestId("alerta-rechazo");
+    expect(within(alerta).getByText(/Motivo: no registrado/)).toBeInTheDocument();
+    expect(within(alerta).getByText(/03\/09\/2026 14:30/)).toBeInTheDocument();
+  });
+
+  it("historial: muestra 23:30 y el cruce de medianoche como hora local, sin correr horas (SHG-FE-111)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      historialEstado: [
+        { id: 2, estado: "en_sucursal", fechaHoraInicio: "2026-10-08T00:10:00.000" },
+        { id: 1, estado: "creado", fechaHoraInicio: "2026-10-07T23:30:15.123" },
+      ],
+    });
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+
+    await screen.findByText("Juan García");
+    const fechas = screen.getAllByText(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/).map((n) => n.textContent);
+    expect(fechas).toEqual(["07/10/2026 23:30", "08/10/2026 00:10"]);
+  });
+
+  it("no muestra la alerta de rechazo si el envío no está rechazado", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, { route: "/envios/9" });
+    await screen.findByText("Juan García");
+    expect(screen.queryByTestId("alerta-rechazo")).not.toBeInTheDocument();
+  });
+
+  it("renders the estado badge via @domain/estados", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect((await screen.findAllByText("En camino")).length).toBeGreaterThan(0);
+  });
+
+  it("renders sucursal de origen, sucursal actual and fecha de entrega", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(await screen.findByText("Sucursal de origen")).toBeInTheDocument();
+    expect(screen.getByText("Sucursal Norte")).toBeInTheDocument();
+    expect(screen.getByText("Sucursal Centro")).toBeInTheDocument();
+    expect(screen.getByText("10/09/2026")).toBeInTheDocument();
+  });
+
+  it("muestra origen y ubicación actual distintos cuando el envío fue transferido (SHG-FE-088)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      sucursalOrigen: { id: 2, nombre: "Sucursal Norte" },
+      sucursal: { id: 5, nombre: "Sucursal Sur" },
+    });
+
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(await screen.findByText("Sucursal de origen")).toBeInTheDocument();
+    expect(screen.getByText("Sucursal Norte")).toBeInTheDocument();
+    expect(screen.getByText("Sucursal Sur")).toBeInTheDocument();
+  });
+
+  it("muestra '-' cuando sucursalOrigen es null (SHG-FE-088)", async () => {
+    envioApi.getById.mockResolvedValue({
+      ...EXISTING_ENVIO,
+      sucursalOrigen: null,
+    });
+
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    const sucursalOrigenLabel = await screen.findByText("Sucursal de origen");
+    expect(sucursalOrigenLabel).toBeInTheDocument();
+
+    // Find the InfoItem container (Box) and verify "-" is shown within it
+    const infoItemContainer = sucursalOrigenLabel.closest("div").parentElement;
+    expect(within(infoItemContainer).getByText("-")).toBeInTheDocument();
+
+    // Verify sucursal actual still shows its value
+    expect(screen.getByText("Sucursal Centro")).toBeInTheDocument();
+  });
+
+  it("renders the historial de estados timeline ordered by fecha", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(await screen.findByText("Historial de estados")).toBeInTheDocument();
+    expect(screen.getByText("Creado")).toBeInTheDocument();
+    expect(screen.getByText("En sucursal")).toBeInTheDocument();
+    expect(screen.getAllByText("En camino").length).toBeGreaterThan(0);
+  });
+
+  it("renders the viaje asociado with a link to DetalleViaje and estado del recorrido", async () => {
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(await screen.findByText("Viaje #77")).toBeInTheDocument();
+  });
+
+  it("muestra un mensaje cuando el envío no está asignado a un viaje", async () => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, detalleRecorridos: [] });
+
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    expect(
+      await screen.findByText("Este envío todavía no fue asignado a un viaje."),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["entregado"],
+    ["en_camino"],
+    ["asignado_a_viaje"],
+  ])("no muestra el botón Editar cuando editable es false (%s)", async (estado) => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado, editable: false });
+
+    renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+      route: "/envios/9",
+    });
+
+    await screen.findByText("Juan García");
+    expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument();
+  });
+
+  describe("tarjeta Destino — retiro en sucursal (SHG-FE-084)", () => {
+    it("muestra la sucursal de retiro y su dirección cuando tipoEntrega=sucursal, sin campos vacíos", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: {
+          id: 2,
+          nombre: "ShipGo Norte",
+          email: "norte@shipgo.com",
+          prefijo: "351",
+          telefono: "9876543",
+          empresa: "ShipGo",
+          puntoEntrega: {
+            numeroCalle: "500",
+            nombreCalle: "Av. Rafael Núñez",
+            localidad: {
+              id: 5,
+              nombre: "Córdoba",
+              provincia: { id: 2, nombre: "Córdoba" },
+            },
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByText("Retiro en sucursal")).toBeInTheDocument();
+      expect(screen.getByText("ShipGo Norte")).toBeInTheDocument();
+      expect(screen.getByText("Av. Rafael Núñez 500")).toBeInTheDocument();
+      expect(screen.queryByText("Dirección de entrega")).not.toBeInTheDocument();
+    });
+
+    it("no rompe cuando tipoEntrega=sucursal pero sucursalEntrega viene null", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: null,
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByText("Retiro en sucursal")).toBeInTheDocument();
+      expect(screen.getAllByText("-").length).toBeGreaterThan(0);
+    });
+
+    it("un envío a domicilio sigue mostrando Dirección de entrega como antes", async () => {
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByText("Dirección de entrega")).toBeInTheDocument();
+      expect(screen.queryByText("Retiro en sucursal")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("estados de carga/error/vacío (SHG-QA-003)", () => {
+    it("un 404 muestra 'Envío no encontrado' con link al listado, sin Reintentar ni segundo GET (SHG-FE-104)", async () => {
+      const error = new Error("Not found");
+      error.response = { status: 404 };
+      envioApi.getById.mockRejectedValueOnce(error);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/999",
+      });
+
+      expect(await screen.findByText("Envío no encontrado")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /volver a envíos/i })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /reintentar/i })).not.toBeInTheDocument();
+      expect(screen.queryByText("No se pudo cargar el envío")).not.toBeInTheDocument();
+      expect(envioApi.getById).toHaveBeenCalledTimes(1);
+    });
+
+    it("muestra el estado de error cuando envioApi.getById rechaza, y reintentar hace una nueva llamada", async () => {
+      const user = userEvent.setup();
+      const error = new Error("Network error");
+      error.response = { status: 500 };
+      envioApi.getById.mockRejectedValueOnce(error);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledWith("9");
+      });
+
+      expect(await screen.findByText("No se pudo cargar el envío")).toBeInTheDocument();
+      expect(screen.getByText("No pudimos cargar el envío. Probá de nuevo en unos minutos.")).toBeInTheDocument();
+
+      const reintentar = screen.getByRole("button", { name: /reintentar/i });
+      expect(reintentar).toBeInTheDocument();
+
+      envioApi.getById.mockResolvedValueOnce(EXISTING_ENVIO);
+      await user.click(reintentar);
+
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledTimes(2);
+      });
+
+      expect(await screen.findByText("Juan García")).toBeInTheDocument();
+    });
+
+    it("muestra el estado vacío cuando envioApi.getById retorna null", async () => {
+      vi.clearAllMocks();
+      envioApi.getById.mockResolvedValue(null);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledWith("9");
+      });
+
+      expect(await screen.findByText("Envío no encontrado")).toBeInTheDocument();
+      expect(screen.getByText("No encontramos información para este envío.")).toBeInTheDocument();
+    });
+  });
+
+  describe("acciones de estado (SHG-FE-007)", () => {
+    beforeEach(() => {
+      useAuthStore.setState({
+        user: new Usuario({ id: 1, username: "admin1", authorities: ["ROLE_ADMIN"] }),
+        isAuthenticated: true,
+      });
+    });
+
+    it("no muestra los botones de acción para un usuario sin rol admin/superuser", async () => {
+      useAuthStore.setState({
+        user: new Usuario({ id: 2, username: "carga1", authorities: ["ROLE_CARGA"] }),
+        isAuthenticated: true,
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /entregar/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /registrar entrega fallida/i })).not.toBeInTheDocument();
+    });
+
+    it("no muestra los botones de acción si el estado no es en_camino/en_vehiculo", async () => {
+      envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "en_sucursal" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /entregar/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /registrar entrega fallida/i })).not.toBeInTheDocument();
+    });
+
+    it("muestra los botones habilitados para un ADMIN con el envío en_camino", async () => {
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      const entregarBtn = await screen.findByRole("button", { name: /entregar/i });
+      expect(entregarBtn).toBeEnabled();
+      expect(screen.getByRole("button", { name: /registrar entrega fallida/i })).toBeEnabled();
+    });
+
+    it("entrega el envío con dniReceptor tras confirmar y refetchea el detalle (SHG-FE-058)", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      await waitFor(() => {
+        expect(envioApi.entregar).toHaveBeenCalledWith("9", { dniReceptor: "30111222" });
+      });
+      expect(await screen.findByText("Envío entregado")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("entrega el envío mandando también la palabra de entrega si se ingresó", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "AB23K9");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      await waitFor(() => {
+        expect(envioApi.entregar).toHaveBeenCalledWith("9", {
+          dniReceptor: "30111222",
+          palabraEntregaIngresada: "AB23K9",
+        });
+      });
+    });
+
+    it("regresión SHG-FE-058: el modal de Entregar no confirma sin dniReceptor, y no llama a la API sin body", async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      expect(
+        within(dialog).getByText("Ingresá el DNI de quien recibe."),
+      ).toBeInTheDocument();
+      // Antes de SHG-FE-058 esto disparaba `entregar(id)` sin body → 400 real
+      // contra `EntregaEnvioReqDTO.dniReceptor` (`@NotEmpty`, `SHG-BE-042`).
+      expect(envioApi.entregar).not.toHaveBeenCalled();
+    });
+
+    it("delivery_word_mismatch: muestra el error dentro del modal, no lo cierra y mantiene el DNI tipeado", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: {
+            statusCode: 400,
+            message: "La palabra de entrega ingresada no coincide con la registrada para este envío.",
+            code: "delivery_word_mismatch",
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      const dniInput = within(dialog).getByLabelText(/dni de quien recibe/i);
+      await user.type(dniInput, "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "WRONG1");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      expect(
+        await within(dialog).findByText(
+          "La palabra de entrega ingresada no coincide con la registrada para este envío.",
+        ),
+      ).toBeInTheDocument();
+      // el modal sigue abierto y el DNI ya tipeado no se pierde
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(dniInput).toHaveValue("30111222");
+      expect(envioApi.getById).toHaveBeenCalledTimes(1);
+    });
+
+    it("dniReceptor faltante (ApiFieldError del backend): se muestra como error de campo estándar sin cerrar el modal", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: {
+            statusCode: 400,
+            message: "Revisá los campos marcados.",
+            fields: [{ field: "dniReceptor", error: "no debe estar vacío" }],
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      // el cliente ya valida el DNI localmente, pero igual la request puede
+      // volver con un `ApiFieldError` estándar (`CONTRACTS.md §5`) — se
+      // muestra vía `applyApiError`, igual que el resto de los forms del repo.
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      expect(await within(dialog).findByText("no debe estar vacío")).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("el modal de fallo de entrega no confirma sin motivo (obligatorio)", async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /registrar entrega fallida/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Registrar entrega fallida" }));
+
+      expect(within(dialog).getByText("Ingresá el motivo.")).toBeInTheDocument();
+      expect(envioApi.falloEntrega).not.toHaveBeenCalled();
+    });
+
+    it("registra el fallo de entrega con motivo y refetchea el detalle", async () => {
+      const user = userEvent.setup();
+      envioApi.falloEntrega.mockResolvedValue({ ...EXISTING_ENVIO, estado: "rechazado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /registrar entrega fallida/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/motivo/i), "Destinatario ausente");
+      await user.click(within(dialog).getByRole("button", { name: "Registrar entrega fallida" }));
+
+      await waitFor(() => {
+        expect(envioApi.falloEntrega).toHaveBeenCalledWith("9", { motivo: "Destinatario ausente" });
+      });
+      expect(await screen.findByText("Entrega fallida registrada")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("muestra una advertencia si el backend rechaza la transición (409)", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockRejectedValue({
+        response: { status: 409, data: { message: "El envío no está en camino" } },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      expect(await screen.findByText("Acción no disponible")).toBeInTheDocument();
+      expect(screen.getByText("El envío no está en camino")).toBeInTheDocument();
+    });
+  });
+
+  describe("confirmar retiro en sucursal (SHG-FE-080 / SHG-CONTRACT-012)", () => {
+    const ENVIO_EN_SUCURSAL_PARA_RETIRO = {
+      ...EXISTING_ENVIO,
+      estado: "en_sucursal",
+      tipoEntrega: "sucursal",
+      sucursalEntrega: { id: 1, nombre: "Sucursal Centro" },
+    };
+
+    beforeEach(() => {
+      useAuthStore.setState({
+        user: new Usuario({ id: 1, username: "admin1", authorities: ["ROLE_ADMIN"] }),
+        isAuthenticated: true,
+      });
+    });
+
+    it('muestra "Confirmar retiro" sólo cuando estado=en_sucursal y tipoEntrega=sucursal', async () => {
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByRole("button", { name: /confirmar retiro/i })).toBeInTheDocument();
+      // Rango de estados disjunto de Entregar/Registrar entrega fallida (en_camino/en_vehiculo).
+      expect(screen.queryByRole("button", { name: "Entregar" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /registrar entrega fallida/i })).not.toBeInTheDocument();
+    });
+
+    it('no muestra "Confirmar retiro" si el envío es en_sucursal pero tipoEntrega=domicilio', async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        estado: "en_sucursal",
+        tipoEntrega: "domicilio",
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /confirmar retiro/i })).not.toBeInTheDocument();
+    });
+
+    it('no muestra "Confirmar retiro" si tipoEntrega=sucursal pero el envío no está en_sucursal', async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        estado: "en_camino",
+        tipoEntrega: "sucursal",
+        sucursalEntrega: { id: 1, nombre: "Sucursal Centro" },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /confirmar retiro/i })).not.toBeInTheDocument();
+    });
+
+    it('no muestra "Confirmar retiro" para un usuario sin rol admin/superuser', async () => {
+      useAuthStore.setState({
+        user: new Usuario({ id: 2, username: "carga1", authorities: ["ROLE_CARGA"] }),
+        isAuthenticated: true,
+      });
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByRole("button", { name: /confirmar retiro/i })).not.toBeInTheDocument();
+    });
+
+    it("no confirma sin DNI ni palabra de entrega (ambos obligatorios acá, a diferencia de Entregar)", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /confirmar retiro/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+
+      expect(within(dialog).getByText("Ingresá el DNI de quien retira.")).toBeInTheDocument();
+      expect(within(dialog).getByText("Ingresá la palabra de entrega.")).toBeInTheDocument();
+      expect(envioApi.entregar).not.toHaveBeenCalled();
+    });
+
+    it("confirma el retiro con DNI + palabra, refetchea el detalle y no pisa el flujo de Entregar", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+      envioApi.entregar.mockResolvedValue({ ...ENVIO_EN_SUCURSAL_PARA_RETIRO, estado: "entregado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /confirmar retiro/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien retira/i), "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "AB23K9");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+
+      await waitFor(() => {
+        expect(envioApi.entregar).toHaveBeenCalledWith("9", {
+          dniReceptor: "30111222",
+          palabraEntregaIngresada: "AB23K9",
+        });
+      });
+      expect(await screen.findByText("Retiro confirmado")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("delivery_word_mismatch: muestra el error dentro del modal sin cerrarlo", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+      envioApi.entregar.mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: {
+            statusCode: 400,
+            message: "La palabra de entrega ingresada no coincide con la registrada para este envío.",
+            code: "delivery_word_mismatch",
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /confirmar retiro/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      const dniInput = within(dialog).getByLabelText(/dni de quien retira/i);
+      await user.type(dniInput, "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "WRONG1");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+
+      expect(
+        await within(dialog).findByText(
+          "La palabra de entrega ingresada no coincide con la registrada para este envío.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(dniInput).toHaveValue("30111222");
+      expect(envioApi.getById).toHaveBeenCalledTimes(1);
+    });
+
+    it("sucursal de retiro no coincide (validación de SHG-BE-061): muestra el mensaje del backend sin cerrar el modal, sin 400 crudo", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
+      envioApi.entregar.mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: {
+            statusCode: 400,
+            message: "Este envío no está en su sucursal de retiro: no se puede confirmar el retiro acá.",
+          },
+        },
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /confirmar retiro/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien retira/i), "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "AB23K9");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+
+      expect(
+        await screen.findByText(
+          "Este envío no está en su sucursal de retiro: no se puede confirmar el retiro acá.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(envioApi.getById).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("dniReceptor en Remitente y receptor (SHG-FE-058)", () => {
+    it("muestra el DNI del receptor cuando el envío está entregado", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        estado: "entregado",
+        dniReceptor: "30111222",
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      expect(await screen.findByText("DNI de quien recibió")).toBeInTheDocument();
+      expect(screen.getByText("30111222")).toBeInTheDocument();
+    });
+
+    it("no muestra la sección de DNI de receptor cuando el envío todavía no fue entregado", async () => {
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByText("DNI de quien recibió")).not.toBeInTheDocument();
+    });
+
+    it("nunca muestra palabraEntrega en el panel de operador, aunque el backend la mande por error", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        estado: "entregado",
+        dniReceptor: "30111222",
+        palabraEntrega: "AB23K9",
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByText("AB23K9")).not.toBeInTheDocument();
+    });
+  });
+});

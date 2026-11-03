@@ -1,12 +1,12 @@
 import { omit } from "es-toolkit";
 import { useState, useCallback } from "react";
 
-const DEFAUL_PARAMS = {
+const DEFAULT_PARAMS = {
   page: 1,
   filters: {},
 };
 
-export const useParams = (initialParams = DEFAUL_PARAMS) => {
+export const useParams = (initialParams = DEFAULT_PARAMS) => {
   const [params, setParams] = useState(initialParams);
 
   const setPage = useCallback((newPage) => {
@@ -32,7 +32,7 @@ export const useParams = (initialParams = DEFAUL_PARAMS) => {
   }, []);
 
   const clearFilters = useCallback(() => {
-    setParams(DEFAUL_PARAMS);
+    setParams(DEFAULT_PARAMS);
   }, []);
 
   return { params, setPage, setFilters, clearFilters, removeFilter };

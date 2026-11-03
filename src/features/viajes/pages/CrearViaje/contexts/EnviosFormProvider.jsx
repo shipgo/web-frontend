@@ -1,17 +1,10 @@
 import { useForm, FormProvider } from "./EnviosFormContext";
-
-const INITIAL_VALUES = {
-  fechaSalida: new Date(),
-  sucursalOrigen: "Sucursal A",
-  enviosIncluidos: new Map(),
-  vehiculo: null,
-  chofer: null,
-  retornoOrigen: false,
-};
+import { INITIAL_VALUES, validate } from "./enviosFormConfig";
 
 const EnviosFormProvider = ({ children }) => {
   const form = useForm({
     initialValues: INITIAL_VALUES,
+    validate,
   });
 
   return <FormProvider form={form}>{children}</FormProvider>;

@@ -1,0 +1,113 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { Alert, Stack } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { schemaResolver } from "@mantine/form";
+import { IconCheck, IconX } from "@tabler/icons-react";
+
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import { applyApiError } from "@domain/apiError";
+import { envioApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
+
+import {
+  EnvioFormProvider,
+  useEnvioForm,
+} from "../../CrearEnvios/contexts/CrearEnvioContext";
+import { CREAR_ENVIO_SCHEMA } from "../../CrearEnvios/constants/schema";
+import SeccionOrigen from "../../CrearEnvios/components/SeccionOrigen";
+import SeccionCarga from "../../CrearEnvios/components/SeccionCarga";
+import Footer from "../../CrearEnvios/components/Footer";
+import { buildEnvioFormValues, buildEnvioReqDTO } from "../../../utils";
+
+/**
+ * Form de edición de envío. Comparte con `CrearEnvios` el `EnvioFormProvider`,
+ * el schema Zod (`CREAR_ENVIO_SCHEMA`) y las secciones (`SeccionOrigen`,
+ * `SeccionCarga`, `Footer`) — la única diferencia es la precarga de `values`
+ * desde el envío existente (`buildEnvioFormValues`) y el `PUT` en vez de `POST`
+ * (`SHG-FE-031`). El gate de estado terminal y el 404 se resuelven en el
+ * componente padre (`EditarEnvio/index.jsx`).
+ *
+ * @param {Object} props
+ * @param {string} props.id - id de ruta del envío (string, como lo espera `envioApi.update`).
+ * @param {Object} props.envio - `EnvioDTO` ya cargado del backend.
+ * @param {Array<{value: string, label: string}>} props.categorias
+ */
+const EditarEnvioForm = ({ id, envio, categorias }) => {
+  const [, navigate] = useLocation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorConflicto, setErrorConflicto] = useState(null);
+  const form = useEnvioForm({
+    mode: "controlled",
+    initialValues: buildEnvioFormValues(envio),
+    validate: schemaResolver(CREAR_ENVIO_SCHEMA, { sync: true }),
+  });
+
+  const handleSubmit = form.onSubmit(async (values) => {
+    setIsSubmitting(true);
+    setErrorConflicto(null);
+    try {
+      const payload = buildEnvioReqDTO(values, {
+        id: envio.destino?.id ?? null,
+      });
+
+      await envioApi.update(id, payload);
+
+      notifications.show({
+        title: "Envío actualizado",
+        message: "El envío se actualizó correctamente.",
+        color: "green",
+        icon: <IconCheck />,
+      });
+
+      navigate("~/envios");
+    } catch (error) {
+      console.error("Error actualizando envío:", error);
+
+      const message = applyApiError(form, error, {
+        fallbackMessage: REINTENTAR_MAS_TARDE,
+      });
+      // 409 (`editable: false`, `SHG-BE-112`: el envío cambió de estado con el form abierto):
+      // el mensaje del backend queda visible también dentro del form.
+      if (error?.response?.status === 409) setErrorConflicto(message);
+
+      notifications.show({
+        title: "No se pudo actualizar el envío",
+        message,
+        color: "red",
+        icon: <IconX />,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  });
+
+  return (
+    <Stack>
+      <PageBreadcrumbsHeader
+        entidad="Envíos"
+        accion="Editar envío"
+        descripcion={`Modificá los datos del envío #${id}`}
+      />
+
+      <EnvioFormProvider form={form}>
+        <Stack>
+          {errorConflicto && (
+            <Alert color="red" variant="light" icon={<IconX size={18} />} data-testid="error-conflicto">
+              {errorConflicto}
+            </Alert>
+          )}
+          <SeccionOrigen />
+          <SeccionCarga categorias={categorias} />
+        </Stack>
+        <Footer
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          submitLabel="Guardar cambios"
+        />
+      </EnvioFormProvider>
+    </Stack>
+  );
+};
+
+export default EditarEnvioForm;

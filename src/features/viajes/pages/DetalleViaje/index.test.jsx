@@ -1,0 +1,528 @@
+import { screen, waitFor, within } from '@testing-library/react';
+import { notifications } from '@mantine/notifications';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { Route } from 'wouter';
+
+import { renderWithProviders } from '../../../../test/renderWithProviders';
+
+vi.mock('@api', () => ({
+  viajeApi: {
+    getById: vi.fn(),
+    finalizar: vi.fn(),
+    reanudar: vi.fn(),
+    cancelar: vi.fn(),
+  },
+  trackingApi: { getUltimaUbicacion: vi.fn(), getHistorial: vi.fn() },
+}));
+
+// El mini-mapa (Mapbox GL) no funciona sobre jsdom (requiere WebGL real);
+// se reemplaza por un stub liviano para poder testear el resto de la pantalla.
+vi.mock('@components/Map', () => ({
+  default: ({ children }) => <div data-testid="mapa-viaje">{children}</div>,
+}));
+vi.mock('react-map-gl/mapbox', () => ({
+  Marker: ({ children }) => <div>{children}</div>,
+  Source: ({ children }) => <div>{children}</div>,
+  Layer: () => null,
+  useMap: () => ({ current: null }),
+}));
+
+import { trackingApi, viajeApi } from '@api';
+import { useAuthStore, Usuario } from '@stores/auth.store';
+import DetalleViaje from './index';
+
+const EXISTING_VIAJE = {
+  id: 42,
+  estado: 'en_camino',
+  fechaHoraInicioPlanificada: '2026-08-01T09:00:00',
+  fechaHoraFinPlanificada: '2026-08-01T17:00:00',
+  fechaHoraInicio: '2026-08-01T09:15:00',
+  fechaHoraFin: null,
+  vehiculo: { id: 5, patente: 'AB123CD', modelo: { nombre: 'Hilux' } },
+  choferes: [{ id: 10, nombre: 'Juan', apellido: 'Perez' }],
+  responsable: { id: 1, nombre: 'Ana', apellido: 'Gomez' },
+  sucursal: { id: 2, nombre: 'Sucursal Centro' },
+  recorridos: [
+    {
+      id: 1,
+      orden: 1,
+      estado: 'planificado',
+      puntoEntrega: { nombreCalle: 'Av. Colón', numeroCalle: '1234', latitud: -31.4, longitud: -64.18 },
+      sucursalDestino: null,
+      detalleRecorridos: [
+        {
+          id: 100,
+          envio: {
+            id: 200,
+            codigoSeguimiento: 'ABC123',
+            nombre: 'Pedro',
+            apellido: 'Ruiz',
+            detalleEnvios: [{ id: 1, peso: 2.5 }],
+          },
+        },
+      ],
+    },
+  ],
+  historialEstado: [
+    { id: 1, estado: 'creado', fechaHoraInicio: '2026-08-01T08:00:00' },
+    { id: 2, estado: 'en_camino', fechaHoraInicio: '2026-08-01T09:15:00' },
+  ],
+};
+
+describe('DetalleViaje', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    viajeApi.getById.mockResolvedValue(EXISTING_VIAJE);
+    trackingApi.getUltimaUbicacion.mockResolvedValue({ latitud: -31.41, longitud: -64.19 });
+    trackingApi.getHistorial.mockResolvedValue([
+      { orden: 1, latitud: -31.42, longitud: -64.2 },
+      { orden: 2, latitud: -31.41, longitud: -64.19 },
+    ]);
+    useAuthStore.setState({
+      user: new Usuario({ id: 1, username: 'admin1', authorities: ['ROLE_ADMIN'] }),
+      isAuthenticated: true,
+    });
+  });
+
+  it('carga el viaje y muestra header, recorridos, historial y envíos', async () => {
+    renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+      route: '/viajes/42',
+    });
+
+    await waitFor(() => {
+      expect(viajeApi.getById).toHaveBeenCalledWith('42');
+    });
+
+    expect(await screen.findByText('Viaje #42')).toBeInTheDocument();
+
+    // Header canónico: breadcrumbs `Viajes / Detalle de viaje` + botón de ayuda.
+    expect(screen.getByText('Detalle de viaje')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ayuda/i })).toHaveAttribute(
+      'href',
+      'https://shipgo.gitbook.io/manual',
+    );
+
+    expect(screen.getAllByText('En camino').length).toBeGreaterThan(0);
+    expect(screen.getByText('AB123CD - Hilux')).toBeInTheDocument();
+    expect(screen.getByText('Juan Perez')).toBeInTheDocument();
+    expect(screen.getByText('Ana Gomez')).toBeInTheDocument();
+    expect(screen.getAllByText('Sucursal Centro').length).toBeGreaterThan(0);
+
+    expect(screen.getByText('Parada 1')).toBeInTheDocument();
+    expect(screen.getByText('ABC123')).toBeInTheDocument();
+    expect(screen.getByText('Pedro Ruiz')).toBeInTheDocument();
+
+    expect(screen.getByText('Historial de estados')).toBeInTheDocument();
+    expect(screen.getByText('Creado')).toBeInTheDocument();
+
+    expect(screen.getByTestId('mapa-viaje')).toBeInTheDocument();
+  });
+
+  it('un 404 muestra "Viaje no encontrado" con link al listado, sin Reintentar ni reintentos automáticos (SHG-FE-104)', async () => {
+    viajeApi.getById.mockRejectedValue(
+      Object.assign(new Error('Not found'), { response: { status: 404 } }),
+    );
+
+    renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+      route: '/viajes/999',
+    });
+
+    expect(await screen.findByText('Viaje no encontrado')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /volver a viajes/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /reintentar/i })).not.toBeInTheDocument();
+    expect(viajeApi.getById).toHaveBeenCalledTimes(1);
+  });
+
+  it('un 500 conserva "No se pudo cargar el viaje" con Reintentar, no el estado no-encontrado (SHG-FE-104)', async () => {
+    viajeApi.getById.mockRejectedValue(
+      Object.assign(new Error('boom'), { response: { status: 500 } }),
+    );
+
+    renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+      route: '/viajes/42',
+    });
+
+    expect(await screen.findByText('No se pudo cargar el viaje')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+    expect(screen.queryByText('Viaje no encontrado')).not.toBeInTheDocument();
+  });
+
+  it('muestra un error si falla la carga del viaje', async () => {
+    viajeApi.getById.mockRejectedValue(new Error('boom'));
+
+    renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+      route: '/viajes/42',
+    });
+
+    expect(await screen.findByText('No se pudo cargar el viaje')).toBeInTheDocument();
+  });
+
+  describe('acciones de ciclo de vida (SHG-FE-012)', () => {
+    const VIAJE_PLANIFICADO = { ...EXISTING_VIAJE, estado: 'planificado' };
+
+    it('no muestra el botón "Iniciar" para ADMIN (SHG-FE-083)', async () => {
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      // El botón "Iniciar" no debería estar presente para ADMIN
+      expect(screen.queryByRole('button', { name: 'Iniciar' })).not.toBeInTheDocument();
+    });
+
+    it('no muestra el botón "Iniciar" para SUPERUSER (SHG-FE-083)', async () => {
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+      useAuthStore.setState({
+        user: new Usuario({ id: 1, username: 'super1', authorities: ['ROLE_SUPERUSER'] }),
+        isAuthenticated: true,
+      });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      // El botón "Iniciar" no debería estar presente para SUPERUSER
+      expect(screen.queryByRole('button', { name: 'Iniciar' })).not.toBeInTheDocument();
+    });
+
+    it('cancela un viaje planificado con motivo opcional', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+      viajeApi.cancelar.mockResolvedValue({ ...VIAJE_PLANIFICADO, estado: 'cancelado' });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Cancelar viaje' }));
+
+      const dialog = await screen.findByRole('dialog');
+      await user.type(within(dialog).getByLabelText('Motivo (opcional)'), 'Vehículo con desperfecto');
+      await user.click(within(dialog).getByRole('button', { name: 'Cancelar viaje' }));
+
+      await waitFor(() => {
+        expect(viajeApi.cancelar).toHaveBeenCalledWith('42', { motivo: 'Vehículo con desperfecto' });
+      });
+      expect(await screen.findByText('Viaje cancelado')).toBeInTheDocument();
+    });
+
+    it('doble click en "Cancelar viaje" manda un solo PUT /cancelar (SHG-FE-106)', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+      let resolver;
+      viajeApi.cancelar.mockImplementation(() => new Promise((resolve) => { resolver = resolve; }));
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Cancelar viaje' }));
+      const dialog = await screen.findByRole('dialog');
+      const boton = within(dialog).getByRole('button', { name: 'Cancelar viaje' });
+      await user.dblClick(boton);
+
+      expect(viajeApi.cancelar).toHaveBeenCalledTimes(1);
+      resolver({ ...VIAJE_PLANIFICADO, estado: 'cancelado' });
+      expect(await screen.findByText('Viaje cancelado')).toBeInTheDocument();
+      expect(viajeApi.cancelar).toHaveBeenCalledTimes(1);
+    });
+
+    it('doble click en "Sí, finalizar" manda un solo PUT /finalizar (SHG-FE-106)', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue({ ...VIAJE_PLANIFICADO, estado: 'en_camino' });
+      let resolver;
+      viajeApi.finalizar.mockImplementation(() => new Promise((resolve) => { resolver = resolve; }));
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Finalizar' }));
+      const dialog = await screen.findByRole('dialog');
+      await user.dblClick(within(dialog).getByRole('button', { name: 'Sí, finalizar' }));
+
+      expect(viajeApi.finalizar).toHaveBeenCalledTimes(1);
+      resolver({});
+      expect(await screen.findByText('Viaje finalizado')).toBeInTheDocument();
+      expect(viajeApi.finalizar).toHaveBeenCalledTimes(1);
+    });
+
+    it('cancela un viaje sin motivo (opcional)', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+      viajeApi.cancelar.mockResolvedValue({ ...VIAJE_PLANIFICADO, estado: 'cancelado' });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Cancelar viaje' }));
+
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Cancelar viaje' }));
+
+      await waitFor(() => {
+        expect(viajeApi.cancelar).toHaveBeenCalledWith('42', { motivo: undefined });
+      });
+    });
+
+    it('muestra una advertencia si el backend rechaza la transición (409)', async () => {
+      const user = userEvent.setup();
+      viajeApi.finalizar.mockRejectedValue({
+        response: { status: 409, data: { message: 'El viaje no está en camino' } },
+      });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await user.click(await screen.findByRole('button', { name: 'Finalizar' }));
+
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, finalizar' }));
+
+      expect(await screen.findByText('Acción no disponible')).toBeInTheDocument();
+      expect(screen.getByText('El viaje no está en camino')).toBeInTheDocument();
+    });
+  });
+
+  describe('reanudar viaje con problemas (SHG-FE-126)', () => {
+    const VIAJE_CON_PROBLEMAS = { ...EXISTING_VIAJE, estado: 'con_problemas' };
+
+    // El store de Mantine es global: toasts de tests previos ocupan el límite (5) y encolan los nuevos.
+    beforeEach(() => notifications.clean());
+
+    const render = () =>
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, { route: '/viajes/42' });
+    const setRol = (rol) =>
+      useAuthStore.setState({
+        user: new Usuario({ id: 1, username: 'u', authorities: [rol] }),
+        isAuthenticated: true,
+      });
+
+    it.each(['ROLE_ADMIN', 'ROLE_SUPERUSER'])('%s ve "Reanudar" en con_problemas', async (rol) => {
+      setRol(rol);
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      render();
+      expect(await screen.findByRole('button', { name: 'Reanudar' })).toBeInTheDocument();
+    });
+
+    it.each(['ROLE_ADMIN', 'ROLE_SUPERUSER'])(
+      '%s puede cancelar un viaje con_problemas (PUT /cancelar)',
+      async (rol) => {
+        const user = userEvent.setup();
+        setRol(rol);
+        viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+        viajeApi.cancelar.mockResolvedValue({ ...VIAJE_CON_PROBLEMAS, estado: 'cancelado' });
+        render();
+
+        await user.click(await screen.findByRole('button', { name: 'Cancelar viaje' }));
+        const dialog = await screen.findByRole('dialog');
+        await user.click(within(dialog).getByRole('button', { name: 'Cancelar viaje' }));
+
+        await waitFor(() => {
+          expect(viajeApi.cancelar).toHaveBeenCalledWith('42', { motivo: undefined });
+        });
+      },
+    );
+
+    it('un CHOFER no ve "Reanudar" en con_problemas', async () => {
+      setRol('ROLE_CHOFER');
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      render();
+      await screen.findByText('Viaje #42');
+      expect(screen.queryByRole('button', { name: 'Reanudar' })).not.toBeInTheDocument();
+    });
+
+    it.each(['creado', 'planificado', 'en_proceso_de_carga', 'en_camino', 'finalizado', 'cancelado'])(
+      'no muestra "Reanudar" en estado %s',
+      async (estado) => {
+        viajeApi.getById.mockResolvedValue({ ...EXISTING_VIAJE, estado });
+        render();
+        await screen.findByText('Viaje #42');
+        expect(screen.queryByRole('button', { name: 'Reanudar' })).not.toBeInTheDocument();
+      },
+    );
+
+    it('confirma, llama PUT /reanudar, avisa y relee el detalle', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      viajeApi.reanudar.mockResolvedValue({ ...VIAJE_CON_PROBLEMAS, estado: 'en_camino' });
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      viajeApi.getById.mockResolvedValue({ ...VIAJE_CON_PROBLEMAS, estado: 'en_camino' });
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+
+      await waitFor(() => expect(viajeApi.reanudar).toHaveBeenCalledWith('42'));
+      expect(await screen.findByText('Viaje reanudado')).toBeInTheDocument();
+      await waitFor(() => expect(viajeApi.getById).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(screen.queryByRole('button', { name: 'Reanudar' })).not.toBeInTheDocument());
+    });
+
+    it('doble click en "Sí, reanudar" manda un solo PUT', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      let resolver;
+      viajeApi.reanudar.mockImplementation(() => new Promise((resolve) => { resolver = resolve; }));
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      await user.dblClick(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+      expect(viajeApi.reanudar).toHaveBeenCalledTimes(1);
+      resolver({});
+      expect(await screen.findByText('Viaje reanudado')).toBeInTheDocument();
+      expect(viajeApi.reanudar).toHaveBeenCalledTimes(1);
+    });
+
+    it('409: muestra el mensaje del backend como aviso y relee el viaje', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      viajeApi.reanudar.mockRejectedValue({
+        response: { status: 409, data: { message: 'El chofer ya tiene otro viaje en camino' } },
+      });
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+
+      expect(await screen.findByText('Acción no disponible')).toBeInTheDocument();
+      expect(screen.getByText('El chofer ya tiene otro viaje en camino')).toBeInTheDocument();
+      await waitFor(() => expect(viajeApi.getById).toHaveBeenCalledTimes(2));
+    });
+
+    it('404: avisa y relee el viaje, que pasa a la vista de no encontrado', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById
+        .mockResolvedValueOnce(VIAJE_CON_PROBLEMAS)
+        .mockRejectedValue(Object.assign(new Error('Not found'), { response: { status: 404 } }));
+      viajeApi.reanudar.mockRejectedValue({ response: { status: 404, data: {} } });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+
+      expect(await screen.findByText('Viaje no encontrado')).toBeInTheDocument();
+      expect(viajeApi.getById).toHaveBeenCalledTimes(2);
+    });
+
+    it('un error distinto de 409 y 404 no relee el viaje', async () => {
+      const user = userEvent.setup();
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+      viajeApi.reanudar.mockRejectedValue({ response: { status: 500, data: {} } });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      render();
+
+      await user.click(await screen.findByRole('button', { name: 'Reanudar' }));
+      const dialog = await screen.findByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Sí, reanudar' }));
+
+      expect(await screen.findByText('No se pudo completar la acción')).toBeInTheDocument();
+      expect(viajeApi.getById).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('reconciliación de puedeEditar (SHG-FE-029)', () => {
+    it('no muestra el botón "Editar" para viajes en_camino', async () => {
+      const VIAJE_EN_CAMINO = { ...EXISTING_VIAJE, estado: 'en_camino' };
+      viajeApi.getById.mockResolvedValue(VIAJE_EN_CAMINO);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    });
+
+    it('no muestra el botón "Editar" para viajes en_proceso_de_carga', async () => {
+      const VIAJE_EN_CARGA = { ...EXISTING_VIAJE, estado: 'en_proceso_de_carga' };
+      viajeApi.getById.mockResolvedValue(VIAJE_EN_CARGA);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    });
+
+    it('listo_para_viaje: muestra el badge y "Cancelar viaje", sin "Editar"', async () => {
+      viajeApi.getById.mockResolvedValue({ ...EXISTING_VIAJE, estado: 'listo_para_viaje' });
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      expect(await screen.findByRole('button', { name: 'Cancelar viaje' })).toBeInTheDocument();
+      expect(screen.getAllByText('Listo para salir').length).toBeGreaterThan(0);
+      expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    });
+
+    it('no muestra el botón "Editar" para viajes con_problemas', async () => {
+      const VIAJE_CON_PROBLEMAS = { ...EXISTING_VIAJE, estado: 'con_problemas' };
+      viajeApi.getById.mockResolvedValue(VIAJE_CON_PROBLEMAS);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    });
+
+    it('muestra el botón "Editar" para viajes creado', async () => {
+      const VIAJE_CREADO = { ...EXISTING_VIAJE, estado: 'creado' };
+      viajeApi.getById.mockResolvedValue(VIAJE_CREADO);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument();
+    });
+
+    it('muestra el botón "Editar" para viajes planificado', async () => {
+      const VIAJE_PLANIFICADO = { ...EXISTING_VIAJE, estado: 'planificado' };
+      viajeApi.getById.mockResolvedValue(VIAJE_PLANIFICADO);
+
+      renderWithProviders(<Route path="/viajes/:id" component={DetalleViaje} />, {
+        route: '/viajes/42',
+      });
+
+      await waitFor(() => {
+        expect(viajeApi.getById).toHaveBeenCalledWith('42');
+      });
+
+      expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument();
+    });
+  });
+});

@@ -1,52 +1,44 @@
-import { Card, Group, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import { DonutChart } from '@mantine/charts';
-import { IconTruck, IconInfoCircle } from '@tabler/icons-react';
-import ScreenContainer from '@components/ScreenContainer';
+import { Stack } from '@mantine/core';
+import { IconTruck } from '@tabler/icons-react';
 
-const OCUPACION_FLOTA = [
-  { name: 'En ruta', value: 17, color: 'blue.5' },
-  { name: 'Operativos', value: 7, color: 'teal.6' },
-  { name: 'En taller', value: 6, color: 'orange.5' },
-];
+import ChartCard from './ChartCard';
+import DonutLegend from './DonutLegend';
+import { getFlotaTotal, isDonutVacio, mapFlotaDonut } from '../dashboard.mappers';
 
-const TOTAL = OCUPACION_FLOTA.reduce((acc, e) => acc + e.value, 0);
+/**
+ * Estado actual de la flota — `resumen.flota.porEstado` (`SHG-BE-003`).
+ * Es una foto del estado *actual* de los vehículos del alcance (no se filtra por
+ * período), de ahí el subtítulo fijo.
+ */
+const FleetDonut = ({ resumen, isLoading, isError, onRetry }) => {
+  const data = mapFlotaDonut(resumen);
+  const total = getFlotaTotal(resumen);
 
-const FleetDonut = ({ periodoLabel, isLoading }) => (
-  <Card h="100%">
-    <Group gap="xs" mb="md">
-      <ThemeIcon variant="light" color="blue" size="xl">
-        <IconTruck />
-      </ThemeIcon>
-      <Stack gap={0}>
-        <Group gap={4} align="center">
-          <Text size="sm" fw={600}>Ocupación de flota</Text>
-          <Tooltip label="Estado operativo actual de los camiones: en ruta, disponibles o en taller." withArrow>
-            <IconInfoCircle size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
-          </Tooltip>
-        </Group>
-        <Text size="xs" c="dimmed">{periodoLabel}</Text>
-      </Stack>
-    </Group>
-    <ScreenContainer onLoading={{ show: isLoading }} styleProps={{ bg: 'transparent', mih: '220px' }}>
+  return (
+    <ChartCard
+      title="Estado de la flota"
+      tooltip="Vehículos por estado, hoy."
+      icon={<IconTruck />}
+      color="blue"
+      subtitle="Estado actual"
+      isLoading={isLoading}
+      isError={isError}
+      isEmpty={isDonutVacio(data)}
+      onRetry={onRetry}
+    >
       <Stack gap="md" pt="sm">
         <DonutChart
-          data={OCUPACION_FLOTA}
-          chartLabel={`${TOTAL} unidades`}
+          data={data}
+          chartLabel={`${total} vehículos`}
           size={200}
           thickness={30}
           mx="auto"
         />
-        <Group gap="xl" justify="center">
-          {OCUPACION_FLOTA.map((e) => (
-            <Stack key={e.name} gap={2} align="center">
-              <Text size="xs" c="dimmed">{e.name}</Text>
-              <Text size="sm" fw={700}>{e.value}</Text>
-            </Stack>
-          ))}
-        </Group>
+        <DonutLegend data={data} gap="lg" />
       </Stack>
-    </ScreenContainer>
-  </Card>
-);
+    </ChartCard>
+  );
+};
 
 export default FleetDonut;

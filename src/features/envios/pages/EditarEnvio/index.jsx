@@ -1,0 +1,125 @@
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "wouter";
+import { Card, Text } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { IconX } from "@tabler/icons-react";
+
+import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import ScreenContainer from "@components/ScreenContainer";
+import { isNotFoundError } from "@utils/httpErrors";
+import { envioApi, categoriaApi } from "@api";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
+
+import EditarEnvioForm from "./components/EditarEnvioForm";
+import { esEnvioEditable } from "../../utils";
+import EnvioNoEditable from "./components/EnvioNoEditable";
+
+/**
+ * Carga el envío + catálogos y delega en el form canónico (`EditarEnvioForm`,
+ * comparte `EnvioFormProvider`/schema/secciones con `CrearEnvios` — `SHG-FE-031`).
+ * Resuelve acá el estado de carga, el 404 y el gate `editable` (`SHG-FE-004`/`SHG-FE-125`) para que el form monte una sola vez con los `initialValues`
+ * ya resueltos.
+ */
+const EditarEnvio = () => {
+  const { id } = useParams();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [envio, setEnvio] = useState(null);
+  const [categorias, setCategorias] = useState([]);
+
+  const loadEnvio = useCallback(() => {
+    if (!id) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
+    setNotFound(false);
+
+    envioApi
+      .getById(id)
+      .then((data) => {
+        if (!cancelled) setEnvio(data);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (isNotFoundError(err)) {
+          setEnvio(null);
+          setNotFound(true);
+        } else {
+          console.error("Error cargando envío:", err);
+          setError(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    categoriaApi
+      .getAll()
+      .then((data) =>
+        setCategorias(
+          (data ?? []).map((c) => ({ value: String(c.id), label: c.nombre })),
+        ),
+      )
+      .catch(() => {
+        notifications.show({
+          title: "No se pudieron cargar las categorías",
+          message: REINTENTAR_MAS_TARDE,
+          color: "red",
+          icon: <IconX />,
+        });
+      });
+  }, []);
+
+  useEffect(() => {
+    const cleanup = loadEnvio();
+    return cleanup;
+  }, [loadEnvio]);
+
+  return (
+    <PageContainer>
+      {notFound && !loading && <PageBreadcrumbsHeader entidad="Envíos" accion="Editar envío" />}
+      <ScreenContainer
+        onLoading={{ show: loading, description: 'Cargando envío...' }}
+        onNotFound={{
+          show: notFound && !loading,
+          recurso: 'Envío',
+          listaHref: '~/envios',
+          listaLabel: 'Volver a envíos',
+        }}
+        onError={{
+          show: error && !loading,
+          title: 'No se pudo cargar el envío',
+          description: 'No pudimos cargar el envío. Probá de nuevo en unos minutos.',
+          onClick: loadEnvio,
+        }}
+        onEmptyData={{
+          show: !loading && !error && !notFound && !envio,
+          title: 'Envío no encontrado',
+          description: 'No encontramos información para este envío.',
+        }}
+      >
+        {envio && (
+          <>
+            {!esEnvioEditable(envio) ? (
+              <EnvioNoEditable id={id} estado={envio.estado} />
+            ) : (
+              <EditarEnvioForm id={id} envio={envio} categorias={categorias} />
+            )}
+          </>
+        )}
+      </ScreenContainer>
+    </PageContainer>
+  );
+};
+
+export default EditarEnvio;

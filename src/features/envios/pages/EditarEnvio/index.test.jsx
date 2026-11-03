@@ -1,0 +1,526 @@
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { AppShell } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { Route } from "wouter";
+
+import { renderWithProviders } from "../../../../test/renderWithProviders";
+
+vi.mock("@api", () => ({
+  envioApi: {
+    getById: vi.fn(),
+    update: vi.fn(),
+  },
+  categoriaApi: { getAll: vi.fn() },
+  provinciaApi: { getAll: vi.fn() },
+  localidadApi: { getByProvincia: vi.fn() },
+  sucursalApi: { getParaEntrega: vi.fn() },
+}));
+
+// El mapa (mapbox-gl / react-map-gl) no corre en jsdom; el stub expone
+// `data-initial-center` (el prop `initialCenter` de `MapCard`) para poder
+// verificar que EditarEnvio centra el mapa en las coordenadas del envío
+// precargado y no en `DEFAULT_CENTER` (SHG-FE-078).
+vi.mock("@features/mapa/components/MapCard", () => ({
+  default: ({ children, initialCenter, onClick }) => (
+    <div
+      data-testid="map-card"
+      data-initial-center={`${initialCenter.lat},${initialCenter.lng}`}
+      onClick={() => onClick?.({ lngLat: { lat: -31.5, lng: -64.2 } })}
+    >
+      {children}
+    </div>
+  ),
+}));
+vi.mock("react-map-gl/mapbox", () => ({
+  Marker: () => null,
+}));
+
+// El geocoding real (Mapbox Search JS) se prueba en useAddressAutofill; acá se
+// stubea porque EditarEnvio precarga las coordenadas del envío y no necesita
+// re-geocodificar.
+vi.mock("../CrearEnvios/hooks/useAddressAutofill", () => ({
+  useAddressAutofill: () => ({
+    autocompleteData: [],
+    handleChange: vi.fn(),
+    handleSelect: vi.fn(),
+    loadingInput: false,
+    loadingMap: false,
+    selectedId: null,
+  }),
+}));
+
+import {
+  envioApi,
+  categoriaApi,
+  provinciaApi,
+  localidadApi,
+  sucursalApi,
+} from "@api";
+import EditarEnvio from "./index";
+
+const EXISTING_ENVIO = {
+  id: 9,
+  nombre: "Juan",
+  apellido: "García",
+  emailRemitente: "remitente@test.com",
+  emailReceptor: "receptor@test.com",
+  prefijo: "351",
+  telefono: "1234567",
+  estado: "CREADO",
+  destino: {
+    id: 3,
+    nombreCalle: "Av. Colón",
+    numeroCalle: "1234",
+    latitud: -31.4,
+    longitud: -64.18,
+    localidad: {
+      id: 5,
+      nombre: "Córdoba",
+      provincia: { id: 2, nombre: "Córdoba" },
+    },
+  },
+  detalleEnvios: [
+    { id: 11, categoria: { id: 1, nombre: "Documentación" }, descripcion: "Sobre", peso: 0.5 },
+  ],
+};
+
+const renderEditarEnvio = () =>
+  renderWithProviders(
+    <AppShell footer={{ height: 60 }}>
+      <Route path="/envios/editar/:id" component={EditarEnvio} />
+    </AppShell>,
+    { route: "/envios/editar/9" },
+  );
+
+describe("EditarEnvio", () => {
+  afterEach(() => {
+    notifications.clean();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    categoriaApi.getAll.mockResolvedValue([
+      { id: 1, nombre: "Documentación" },
+      { id: 2, nombre: "Electrónica" },
+    ]);
+    provinciaApi.getAll.mockResolvedValue([{ id: 2, nombre: "Córdoba" }]);
+    localidadApi.getByProvincia.mockResolvedValue([{ id: 5, nombre: "Córdoba" }]);
+    sucursalApi.getParaEntrega.mockResolvedValue([
+      {
+        id: 5,
+        nombre: "Sucursal Centro",
+        puntoEntrega: { nombreCalle: "Av. Colón", numeroCalle: "500" },
+      },
+    ]);
+    envioApi.getById.mockResolvedValue(EXISTING_ENVIO);
+    envioApi.update.mockResolvedValue({ id: 9 });
+  });
+
+  it("usa el header canónico (breadcrumbs Envíos / Editar envío + Ayuda)", async () => {
+    renderEditarEnvio();
+
+    expect(await screen.findByText("Editar envío")).toBeInTheDocument();
+    expect(screen.getAllByText("Envíos").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("link", { name: /ayuda/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("loads and prefills the existing envío data into the form", async () => {
+    renderEditarEnvio();
+
+    await waitFor(() => {
+      expect(envioApi.getById).toHaveBeenCalledWith("9");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+    });
+
+    expect(screen.getByLabelText(/apellido/i)).toHaveValue("García");
+    expect(screen.getByLabelText(/email del remitente/i)).toHaveValue(
+      "remitente@test.com",
+    );
+    expect(screen.getByLabelText(/email del destinatario/i)).toHaveValue(
+      "receptor@test.com",
+    );
+    expect(screen.getByLabelText(/^calle/i)).toHaveValue("Av. Colón");
+    expect(screen.getByText("Documentación")).toBeInTheDocument();
+  });
+
+  it("submits changes and calls envioApi.update with the EnvioReqDTO shape", async () => {
+    const user = userEvent.setup();
+    renderEditarEnvio();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+    });
+
+    const nombreInput = screen.getByLabelText(/^nombre/i);
+    await user.clear(nombreInput);
+    await user.type(nombreInput, "Pedro");
+
+    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+    await waitFor(() => {
+      expect(envioApi.update).toHaveBeenCalledTimes(1);
+    });
+
+    expect(envioApi.update).toHaveBeenCalledWith(
+      "9",
+      expect.objectContaining({
+        nombre: "Pedro",
+        apellido: "García",
+        emailRemitente: "remitente@test.com",
+        emailReceptor: "receptor@test.com",
+        prefijo: "351",
+        telefono: "1234567",
+        destino: expect.objectContaining({
+          id: 3,
+          nombreCalle: "Av. Colón",
+          numeroCalle: "1234",
+          localidad: { id: 5 },
+        }),
+        detalleEnvios: [
+          expect.objectContaining({
+            id: 11,
+            categoria: { id: 1 },
+            descripcion: "Sobre",
+            peso: 0.5,
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("muestra el error de campo devuelto por PUT /api/envio/{id} (400 de validación, CONTRACTS.md §5)", async () => {
+    const user = userEvent.setup();
+    envioApi.update.mockRejectedValue({
+      response: {
+        data: {
+          statusCode: 400,
+          message: "Error en la validación de los campos.",
+          fields: [{ field: "telefono", error: "El teléfono no es válido." }],
+        },
+      },
+    });
+
+    renderEditarEnvio();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+    });
+
+    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+    await waitFor(() => {
+      expect(envioApi.update).toHaveBeenCalledTimes(1);
+    });
+
+    expect(
+      await screen.findByText("El teléfono no es válido."),
+    ).toBeInTheDocument();
+  });
+
+  it("centra el mapa en las coordenadas del envío precargado, no en DEFAULT_CENTER (SHG-FE-078)", async () => {
+    renderEditarEnvio();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+    });
+
+    expect(screen.getByTestId("map-card")).toHaveAttribute(
+      "data-initial-center",
+      `${EXISTING_ENVIO.destino.latitud},${EXISTING_ENVIO.destino.longitud}`,
+    );
+  });
+
+  it("un 404 muestra 'Envío no encontrado' con breadcrumb y link al listado, sin Reintentar ni segundo GET (SHG-FE-104)", async () => {
+    envioApi.getById.mockRejectedValue(
+      Object.assign(new Error("Not found"), { response: { status: 404 } }),
+    );
+
+    renderEditarEnvio();
+
+    expect(await screen.findByText("Envío no encontrado")).toBeInTheDocument();
+    expect(screen.getByText("Editar envío")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /volver a envíos/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /reintentar/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("No se pudo cargar el envío")).not.toBeInTheDocument();
+    expect(envioApi.getById).toHaveBeenCalledTimes(1);
+  });
+
+  describe("envío editable (SHG-FE-125, SHG-CONTRACT-022)", () => {
+    it("el payload lleva emailRemitente editado", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, editable: true });
+      renderEditarEnvio();
+
+      const email = await screen.findByLabelText(/email del remitente/i);
+      await waitFor(() => expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan"));
+      await user.clear(email);
+      await user.type(email, "nuevo@example.com");
+      await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+      await waitFor(() => expect(envioApi.update).toHaveBeenCalledTimes(1));
+      expect(envioApi.update.mock.calls[0][1].emailRemitente).toBe("nuevo@example.com");
+    });
+
+    it("con editable ausente (anidado o backend viejo) se ofrece el form", async () => {
+      renderEditarEnvio();
+      await waitFor(() => expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan"));
+    });
+
+    it.each(["asignado_a_viaje", "en_vehiculo", "en_camino", "en_sucursal"])(
+      "editable=false (%s): sin form, con motivo y vuelta al detalle",
+      async (estado) => {
+        envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado, editable: false });
+        renderEditarEnvio();
+
+        expect(await screen.findByText(/está o estuvo en un viaje/i)).toBeInTheDocument();
+        expect(screen.getByTestId("volver-detalle")).toBeInTheDocument();
+        expect(screen.queryByLabelText(/^nombre/i)).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /guardar cambios/i })).not.toBeInTheDocument();
+      },
+    );
+
+    it("un 409 del backend se muestra dentro del form", async () => {
+      const user = userEvent.setup();
+      envioApi.update.mockRejectedValue({
+        response: {
+          status: 409,
+          data: { statusCode: 409, message: "El envío ya viajó y no se puede modificar." },
+        },
+      });
+      renderEditarEnvio();
+
+      await waitFor(() => expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan"));
+      await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+      expect(await screen.findByTestId("error-conflicto")).toHaveTextContent(
+        "El envío ya viajó y no se puede modificar.",
+      );
+    });
+  });
+
+  it("un envío creado tiene destino y paquetes editables", async () => {
+    renderEditarEnvio();
+
+    await waitFor(() => expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan"));
+    expect(screen.getByLabelText(/^calle/i)).toBeEnabled();
+    expect(screen.getByRole("button", { name: /agregar paquete/i })).toBeInTheDocument();
+  });
+
+  it("no permite editar un envío en estado terminal (entregado/rechazado)", async () => {
+    envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado", editable: false });
+
+    renderEditarEnvio();
+
+    await waitFor(() => {
+      expect(envioApi.getById).toHaveBeenCalledWith("9");
+    });
+
+    expect(
+      await screen.findByText(/no se puede editar en su estado actual/i),
+    ).toBeInTheDocument();
+
+    expect(screen.queryByLabelText(/^nombre/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /guardar cambios/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  describe("SHG-FE-079/SHG-CONTRACT-012 — retiro en sucursal como método de entrega", () => {
+    it("precarga un envío de retiro en sucursal con el selector de sucursal, sin buscador/mapa", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: { id: 5, nombre: "Sucursal Centro" },
+        destino: null,
+      });
+
+      renderEditarEnvio();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+      });
+
+      expect(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      ).toBeChecked();
+      expect(
+        await screen.findByText(/sucursal centro — av\. colón 500/i),
+      ).toBeInTheDocument();
+      expect(screen.queryByLabelText(/buscar dirección/i)).not.toBeInTheDocument();
+      expect(screen.queryByTestId("map-card")).not.toBeInTheDocument();
+    });
+
+    it("permite cambiar de domicilio a retiro en sucursal y guarda tipoEntrega/sucursalEntregaId", async () => {
+      const user = userEvent.setup();
+      renderEditarEnvio();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+      });
+
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+
+      const combobox = screen.getByRole("combobox", {
+        name: /sucursal de retiro/i,
+      });
+      await user.click(combobox);
+      const listboxId = combobox.getAttribute("aria-controls");
+      const listbox = document.getElementById(listboxId);
+      const option = await within(listbox).findByText(/sucursal centro/i);
+      await user.click(option);
+
+      await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+      await waitFor(() => {
+        expect(envioApi.update).toHaveBeenCalledTimes(1);
+      });
+
+      expect(envioApi.update).toHaveBeenCalledWith(
+        "9",
+        expect.objectContaining({
+          tipoEntrega: "sucursal",
+          sucursalEntregaId: 5,
+        }),
+      );
+      const [, payload] = envioApi.update.mock.calls[0];
+      expect(payload).not.toHaveProperty("destino");
+    });
+
+    it("permite cambiar de retiro en sucursal a domicilio y guarda destino/tipoEntrega", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        tipoEntrega: "sucursal",
+        sucursalEntrega: { id: 5, nombre: "Sucursal Centro" },
+        destino: null,
+      });
+
+      const user = userEvent.setup();
+      renderEditarEnvio();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("radio", { name: /retiro en sucursal/i }),
+        ).toBeChecked();
+      });
+
+      await user.click(
+        screen.getByRole("radio", { name: /entrega a domicilio/i }),
+      );
+
+      // Sin destino precargado (era un envío de retiro en sucursal): hay que
+      // completar la dirección a mano — no hay geocoding disponible en este
+      // test (`useAddressAutofill` stubeado), así que se completa cada campo
+      // y se fija la posición clickeando el mapa (stub de `MapCard`).
+      await user.type(screen.getByLabelText(/^calle/i), "Av. Colón");
+      await user.type(screen.getByLabelText(/número/i), "1234");
+
+      const provinciaCombobox = screen.getByRole("combobox", {
+        name: /provincia/i,
+      });
+      await user.click(provinciaCombobox);
+      const provinciaListbox = document.getElementById(
+        provinciaCombobox.getAttribute("aria-controls"),
+      );
+      await user.click(
+        await within(provinciaListbox).findByText("Córdoba"),
+      );
+
+      const localidadCombobox = screen.getByRole("combobox", {
+        name: /localidad/i,
+      });
+      await user.click(localidadCombobox);
+      const localidadListbox = document.getElementById(
+        localidadCombobox.getAttribute("aria-controls"),
+      );
+      await user.click(
+        await within(localidadListbox).findByText("Córdoba"),
+      );
+
+      await user.click(screen.getByTestId("map-card"));
+
+      await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+      await waitFor(() => {
+        expect(envioApi.update).toHaveBeenCalledTimes(1);
+      });
+
+      expect(envioApi.update).toHaveBeenCalledWith(
+        "9",
+        expect.objectContaining({
+          tipoEntrega: "domicilio",
+          destino: expect.objectContaining({
+            nombreCalle: "Av. Colón",
+            numeroCalle: "1234",
+            localidad: { id: 5 },
+            latitud: -31.5,
+            longitud: -64.2,
+          }),
+        }),
+      );
+      const [, payload] = envioApi.update.mock.calls[0];
+      expect(payload).not.toHaveProperty("sucursalEntregaId");
+    });
+  });
+
+  describe("estados de carga/error/vacío (SHG-QA-003)", () => {
+    it("muestra el estado de error cuando envioApi.getById rechaza, y reintentar hace una nueva llamada", async () => {
+      const user = userEvent.setup();
+      const error = new Error("Network error");
+      error.response = { status: 500 };
+      envioApi.getById.mockRejectedValueOnce(error);
+
+      renderEditarEnvio();
+
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledWith("9");
+      });
+
+      expect(await screen.findByText("No se pudo cargar el envío")).toBeInTheDocument();
+      expect(screen.getByText("No pudimos cargar el envío. Probá de nuevo en unos minutos.")).toBeInTheDocument();
+
+      const reintentar = screen.getByRole("button", { name: /reintentar/i });
+      expect(reintentar).toBeInTheDocument();
+
+      envioApi.getById.mockResolvedValueOnce(EXISTING_ENVIO);
+      await user.click(reintentar);
+
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledTimes(2);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/^nombre/i)).toHaveValue("Juan");
+      });
+    });
+
+    it("muestra el estado vacío cuando envioApi.getById retorna null", async () => {
+      vi.clearAllMocks();
+      envioApi.getById.mockResolvedValue(null);
+      categoriaApi.getAll.mockResolvedValue([
+        { id: 1, nombre: "Documentación" },
+        { id: 2, nombre: "Electrónica" },
+      ]);
+      provinciaApi.getAll.mockResolvedValue([{ id: 2, nombre: "Córdoba" }]);
+      localidadApi.getByProvincia.mockResolvedValue([{ id: 5, nombre: "Córdoba" }]);
+
+      renderEditarEnvio();
+
+      await waitFor(() => {
+        expect(envioApi.getById).toHaveBeenCalledWith("9");
+      });
+
+      expect(await screen.findByText("Envío no encontrado")).toBeInTheDocument();
+      expect(screen.getByText("No encontramos información para este envío.")).toBeInTheDocument();
+    });
+  });
+});

@@ -1,65 +1,75 @@
+import { mapValues } from 'es-toolkit';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 
-import dayjs from 'dayjs';
-
 import { useParams } from '@hooks/useParams';
-
-import ENVIOS from '../items';
+import { useOperatingContext } from '@contexts/operatingContext';
+import { envioApi } from '@api';
 
 const PAGE_LIMIT = 10;
+const EMPTY_RESULTS = [];
 
-const getEnvios = (params) =>
-  new Promise((resolve) => {
-    const { page, filters } = params;
-    const offset = (page - 1) * PAGE_LIMIT;
-
-    let results = [...ENVIOS];
-
-    if (filters.search) {
-      const term = filters.search.toLowerCase();
-      results = results.filter(
-        (e) =>
-          e.codigo_envio.toLowerCase().includes(term) ||
-          e.direccion.toLowerCase().includes(term) ||
-          e.localidad.toLowerCase().includes(term),
-      );
-    }
-
-    if (filters.estado?.length > 0) {
-      results = results.filter((e) => filters.estado.includes(e.estado));
-    }
-
-    if (filters.provincia) {
-      results = results.filter((e) =>
-        e.provincia.toLowerCase().includes(filters.provincia.toLowerCase()),
-      );
-    }
-
-    if (filters.date?.[0] && filters.date?.[1]) {
-      const from = dayjs(filters.date[0]).startOf('day');
-      const to = dayjs(filters.date[1]).endOf('day');
-      results = results.filter((e) => {
-        const d = dayjs(e.fecha_registro);
-        return d.isAfter(from) && d.isBefore(to);
-      });
-    }
-
-    setTimeout(() => {
-      resolve({
-        total: results.length,
-        totalPages: Math.ceil(results.length / PAGE_LIMIT),
-        results: results.slice(offset, offset + PAGE_LIMIT),
-      });
-    }, 600);
-  });
-
-export const useGetEnvios = () => {
+/**
+ * Hook para obtener envíos con paginación usando la API real (`GET /api/envio`).
+ *
+ * Los filtros llegan de `ListaEnviosFiltros` como `{ [param]: { label, values } }`
+ * y acá se aplanan a los nombres exactos de `EnvioFilter` (`destino`, `search`,
+ * `estado`, `fechaDesde`, `fechaHasta` — CONTRACTS.md §4 / SHG-BE-004).
+ *
+ * `sucursal` (SHG-FE-052): cuando el SUPERUSER eligió una sucursal operativa
+ * en el selector del header, se manda como `sucursal=<id>` — `EnvioFilter` ya
+ * lo soporta server-side (SUPERUSER-only, SHG-BE-004). Sin selección (o para
+ * ADMIN, donde el selector ni se muestra) no se manda nada y el backend aplica
+ * su alcance normal (ADMIN → su sucursal, SUPERUSER → toda la empresa).
+ * @param {number} pageLimit - Cantidad de elementos por página (default: 10)
+ */
+export const useGetEnvios = (pageLimit = PAGE_LIMIT) => {
   const queryClient = useQueryClient();
   const paramsOptions = useParams();
+  const { isSuperUser, activeSucursalId } = useOperatingContext();
+
+  // Normalizar parámetros para el backend
+  // El backend espera: page (0-indexed), size, y los filtros de EnvioFilter
+  const filterParams = mapValues(paramsOptions.params.filters, (filter) => filter.values);
+
+  const operatingContextParams =
+    isSuperUser && activeSucursalId != null ? { sucursal: activeSucursalId } : {};
+
+  const normalizedParams = {
+    page: (paramsOptions.params.page || 1) - 1, // Convertir de 1-indexed (UI) a 0-indexed (backend)
+    size: pageLimit,
+    ...operatingContextParams,
+    ...filterParams,
+  };
+
+  /**
+   * Trae hasta `limit` envíos con los filtros actuales aplicados (para exportar a
+   * CSV, no sólo la página visible). Ver `useCsvExport`.
+   * @param {number} limit
+   * @returns {Promise<{ rows: any[], total: number }>}
+   */
+  const fetchExportRows = async (limit) => {
+    const response = await envioApi.get({
+      ...operatingContextParams,
+      ...filterParams,
+      page: 0,
+      size: limit,
+    });
+    return {
+      rows: response?.content ?? EMPTY_RESULTS,
+      total: response?.totalElements ?? 0,
+    };
+  };
 
   const enviosQuery = useQuery({
-    queryFn: () => getEnvios(paramsOptions.params),
-    queryKey: ['envios', JSON.stringify(paramsOptions.params)],
+    queryFn: async () => {
+      const response = await envioApi.get(normalizedParams);
+      return {
+        total: response?.totalElements || 0,
+        results: response?.content || EMPTY_RESULTS,
+        totalPages: response?.totalPages || 0,
+      };
+    },
+    queryKey: ['envios', JSON.stringify(normalizedParams)],
   });
 
   const refetch = () => {
@@ -67,5 +77,5 @@ export const useGetEnvios = () => {
     enviosQuery.refetch();
   };
 
-  return { enviosQuery, refetch, PAGE_LIMIT, ...paramsOptions };
+  return { enviosQuery, refetch, fetchExportRows, PAGE_LIMIT: pageLimit, ...paramsOptions };
 };

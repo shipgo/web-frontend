@@ -1,41 +1,57 @@
+import { useEffect } from "react";
+
 import { Virtuoso } from "react-virtuoso";
-import { Button, Center, Text } from "@mantine/core";
+import { Center, Text } from "@mantine/core";
 
 import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
+import { VirtuosoItem } from "@components/VirtuosoListA11y";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 import ItemVehiculo from "./ItemVehiculo";
 import { useFormContext } from "../contexts/EnviosFormContext";
+import { motivoNoDisponible } from "@features/vehiculos/utils/mantenimiento";
 import useEnviosStats from "../hooks/useEnviosStats";
 
-const ListaVehiculosDisponibles = ({ vehiculosQuery }) => {
+const ListaVehiculosDisponibles = ({
+  vehiculos,
+  enMantenimiento = [],
+  isFetching,
+  isError,
+  refetch,
+  fechasSeleccionadas,
+}) => {
   const {
     setFieldValue,
     values: { vehiculo },
   } = useFormContext();
 
   const { pesoTotal } = useEnviosStats();
-  const {
-    data,
-    isFetching,
-    refetch,
-    isError,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-  } = vehiculosQuery;
+
+  // Si cambian las fechas planificadas y el vehículo que ya estaba
+  // seleccionado deja de figurar entre los disponibles, se limpia la
+  // selección (evita postear un vehículo que ya no está libre en la ventana).
+  useEffect(() => {
+    if (!vehiculo || isFetching) return;
+    if (!vehiculos.some((v) => v.id === vehiculo.id)) {
+      setFieldValue("vehiculo", null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehiculos]);
+
+  // Disponibles primero y, debajo, los que están en mantenimiento (no seleccionables).
+  const items = [...vehiculos, ...enMantenimiento];
 
   const handleSelectedVehicle = (vehicle) => {
     setFieldValue("vehiculo", vehicle);
   };
 
-  const vehicles = data?.pages?.flatMap((page) => page.data) ?? [];
-
   return (
     <Virtuoso
-      data={vehicles}
+      data={items}
       style={{ flex: 1 }}
       components={{
+        Item: VirtuosoItem,
         EmptyPlaceholder: () => (
           <ScreenContainer
             styleProps={{
@@ -43,62 +59,55 @@ const ListaVehiculosDisponibles = ({ vehiculosQuery }) => {
             }}
             onLoading={{
               show: isFetching,
-              description: "Cargando vehículos pendientes...",
+              description: "Cargando vehículos disponibles...",
             }}
             onError={{
               show: isError,
               onClick: refetch,
-              title: "Error al cargar los vehículos",
+              title: "No pudimos cargar los vehículos",
               description:
-                "Hubo un error al cargar los vehículos pendientes, por favor intenta nuevamente",
+                REINTENTAR_MAS_TARDE,
             }}
             onEmptyData={{
-              show: !isFetching && !isError && vehicles.length === 0,
-              title: "No hay vehículos pendientes",
-              description: "No hay vehículos pendientes para seleccionar",
+              show: !isFetching && !isError && vehiculos.length === 0,
+              title: fechasSeleccionadas
+                ? "No hay vehículos disponibles"
+                : "Seleccioná las fechas del viaje",
+              description: fechasSeleccionadas
+                ? "No hay vehículos disponibles en las fechas elegidas."
+                : "Completá la salida y la llegada planificadas en \"Detalles del viaje\" para ver los vehículos disponibles.",
             }}
           />
         ),
         Footer: () => {
-          if (isFetching || isError) {
-            return null;
-          }
-
-          if (hasNextPage) {
-            return (
-              <Button
-                radius={0}
-                fullWidth
-                h="72px"
-                variant="subtle"
-                onClick={fetchNextPage}
-                loading={isFetchingNextPage}
-                loaderProps={{
-                  type: "dots",
-                }}
-              >
-                Cargar más envíos
-              </Button>
-            );
-          }
+          if (isFetching || isError || items.length === 0) return null;
 
           return (
             <Center h="72px">
-              <Text c="dimmed">No hay más vehículos disponibles</Text>
+              <Text c="dimmed">No hay más vehículos disponibles.</Text>
             </Center>
           );
         },
       }}
-      itemContent={(_, vehicle) => (
-        <SelectableItemList
-          singleSelection
-          key={vehicle.id}
-          selected={vehiculo?.id === vehicle.id}
-          onClick={() => handleSelectedVehicle(vehicle)}
-        >
-          <ItemVehiculo vehicle={vehicle} pesoTotal={pesoTotal} />
-        </SelectableItemList>
-      )}
+      itemContent={(_, vehicle) => {
+        const enMant = enMantenimiento.some((v) => v.id === vehicle.id);
+
+        return (
+          <SelectableItemList
+            singleSelection
+            key={vehicle.id}
+            selected={!enMant && vehiculo?.id === vehicle.id}
+            disabled={enMant}
+            onClick={() => handleSelectedVehicle(vehicle)}
+          >
+            <ItemVehiculo
+              vehicle={vehicle}
+              pesoTotal={pesoTotal}
+              motivoNoDisponible={enMant ? motivoNoDisponible(vehicle) : undefined}
+            />
+          </SelectableItemList>
+        );
+      }}
     />
   );
 };

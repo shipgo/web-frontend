@@ -1,133 +1,212 @@
-import { useState } from 'react';
+import { useLocation } from "wouter";
 import {
-  Avatar, Badge, Button, Checkbox, Divider, Drawer, Group,
-  Pill, Stack, Table, Text, Title,
-} from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { IconEdit, IconEye, IconKey, IconMail, IconUserOff } from '@tabler/icons-react';
+  Avatar,
+  Badge,
+  Checkbox,
+  Group,
+  Stack,
+  Table,
+  Text,
+} from "@mantine/core";
+import {
+  IconEdit,
+  IconEye,
+  IconKey,
+  IconTrash,
+} from "@tabler/icons-react";
 
-import { toLocalDate } from '@utils/dates';
-import { GridData, RowActionsMenu } from '@components';
-import ScreenContainer from '@components/ScreenContainer';
+import { EMPTY } from "@domain/format";
+import { timeFromNow, toLocalDate } from "@utils/dates";
+import { RowActionsMenu } from "@components";
+import { API_URLS } from "@constants/apiUrls";
+import { rolBadge } from "@domain/roles";
+import { useAuthStore } from "@stores/auth.store";
+import { useDeleteUsuario } from "../hooks/useDeleteUsuario";
+import { usePasswordReset } from "../../hooks/usePasswordReset";
+import { canManageUsuario } from "../../utils";
+import { nombreCompleto } from "@domain/usuario";
 
-const ROL_LABELS = { admin: 'Administrador', operador: 'Operador', chofer: 'Chofer' };
-const ESTADO_COLORS = { activo: 'green', inactivo: 'orange' };
-const ESTADO_LABELS = { activo: 'Activo', inactivo: 'Dado de baja' };
+const ListaUsuariosTabla = ({
+  items = [],
+  selectedIds,
+  onToggle,
+  onToggleAll,
+  onRefresh,
+}) => {
+  const [, navigate] = useLocation();
+  const { confirmDelete } = useDeleteUsuario(onRefresh);
+  const { confirmReset } = usePasswordReset();
+  const currentUser = useAuthStore((state) => state.user);
 
-const ListaUsuariosTabla = ({ items = [], selectedIds, onToggle, onToggleAll }) => {
-  const [selected, setSelected] = useState(null);
-  const [drawerOpened, { open, close }] = useDisclosure(false);
+  const handleEdit = (userId) => navigate(`~/usuarios/${userId}/editar`);
+  const handleViewDetails = (userId) => navigate(`~/usuarios/${userId}`);
 
-  const handleViewDetails = (usuario) => {
-    setSelected(usuario);
-    open();
+  // SHG-FE-094 / SHG-FE-095: nunca ofrecer "Eliminar" (ni individual ni
+  // masivo) sobre el propio usuario logueado — hard delete sin guarda de
+  // backend contra auto-borrado, la decisión de alcance fue resolverlo sólo
+  // en el frontend. Se usa también para deshabilitar el checkbox de la
+  // propia fila (bulk delete de SelectionBanner).
+  const isSelf = (usuario) =>
+    Boolean(currentUser?.id) && String(currentUser.id) === String(usuario.id);
+
+  const getActions = (usuario) => {
+    // "Desactivar" se quitó del menú: no tenía `onClick` ni soporte de
+    // backend (`enabled` no existe en `UserDTO`), y activar/desactivar
+    // usuarios quedó fuera de alcance.
+    const self = isSelf(usuario);
+    // SHG-FE-121: un ADMIN no edita ni borra a otros ADMIN/SUPERUSER (404 del backend).
+    const manageable = canManageUsuario(currentUser, usuario);
+
+    const actions = [
+      { icon: <IconEye size={18} />, label: "Ver detalles", onClick: () => handleViewDetails(usuario.id) },
+    ];
+    if (manageable) {
+      actions.push({ icon: <IconEdit size={18} />, label: "Editar", color: "blue", onClick: () => handleEdit(usuario.id) });
+    }
+    if (manageable) {
+      actions.push({ icon: <IconKey size={18} />, label: "Restablecer contraseña", color: "orange", onClick: () => confirmReset(usuario) });
+    }
+
+    if (!self && manageable) {
+      actions.push({
+        icon: <IconTrash size={18} />,
+        label: "Eliminar",
+        color: "red",
+        dividerBefore: true,
+        onClick: () => confirmDelete(usuario),
+      });
+    }
+
+    return actions;
   };
 
-  const getActions = (row) => [
-    { icon: <IconEye size={18} />, label: 'Ver detalles', onClick: () => handleViewDetails(row) },
-    { icon: <IconEdit size={18} />, label: 'Editar' },
-    { icon: <IconKey size={18} />, label: 'Resetear contraseña', color: 'orange', dividerBefore: true },
-    { icon: <IconUserOff size={18} />, label: 'Desactivar', color: 'red', disabled: row.estado === 'inactivo' },
-  ];
-
-  const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
-  const indeterminate = !allSelected && items.some((i) => selectedIds.has(i.id));
+  // "Seleccionar todos" ignora la propia fila (no seleccionable): si no se
+  // excluyera acá, el checkbox de cabecera nunca llegaría a `checked` con el
+  // resto de la página ya tildada (la propia fila jamás entra a `selectedIds`).
+  const selectableItems = items.filter((i) => !isSelf(i) && canManageUsuario(currentUser, i));
+  const allSelected = selectableItems.length > 0 && selectableItems.every((i) => selectedIds.has(i.id));
+  const indeterminate = !allSelected && selectableItems.some((i) => selectedIds.has(i.id));
 
   return (
-    <>
-      <Drawer
-        opened={drawerOpened}
-        onClose={close}
-        position="right"
-        styles={{ body: { padding: 'var(--mantine-spacing-xl)' } }}
-      >
-        {selected && (
-          <Stack gap="md">
-            <Stack align="center" gap="xs">
-              <Avatar name={selected.nombre} color="initials" size={80} />
-              <Title order={4} ta="center">{selected.nombre}</Title>
-              <Pill>{ROL_LABELS[selected.rol] ?? selected.rol}</Pill>
-            </Stack>
-
-            <Group grow>
-              <Button leftSection={<IconMail size={16} />} variant="filled">Mensaje</Button>
-              <Button leftSection={<IconEdit size={16} />} variant="outline">Editar</Button>
-            </Group>
-
-            <Divider label="INFORMACIÓN DE LA CUENTA" labelPosition="center" />
-
-            <GridData
-              columnsCount={2}
-              items={[
-                { label: 'Teléfono', value: selected.telefono },
-                { label: 'Email', value: selected.email },
-                { label: 'Fecha de alta', value: toLocalDate(selected.fecha_alta) },
-              ]}
+    <Table.ScrollContainer minWidth={760}>
+    <Table stickyHeader highlightOnHover verticalSpacing="xs" horizontalSpacing="xs">
+      <Table.Thead>
+        <Table.Tr>
+          <Table.Th w={40}>
+            <Checkbox
+              aria-label="Seleccionar todos los usuarios"
+              checked={allSelected}
+              indeterminate={indeterminate}
+              onChange={onToggleAll}
             />
+          </Table.Th>
+          <Table.Th>Usuario</Table.Th>
+          <Table.Th>Email</Table.Th>
+          <Table.Th>Rol</Table.Th>
+          <Table.Th>Sucursal</Table.Th>
+          <Table.Th>Fecha de registro</Table.Th>
+          <Table.Th>Acciones</Table.Th>
+        </Table.Tr>
+      </Table.Thead>
 
-            {selected.rol === 'chofer' && (
-              <>
-                <Divider label="ACTIVIDAD RECIENTE" labelPosition="center" />
-                <ScreenContainer
-                  onEmptyData={{ show: true, title: 'Nada por acá' }}
-                  styleProps={{ mih: '8rem' }}
-                />
-              </>
-            )}
-          </Stack>
-        )}
-      </Drawer>
+      <Table.Tbody>
+        {items.map((item) => {
+          const fullName = nombreCompleto(item, "Sin nombre");
 
-      <Table stickyHeader highlightOnHover verticalSpacing="xs" horizontalSpacing="xs">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th w={40}>
-              <Checkbox checked={allSelected} indeterminate={indeterminate} onChange={onToggleAll} />
-            </Table.Th>
-            <Table.Th>Usuario</Table.Th>
-            <Table.Th>Teléfono</Table.Th>
-            <Table.Th>Rol</Table.Th>
-            <Table.Th>Estado</Table.Th>
-            <Table.Th>Acciones</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
+          const email = item.email || "Sin email";
+          const sucursal = item.sucursal?.nombre || "Sin sucursal";
+          const fechaRegistro = item.fechaCreacion || item.createdAt || item.fecha;
+          const authorities = item.authorities || [];
+          const self = isSelf(item);
+          const manageable = canManageUsuario(currentUser, item);
 
-        <Table.Tbody>
-          {items.map((row) => (
-            <Table.Tr key={row.id} bg={selectedIds.has(row.id) ? 'var(--mantine-color-blue-light)' : undefined}>
+          return (
+            <Table.Tr
+              key={item.id}
+              bg={selectedIds.has(item.id) ? "var(--mantine-color-blue-light)" : undefined}
+            >
               <Table.Td>
-                <Checkbox checked={selectedIds.has(row.id)} onChange={() => onToggle(row.id)} />
+                <Checkbox
+                  aria-label={
+                    self
+                      ? "No podés seleccionar tu propio usuario"
+                      : !manageable
+                        ? `No podés seleccionar a ${item.username}`
+                        : `Seleccionar usuario ${item.username}`
+                  }
+                  checked={selectedIds.has(item.id)}
+                  disabled={self || !manageable}
+                  onChange={() => onToggle(item.id)}
+                />
               </Table.Td>
 
               <Table.Td>
-                <Group gap="xs">
-                  <Avatar name={row.nombre} color="initials" size="sm" />
-                  <Text size="sm">{row.nombre}</Text>
+                <Group gap="sm">
+                  {item.profile ? (
+                    <Avatar
+                      src={`/api${API_URLS.FILES_URL}/${item.profile}`}
+                      name={fullName}
+                      radius="xl"
+                    />
+                  ) : (
+                    <Avatar name={fullName} color="initials" radius="xl" />
+                  )}
+                  <Stack gap={0}>
+                    <Text size="sm" fw={500}>
+                      {fullName}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      @{item.username}
+                    </Text>
+                  </Stack>
                 </Group>
               </Table.Td>
 
               <Table.Td>
-                <Text size="sm">{row.telefono}</Text>
+                <Text size="sm">{email}</Text>
               </Table.Td>
 
               <Table.Td>
-                <Pill>{ROL_LABELS[row.rol] ?? row.rol}</Pill>
+                <Group gap="xs">
+                  {authorities.map((auth, index) => {
+                    const rol = rolBadge(auth);
+                    return (
+                      <Badge key={index} color={rol.color} variant="light" radius="md">
+                        {rol.label}
+                      </Badge>
+                    );
+                  })}
+                </Group>
               </Table.Td>
 
               <Table.Td>
-                <Badge color={ESTADO_COLORS[row.estado] ?? 'gray'} variant="light" radius="md">
-                  {ESTADO_LABELS[row.estado] ?? row.estado}
-                </Badge>
+                <Text size="sm">{sucursal}</Text>
               </Table.Td>
 
               <Table.Td>
-                <RowActionsMenu actions={getActions(row)} />
+                {fechaRegistro ? (
+                  <Stack gap="0">
+                    <Text size="sm">{toLocalDate(fechaRegistro)}</Text>
+                    <Text size="xs" fw="bold">
+                      {timeFromNow(fechaRegistro)}
+                    </Text>
+                  </Stack>
+                ) : (
+                  <Text size="sm" c="dimmed">
+                    {EMPTY}
+                  </Text>
+                )}
+              </Table.Td>
+
+              <Table.Td>
+                <RowActionsMenu actions={getActions(item)} ariaLabel={`Acciones de ${fullName}`} />
               </Table.Td>
             </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
-    </>
+          );
+        })}
+      </Table.Tbody>
+    </Table>
+    </Table.ScrollContainer>
   );
 };
 

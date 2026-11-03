@@ -2,36 +2,45 @@ import { useState, useRef } from 'react';
 
 import { useForm } from '@mantine/form';
 import { useDebouncedCallback } from '@mantine/hooks';
-import { DatePickerInput } from '@mantine/dates';
-import { Card, Chip, Flex, MultiSelect, Select, TextInput } from '@mantine/core';
+import { Card, Chip, Flex, Select, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 
-import dayjs from 'dayjs';
+import {
+  rolOptions,
+  ROLE_ADMIN,
+  ROLE_CARGA,
+  ROLE_CHOFER,
+  ROLE_SUPERUSER,
+} from '@domain/roles';
 
-const ROLES = ['admin', 'operador', 'chofer'];
-const ESTADOS = ['activo', 'inactivo'];
+const ROLES = rolOptions([ROLE_SUPERUSER, ROLE_ADMIN, ROLE_CHOFER, ROLE_CARGA]);
 
 const QUICK_FILTERS = [
-  { label: 'Choferes', getFilters: () => ({ rol: 'chofer', estado: [], search: '', date: [null, null] }) },
-  { label: 'Activos', getFilters: () => ({ rol: '', estado: ['activo'], search: '', date: [null, null] }) },
-  { label: 'Últimos 30 días', getFilters: () => ({ rol: '', estado: [], search: '', date: [dayjs().subtract(30, 'day'), dayjs()] }) },
+  { label: 'Choferes', getFilters: () => ({ nombre: '', email: '', username: '', authority: ROLE_CHOFER, localidad: '' }) },
+  { label: 'Administradores', getFilters: () => ({ nombre: '', email: '', username: '', authority: ROLE_ADMIN, localidad: '' }) },
 ];
 
-const DEFAULT_VALUES = { search: '', rol: '', estado: [], date: [null, null] };
+const DEFAULT_VALUES = { nombre: '', email: '', username: '', authority: '', localidad: '' };
+
+const formatValues = (values) =>
+  Object.fromEntries(
+    Object.entries(values)
+      .filter(([, value]) => !!value)
+      .map(([key, value]) => [key, { label: key, values: value }])
+  );
 
 const ListaUsuariosFiltros = ({ disabled, onFiltersChange }) => {
   const [selectedQuickFilter, setSelectedQuickFilter] = useState(null);
-  const lastSearchRef = useRef('');
+  const lastValuesRef = useRef(DEFAULT_VALUES);
   const isQuickFilterChange = useRef(false);
 
-  const debounceSearch = useDebouncedCallback((values) => {
-    onFiltersChange(values);
+  const debounceChange = useDebouncedCallback((values) => {
+    onFiltersChange(formatValues(values));
   }, 500);
 
   const form = useForm({
     mode: 'controlled',
     initialValues: DEFAULT_VALUES,
-    enhanceGetInputProps: () => ({ disabled }),
     onValuesChange: (values) => {
       if (isQuickFilterChange.current) {
         isQuickFilterChange.current = false;
@@ -39,18 +48,19 @@ const ListaUsuariosFiltros = ({ disabled, onFiltersChange }) => {
         setSelectedQuickFilter(null);
       }
 
-      if (values.date[0] && !values.date[1]) return;
+      const textFieldChanged =
+        values.nombre !== lastValuesRef.current.nombre ||
+        values.email !== lastValuesRef.current.email ||
+        values.username !== lastValuesRef.current.username;
+      lastValuesRef.current = values;
 
-      const searchChanged = values.search !== lastSearchRef.current;
-      lastSearchRef.current = values.search;
-
-      if (searchChanged) {
-        debounceSearch(values);
+      if (textFieldChanged) {
+        debounceChange(values);
         return;
       }
 
-      debounceSearch.cancel();
-      onFiltersChange(values);
+      debounceChange.cancel();
+      onFiltersChange(formatValues(values));
     },
   });
 
@@ -66,24 +76,29 @@ const ListaUsuariosFiltros = ({ disabled, onFiltersChange }) => {
     <Card component="search">
       <Flex mb="md" gap="md">
         <TextInput
-          {...form.getInputProps('search')}
+          {...form.getInputProps('nombre')}
           flex={1}
-          label="Buscar usuario"
-          placeholder="Nombre o email..."
+          label="Nombre"
+          placeholder="Ej: Juan"
+        />
+
+        <TextInput
+          {...form.getInputProps('email')}
+          flex={1}
+          label="Email"
+          placeholder="Ej: juan@example.com"
           rightSection={<IconSearch size={18} />}
         />
 
-        <DatePickerInput
-          {...form.getInputProps('date')}
+        <TextInput
+          {...form.getInputProps('username')}
           flex={1}
-          type="range"
-          clearable
-          label="Fecha de alta"
-          placeholder="Seleccioná un rango"
+          label="Usuario"
+          placeholder="Ej: jperez"
         />
 
         <Select
-          {...form.getInputProps('rol')}
+          {...form.getInputProps('authority')}
           flex={1}
           clearable
           label="Rol"
@@ -91,12 +106,11 @@ const ListaUsuariosFiltros = ({ disabled, onFiltersChange }) => {
           data={ROLES}
         />
 
-        <MultiSelect
-          {...form.getInputProps('estado')}
+        <TextInput
+          {...form.getInputProps('localidad')}
           flex={1}
-          label="Estado"
-          placeholder="Seleccioná..."
-          data={ESTADOS}
+          label="Localidad"
+          placeholder="Ej: Rosario"
         />
       </Flex>
 

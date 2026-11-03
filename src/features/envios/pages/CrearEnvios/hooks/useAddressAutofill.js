@@ -6,7 +6,13 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_API_KEY;
 
 /**
  * @typedef {{ value: string; label: string }} AutofillOption
- * @typedef {{ address: string; coordenadas: { lat: number; lng: number } }} AutofillSelection
+ * @typedef {{
+ *   address: string;
+ *   addressLine1?: string;
+ *   provincia?: string;
+ *   localidad?: string;
+ *   coordenadas: { lat: number; lng: number };
+ * }} AutofillSelection
  */
 
 /**
@@ -82,6 +88,9 @@ export const useAddressAutofill = ({ onSelect }) => {
 
       onSelect({
         address: /** @type {string} */ (suggestion.full_address),
+        addressLine1: suggestion.address_line1,
+        provincia: suggestion.address_level1,
+        localidad: suggestion.address_level2,
         coordenadas: { lat, lng },
       });
     } finally {

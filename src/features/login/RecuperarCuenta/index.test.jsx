@@ -1,0 +1,106 @@
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+import { renderWithProviders } from "../../../test/renderWithProviders";
+
+const mockVerifyEmail = vi.fn();
+vi.mock("@stores/auth.store", () => ({
+  useAuthStore: (selector) => selector({ verifyEmail: mockVerifyEmail }),
+}));
+
+import RecuperarCuenta from "./index";
+
+describe("RecuperarCuenta", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("no llama a la API si el email es inválido", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<RecuperarCuenta />);
+
+    await user.type(screen.getByLabelText("Email"), "no-es-un-email");
+    await user.click(screen.getByRole("button", { name: "Enviar enlace" }));
+
+    expect(await screen.findByText("Ingresá un email válido.")).toBeInTheDocument();
+    expect(mockVerifyEmail).not.toHaveBeenCalled();
+  });
+
+  it("con un email válido dispara verifyEmail y muestra el mensaje de éxito", async () => {
+    const user = userEvent.setup();
+    mockVerifyEmail.mockResolvedValue(null);
+    renderWithProviders(<RecuperarCuenta />);
+
+    await user.type(screen.getByLabelText("Email"), "juan@example.com");
+    await user.click(screen.getByRole("button", { name: "Enviar enlace" }));
+
+    await waitFor(() =>
+      expect(mockVerifyEmail).toHaveBeenCalledWith(
+        "juan@example.com",
+        expect.any(String),
+      )
+    );
+    expect(await screen.findByText("Revisá tu correo")).toBeInTheDocument();
+  });
+
+  it("muestra un error si la API falla", async () => {
+    const user = userEvent.setup();
+    mockVerifyEmail.mockRejectedValue({
+      response: { status: 500, data: {} },
+    });
+    renderWithProviders(<RecuperarCuenta />);
+
+    await user.type(screen.getByLabelText("Email"), "juan@example.com");
+    await user.click(screen.getByRole("button", { name: "Enviar enlace" }));
+
+    expect(await screen.findByText("No se pudo enviar")).toBeInTheDocument();
+    expect(screen.queryByText("Revisá tu correo")).not.toBeInTheDocument();
+  });
+
+  const enviar = async (user) => {
+    renderWithProviders(<RecuperarCuenta />);
+    await user.type(screen.getByLabelText("Email"), "nadie@example.com");
+    await user.click(screen.getByRole("button", { name: "Enviar enlace" }));
+  };
+
+  it("un 404 se muestra como error, no como éxito", async () => {
+    const user = userEvent.setup();
+    mockVerifyEmail.mockRejectedValue({
+      response: { status: 404, data: { message: "Usuario no encontrado" } },
+    });
+    await enviar(user);
+
+    expect(await screen.findByText("No se pudo enviar")).toBeInTheDocument();
+    expect(screen.queryByText("Revisá tu correo")).not.toBeInTheDocument();
+  });
+
+  it("un 429 (rate limit) NO se oculta como éxito", async () => {
+    const user = userEvent.setup();
+    mockVerifyEmail.mockRejectedValue({
+      response: {
+        status: 429,
+        data: {
+          statusCode: 429,
+          message: "Demasiados intentos. Probá de nuevo en unos minutos.",
+          code: "rate_limited",
+        },
+      },
+    });
+    await enviar(user);
+
+    expect(await screen.findByText("Demasiados intentos")).toBeInTheDocument();
+    expect(
+      screen.getByText("Demasiados intentos. Probá de nuevo en unos minutos."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No se pudo enviar")).not.toBeInTheDocument();
+  });
+
+  it("un error de red (sin response) NO se oculta como éxito", async () => {
+    const user = userEvent.setup();
+    mockVerifyEmail.mockRejectedValue(new Error("Network Error"));
+    await enviar(user);
+
+    expect(await screen.findByText("No se pudo enviar")).toBeInTheDocument();
+  });
+});

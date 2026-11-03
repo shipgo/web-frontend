@@ -45,9 +45,9 @@ Each feature follows: `pages/<PageName>/index.jsx` + colocated components, hooks
 ## Conventions
 
 - Feature-scoped API calls live in `features/<feature>/api/<feature>.api.js`.
-- Mock data goes in a `mocks.js` file colocated with the page that uses it — easy to swap for real API calls later.
+- Mock data is **only in `*.test.*` files** — all production code uses real API calls. ESLint rule `no-restricted-imports` prevents importing mock files from non-test code.
 - Form state via `@mantine/form`; validation schema via Zod 4 with `schemaResolver` from `@mantine/form` (Standard Schema nativo, NO usar librerías externas de resolver).
-- No real API connection yet — all data is mocked locally.
+- All data comes from the real API; mocks exist only in tests.
 - Shared, reusable components go in `src/app/components/`; feature-specific ones stay inside the feature folder.
 - Prefer `const` over `let`; never `var`.
 - Trailing commas everywhere; single quotes; semicolons required.
