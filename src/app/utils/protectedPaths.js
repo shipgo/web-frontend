@@ -1,4 +1,4 @@
-import { PORTAL_BASE_PATH } from '@domain/roles';
+import { NOTIFICACIONES_PATH, PORTAL_BASE_PATH } from '@domain/roles';
 
 // Única fuente de verdad de los paths de las secciones que EXIGEN sesión.
 // `PROTECTED_SECTIONS` de `routes/index.jsx` los consume para armar las
@@ -22,6 +22,7 @@ export const SECTION_PATHS = {
   vehiculos: '/vehiculos',
   catalogoVehiculos: '/catalogo-vehiculos',
   mantenimientos: '/mantenimientos',
+  notificaciones: NOTIFICACIONES_PATH,
 };
 
 // Secciones de gestión + portal CUSTOMER (requiere sesión, salvo la entrada

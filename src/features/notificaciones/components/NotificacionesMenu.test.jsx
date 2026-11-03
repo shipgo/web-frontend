@@ -304,6 +304,42 @@ describe('NotificacionesMenu', () => {
       screen.queryByText('No tenés notificaciones.'),
     ).not.toBeInTheDocument();
   });
+
+  describe('"Ver todas" (SHG-FE-142)', () => {
+    it('lleva al historial del panel (/notificaciones) y cierra el dropdown', async () => {
+      mockGetMias.mockResolvedValue(NOTIFS);
+      const { history } = renderMenu();
+
+      await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+      await userEvent.click(await screen.findByRole('menuitem', { name: 'Ver todas' }));
+
+      await waitFor(() => expect(history.at(-1)).toBe('/notificaciones'));
+      await waitFor(() =>
+        expect(screen.queryByRole('menuitem', { name: 'Ver todas' })).not.toBeInTheDocument(),
+      );
+    });
+
+    it('portal: lleva a /portal/notificaciones (ruta absoluta desde el nest /portal)', async () => {
+      mockGetMias.mockResolvedValue(NOTIFS);
+      const { history } = renderMenu({ portal: true, base: '/portal' });
+
+      await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+      await userEvent.click(await screen.findByRole('menuitem', { name: 'Ver todas' }));
+
+      await waitFor(() => expect(history.at(-1)).toBe('/portal/notificaciones'));
+    });
+
+    it('no se ofrece sin notificaciones', async () => {
+      mockGetMias.mockResolvedValue([]);
+      renderMenu();
+
+      await userEvent.click(await screen.findByLabelText('Notificaciones'));
+      await screen.findByText('No tenés notificaciones.');
+
+      expect(screen.queryByRole('menuitem', { name: 'Ver todas' })).not.toBeInTheDocument();
+    });
+  });
+
   describe('actualización optimista (SHG-FE-141)', () => {
     it('al hacer click en una notificación sin leer, la marca como leída antes de que responda el backend y navega sin esperar', async () => {
       mockGetMias.mockResolvedValue(NOTIFS);

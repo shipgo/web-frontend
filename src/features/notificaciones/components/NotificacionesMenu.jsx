@@ -10,91 +10,15 @@ import {
   Stack,
   Text,
   Tooltip,
-  UnstyledButton,
-  VisuallyHidden,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { IconBell, IconCheck, IconTrash } from '@tabler/icons-react';
+import { IconBell, IconTrash } from '@tabler/icons-react';
 
-import { formatDesdeAhora, formatFechaHora } from '@domain/format';
-
-import { notificacionHref } from '../constants';
+import { notificacionesHistorialHref } from '../constants';
 import { useNotificaciones } from '../hooks/useNotificaciones';
+import NotificacionFila from './NotificacionFila';
 
 const MAX_BADGE = 9;
-
-const NotificacionFila = ({ notificacion, portal, onNavigate, onMarcarLeida }) => {
-  const href = notificacionHref(notificacion, { portal });
-  const noLeida = !notificacion?.visto;
-
-  return (
-    <Group
-      gap="xs"
-      wrap="nowrap"
-      align="flex-start"
-      px="sm"
-      py="xs"
-      bg={noLeida ? 'var(--mantine-color-default-hover)' : undefined}
-    >
-      {noLeida ? (
-        <div
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: 'var(--mantine-color-red-6)',
-            flexShrink: 0,
-            marginTop: 6,
-          }}
-          aria-hidden="true"
-        />
-      ) : null}
-      <UnstyledButton
-        style={{ flex: 1, cursor: href ? 'pointer' : 'default' }}
-        onClick={() => onNavigate(notificacion, href)}
-      >
-        <Text size="sm" fw={noLeida ? 700 : 500} lineClamp={1}>
-          {notificacion?.title || 'Notificación'}
-        </Text>
-        {notificacion?.body ? (
-          <Text size="xs" c="dimmed" lineClamp={2}>
-            {notificacion.body}
-          </Text>
-        ) : null}
-        {portal ? (
-          // Sin hover en el celular: la fecha exacta (DD/MM/YYYY 24 h) va visible.
-          <Text size="xs" c="dimmed" mt={2}>
-            {formatFechaHora(notificacion?.fecha)}
-          </Text>
-        ) : (
-          <Tooltip label={formatFechaHora(notificacion?.fecha)} withArrow position="bottom">
-            <Text size="10px" c="dimmed" mt={2} style={{ cursor: 'help' }}>
-              {formatDesdeAhora(notificacion?.fecha)}
-            </Text>
-          </Tooltip>
-        )}
-        {noLeida ? <VisuallyHidden>Sin leer</VisuallyHidden> : null}
-      </UnstyledButton>
-
-      {noLeida ? (
-        <Tooltip label="Marcar como leída" withArrow>
-          <ActionIcon
-            size="sm"
-            variant="subtle"
-            color="gray"
-            aria-label="Marcar como leída"
-            onClick={(event) => {
-              event.stopPropagation();
-              onMarcarLeida(notificacion.id);
-            }}
-          >
-            <IconCheck size={16} />
-          </ActionIcon>
-        </Tooltip>
-      ) : null}
-    </Group>
-  );
-};
 
 /**
  * Campana de notificaciones del `Header`: contador de no leídas, dropdown con las
@@ -123,6 +47,10 @@ const NotificacionesMenu = ({ portal = false }) => {
       navigate(href);
     }
   };
+
+  // "Ver todas": historial paginado (SHG-FE-142). `Menu.Item` cierra el
+  // dropdown al hacer click, igual que al navegar a una notificación.
+  const handleVerTodas = () => navigate(notificacionesHistorialHref({ portal }));
 
   const handleVaciarTodas = () => {
     modals.openConfirmModal({
@@ -219,6 +147,15 @@ const NotificacionesMenu = ({ portal = false }) => {
             </Stack>
           </ScrollArea.Autosize>
         )}
+
+        {!isLoading && !isError && notificaciones.length > 0 ? (
+          <>
+            <Menu.Divider />
+            <Menu.Item ta="center" fw={500} onClick={handleVerTodas}>
+              Ver todas
+            </Menu.Item>
+          </>
+        ) : null}
       </Menu.Dropdown>
     </Menu>
   );

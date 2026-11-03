@@ -54,6 +54,9 @@ const PortalLayout = lazy(() =>
 );
 const PortalRoutes = lazy(() => import('./portal.routes'));
 const MapaPage = lazy(() => import('@features/mapa'));
+const NotificacionesHistorialPage = lazy(
+  () => import('@features/notificaciones/pages/Historial'),
+);
 const MantenimientosRoutes = lazy(() => import('@features/mantenimientos'));
 const DashboardRoutes = lazy(() => import('./dashboard.routes'));
 const EnviosRoutes = lazy(() => import('./envios.routes'));
@@ -111,6 +114,9 @@ const PROTECTED_SECTIONS = [
   // Vehículo queda fuera (backend sólo GET).
   { path: SECTION_PATHS.catalogoVehiculos, nest: true, component: CatalogoVehiculosRoutes },
   { path: SECTION_PATHS.mantenimientos, nest: true, component: MantenimientosRoutes },
+  // Historial de notificaciones (SHG-FE-142): "Ver todas" de la campana. SU/AD
+  // (`ROLES_WEB`); el CUSTOMER tiene el suyo en `/portal/notificaciones`.
+  { path: SECTION_PATHS.notificaciones, component: NotificacionesHistorialPage },
 ];
 
 const isKnownProtectedPath = (pathname) =>

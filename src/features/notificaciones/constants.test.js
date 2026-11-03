@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
-import { notificacionHref, parseNotificacionData, parseActionUrl } from './constants';
+import {
+  notificacionHref,
+  notificacionesHistorialHref,
+  parseNotificacionData,
+  parseActionUrl,
+} from './constants';
+
+describe('notificacionesHistorialHref (SHG-FE-142)', () => {
+  it('panel: /notificaciones', () => {
+    expect(notificacionesHistorialHref()).toBe('/notificaciones');
+    expect(notificacionesHistorialHref({ portal: false })).toBe('/notificaciones');
+  });
+
+  it('portal: ruta absoluta bajo /portal (el header vive dentro del nest)', () => {
+    expect(notificacionesHistorialHref({ portal: true })).toBe('~/portal/notificaciones');
+  });
+});
 
 describe('avisos de viaje (SHG-FE-124)', () => {
   it.each(['VIAJE_LISTO_PARA_VIAJE', 'VIAJE_EN_CAMINO', 'VIAJE_FINALIZADO', 'VIAJE_REANUDADO'])(

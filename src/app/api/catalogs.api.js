@@ -172,6 +172,20 @@ export const notificacionesApi = {
   },
 
   /**
+   * `GET /api/notificaciones/historial?page=&size=` (`SHG-CONTRACT-023`,
+   * ENDPOINTS.md §21) — `Page<NotificacionDTO>` con TODAS las notificaciones del
+   * usuario logueado (sin las vaciadas), más recientes primero.
+   * @param {{ page?: number, size?: number }} [params] `page` 0-indexed.
+   */
+  getHistorial: async (params = {}) => {
+    const response = await restclient.get(
+      `${API_URLS.NOTIFICACIONES_URL}/historial`,
+      { params },
+    );
+    return response.data;
+  },
+
+  /**
    * `POST /api/notificaciones`
    * @param {Object} data - entidad `Notificacion`.
    */

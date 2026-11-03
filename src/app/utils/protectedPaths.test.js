@@ -10,7 +10,7 @@ describe('PROTECTED_PATH_PREFIXES', () => {
 });
 
 describe('isProtectedPath', () => {
-  it.each(['/mapa', '/envios', '/envios/12/editar', '/portal', '/portal/envios'])(
+  it.each(['/mapa', '/notificaciones', '/portal/notificaciones', '/envios', '/envios/12/editar', '/portal', '/portal/envios'])(
     '%s requiere sesión',
     (path) => {
       expect(isProtectedPath(path)).toBe(true);

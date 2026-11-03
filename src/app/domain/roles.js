@@ -28,6 +28,10 @@ export const PORTAL_BASE_PATH = '/portal';
 export const PORTAL_HOME_PATH = `${PORTAL_BASE_PATH}/envios`;
 /** Pantalla "Mi perfil" del portal CUSTOMER (SHG-FE-102). */
 export const PORTAL_PERFIL_PATH = `${PORTAL_BASE_PATH}/perfil`;
+/** Historial de notificaciones del panel (SUPERUSER / ADMIN, SHG-FE-142). */
+export const NOTIFICACIONES_PATH = '/notificaciones';
+/** Historial de notificaciones del portal CUSTOMER (SHG-FE-142). */
+export const PORTAL_NOTIFICACIONES_PATH = `${PORTAL_BASE_PATH}/notificaciones`;
 
 /** `valor canónico -> { label, color (paleta Mantine) }`. */
 export const ROL = {
