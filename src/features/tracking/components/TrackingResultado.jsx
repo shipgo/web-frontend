@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import {
-  IconCalendarClock,
+  IconCalendarCheck,
   IconCheck,
   IconCopy,
   IconKey,
@@ -22,6 +22,7 @@ import {
 import { estadoBadge, estadoLabel } from '@domain/estados';
 import { formatFecha, formatFechaHora, EMPTY } from '@domain/format';
 
+import { fechaEntrega } from '../utils';
 import TrackingTimeline from './TrackingTimeline';
 import TrackingUbicacionMapa from './TrackingUbicacionMapa';
 
@@ -44,7 +45,9 @@ const InfoRow = ({ icon, label, children }) => (
  *
  * Muestra SÓLO lo que trae el DTO (que el backend ya filtró sin PII):
  * `codigoSeguimiento`, `estado` + label canónico, `historial`, `destino`
- * (localidad + provincia), `fechaEstimada` y `ultimaUbicacionAprox`.
+ * (localidad + provincia) y `ultimaUbicacionAprox`. No muestra `fechaEstimada`
+ * (SHG-FE-143): la fecha de entrega sale del evento `entregado` del historial,
+ * y solo aparece cuando el envío ya fue entregado.
  * No expone nombre / email / teléfono ni la dirección exacta del remitente.
  *
  * Reutilizable por el portal CUSTOMER (`SHG-FE-026`).
@@ -64,6 +67,7 @@ const TrackingResultado = ({ data }) => {
   const destino = data.destino
     ? [data.destino.localidad, data.destino.provincia].filter(Boolean).join(', ')
     : null;
+  const entregadoEl = fechaEntrega(data.historial);
 
   return (
     <Stack gap="lg">
@@ -108,14 +112,16 @@ const TrackingResultado = ({ data }) => {
             >
               {destino || EMPTY}
             </InfoRow>
-            <InfoRow
-              icon={
-                <IconCalendarClock size={18} color="var(--mantine-color-dimmed)" />
-              }
-              label="Entrega estimada"
-            >
-              {data.fechaEstimada ? formatFecha(data.fechaEstimada) : 'A definir'}
-            </InfoRow>
+            {entregadoEl ? (
+              <InfoRow
+                icon={
+                  <IconCalendarCheck size={18} color="var(--mantine-color-dimmed)" />
+                }
+                label="Fecha de entrega"
+              >
+                {formatFecha(entregadoEl)}
+              </InfoRow>
+            ) : null}
           </Group>
         </Stack>
       </Card>

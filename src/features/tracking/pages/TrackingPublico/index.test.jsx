@@ -62,11 +62,59 @@ describe('TrackingPublicoPage', () => {
     // El captcha está desactivado bajo Vitest (SHG-FE-043, `@config/captcha`),
     // así que `track` recibe igual un token "listo" (sin widget real).
     expect(mockTrack).toHaveBeenCalledWith('7K2M9QX4TP', expect.any(String));
-    // estado + destino + ETA + timeline
+    // estado + destino + timeline
     expect(screen.getAllByText('En camino').length).toBeGreaterThan(0);
     expect(screen.getByText('Rosario, Santa Fe')).toBeInTheDocument();
     expect(screen.getByText('Creado')).toBeInTheDocument();
     expect(screen.getByTestId('mapa-ubicacion')).toBeInTheDocument();
+  });
+
+  it('no muestra "Entrega estimada" ni "A definir" aunque el DTO traiga fechaEstimada (SHG-FE-143)', async () => {
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking/7K2M9QX4TP');
+
+    await screen.findByText('7K2M9QX4TP');
+    expect(screen.queryByText(/entrega estimada/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/a definir/i)).not.toBeInTheDocument();
+    // En camino: todavía no hay fecha de entrega.
+    expect(screen.queryByText('Fecha de entrega')).not.toBeInTheDocument();
+  });
+
+  it('entregado: muestra "Fecha de entrega" con la fecha del evento entregado (SHG-FE-143)', async () => {
+    mockTrack.mockResolvedValue({
+      ...DTO_OK,
+      estado: 'entregado',
+      estadoLabel: 'Entregado',
+      historial: [
+        ...DTO_OK.historial,
+        { estado: 'entregado', fecha: '2026-09-04T15:30:00' },
+      ],
+      ultimaUbicacionAprox: undefined,
+    });
+    renderAt('/tracking/7K2M9QX4TP');
+
+    expect(await screen.findByText('Fecha de entrega')).toBeInTheDocument();
+    expect(screen.getByText('04/09/2026')).toBeInTheDocument();
+    expect(screen.queryByText(/entrega estimada/i)).not.toBeInTheDocument();
+  });
+
+  it('con más de un evento entregado usa el más reciente (SHG-FE-143)', async () => {
+    mockTrack.mockResolvedValue({
+      ...DTO_OK,
+      estado: 'entregado',
+      estadoLabel: 'Entregado',
+      historial: [
+        { estado: 'entregado', fecha: '2026-09-04T15:30:00' },
+        { estado: 'en_camino', fecha: '2026-09-05T08:00:00' },
+        { estado: 'entregado', fecha: '2026-09-06T10:00:00' },
+      ],
+      ultimaUbicacionAprox: undefined,
+    });
+    renderAt('/tracking/7K2M9QX4TP');
+
+    const fila = (await screen.findByText('Fecha de entrega')).parentElement;
+    expect(fila).toHaveTextContent('06/09/2026');
+    expect(fila).not.toHaveTextContent('04/09/2026');
   });
 
   it('muestra la palabra de entrega cuando el DTO la trae (SHG-BE-042/SHG-FE-058)', async () => {

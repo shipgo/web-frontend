@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { codigoEsValido, normalizarCodigo } from './utils';
+import { codigoEsValido, fechaEntrega, normalizarCodigo } from './utils';
 
 describe('normalizarCodigo', () => {
   it('saca espacios y guiones y pasa a mayúsculas', () => {
@@ -27,5 +27,37 @@ describe('codigoEsValido', () => {
     expect(codigoEsValido('ABC')).toBe(false);
     expect(codigoEsValido('A'.repeat(20))).toBe(false);
     expect(codigoEsValido('7K2M9QX4T@')).toBe(false);
+  });
+});
+
+describe('fechaEntrega', () => {
+  it('devuelve la fecha del evento entregado', () => {
+    expect(
+      fechaEntrega([
+        { estado: 'creado', fecha: '2026-09-01T10:00:00' },
+        { estado: 'entregado', fecha: '2026-09-04T15:30:00' },
+      ]),
+    ).toBe('2026-09-04T15:30:00');
+  });
+
+  it('sin evento entregado (o sin historial) devuelve null', () => {
+    expect(fechaEntrega([{ estado: 'en_camino', fecha: '2026-09-03T08:00:00' }])).toBeNull();
+    expect(fechaEntrega([{ estado: 'rechazado', fecha: '2026-09-03T08:00:00' }])).toBeNull();
+    expect(fechaEntrega([])).toBeNull();
+    expect(fechaEntrega(undefined)).toBeNull();
+  });
+
+  it('con varios eventos entregado usa el más reciente, sin importar el orden', () => {
+    expect(
+      fechaEntrega([
+        { estado: 'entregado', fecha: '2026-09-06T09:00:00' },
+        { estado: 'entregado', fecha: '2026-09-04T09:00:00' },
+        { estado: 'entregado', fecha: '2026-09-05T09:00:00' },
+      ]),
+    ).toBe('2026-09-06T09:00:00');
+  });
+
+  it('ignora eventos entregado con fecha inválida', () => {
+    expect(fechaEntrega([{ estado: 'entregado', fecha: 'no-es-fecha' }])).toBeNull();
   });
 });
