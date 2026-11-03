@@ -8,6 +8,8 @@
  * longitud disparatada). El "no encontrado" real lo resuelve el `404`.
  */
 
+import dayjs from 'dayjs';
+
 const CODIGO_MIN = 6;
 const CODIGO_MAX = 16;
 const CODIGO_REGEX = /^[0-9A-Z]+$/;
@@ -28,3 +30,17 @@ export const codigoEsValido = (valor) => {
 
 export const CODIGO_INVALIDO_MSG =
   'Ingresá un código de seguimiento válido (letras y números, sin espacios).';
+
+/**
+ * Fecha de entrega: la del evento `entregado` más reciente del `historial`
+ * (`fecha` = cuándo el envío entró a ese estado, `fechaHoraInicio` en el
+ * backend). `null` si el envío no fue entregado (no hay evento) o si ninguna
+ * fecha es válida.
+ */
+export const fechaEntrega = (historial) => {
+  const fechas = (historial ?? [])
+    .filter((h) => h?.estado === 'entregado' && dayjs(h.fecha).isValid())
+    .map((h) => h.fecha);
+  if (!fechas.length) return null;
+  return fechas.reduce((max, f) => (dayjs(f).isAfter(dayjs(max)) ? f : max));
+};
