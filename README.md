@@ -58,5 +58,3 @@ que cualquier cambio requiere un nuevo deploy.
 
 - **`VITE_TURNSTILE_SECRET` NO se carga** en Vercel ni en el front: la secret del captcha vive sólo en el
   backend. Cualquier variable `VITE_*` queda pública en el bundle.
-- Las variables `VITE_TURNSTILE_*` y `VITE_ONESIGNAL_APP_ID` están en el código de la rama
-  `feature/backend-connection`, todavía no en `main`; en `main` sólo aplica `VITE_MAPBOX_API_KEY`.
