@@ -10,6 +10,7 @@ import {
   NOTIFICACIONES_QUERY_KEY,
   NOTIFICACIONES_REFETCH_MS,
 } from '../constants';
+import { useMarcarLeida } from './useMarcarLeida';
 
 const porFechaDesc = (a, b) =>
   new Date(b?.fecha ?? 0).getTime() - new Date(a?.fecha ?? 0).getTime();
@@ -17,7 +18,8 @@ const porFechaDesc = (a, b) =>
 /**
  * Lista de notificaciones in-app del usuario logueado (`GET /api/notificaciones`,
  * top 10 más recientes según el backend) + contador de no leídas + acción
- * "marcar leída".
+ * "marcar leída". El resto se ve en el historial paginado
+ * (`useNotificacionesHistorial`, SHG-FE-142).
  *
  * "Marcar leída" es `DELETE /api/notificaciones/{id}`: el backend tiene
  * `@SQLDelete(... SET visto=true ...)`, así que el borrado es un soft-delete que
@@ -25,7 +27,8 @@ const porFechaDesc = (a, b) =>
  * leída). No hay endpoint de "marcar todas".
  *
  * Ambas acciones son optimistas (SHG-FE-141): el cache cambia en `onMutate`,
- * se revierte en `onError` y se revalida en `onSettled`.
+ * se revierte en `onError` y se revalida en `onSettled`. La de marcar leída
+ * vive en `useMarcarLeida`, compartida con el historial.
  *
  * "Vaciar todas" es `DELETE /api/notificaciones` (sin `{id}`, `SHG-BE-058`):
  * marca `oculta=true` en todas las notificaciones del usuario, así que el
@@ -56,44 +59,7 @@ export const useNotificaciones = ({ enabled = true } = {}) => {
     [notificaciones],
   );
 
-  // Actualización optimista (SHG-FE-141): la notificación pasa a leída en
-  // pantalla (punto rojo, negrita y contador) sin esperar al backend. Si el
-  // pedido falla se restaura sólo esa notificación (no el snapshot entero, para
-  // no pisar otras marcas en vuelo) y se avisa.
-  const marcarLeida = useMutation({
-    mutationFn: (id) => notificacionesApi.delete(id),
-    onMutate: async (id) => {
-      // Sin esto, un refetch en vuelo (intervalo o push) pisaría el cambio
-      // optimista con datos viejos al resolver.
-      await queryClient.cancelQueries({ queryKey: NOTIFICACIONES_QUERY_KEY });
-      const previo = queryClient.getQueryData(NOTIFICACIONES_QUERY_KEY);
-      queryClient.setQueryData(NOTIFICACIONES_QUERY_KEY, (actuales) =>
-        Array.isArray(actuales)
-          ? actuales.map((n) => (n?.id === id ? { ...n, visto: true } : n))
-          : actuales,
-      );
-      return { previo };
-    },
-    onError: (error, id, context) => {
-      const original = context?.previo?.find((n) => n?.id === id);
-      if (original) {
-        queryClient.setQueryData(NOTIFICACIONES_QUERY_KEY, (actuales) =>
-          Array.isArray(actuales)
-            ? actuales.map((n) => (n?.id === id ? original : n))
-            : actuales,
-        );
-      }
-      console.error('Error al marcar la notificación como leída:', error);
-      notifications.show({
-        title: 'No se pudo marcar la notificación como leída',
-        message: REINTENTAR_MAS_TARDE,
-        color: 'red',
-        icon: createElement(IconX),
-      });
-    },
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: NOTIFICACIONES_QUERY_KEY }),
-  });
+  const marcarLeida = useMarcarLeida();
 
   // "Vaciar todas" también es optimista: ya hay un modal de confirmación y el
   // listado queda vacío al instante; si falla, vuelve el listado original.

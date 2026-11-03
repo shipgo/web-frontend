@@ -3,8 +3,10 @@ import { Route, Switch, Redirect } from 'wouter';
 import {
   PORTAL_BASE_PATH,
   PORTAL_HOME_PATH,
+  PORTAL_NOTIFICACIONES_PATH,
   PORTAL_PERFIL_PATH,
 } from '@domain/roles';
+import NotificacionesHistorialPage from '@features/notificaciones/pages/Historial';
 
 import {
   PortalEnviosPage,
@@ -22,12 +24,17 @@ import {
  */
 const ENVIOS_PATH = PORTAL_HOME_PATH.slice(PORTAL_BASE_PATH.length); // '/envios'
 const PERFIL_PATH = PORTAL_PERFIL_PATH.slice(PORTAL_BASE_PATH.length); // '/perfil'
+const NOTIFICACIONES_PATH = PORTAL_NOTIFICACIONES_PATH.slice(PORTAL_BASE_PATH.length); // '/notificaciones'
 
 const PortalRoutes = () => (
   <Switch>
     <Route path={ENVIOS_PATH} component={PortalEnviosPage} />
     <Route path={`${ENVIOS_PATH}/:codigo`} component={PortalEnvioDetallePage} />
     <Route path={PERFIL_PATH} component={MiPerfilPage} />
+    {/* Historial de notificaciones (SHG-FE-142), a donde lleva "Ver todas" de la campana. */}
+    <Route path={NOTIFICACIONES_PATH}>
+      <NotificacionesHistorialPage portal />
+    </Route>
     <Route>
       {/* `~` = ruta absoluta desde la raíz (ignora el base del nest). */}
       <Redirect to={`~${PORTAL_HOME_PATH}`} replace />

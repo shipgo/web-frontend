@@ -10,10 +10,32 @@
  * Ver `planning/NOTIFICATIONS.md`.
  */
 
-import { PORTAL_HOME_PATH } from '@domain/roles';
+import {
+  NOTIFICACIONES_PATH,
+  PORTAL_HOME_PATH,
+  PORTAL_NOTIFICACIONES_PATH,
+} from '@domain/roles';
 
 /** Query key única de la lista de notificaciones del usuario logueado. */
 export const NOTIFICACIONES_QUERY_KEY = ['notificaciones'];
+
+/**
+ * Query key del historial paginado (`GET /api/notificaciones/historial`,
+ * SHG-FE-142). Cuelga de `NOTIFICACIONES_QUERY_KEY` a propósito: invalidar la
+ * campana (push entrante, marcar leída, vaciar) también revalida el historial.
+ */
+export const NOTIFICACIONES_HISTORIAL_QUERY_KEY = [...NOTIFICACIONES_QUERY_KEY, 'historial'];
+
+/** Tamaño de página del historial. */
+export const NOTIFICACIONES_HISTORIAL_PAGE_SIZE = 20;
+
+/**
+ * Destino de "Ver todas": pantalla del historial. Con `portal` va a
+ * `/portal/notificaciones` con `~` (ruta absoluta: el header del portal vive
+ * dentro del nest `/portal`).
+ */
+export const notificacionesHistorialHref = ({ portal = false } = {}) =>
+  portal ? `~${PORTAL_NOTIFICACIONES_PATH}` : NOTIFICACIONES_PATH;
 
 /** Refetch de respaldo (además del invalidate al recibir un push). */
 export const NOTIFICACIONES_REFETCH_MS = 60_000;

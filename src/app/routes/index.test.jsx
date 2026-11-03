@@ -55,6 +55,9 @@ vi.mock("@features/usuarios/CompletarCuenta", () => ({
 }));
 vi.mock("@features/home", () => ({ default: () => <div>Home</div> }));
 vi.mock("@features/mapa", () => ({ default: () => <div>Mapa</div> }));
+vi.mock("@features/notificaciones/pages/Historial", () => ({
+  default: () => <div>Historial de notificaciones</div>,
+}));
 vi.mock("@features/mantenimientos", () => ({
   default: () => <div>Mantenimientos</div>,
 }));
@@ -342,6 +345,40 @@ describe("AppRoutes", () => {
 
     expect(await screen.findByText("Home")).toBeInTheDocument();
     expect(screen.queryByText("Portal envios")).not.toBeInTheDocument();
+  });
+
+  // --- Historial de notificaciones (SHG-FE-142) ---
+
+  it("un ADMIN accede a /notificaciones dentro del layout de gestión", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_ADMIN" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/notificaciones" });
+
+    expect(await screen.findByText("Historial de notificaciones")).toBeInTheDocument();
+    expect(screen.getByTestId("layout")).toBeInTheDocument();
+  });
+
+  it("sin sesión, /notificaciones va a /login preservando el destino (no es una 404)", async () => {
+    setAuth({ user: null, isLoading: false, isAuthenticated: false });
+    renderWithProviders(<AppRoutes />, { route: "/notificaciones" });
+
+    expect(await screen.findByText("Login:operator")).toBeInTheDocument();
+    expect(window.location.search).toBe("?redirect=%2Fnotificaciones");
+  });
+
+  it("un CUSTOMER en /notificaciones es redirigido al portal (tiene la suya en /portal/notificaciones)", async () => {
+    setAuth({
+      user: { authorities: [{ name: "ROLE_CUSTOMER" }] },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+    renderWithProviders(<AppRoutes />, { route: "/notificaciones" });
+
+    expect(await screen.findByText("Portal envios")).toBeInTheDocument();
+    expect(screen.queryByText("Historial de notificaciones")).not.toBeInTheDocument();
   });
 
   // --- Landing pública (SHG-FE-044) ---
