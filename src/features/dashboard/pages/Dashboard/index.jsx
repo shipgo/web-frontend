@@ -1,56 +1,89 @@
-import { useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Button, Flex, Grid, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import {
   IconAlertTriangle,
+  IconClockCheck,
   IconDownload,
   IconPackage,
   IconRoute,
-  IconTruck,
 } from '@tabler/icons-react';
-import PageContainer from '@components/PageContainer';
 
-import { getPeriodoLabel } from './dashboard.helpers';
+import PageContainer from '@components/PageContainer';
+import { useOperatingContext } from '@contexts/operatingContext';
+
+import { getDefaultFiltros, getPeriodoLabel, toDashboardParams } from './dashboard.helpers';
+import { mapResumenToKpis } from './dashboard.mappers';
+import { exportarDashboardPDF } from './exportarDashboard';
+import {
+  useDashboardResumen,
+  useDashboardSeries,
+} from './hooks/useDashboardData';
 import DashboardFiltros from './components/DashboardFiltros';
 import KpiCard from './components/KpiCard';
 import VolumeChart from './components/VolumeChart';
 import FleetDonut from './components/FleetDonut';
-import TamanoCargaDonut from './components/TamanoCargaDonut';
+import StatusDonut from './components/StatusDonut';
+import CategoriaDonut from './components/CategoriaDonut';
 import SucursalChart from './components/SucursalChart';
-import FallosChart from './components/FallosChart';
 import DesvioChart from './components/DesvioChart';
-import IncidenciasTable from './components/IncidenciasTable';
 
-const ENVIOS_HOY = { total: 142, entregados: 89, pendientes: 53 };
-const VIAJES_ACTIVOS = 17;
-const ALERTAS = { total: 8, criticas: 3 };
-const FLOTA = { operativos: 24, enTaller: 6, total: 30 };
-
-const DEFAULT_FILTROS = { date: [null, null], sucursal: null, quickFilterLabel: null };
+const pct = (value) => (value == null ? '—' : `${Math.round(value)}%`);
 
 const DashboardPage = () => {
-  const [filtros, setFiltros] = useState(DEFAULT_FILTROS);
-  const [isLoading, setIsLoading] = useState(false);
-  const loadingTimerRef = useRef(null);
+  // SHG-FE-052: sembrar el filtro de sucursal del dashboard con la sucursal
+  // operativa activa del selector del header (si el SUPERUSER eligió una).
+  // Sólo se usa como valor INICIAL — a partir de ahí `DashboardFiltros` (su
+  // propio selector, ya existente) manda; cambiar la sucursal del header
+  // mientras el dashboard sigue abierto no lo pisa, para no pelear con una
+  // elección manual que el usuario ya haya hecho en esta pantalla.
+  const { activeSucursalId } = useOperatingContext();
+  const [filtros, setFiltros] = useState(() =>
+    getDefaultFiltros(activeSucursalId != null ? String(activeSucursalId) : null),
+  );
 
-  const periodoLabel = getPeriodoLabel(filtros);
+  const params = useMemo(() => toDashboardParams(filtros), [filtros]);
 
-  const handleFiltersChange = (newFiltros) => {
-    clearTimeout(loadingTimerRef.current);
-    setIsLoading(true);
-    setFiltros(newFiltros);
-    loadingTimerRef.current = setTimeout(() => setIsLoading(false), 700);
-  };
+  const resumenQuery = useDashboardResumen(params);
+  const seriesQuery = useDashboardSeries(params);
+
+  const kpis = useMemo(
+    () => mapResumenToKpis(resumenQuery.data),
+    [resumenQuery.data],
+  );
+
+  const periodoLabel = getPeriodoLabel(filtros, filtros.sucursalLabel);
+
+  const resumenLoading = resumenQuery.isFetching;
+  const resumenError = resumenQuery.isError;
+  const seriesLoading = seriesQuery.isFetching;
+  const seriesError = seriesQuery.isError;
 
   return (
     <PageContainer>
-      <Flex justify="space-between" align="flex-end">
+      <Flex justify="space-between" align="flex-end" wrap="wrap" gap="md">
         <Stack gap="0">
           <Title order={2}>Dashboard</Title>
-          <Text c="dimmed">Resumen operativo del día</Text>
+          <Text c="dimmed">Resumen · {periodoLabel}</Text>
         </Stack>
         <Flex gap="xs">
-          <Button variant="light" leftSection={<IconDownload size={16} />}>
+          {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+              `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto
+              del color primario en `variant="light"` no llega a 4.5:1 en
+              dark mode (axe-core `color-contrast`, SHG-FE-070). */}
+          <Button
+            variant="light"
+            leftSection={<IconDownload size={16} />}
+            onClick={() =>
+              exportarDashboardPDF({
+                filtros,
+                params,
+                resumen: resumenQuery.data,
+                series: seriesQuery.data,
+              })
+            }
+            c="var(--shg-button-text-primary)"
+          >
             Exportar PDF
           </Button>
           <Button
@@ -59,80 +92,147 @@ const DashboardPage = () => {
             href="https://shipgo.gitbook.io/manual"
             target="_blank"
           >
-            Necesito ayuda
+            Ayuda
           </Button>
         </Flex>
       </Flex>
 
-      <DashboardFiltros onFiltersChange={handleFiltersChange} />
+      <DashboardFiltros value={filtros} onChange={setFiltros} />
 
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
         <KpiCard
-          title="Envíos para hoy"
-          value={ENVIOS_HOY.total}
-          subtitle={`${ENVIOS_HOY.entregados} entregados · ${ENVIOS_HOY.pendientes} pendientes`}
+          title="Envíos del período"
+          value={kpis ? kpis.envios.value : '—'}
+          subtitle={
+            kpis
+              ? `${kpis.envios.entregados} entregados · ${kpis.envios.pendientes} pendientes`
+              : ''
+          }
           icon={<IconPackage />}
           color="teal"
-          isLoading={isLoading}
-          tooltip="Total de envíos programados para el día. Incluye entregados y pendientes."
+          isLoading={resumenLoading}
+          isError={resumenError}
+          onRetry={resumenQuery.refetch}
+          tooltip="Envíos creados en el período seleccionado."
         />
         <KpiCard
-          title="Viajes Activos"
-          value={VIAJES_ACTIVOS}
-          subtitle="camiones en ruta ahora"
+          title="Viajes activos"
+          value={kpis ? kpis.viajesActivos.value : '—'}
+          subtitle={
+            kpis
+              ? `${kpis.viajesActivos.planificados} planificados · ${kpis.viajesActivos.finalizados} finalizados`
+              : ''
+          }
           icon={<IconRoute />}
           color="blue"
-          isLoading={isLoading}
-          tooltip="Camiones actualmente en ruta en el turno activo."
+          isLoading={resumenLoading}
+          isError={resumenError}
+          onRetry={resumenQuery.refetch}
+          tooltip="Viajes en carga o en camino. Abajo, como referencia, los planificados y los finalizados del período."
         />
         <KpiCard
-          title="Alertas / Atrasos"
-          value={ALERTAS.total}
-          subtitle={`${ALERTAS.criticas} críticas · ${ALERTAS.total - ALERTAS.criticas} moderadas`}
+          title="Incidencias"
+          value={kpis ? kpis.incidencias.value : '—'}
+          subtitle={
+            kpis
+              ? `${kpis.incidencias.viajesConProblemas} viajes · ${kpis.incidencias.enviosRechazados} envíos no entregados`
+              : ''
+          }
           icon={<IconAlertTriangle />}
           color="red"
-          isLoading={isLoading}
-          tooltip="Incidencias activas detectadas. Las críticas requieren atención inmediata."
+          isLoading={resumenLoading}
+          isError={resumenError}
+          onRetry={resumenQuery.refetch}
+          tooltip="Viajes con problemas y envíos no entregados en el período."
         />
         <KpiCard
-          title="Disponibilidad de Flota"
-          value={`${FLOTA.operativos}/${FLOTA.total}`}
-          subtitle={`${FLOTA.enTaller} en taller`}
-          icon={<IconTruck />}
-          color="green"
-          isLoading={isLoading}
-          tooltip="Camiones operativos sobre el total disponible. Excluye los que están en taller."
+          title="Entregas a tiempo"
+          value={kpis ? pct(kpis.entregasATiempo.porcentaje) : '—'}
+          subtitle={
+            kpis
+              ? `${kpis.entregasATiempo.aTiempo} de ${kpis.entregasATiempo.base} entregas llegaron en el horario planificado`
+              : ''
+          }
+          icon={<IconClockCheck />}
+          color="grape"
+          ring={
+            kpis && kpis.entregasATiempo.porcentaje != null
+              ? {
+                  sections: [
+                    { value: kpis.entregasATiempo.porcentaje, color: 'teal' },
+                  ],
+                  label: `${kpis.entregasATiempo.aTiempo}/${kpis.entregasATiempo.base}`,
+                }
+              : null
+          }
+          isLoading={resumenLoading}
+          isError={resumenError}
+          onRetry={resumenQuery.refetch}
+          tooltip="Entregas dentro del horario planificado del viaje, sobre el total de entregas con viaje."
         />
       </SimpleGrid>
 
       <Grid>
         <Grid.Col span={{ base: 12, md: 8 }}>
-          <VolumeChart periodoLabel={periodoLabel} isLoading={isLoading} />
+          <VolumeChart
+            series={seriesQuery.data}
+            periodoLabel={periodoLabel}
+            isLoading={seriesLoading}
+            isError={seriesError}
+            onRetry={seriesQuery.refetch}
+          />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}>
-          <FleetDonut periodoLabel={periodoLabel} isLoading={isLoading} />
+          <FleetDonut
+            resumen={resumenQuery.data}
+            isLoading={resumenLoading}
+            isError={resumenError}
+            onRetry={resumenQuery.refetch}
+          />
         </Grid.Col>
       </Grid>
 
       <Grid>
         <Grid.Col span={{ base: 12, md: 4 }}>
-          <TamanoCargaDonut periodoLabel={periodoLabel} isLoading={isLoading} />
+          <CategoriaDonut
+            series={seriesQuery.data}
+            periodoLabel={periodoLabel}
+            isLoading={seriesLoading}
+            isError={seriesError}
+            onRetry={seriesQuery.refetch}
+          />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 8 }}>
-          <SucursalChart periodoLabel={periodoLabel} filtros={filtros} isLoading={isLoading} />
+          <SucursalChart
+            series={seriesQuery.data}
+            periodoLabel={periodoLabel}
+            isLoading={seriesLoading}
+            isError={seriesError}
+            onRetry={seriesQuery.refetch}
+          />
         </Grid.Col>
       </Grid>
 
       <Grid>
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <FallosChart periodoLabel={periodoLabel} filtros={filtros} isLoading={isLoading} />
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <StatusDonut
+            resumen={resumenQuery.data}
+            periodoLabel={periodoLabel}
+            isLoading={resumenLoading}
+            isError={resumenError}
+            onRetry={resumenQuery.refetch}
+          />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <DesvioChart periodoLabel={periodoLabel} isLoading={isLoading} />
+        <Grid.Col span={{ base: 12, md: 8 }}>
+          <DesvioChart
+            series={seriesQuery.data}
+            periodoLabel={periodoLabel}
+            isLoading={seriesLoading}
+            isError={seriesError}
+            onRetry={seriesQuery.refetch}
+          />
         </Grid.Col>
       </Grid>
-
-      <IncidenciasTable periodoLabel={periodoLabel} isLoading={isLoading} />
     </PageContainer>
   );
 };

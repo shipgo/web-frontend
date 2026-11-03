@@ -1,0 +1,477 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { notifications } from "@mantine/notifications";
+
+import { renderWithProviders } from "../../../../test/renderWithProviders";
+
+vi.mock("@api/viaje.api", () => ({
+  viajeApi: { get: vi.fn(), cancelar: vi.fn(), delete: vi.fn() },
+}));
+
+import { viajeApi } from "@api/viaje.api";
+import { useAuthStore, Usuario } from "@stores/auth.store";
+import ListaViajes from "./index";
+
+const VIAJE = {
+  id: 42,
+  estado: "planificado",
+  fechaHoraInicioPlanificada: "2026-09-10T09:00:00",
+  vehiculo: { id: 5, patente: "AB123CD" },
+  chofer: null,
+  choferes: [{ id: 10, nombre: "Juan", apellido: "Perez" }],
+  recorridos: [
+    { id: 1, detalleRecorridos: [{ id: 100 }, { id: 101 }] },
+    { id: 2, detalleRecorridos: [{ id: 102 }] },
+  ],
+};
+
+describe("ListaViajes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // El store de `@mantine/notifications` es un singleton fuera del árbol de
+    // React: un toast de un test anterior puede seguir montado y romper un
+    // `findByText` (ej. "multiple elements found") en el siguiente.
+    notifications.clean();
+    useAuthStore.setState({
+      user: new Usuario({ id: 1, username: "admin1", authorities: ["ROLE_ADMIN"] }),
+      isAuthenticated: true,
+    });
+  });
+
+  it("renderiza los viajes devueltos por viajeApi.get con las columnas nuevas", async () => {
+    viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+
+    renderWithProviders(<ListaViajes />);
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalled());
+
+    expect(await screen.findByText("AB123CD")).toBeInTheDocument();
+
+    const table = within(screen.getByRole("table"));
+    expect(table.getByText("Planificado")).toBeInTheDocument();
+    expect(table.getByText("Juan Perez")).toBeInTheDocument();
+    expect(table.getByText("2 recorridos · 3 envíos")).toBeInTheDocument();
+  });
+
+  it("no manda ningún filtro por defecto (sin quick-filter preseleccionada)", async () => {
+    viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+
+    renderWithProviders(<ListaViajes />);
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalled());
+
+    const params = viajeApi.get.mock.calls[0][0];
+    expect(params.page).toBe(0);
+    expect(params.estado).toBeUndefined();
+    expect(params.search).toBeUndefined();
+  });
+
+  it("clickear la fila navega al detalle del viaje", async () => {
+    const user = userEvent.setup();
+    viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+
+    renderWithProviders(<ListaViajes />);
+
+    const row = await screen.findByText("AB123CD");
+    await user.click(row);
+
+    await waitFor(() => expect(window.location.pathname).toBe("/42"));
+  });
+
+  it("clickear 'En curso' vuelve a pedir los viajes con estado=en_camino", async () => {
+    const user = userEvent.setup();
+    viajeApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    renderWithProviders(<ListaViajes />);
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByText("En curso"));
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(2));
+    const params = viajeApi.get.mock.calls.at(-1)[0];
+    expect(params.estado).toEqual(["en_camino"]);
+  });
+
+  it("muestra el estado vacío cuando no hay viajes", async () => {
+    viajeApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    renderWithProviders(<ListaViajes />);
+
+    expect(await screen.findByText("Todavía no hay viajes")).toBeInTheDocument();
+  });
+
+  it('estado "vacío con filtros" muestra un CTA que limpia los filtros y vuelve a pedir sin ellos', async () => {
+    viajeApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaViajes />);
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByText("En curso"));
+
+    await waitFor(() => {
+      const lastCall = viajeApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.estado).toEqual(["en_camino"]);
+    });
+
+    const limpiarBtn = await screen.findByRole("button", { name: "Limpiar filtros" });
+    await user.click(limpiarBtn);
+
+    await waitFor(() => {
+      const lastCall = viajeApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.estado).toBeUndefined();
+    });
+  });
+
+  it("cambiar de página manda el índice 0-based que espera el backend", async () => {
+    // UI: `Pagination` es 1-indexed (arranca en 1). Backend: `page` es
+    // 0-indexed (CONTRACTS.md §4). `useGetViajes` hace la conversión — esto
+    // verifica que clickear "2" en la paginación termina en `page: 1`.
+    viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 25, totalPages: 3 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaViajes />);
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+    expect(viajeApi.get.mock.calls[0][0].page).toBe(0);
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "2" })).not.toBeDisabled(),
+    );
+    await user.click(screen.getByRole("button", { name: "2" }));
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(2));
+    expect(viajeApi.get.mock.calls.at(-1)[0].page).toBe(1);
+  });
+
+  it("combina la quick-filter con el buscador de texto en un solo request", async () => {
+    // `estado` (quick-filter "En curso") y `search` (texto libre) son filtros
+    // independientes de `ViajeFilter` (CONTRACTS.md §4) — deben poder viajar
+    // juntos sin que uno pise al otro.
+    viajeApi.get.mockResolvedValue({ content: [], totalElements: 0, totalPages: 0 });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ListaViajes />);
+
+    await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByText("En curso"));
+    await waitFor(() => {
+      const lastCall = viajeApi.get.mock.calls.at(-1)[0];
+      expect(lastCall.estado).toEqual(["en_camino"]);
+    });
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("Buscar viaje")).not.toBeDisabled(),
+    );
+    await user.type(screen.getByLabelText("Buscar viaje"), "AB123CD");
+
+    await waitFor(
+      () => {
+        const lastCall = viajeApi.get.mock.calls.at(-1)[0];
+        expect(lastCall.estado).toEqual(["en_camino"]);
+        expect(lastCall.search).toBe("AB123CD");
+      },
+      { timeout: 2000 },
+    );
+  });
+
+  describe("menú de fila (SHG-FE-096)", () => {
+    // Nota: pedirle a testing-library el MISMO nombre accesible dos veces
+    // seguidas (ej. dos `findByRole(..., { name: "Ver hoja de ruta" })`
+    // consecutivos) es flaky acá — el segundo poll puede pisar la transición
+    // de apertura del `Menu` de Mantine y no encontrarlo. Por eso cada test
+    // resuelve el ítem que va a click-ear en UNA sola query y reusa esa
+    // referencia, y usa un nombre *distinto* al confirmar que el menú está
+    // abierto antes de una aserción de ausencia.
+    //
+    // `MENU_ITEM_TIMEOUT`: el tema por default de Mantine tiene
+    // `respectReducedMotion: false` (no lo pisamos acá), así que el `Menu`
+    // siempre anima su apertura con un `setTimeout` real (no hay fake timers
+    // en este archivo). Bajo carga (ej. esta suite corriendo en paralelo con
+    // otras) ese timeout puede tardar más que el default de `findByRole`
+    // (1000ms) en dispararse; 3s da margen sin acoplarse a la duración real
+    // de la transición.
+    const MENU_ITEM_TIMEOUT = 3000;
+
+    const abrirMenuDelViaje = async (user, id) => {
+      await user.click(await screen.findByRole("button", { name: `Acciones del viaje ${id}` }));
+    };
+
+    const encontrarMenuItem = (name) =>
+      screen.findByRole("menuitem", { name }, { timeout: MENU_ITEM_TIMEOUT });
+
+    it('"Ver hoja de ruta" navega al detalle del viaje', async () => {
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+      await user.click(await encontrarMenuItem("Ver hoja de ruta"));
+
+      await waitFor(() => expect(window.location.pathname).toBe("/42"));
+    });
+
+    it('"Editar viaje" se muestra en estado planificado y navega a editar', async () => {
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+      await user.click(await encontrarMenuItem("Editar viaje"));
+
+      await waitFor(() => expect(window.location.pathname).toBe("/42/editar"));
+    });
+
+    it('"Editar viaje" NO se muestra en en_proceso_de_carga (VIAJE_ESTADOS_EDITABLES no lo incluye, aunque sí sea cancelable)', async () => {
+      const user = userEvent.setup();
+      const VIAJE_EN_CARGA = { ...VIAJE, estado: "en_proceso_de_carga" };
+      viajeApi.get.mockResolvedValue({ content: [VIAJE_EN_CARGA], totalElements: 1, totalPages: 1 });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+
+      // Confirma que el menú ya montó vía un ítem que SÍ está en este estado
+      // (distinto del que se busca ausente, para no repetir el mismo query).
+      expect(await encontrarMenuItem("Cancelar viaje")).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
+    });
+
+    it('con_problemas: se puede cancelar desde la fila (PUT /cancelar) pero no editar (SHG-FE-132)', async () => {
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [{ ...VIAJE, estado: "con_problemas" }], totalElements: 1, totalPages: 1 });
+      viajeApi.cancelar.mockResolvedValue({ ...VIAJE, estado: "cancelado" });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
+      await user.click(await encontrarMenuItem("Cancelar viaje"));
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
+
+      await waitFor(() => expect(viajeApi.cancelar).toHaveBeenCalledWith(42, { motivo: undefined }));
+    });
+
+    it('listo_para_viaje: se puede cancelar pero no editar (igual que en_proceso_de_carga)', async () => {
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [{ ...VIAJE, estado: "listo_para_viaje" }], totalElements: 1, totalPages: 1 });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+
+      expect(await encontrarMenuItem("Cancelar viaje")).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
+    });
+
+    it('"Cancelar viaje" pide confirmación, llama a la API real y refresca el listado', async () => {
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+      viajeApi.cancelar.mockResolvedValue({ ...VIAJE, estado: "cancelado" });
+
+      renderWithProviders(<ListaViajes />);
+      await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+
+      await abrirMenuDelViaje(user, 42);
+      await user.click(await encontrarMenuItem("Cancelar viaje"));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
+
+      await waitFor(() => expect(viajeApi.cancelar).toHaveBeenCalledWith(42, { motivo: undefined }));
+      expect(await screen.findByText("Viaje cancelado")).toBeInTheDocument();
+      // Refetch tras cancelar (SHG-FE-096): `useGetViajes().refetch` invalida
+      // la query y vuelve a pedir el listado.
+      await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(2));
+    });
+
+    it('"Cancelar viaje" maneja un 409 del backend igual que el detalle (toast de warning, sin refetch)', async () => {
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+      viajeApi.cancelar.mockRejectedValue({
+        response: { status: 409, data: { message: "El viaje ya está en curso" } },
+      });
+
+      renderWithProviders(<ListaViajes />);
+      await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+
+      await abrirMenuDelViaje(user, 42);
+      await user.click(await encontrarMenuItem("Cancelar viaje"));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
+
+      expect(await screen.findByText("Acción no disponible")).toBeInTheDocument();
+      expect(screen.getByText("El viaje ya está en curso")).toBeInTheDocument();
+      // Un 409 es "no se pudo, todavía no es un estado válido": no hay razón
+      // para revalidar el listado (a diferencia del cancelar exitoso).
+      expect(viajeApi.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('"Cancelar viaje" maneja un 403 del backend igual que el detalle (toast de "Acción no permitida", sin refetch)', async () => {
+      // Mismo `handleAccionError` que `DetalleViaje` (SHG-FE-012): un 403 es
+      // "rol sin permiso para la acción", no una transición inválida — toast
+      // puntual de error, no de warning, y tampoco refetch (nada cambió).
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+      viajeApi.cancelar.mockRejectedValue({
+        response: { status: 403, data: { message: "No tiene permisos para cancelar este viaje" } },
+      });
+
+      renderWithProviders(<ListaViajes />);
+      await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(1));
+
+      await abrirMenuDelViaje(user, 42);
+      await user.click(await encontrarMenuItem("Cancelar viaje"));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
+
+      expect(await screen.findByText("Acción no permitida")).toBeInTheDocument();
+      expect(screen.getByText("No tiene permisos para cancelar este viaje")).toBeInTheDocument();
+      expect(viajeApi.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('"Ver en el mapa" sólo aparece en estados con tracking (en_camino) y navega a /mapa?viaje=:id', async () => {
+      const user = userEvent.setup();
+      const VIAJE_EN_CAMINO = { ...VIAJE, estado: "en_camino" };
+      viajeApi.get.mockResolvedValue({ content: [VIAJE_EN_CAMINO], totalElements: 1, totalPages: 1 });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+      const monitorear = await encontrarMenuItem("Ver en el mapa");
+
+      // En en_camino ya no es cancelable ni editable: no debería quedar
+      // ninguna acción sin sentido (ver ESTADOS_CANCELABLES/VIAJE_ESTADOS_EDITABLES).
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Cancelar viaje" })).not.toBeInTheDocument();
+
+      await user.click(monitorear);
+
+      await waitFor(() => expect(window.location.pathname).toBe("/mapa"));
+      expect(window.location.search).toBe("?viaje=42");
+    });
+
+    it('"Ver en el mapa" también aparece con_problemas (estado no terminal, sigue trackeable)', async () => {
+      const user = userEvent.setup();
+      const VIAJE_CON_PROBLEMAS = { ...VIAJE, estado: "con_problemas" };
+      viajeApi.get.mockResolvedValue({ content: [VIAJE_CON_PROBLEMAS], totalElements: 1, totalPages: 1 });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+
+      expect(await encontrarMenuItem("Ver en el mapa")).toBeInTheDocument();
+    });
+
+    it('"Ver en el mapa" NO aparece en un viaje planificado (todavía no salió)', async () => {
+      const user = userEvent.setup();
+      viajeApi.get.mockResolvedValue({ content: [VIAJE], totalElements: 1, totalPages: 1 });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+
+      // Confirma apertura vía "Ver hoja de ruta" (siempre presente) antes de
+      // afirmar la ausencia de "Ver en el mapa".
+      expect(await encontrarMenuItem("Ver hoja de ruta")).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Ver en el mapa" })).not.toBeInTheDocument();
+    });
+
+    it('no quedan las acciones muertas "Reportar incidente" ni "Desvincular chofer" en ningún estado', async () => {
+      const user = userEvent.setup();
+      const VIAJE_EN_CAMINO = { ...VIAJE, estado: "en_camino" };
+      viajeApi.get.mockResolvedValue({ content: [VIAJE_EN_CAMINO], totalElements: 1, totalPages: 1 });
+
+      renderWithProviders(<ListaViajes />);
+      await abrirMenuDelViaje(user, 42);
+
+      expect(await encontrarMenuItem("Ver hoja de ruta")).toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Reportar incidente" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Desvincular chofer" })).not.toBeInTheDocument();
+    });
+  });
+
+  describe("eliminar seleccionados respeta ESTADOS_ELIMINABLES (SHG-FE-095, review)", () => {
+    // `DELETE /api/viaje/{id}` devuelve 409 fuera de `ESTADOS_ELIMINABLES`; el
+    // front filtra antes de llamar a `deleteFn` para no ofrecer lo que va a fallar.
+    const VIAJE_NO_CANCELABLE = { ...VIAJE, id: 43, estado: "en_camino" };
+
+    it("una selección mixta sólo llama a delete con los viajes cancelables y reporta el resto sin pegarle al backend", async () => {
+      viajeApi.get.mockResolvedValue({
+        content: [VIAJE, VIAJE_NO_CANCELABLE],
+        totalElements: 2,
+        totalPages: 1,
+      });
+      viajeApi.delete.mockResolvedValue({ codigo: 200 });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaViajes />);
+
+      await user.click(await screen.findByLabelText("Seleccionar viaje 42"));
+      await user.click(await screen.findByLabelText("Seleccionar viaje 43"));
+      expect(await screen.findByText("2 viajes seleccionados")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "Acciones" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
+
+      const dialog = await screen.findByRole("dialog");
+      // SHG-FE-106: informa qué no se va a eliminar antes de confirmar.
+      expect(within(dialog).getByText(/Vas a eliminar 1 viaje\./)).toBeInTheDocument();
+      expect(within(dialog).getByText(/No se va a eliminar 1 viaje \(viaje #43: no se puede eliminar porque está En camino\)/)).toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+
+      await waitFor(() => expect(viajeApi.delete).toHaveBeenCalledWith(42));
+      // Nunca se llama al backend con el viaje no cancelable.
+      expect(viajeApi.delete).not.toHaveBeenCalledWith(43);
+      expect(viajeApi.delete).toHaveBeenCalledTimes(1);
+
+      expect(await screen.findByText("Eliminación parcial")).toBeInTheDocument();
+      expect(screen.getByText(/Se eliminaron 1 de 2 viajes/)).toBeInTheDocument();
+      // El motivo también sigue en el diálogo mientras se anima el cierre.
+      expect(screen.getAllByText(/viaje #43.*no se puede eliminar porque está En camino/).length).toBeGreaterThan(0);
+
+      // Refresca y limpia la selección igual que cualquier otro resultado.
+      await waitFor(() => expect(viajeApi.get).toHaveBeenCalledTimes(2));
+      expect(screen.queryByText(/viajes seleccionados/)).not.toBeInTheDocument();
+    });
+
+    it("un viaje con_problemas no se ofrece para eliminar en masa (el backend da 409, SHG-FE-132)", async () => {
+      const CON_PROBLEMAS = { ...VIAJE, id: 44, estado: "con_problemas" };
+      viajeApi.get.mockResolvedValue({ content: [CON_PROBLEMAS], totalElements: 1, totalPages: 1 });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaViajes />);
+
+      await user.click(await screen.findByLabelText("Seleccionar viaje 44"));
+      await user.click(screen.getByRole("button", { name: "Acciones" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText(/viaje #44: no se puede eliminar porque está Con problemas/)).toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
+      expect(viajeApi.delete).not.toHaveBeenCalled();
+    });
+
+    it("si todos los seleccionados son no cancelables, avisa en el diálogo (sin botón de eliminar) y no llama a delete", async () => {
+      viajeApi.get.mockResolvedValue({
+        content: [VIAJE_NO_CANCELABLE],
+        totalElements: 1,
+        totalPages: 1,
+      });
+
+      const user = userEvent.setup();
+      renderWithProviders(<ListaViajes />);
+
+      await user.click(await screen.findByLabelText("Seleccionar viaje 43"));
+      await user.click(screen.getByRole("button", { name: "Acciones" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText(/viaje #43: no se puede eliminar porque está En camino/)).toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Entendido" }));
+
+      expect(viajeApi.delete).not.toHaveBeenCalled();
+    });
+  });
+});

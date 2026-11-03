@@ -1,0 +1,594 @@
+import { act, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { AppShell } from "@mantine/core";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+
+import { renderWithProviders } from "../../../../test/renderWithProviders";
+
+vi.mock("@api", () => ({
+  envioApi: { save: vi.fn() },
+  categoriaApi: { getAll: vi.fn() },
+  provinciaApi: { getAll: vi.fn() },
+  localidadApi: { getByProvincia: vi.fn() },
+  sucursalApi: { getParaEntrega: vi.fn() },
+}));
+
+// El mapa (mapbox-gl / react-map-gl) no corre en jsdom, así que lo reemplazamos
+// por un stub que expone lo necesario para probar SHG-FE-078 sin un mapa real:
+// - `data-initial-center` refleja el prop `initialCenter` que recibe `MapCard`
+//   (el mismo valor que usa como `key` en `SeccionOrigen`) — si el fix del
+//   remount se revierte a usar `form.values.coordenadas` en vez de un estado
+//   separado, este atributo cambiaría en cada click/drag y los tests de abajo
+//   que verifican que NO cambia fallarían.
+// - clickear el `data-testid="map-card"` dispara el `onClick` recibido (fija
+//   coordenadas por click, SHG-FE-078).
+vi.mock("@features/mapa/components/MapCard", () => ({
+  default: ({ children, onClick, initialCenter }) => (
+    <div
+      data-testid="map-card"
+      data-initial-center={`${initialCenter.lat},${initialCenter.lng}`}
+      onClick={() => onClick?.({ lngLat: { lat: -31.5, lng: -64.2 } })}
+    >
+      {children}
+    </div>
+  ),
+}));
+// El `Marker` real de react-map-gl tampoco corre en jsdom. El stub expone
+// lat/lng recibidos y simula un `onDragEnd` al clickearlo (con coordenadas
+// distintas a las del click de arriba, para diferenciar ambos caminos).
+vi.mock("react-map-gl/mapbox", () => ({
+  Marker: ({ latitude, longitude, onDragEnd }) => (
+    <div
+      data-testid="marker"
+      data-lat={latitude}
+      data-lng={longitude}
+      onClick={() => onDragEnd?.({ lngLat: { lat: -31.6, lng: -64.3 } })}
+    />
+  ),
+}));
+
+// El geocoding real (Mapbox Search JS) se prueba en useAddressAutofill.
+// Acá stubeamos el hook para simular directamente la selección de una
+// sugerencia y así fijar `nombreCalle`/`numeroCalle`/`coordenadas` y disparar
+// el auto-match de provincia/localidad.
+let capturedOnSelect;
+vi.mock("./hooks/useAddressAutofill", () => ({
+  useAddressAutofill: (opts) => {
+    capturedOnSelect = opts.onSelect;
+    return {
+      autocompleteData: [],
+      handleChange: vi.fn(),
+      handleSelect: vi.fn(),
+      loadingInput: false,
+      loadingMap: false,
+      selectedId: null,
+    };
+  },
+}));
+
+import {
+  envioApi,
+  categoriaApi,
+  provinciaApi,
+  localidadApi,
+  sucursalApi,
+} from "@api";
+import CrearEnvios from "./index";
+
+// Mantine keeps every Select's option list mounted in the DOM (hidden via
+// CSS) even when its dropdown is closed, so a role-based lookup against the
+// whole document can match a closed select's options too. Scope the lookup
+// to the listbox the just-opened combobox controls (see CrearVehiculo's
+// index.test.jsx for the same pattern).
+const selectOption = async (user, container, comboboxName, optionName) => {
+  const combobox = within(container).getByRole("combobox", {
+    name: comboboxName,
+  });
+  await user.click(combobox);
+  const listboxId = combobox.getAttribute("aria-controls");
+  const listbox = document.getElementById(listboxId);
+  const option = await within(listbox).findByText(optionName);
+  await user.click(option);
+};
+
+// `Footer` usa `AppShellFooter`, que requiere un `AppShell` ancestro.
+const renderCrearEnvios = () =>
+  renderWithProviders(
+    <AppShell footer={{ height: 60 }}>
+      <CrearEnvios />
+    </AppShell>,
+  );
+
+describe("CrearEnvios", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    capturedOnSelect = undefined;
+
+    categoriaApi.getAll.mockResolvedValue([
+      { id: 1, nombre: "Documentación" },
+      { id: 2, nombre: "Electrónica" },
+    ]);
+    provinciaApi.getAll.mockResolvedValue([{ id: 2, nombre: "Córdoba" }]);
+    localidadApi.getByProvincia.mockResolvedValue([
+      { id: 5, nombre: "Córdoba" },
+    ]);
+    sucursalApi.getParaEntrega.mockResolvedValue([
+      {
+        id: 5,
+        nombre: "Sucursal Centro",
+        puntoEntrega: { nombreCalle: "Av. Colón", numeroCalle: "500" },
+      },
+    ]);
+    envioApi.save.mockResolvedValue({ id: 9, codigoSeguimiento: "SHG-DEV-0009" });
+  });
+
+  const fillRemitenteYReceptor = async (user) => {
+    await user.type(screen.getByLabelText(/^nombre/i), "Juan");
+    await user.type(screen.getByLabelText(/apellido/i), "García");
+    await user.type(screen.getByLabelText(/email del remitente/i), "remitente@test.com");
+    await user.type(screen.getByLabelText(/email del destinatario/i), "receptor@test.com");
+    await user.type(screen.getByLabelText(/^prefijo/i), "351");
+    await user.type(screen.getByLabelText(/^teléfono/i), "1234567");
+  };
+
+  const geocodeDireccion = async () => {
+    await waitFor(() => expect(provinciaApi.getAll).toHaveBeenCalled());
+    await waitFor(() => expect(capturedOnSelect).toBeInstanceOf(Function));
+
+    await act(async () => {
+      capturedOnSelect({
+        addressLine1: "Av. Colón 1234",
+        provincia: "Córdoba",
+        localidad: "Córdoba",
+        coordenadas: { lat: -31.4, lng: -64.18 },
+      });
+    });
+
+    await waitFor(() =>
+      expect(localidadApi.getByProvincia).toHaveBeenCalledWith("2"),
+    );
+  };
+
+  const agregarPaquete = async (user) => {
+    await user.click(screen.getByRole("button", { name: /agregar paquete/i }));
+
+    // Mantine's Modal mounts its content after its enter transition tick.
+    const modal = await screen.findByRole("dialog");
+    await selectOption(user, modal, /categoría/i, "Documentación");
+    await user.type(within(modal).getByLabelText(/peso/i), "3");
+    await user.click(within(modal).getByRole("button", { name: /agregar paquete/i }));
+  };
+
+  it("carga las categorías al montar", async () => {
+    renderCrearEnvios();
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalledTimes(1));
+  });
+
+  it("arma el EnvioReqDTO (destino.localidad / detalleEnvios.categoria anidados) y lo envía", async () => {
+    const user = userEvent.setup();
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+    await fillRemitenteYReceptor(user);
+    await geocodeDireccion();
+    await agregarPaquete(user);
+
+    await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+    await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+    expect(envioApi.save).toHaveBeenCalledWith({
+      nombre: "Juan",
+      apellido: "García",
+      emailRemitente: "remitente@test.com",
+      emailReceptor: "receptor@test.com",
+      prefijo: "351",
+      telefono: "1234567",
+      tipoEntrega: "domicilio",
+      destino: {
+        nombreCalle: "Av. Colón",
+        numeroCalle: "1234",
+        localidad: { id: 5 },
+        latitud: -31.4,
+        longitud: -64.18,
+      },
+      detalleEnvios: [
+        {
+          categoria: { id: 1 },
+          descripcion: null,
+          peso: 3,
+        },
+      ],
+    });
+
+    await screen.findByText(/código de seguimiento: shg-dev-0009/i);
+  });
+
+  describe("SHG-FE-078 — fijar el marcador en el mapa (drag/click) sin remontar", () => {
+    it("sin coordenadas muestra el hint de click-to-place y no renderiza el marcador; al geocodificar, al revés", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        screen.getByText(/tocá o hacé clic en el mapa para ubicar el envío/i),
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId("marker")).not.toBeInTheDocument();
+
+      await fillRemitenteYReceptor(user);
+      await geocodeDireccion();
+
+      expect(
+        screen.queryByText(/tocá o hacé clic en el mapa para ubicar el envío/i),
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("marker")).toBeInTheDocument();
+    });
+
+    it("clickear el mapa fija coordenadas sin pisar la dirección/provincia/localidad ya cargadas", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+      await fillRemitenteYReceptor(user);
+      await geocodeDireccion();
+      await agregarPaquete(user);
+
+      await user.click(screen.getByTestId("map-card"));
+
+      // La dirección/provincia/localidad no se tocan por fijar el marcador a mano.
+      expect(screen.getByLabelText(/^calle/i)).toHaveValue("Av. Colón");
+      expect(screen.getByLabelText(/número/i)).toHaveValue("1234");
+
+      await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+      await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+      expect(envioApi.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          destino: expect.objectContaining({
+            nombreCalle: "Av. Colón",
+            numeroCalle: "1234",
+            localidad: { id: 5 },
+            // Coordenadas del click del stub de MapCard (ver mock arriba),
+            // no las que trajo el geocoder.
+            latitud: -31.5,
+            longitud: -64.2,
+          }),
+        }),
+      );
+    });
+
+    it("no remonta el MapCard (mantiene initialCenter) al clickear el mapa o arrastrar el marcador", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+      await fillRemitenteYReceptor(user);
+      await geocodeDireccion();
+
+      const initialCenterBefore = screen
+        .getByTestId("map-card")
+        .getAttribute("data-initial-center");
+      expect(initialCenterBefore).toBe("-31.4,-64.18");
+
+      await user.click(screen.getByTestId("map-card"));
+      expect(
+        screen.getByTestId("map-card").getAttribute("data-initial-center"),
+      ).toBe(initialCenterBefore);
+
+      await user.click(screen.getByTestId("marker"));
+      expect(
+        screen.getByTestId("map-card").getAttribute("data-initial-center"),
+      ).toBe(initialCenterBefore);
+    });
+  });
+
+  it("no envía el formulario si falta geocodificar la dirección", async () => {
+    const user = userEvent.setup();
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+    await fillRemitenteYReceptor(user);
+    await agregarPaquete(user);
+
+    await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+    expect(envioApi.save).not.toHaveBeenCalled();
+    await screen.findByText(
+      "Elegí una sugerencia del buscador de direcciones para ubicar el envío en el mapa.",
+    );
+  });
+
+  it("muestra el mensaje del backend en un toast cuando el POST falla sin field-errors (409)", async () => {
+    const user = userEvent.setup();
+    envioApi.save.mockRejectedValue({
+      response: {
+        status: 409,
+        data: {
+          statusCode: 409,
+          message: "Ya existe un envío en curso para este remitente.",
+        },
+      },
+    });
+
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+    await fillRemitenteYReceptor(user);
+    await geocodeDireccion();
+    await agregarPaquete(user);
+
+    await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+    await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+    expect(
+      await screen.findByText("Ya existe un envío en curso para este remitente."),
+    ).toBeInTheDocument();
+    // Seguimos en el form de creación (no en la pantalla de éxito post-navegación).
+    expect(
+      screen.getByRole("button", { name: /registrar envío/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("marca el error de campo devuelto por la API bajo el input correspondiente (prefijo destino.* stripeado)", async () => {
+    // `envioApi.save` envía `destino` anidado (CONTRACTS.md §2), pero el form
+    // usa el campo plano `nombreCalle` (ver `constants/schema.js`). El backend
+    // devuelve el field-error con el path real del DTO (`destino.nombreCalle`);
+    // `applyApiError` lo mapea al campo plano detectando el prefijo común
+    // (`@domain/apiError`, `detectCommonPrefix`) cuando TODOS los field-errors
+    // comparten el mismo prefijo.
+    const user = userEvent.setup();
+    envioApi.save.mockRejectedValue({
+      response: {
+        status: 400,
+        data: {
+          statusCode: 400,
+          message: "Error en la validación de los campos.",
+          fields: [
+            {
+              field: "destino.nombreCalle",
+              error: "Ya existe un punto de entrega con esa dirección.",
+            },
+          ],
+        },
+      },
+    });
+
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+    await fillRemitenteYReceptor(user);
+    await geocodeDireccion();
+    await agregarPaquete(user);
+
+    await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+    await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+    expect(
+      await screen.findByText("Ya existe un punto de entrega con esa dirección."),
+    ).toBeInTheDocument();
+  });
+
+  it("maneja 400 mixto: campo de raíz + destino.campo (stripPrefix resalta ambos)", async () => {
+    // Este test reproduce el caso descrito en CONTRACTS.md §2 donde un 400
+    // de Bean Validation contiene campos de la raíz del DTO (`nombre`) y
+    // campos anidados bajo `destino` (`destino.numeroCalle`) en la misma
+    // respuesta. Sin `stripPrefix: "destino"`, la auto-detección de
+    // `detectCommonPrefix` devuelve null (porque no todos los campos comparten
+    // prefijo) y los campos anidados no se pelan.
+    // Con `stripPrefix: "destino"`, se pelan solo los prefijados y ambos
+    // field-errors se resaltan en los inputs correctos.
+    const user = userEvent.setup();
+    envioApi.save.mockRejectedValue({
+      response: {
+        status: 400,
+        data: {
+          message: "Validación fallida",
+          fields: [
+            { field: "nombre", error: "El nombre es requerido" },
+            {
+              field: "destino.numeroCalle",
+              error: "El número de calle es requerido",
+            },
+          ],
+        },
+      },
+    });
+
+    renderCrearEnvios();
+
+    await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+    await fillRemitenteYReceptor(user);
+    await geocodeDireccion();
+    await agregarPaquete(user);
+
+    await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+    await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+    // Verificamos que ambos field-errors se resaltaron en el DOM.
+    // Sin `stripPrefix: "destino"`, el campo anidado no se pelaría y no aparecería aquí.
+    expect(
+      await screen.findByText("El nombre es requerido"),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText("El número de calle es requerido"),
+    ).toBeInTheDocument();
+  });
+
+  describe("SHG-FE-079/SHG-CONTRACT-012 — retiro en sucursal como método de entrega", () => {
+    it("por defecto queda en modo domicilio (buscador + mapa visibles, sin selector de sucursal)", async () => {
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        screen.getByRole("radio", { name: /entrega a domicilio/i }),
+      ).toBeChecked();
+      expect(
+        screen.getByRole("combobox", { name: /buscar dirección/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByLabelText(/sucursal de retiro/i),
+      ).not.toBeInTheDocument();
+      expect(sucursalApi.getParaEntrega).not.toHaveBeenCalled();
+    });
+
+    it("el SegmentedControl de tipo de entrega tiene nombre de grupo accesible (radiogroup)", async () => {
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      expect(
+        screen.getByRole("radiogroup", { name: /método de entrega/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("si falla GET /api/sucursal/paraEntrega, muestra un error en el Select y reintenta al click", async () => {
+      const user = userEvent.setup();
+      sucursalApi.getParaEntrega.mockRejectedValueOnce(new Error("network"));
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+
+      await waitFor(() => expect(sucursalApi.getParaEntrega).toHaveBeenCalledTimes(1));
+
+      expect(
+        await screen.findByText("No se pudieron cargar las sucursales"),
+      ).toBeInTheDocument();
+
+      await user.click(
+        screen.getByRole("button", { name: /reintentar cargar las sucursales/i }),
+      );
+
+      await waitFor(() => expect(sucursalApi.getParaEntrega).toHaveBeenCalledTimes(2));
+      expect(
+        await screen.findByText(/sucursal centro — av\. colón 500/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("No se pudieron cargar las sucursales"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("al elegir 'Retiro en sucursal' reemplaza el buscador de dirección + mapa por el selector de sucursal", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+
+      await waitFor(() => expect(sucursalApi.getParaEntrega).toHaveBeenCalled());
+
+      expect(
+        screen.queryByRole("combobox", { name: /buscar dirección/i }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("map-card")).not.toBeInTheDocument();
+      expect(
+        await screen.findByText(/sucursal centro — av\. colón 500/i),
+      ).toBeInTheDocument();
+    });
+
+    it("crea un envío de retiro en sucursal: manda tipoEntrega/sucursalEntregaId, sin destino", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await fillRemitenteYReceptor(user);
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+
+      await selectOption(
+        user,
+        document.body,
+        /sucursal de retiro/i,
+        /sucursal centro/i,
+      );
+
+      await agregarPaquete(user);
+
+      await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+      await waitFor(() => expect(envioApi.save).toHaveBeenCalledTimes(1));
+
+      expect(envioApi.save).toHaveBeenCalledWith({
+        nombre: "Juan",
+        apellido: "García",
+        emailRemitente: "remitente@test.com",
+        emailReceptor: "receptor@test.com",
+        prefijo: "351",
+        telefono: "1234567",
+        tipoEntrega: "sucursal",
+        sucursalEntregaId: 5,
+        detalleEnvios: [
+          {
+            categoria: { id: 1 },
+            descripcion: null,
+            peso: 3,
+          },
+        ],
+      });
+    });
+
+    it("no envía el formulario si falta elegir la sucursal de retiro", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await fillRemitenteYReceptor(user);
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+      await agregarPaquete(user);
+
+      await user.click(screen.getByRole("button", { name: /registrar envío/i }));
+
+      expect(envioApi.save).not.toHaveBeenCalled();
+      await screen.findByText("Elegí una sucursal de retiro.");
+    });
+
+    it("volver a 'Entrega a domicilio' restaura el buscador de dirección + mapa", async () => {
+      const user = userEvent.setup();
+      renderCrearEnvios();
+
+      await waitFor(() => expect(categoriaApi.getAll).toHaveBeenCalled());
+
+      await user.click(
+        screen.getByRole("radio", { name: /retiro en sucursal/i }),
+      );
+      await waitFor(() =>
+        expect(
+          screen.getByRole("combobox", { name: /sucursal de retiro/i }),
+        ).toBeInTheDocument(),
+      );
+
+      await user.click(
+        screen.getByRole("radio", { name: /entrega a domicilio/i }),
+      );
+
+      expect(
+        screen.getByRole("combobox", { name: /buscar dirección/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("combobox", { name: /sucursal de retiro/i }),
+      ).not.toBeInTheDocument();
+    });
+  });
+});

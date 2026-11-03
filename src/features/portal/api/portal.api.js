@@ -1,0 +1,110 @@
+import { restclient } from '@config/restclient';
+import { API_URLS } from '@constants/apiUrls';
+import { captchaHeader } from '@config/captcha';
+
+/**
+ * Capa API del portal CUSTOMER.
+ *
+ * Fuente de verdad: `planning/CONTRACTS.md §7` (CONTRACT-007) + backend
+ * `SHG-BE-002` (registro + verificación + "mis envíos") y `SHG-BE-024`
+ * (`GET /api/customer/me`).
+ *
+ * @typedef {Object} RegisterReqDTO
+ * @property {string} email
+ * @property {string} password   Mínimo 8 caracteres (validado también server-side).
+ * @property {string} nombre
+ * @property {string} apellido
+ * @property {string} telefono
+ *
+ * @typedef {Object} CustomerMeDTO
+ * @property {string} email
+ * @property {string} nombre
+ * @property {string} apellido
+ * @property {string} telefono
+ * @property {boolean} emailVerificado
+ *
+ * @typedef {Object} CustomerMeUpdateReqDTO
+ * @property {string} nombre     Obligatorio (`@NotEmpty`, mismas reglas que `RegisterReqDTO`).
+ * @property {string} apellido   Obligatorio.
+ * @property {string} telefono   Obligatorio.
+ */
+
+export const registroApi = {
+  /**
+   * `POST /api/register` — público. Crea SIEMPRE un `ROLE_CUSTOMER` (nunca acepta
+   * rol). La cuenta queda deshabilitada hasta verificar el email.
+   *
+   * `201 { codigo: 201, mensaje }`. Errores `400 { statusCode, message }`
+   * (email inválido / password corta / campos vacíos / email ya registrado) o
+   * `400 { statusCode, message, code: "captcha_invalid" }` (SHG-FE-043 /
+   * SHG-BE-032) si falta/es inválido el token de captcha.
+   *
+   * @param {RegisterReqDTO} body
+   * @param {string} captchaToken Token vigente de Cloudflare Turnstile (`useCaptcha`).
+   * @returns {Promise<{ codigo?: number, mensaje?: string }>}
+   */
+  register: async (body, captchaToken) => {
+    const { data } = await restclient.post(API_URLS.REGISTER_URL, body, {
+      headers: captchaHeader(captchaToken),
+    });
+    return data;
+  },
+
+  /**
+   * `GET /api/register/verify?token=...` — público. Activa la cuenta.
+   * `200 { codigo, mensaje }`, `404` token inexistente, `400` token expirado (24 h).
+   *
+   * @param {string} token
+   * @returns {Promise<{ codigo?: number, mensaje?: string }>}
+   */
+  verify: async (token) => {
+    const { data } = await restclient.get(API_URLS.REGISTER_VERIFY_URL, {
+      params: { token },
+    });
+    return data;
+  },
+};
+
+export const portalApi = {
+  /**
+   * `GET /api/customer/me` — sólo `ROLE_CUSTOMER`. Se resuelve server-side desde
+   * la sesión (sin params). `401` anónimo, `403` para SU/AD/CH/CA.
+   *
+   * @returns {Promise<CustomerMeDTO>}
+   */
+  me: async () => {
+    const { data } = await restclient.get(API_URLS.CUSTOMER_ME_URL);
+    return data;
+  },
+
+  /**
+   * `PUT /api/customer/me` — sólo `ROLE_CUSTOMER` (`SHG-BE-074`). Siempre opera
+   * sobre el usuario autenticado (no recibe id). `email`/`emailVerificado` son
+   * de sólo lectura: no forman parte del request y, si vinieran, el backend
+   * los ignora.
+   *
+   * Los tres campos son obligatorios; si falta alguno, `400 ApiFieldError`
+   * (`fields: [{ field, error }]`, `CONTRACTS.md §5`).
+   *
+   * @param {CustomerMeUpdateReqDTO} body
+   * @returns {Promise<CustomerMeDTO>}
+   */
+  updateMe: async (body) => {
+    const { data } = await restclient.put(API_URLS.CUSTOMER_ME_URL, body);
+    return data;
+  },
+
+  /**
+   * `GET /api/envio/mios` — sólo `ROLE_CUSTOMER` (ADMIN/SUPER/CHOFER → `403`).
+   * Paginado, `Page<EnvioDTO>` (mismo shape que `GET /api/envio`). Devuelve los
+   * envíos donde el email del customer == `emailRemitente` OR `emailReceptor`.
+   * Orden default `id` desc.
+   *
+   * @param {{ page?: number, size?: number }} [params]  `page` 0-indexed.
+   * @returns {Promise<import('@api/base.api').Page<Object>>}
+   */
+  misEnvios: async (params = {}) => {
+    const { data } = await restclient.get(API_URLS.ENVIO_MIOS_URL, { params });
+    return data;
+  },
+};

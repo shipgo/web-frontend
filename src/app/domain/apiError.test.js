@@ -1,0 +1,346 @@
+import { describe, expect, it, vi } from 'vitest';
+
+import {
+  applyApiError,
+  BUSY_MESSAGE,
+  getRateLimitMessage,
+  isRateLimitedError,
+  parseApiError,
+} from './apiError';
+
+/** Helper: arma un error tipo axios con `response.status` + `response.data`. */
+const axiosError = (status, data) => ({
+  isAxiosError: true,
+  response: { status, data },
+});
+
+describe('parseApiError — 400 de validación de campos (ApiFieldError, body plano)', () => {
+  // Ejemplo verbatim de CONTRACTS.md §5 (POST /api/envio con body {}).
+  const err = axiosError(400, {
+    statusCode: 400,
+    message: 'Error en la validación de los campos.',
+    fields: [
+      { field: 'telefono', error: 'El campo telefono no puede estar vacío.' },
+      {
+        field: 'emailRemitente',
+        error: 'El campo emailRemitente no puede estar vacío.',
+      },
+      { field: 'nombre', error: 'El campo nombre no puede estar vacío.' },
+    ],
+  });
+
+  it('mapea cada field a su error, listo para form.setErrors', () => {
+    const { fieldErrors } = parseApiError(err);
+    expect(fieldErrors).toEqual({
+      telefono: 'El campo telefono no puede estar vacío.',
+      emailRemitente: 'El campo emailRemitente no puede estar vacío.',
+      nombre: 'El campo nombre no puede estar vacío.',
+    });
+  });
+
+  it('usa el message top-level para el toast', () => {
+    expect(parseApiError(err).message).toBe(
+      'Error en la validación de los campos.',
+    );
+  });
+});
+
+describe('parseApiError — body anidado (ViajeReqDTO.viaje / SucursalReqDTO.puntoEntrega)', () => {
+  it('saca el prefijo explícito para que matcheen los nombres planos del form', () => {
+    const err = axiosError(400, {
+      statusCode: 400,
+      message: 'Error en la validación de los campos.',
+      fields: [
+        { field: 'viaje.vehiculoID', error: 'Debe seleccionar un vehículo.' },
+        { field: 'viaje.choferesID', error: 'Debe asignar al menos un chofer.' },
+      ],
+    });
+
+    expect(parseApiError(err, { stripPrefix: 'viaje' }).fieldErrors).toEqual({
+      vehiculoID: 'Debe seleccionar un vehículo.',
+      choferesID: 'Debe asignar al menos un chofer.',
+    });
+  });
+
+  it('con nombres mezclados, sólo saca el prefijo pedido y deja el resto', () => {
+    const err = axiosError(400, {
+      message: 'Error en la validación de los campos.',
+      fields: [
+        { field: 'nombre', error: 'El campo nombre no puede estar vacío.' },
+        {
+          field: 'puntoEntrega.numeroCalle',
+          error: 'El campo numeroCalle no puede estar vacío.',
+        },
+      ],
+    });
+
+    expect(
+      parseApiError(err, { stripPrefix: 'puntoEntrega' }).fieldErrors,
+    ).toEqual({
+      nombre: 'El campo nombre no puede estar vacío.',
+      numeroCalle: 'El campo numeroCalle no puede estar vacío.',
+    });
+  });
+
+  it('detecta un prefijo común automáticamente si no se pasa stripPrefix', () => {
+    const err = axiosError(400, {
+      fields: [
+        { field: 'viaje.vehiculoID', error: 'Requerido.' },
+        { field: 'viaje.fechaHoraInicioPlanificada', error: 'Requerido.' },
+      ],
+    });
+
+    expect(parseApiError(err).fieldErrors).toEqual({
+      vehiculoID: 'Requerido.',
+      fechaHoraInicioPlanificada: 'Requerido.',
+    });
+  });
+
+  it('acepta un array de prefijos', () => {
+    const err = axiosError(400, {
+      fields: [
+        { field: 'viaje.vehiculoID', error: 'Requerido.' },
+        { field: 'puntoEntrega.numeroCalle', error: 'Requerido.' },
+      ],
+    });
+
+    expect(
+      parseApiError(err, { stripPrefix: ['viaje', 'puntoEntrega'] }).fieldErrors,
+    ).toEqual({ vehiculoID: 'Requerido.', numeroCalle: 'Requerido.' });
+  });
+
+  it('400 mixto: campo de raíz + destino.campo (SHG-FE-040 — CrearEnvios)', () => {
+    // Caso concreto: EnvioReqDTO tiene campos planos (`nombre`, `apellido`, etc.)
+    // y un objeto anidado `destino` con `numeroCalle`, `nombreCalle`, etc.
+    // Un 400 de validación puede mezclar errores de ambos niveles.
+    // Sin `stripPrefix`, detectCommonPrefix devuelve null (porque no todos los
+    // campos comparten prefijo) y los anidados no se pelan.
+    // Con `stripPrefix: "destino"`, se pelan solo los prefijados y los planos quedan igual.
+    const err = axiosError(400, {
+      message: 'Validación fallida',
+      fields: [
+        { field: 'nombre', error: 'El nombre es requerido.' },
+        {
+          field: 'destino.numeroCalle',
+          error: 'El número de calle es requerido.',
+        },
+      ],
+    });
+
+    expect(
+      parseApiError(err, { stripPrefix: 'destino' }).fieldErrors,
+    ).toEqual({
+      nombre: 'El nombre es requerido.',
+      numeroCalle: 'El número de calle es requerido.',
+    });
+  });
+
+  it('NO detecta prefijo en un DTO plano cuyos campos comparten un comienzo pero no un segmento con punto', () => {
+    const err = axiosError(400, {
+      fields: [
+        { field: 'nombreCalle', error: 'Requerido.' },
+        { field: 'nombreMecanico', error: 'Requerido.' },
+      ],
+    });
+
+    expect(parseApiError(err).fieldErrors).toEqual({
+      nombreCalle: 'Requerido.',
+      nombreMecanico: 'Requerido.',
+    });
+  });
+});
+
+describe('parseApiError — errores sin fields (ErrorResponse simple)', () => {
+  it('400 de negocio: sin fieldErrors, message puntual del backend', () => {
+    const err = axiosError(400, {
+      statusCode: 400,
+      message: "El parámetro 'hasta' debe ser posterior a 'desde'.",
+    });
+    const { fieldErrors, message } = parseApiError(err);
+    expect(fieldErrors).toEqual({});
+    expect(message).toBe("El parámetro 'hasta' debe ser posterior a 'desde'.");
+  });
+
+  it('404: message del backend', () => {
+    const err = axiosError(404, {
+      statusCode: 404,
+      message: 'El envío con el id 999999 no existe.',
+    });
+    expect(parseApiError(err).message).toBe(
+      'El envío con el id 999999 no existe.',
+    );
+  });
+
+  it('409: message del backend (conflicto de estado)', () => {
+    const err = axiosError(409, {
+      statusCode: 409,
+      message:
+        "No se puede eliminar el envío 18 porque está en estado 'entregado'.",
+    });
+    const { fieldErrors, message } = parseApiError(err);
+    expect(fieldErrors).toEqual({});
+    expect(message).toBe(
+      "No se puede eliminar el envío 18 porque está en estado 'entregado'.",
+    );
+  });
+});
+
+describe('parseApiError — 403', () => {
+  it('usa el texto fijo de permisos, no el del backend', () => {
+    const err = axiosError(403, {
+      statusCode: 403,
+      message: 'No tiene permisos para acceder a este recurso',
+    });
+    expect(parseApiError(err).message).toBe('No tenés permiso para hacer esto.');
+  });
+});
+
+describe('parseApiError — 403 con backendForbiddenMessage', () => {
+  it('muestra el message del backend', () => {
+    const err = axiosError(403, { statusCode: 403, message: 'Sólo un SUPERUSER puede asignar ROLE_ADMIN' });
+    expect(parseApiError(err, { backendForbiddenMessage: true }).message).toBe(
+      'Sólo un SUPERUSER puede asignar ROLE_ADMIN',
+    );
+  });
+
+  it('sin message cae al texto fijo', () => {
+    const err = axiosError(403, { statusCode: 403 });
+    expect(parseApiError(err, { backendForbiddenMessage: true }).message).toBe(
+      'No tenés permiso para hacer esto.',
+    );
+  });
+});
+
+describe('parseApiError — 5xx', () => {
+  it('500 del GlobalExceptionHandler: mensaje genérico, sin exponer el interno', () => {
+    const err = axiosError(500, {
+      statusCode: 500,
+      message: 'La acción a realizar entregar no existe para el estado entregado',
+    });
+    const { message } = parseApiError(err);
+    expect(message).toBe(
+      'Algo salió mal. Probá de nuevo en unos minutos.',
+    );
+  });
+
+  it('shape default de Spring Boot (/error, sin message ni statusCode)', () => {
+    const err = axiosError(500, {
+      timestamp: '2026-09-06T12:00:00.000+00:00',
+      status: 500,
+      error: 'Internal Server Error',
+      path: '/api/envio',
+    });
+    expect(parseApiError(err).message).toBe(
+      'Algo salió mal. Probá de nuevo en unos minutos.',
+    );
+  });
+});
+
+describe('parseApiError — 503 de lock tras los reintentos (SHG-FE-131)', () => {
+  it('muestra el message del backend («…probá de nuevo…»)', () => {
+    const err = axiosError(503, {
+      statusCode: 503,
+      message: 'El recurso está ocupado, probá de nuevo en unos segundos.',
+    });
+    expect(parseApiError(err).message).toBe(
+      'El recurso está ocupado, probá de nuevo en unos segundos.',
+    );
+  });
+
+  it('sin message (o con body no JSON de un proxy) usa el texto de «sistema ocupado»', () => {
+    expect(BUSY_MESSAGE).toBe('El sistema está ocupado, probá de nuevo en unos segundos.');
+    expect(parseApiError(axiosError(503, {})).message).toBe(BUSY_MESSAGE);
+    expect(parseApiError(axiosError(503, '<html>503</html>')).message).toBe(BUSY_MESSAGE);
+    expect(
+      parseApiError(axiosError(503, {}), { fallbackMessage: 'No se pudo guardar' }).message,
+    ).toBe(BUSY_MESSAGE);
+  });
+
+  it('los otros 5xx siguen con el mensaje genérico de servidor', () => {
+    expect(parseApiError(axiosError(502, { message: 'x' })).message).toBe(
+      'Algo salió mal. Probá de nuevo en unos minutos.',
+    );
+  });
+});
+
+describe('parseApiError — sin respuesta / fallback', () => {
+  it('error de red (sin err.response): status null + mensaje genérico o fallback', () => {
+    const err = new Error('Network Error');
+    const { fieldErrors, message, status } = parseApiError(err, {
+      fallbackMessage: 'No se pudo crear el envío',
+    });
+    expect(fieldErrors).toEqual({});
+    expect(status).toBeNull();
+    expect(message).toBe('No se pudo crear el envío');
+  });
+
+  it('sin message del backend y sin fallback: mensaje genérico por defecto', () => {
+    expect(parseApiError(axiosError(400, {})).message).toBe(
+      'Algo salió mal. Probá de nuevo en unos minutos.',
+    );
+  });
+
+  it('compat: field-errors bajo `fieldErrors` con item.message (parseo viejo de CrearEnvios)', () => {
+    const err = axiosError(400, {
+      mensaje: 'Error de validación',
+      fieldErrors: [{ field: 'nombre', message: 'Requerido' }],
+    });
+    const { fieldErrors, message } = parseApiError(err);
+    expect(fieldErrors).toEqual({ nombre: 'Requerido' });
+    expect(message).toBe('Error de validación');
+  });
+});
+
+describe('applyApiError', () => {
+  it('llama form.setErrors con los fieldErrors y devuelve el message', () => {
+    const form = { setErrors: vi.fn() };
+    const err = axiosError(400, {
+      message: 'Error en la validación de los campos.',
+      fields: [{ field: 'nombre', error: 'Requerido' }],
+    });
+
+    const message = applyApiError(form, err);
+
+    expect(form.setErrors).toHaveBeenCalledWith({ nombre: 'Requerido' });
+    expect(message).toBe('Error en la validación de los campos.');
+  });
+
+  it('no llama form.setErrors si no hay fieldErrors', () => {
+    const form = { setErrors: vi.fn() };
+    applyApiError(form, axiosError(409, { message: 'Conflicto' }));
+    expect(form.setErrors).not.toHaveBeenCalled();
+  });
+
+  it('loguea en consola ante un 5xx', () => {
+    const form = { setErrors: vi.fn() };
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    applyApiError(form, axiosError(503, {}));
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('propaga stripPrefix a parseApiError', () => {
+    const form = { setErrors: vi.fn() };
+    applyApiError(form, axiosError(400, {
+      fields: [{ field: 'viaje.vehiculoID', error: 'Requerido' }],
+    }), { stripPrefix: 'viaje' });
+    expect(form.setErrors).toHaveBeenCalledWith({ vehiculoID: 'Requerido' });
+  });
+});
+
+describe('límite de intentos (429 rate_limited)', () => {
+  it('reconoce el 429 por status y por code, sin mirar el texto', () => {
+    expect(isRateLimitedError(axiosError(429, {}))).toBe(true);
+    expect(isRateLimitedError(axiosError(400, { code: 'rate_limited' }))).toBe(true);
+    expect(isRateLimitedError(axiosError(401, { message: 'Demasiados intentos' }))).toBe(false);
+    expect(isRateLimitedError(new Error('Network Error'))).toBe(false);
+  });
+
+  it('devuelve el message del backend, o uno propio si falta', () => {
+    expect(
+      getRateLimitMessage(axiosError(429, { message: 'Esperá 5 min', code: 'rate_limited' })),
+    ).toBe('Esperá 5 min');
+    expect(getRateLimitMessage(axiosError(429, {}))).toMatch(/Demasiados intentos/);
+    expect(getRateLimitMessage(axiosError(401, {}))).toBeNull();
+  });
+});

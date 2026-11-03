@@ -1,17 +1,20 @@
 import { Link } from 'wouter';
 import { Button } from '@mantine/core';
-import { IconMailPlus, IconShare } from '@tabler/icons-react';
+import { IconMailPlus } from '@tabler/icons-react';
 
 import PageHeader from '@components/PageHeader';
+import ExportCsvButton from '@components/ExportCsvButton';
 
-const ListaViajesHeader = () => (
-  <PageHeader title="Viajes" subtitle="Listado de viajes cargados en el sistema">
+const ListaViajesHeader = ({ onExportCsv, isExporting, exportDisabled }) => (
+  <PageHeader title="Viajes" subtitle="Planificá y seguí tus viajes">
     <Button to="/crear" component={Link} leftSection={<IconMailPlus />}>
       Crear viaje
     </Button>
-    <Button variant="subtle" leftSection={<IconShare />}>
-      Exportar
-    </Button>
+    <ExportCsvButton
+      onExport={onExportCsv}
+      loading={isExporting}
+      disabled={exportDisabled}
+    />
   </PageHeader>
 );
 

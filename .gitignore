@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Variables de entorno locales (ver .env.example)
+.env
+.env.*
+!.env.example
+
+# Evidencia de corridas de e2e (SHG-QA-005) — screenshots/logs por corrida,
+# no se versionan.
+e2e/artifacts/*
+!e2e/artifacts/.gitkeep
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

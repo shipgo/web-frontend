@@ -1,25 +1,19 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
-import PACKAGES from "./PACKAGES.json";
+import { envioApi } from "@api";
 
-const getPackages = ({ pageParam, pageSize = 25 }) =>
-  new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const offset = pageParam + pageSize;
-      const data = PACKAGES.slice(pageParam, offset);
-      const nextPage = PACKAGES.length > offset ? offset : null;
-      if (true) {
-        resolve({ data, nextPage });
-      } else {
-        reject({ data, nextPage });
-      }
-    }, 2000);
-  });
-
-export const useEnviosPendientes = ({ searchValue }) =>
-  useInfiniteQuery({
-    initialPageParam: 1,
-    queryFn: getPackages,
-    queryKey: ["pending-packages", searchValue],
-    getNextPageParam: (lastPage) => lastPage.nextPage,
+/**
+ * `GET /api/envio/paraViaje` (SHG-BE-020) — envíos `creado`/`en_sucursal` agrupados
+ * por punto de entrega destino. Cada `EnvioDTO` ya trae su propio `destino`
+ * (`PuntoEntregaDTO`), así que acá los aplanamos: el agrupamiento real para
+ * armar los recorridos se hace en `ListadoEnviosPendientes` según la acción
+ * elegida (entrega local vs. transferencia a sucursal), no según este grupo.
+ */
+export const useEnviosPendientes = () =>
+  useQuery({
+    queryKey: ["envios-para-viaje"],
+    queryFn: async () => {
+      const grupos = await envioApi.getParaViaje();
+      return (grupos ?? []).flatMap((grupo) => grupo.envios ?? []);
+    },
   });

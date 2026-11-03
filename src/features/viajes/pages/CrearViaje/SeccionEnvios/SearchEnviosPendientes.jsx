@@ -13,7 +13,7 @@ const SearchEnviosPendientes = ({ onSearchChange, onToggleShowIncluded }) => {
       <Stack mt="xs" gap="sm">
         <TextInput
           flex={1}
-          placeholder="Buscá por ID o por destino..."
+          placeholder="Buscá por código o por destino..."
           rightSection={<IconSearch size={16} />}
           onChange={(event) => debouncedOnSearchChange(event.target.value)}
         />

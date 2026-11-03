@@ -1,0 +1,132 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  digitosWhatsapp,
+  EMPTY,
+  formatDesdeAhora,
+  formatDireccion,
+  formatFecha,
+  formatFechaHora,
+  formatPeso,
+  formatTelefono,
+  formatVelocidad,
+  normalizarPrefijoWhatsapp,
+} from "./format";
+
+describe("formatVelocidad", () => {
+  it("redondea a entero y agrega km/h", () => {
+    expect(formatVelocidad(61.6)).toBe("62 km/h");
+    expect(formatVelocidad(0)).toBe("0 km/h");
+  });
+
+  it("sin dato o inválido devuelve EMPTY", () => {
+    expect(formatVelocidad(null)).toBe(EMPTY);
+    expect(formatVelocidad(undefined)).toBe(EMPTY);
+    expect(formatVelocidad("abc")).toBe(EMPTY);
+    expect(formatVelocidad(-3)).toBe(EMPTY);
+  });
+});
+
+describe("formatFecha / formatFechaHora", () => {
+  it("formatea en DD/MM/YYYY", () => {
+    expect(formatFecha("2026-01-31")).toBe("31/01/2026");
+    expect(formatFechaHora("2026-01-31T09:30:00")).toBe("31/01/2026 09:30");
+  });
+
+  it("devuelve EMPTY para fechas inválidas o nulas", () => {
+    expect(formatFecha(null)).toBe(EMPTY);
+    expect(formatFecha("no-es-fecha")).toBe(EMPTY);
+    expect(formatFechaHora(undefined)).toBe(EMPTY);
+  });
+});
+
+describe("formatDesdeAhora", () => {
+  it("da un relativo en español", () => {
+    const hace2Dias = new Date(Date.now() - 2 * 24 * 3600 * 1000);
+    expect(formatDesdeAhora(hace2Dias)).toMatch(/hace/i);
+  });
+
+  it("EMPTY para valor inválido", () => {
+    expect(formatDesdeAhora("x")).toBe(EMPTY);
+  });
+});
+
+describe("formatTelefono", () => {
+  it("junta prefijo y teléfono", () => {
+    expect(formatTelefono("+54", "3411234567")).toBe("+54 3411234567");
+    expect(formatTelefono({ prefijo: "+54", telefono: "11" })).toBe("+54 11");
+  });
+
+  it("tolera partes faltantes", () => {
+    expect(formatTelefono(null, "11")).toBe("11");
+    expect(formatTelefono(null, null)).toBe(EMPTY);
+  });
+});
+
+describe("normalizarPrefijoWhatsapp / digitosWhatsapp", () => {
+  it("deja el código de área tal cual (formato real: chofer.prefijo del seed dev)", () => {
+    expect(normalizarPrefijoWhatsapp("351")).toBe("351");
+    expect(normalizarPrefijoWhatsapp("11")).toBe("11");
+  });
+
+  it("despoja un código de país ('+54' o '54') para no duplicarlo", () => {
+    expect(normalizarPrefijoWhatsapp("+54")).toBe("");
+    expect(normalizarPrefijoWhatsapp("54")).toBe("");
+  });
+
+  it("EMPTY string para prefijo nulo/vacío", () => {
+    expect(normalizarPrefijoWhatsapp(null)).toBe("");
+    expect(normalizarPrefijoWhatsapp(undefined)).toBe("");
+  });
+
+  it("digitosWhatsapp junta prefijo normalizado + teléfono, sin no-dígitos", () => {
+    expect(digitosWhatsapp("351", "3510000003")).toBe("3513510000003");
+    expect(digitosWhatsapp("11", "5555-4444")).toBe("1155554444");
+    expect(digitosWhatsapp(null, "3510000003")).toBe("3510000003");
+    expect(digitosWhatsapp("351", null)).toBe("351");
+  });
+});
+
+describe("formatDireccion", () => {
+  const destino = {
+    nombreCalle: "Av. Corrientes",
+    numeroCalle: 1234,
+    localidad: { nombre: "CABA", provincia: { nombre: "Buenos Aires" } },
+  };
+
+  it("por defecto sólo calle y número", () => {
+    expect(formatDireccion(destino)).toBe("Av. Corrientes 1234");
+  });
+
+  it("completa agrega localidad y provincia", () => {
+    expect(formatDireccion(destino, { completa: true })).toBe(
+      "Av. Corrientes 1234 · CABA, Buenos Aires"
+    );
+  });
+
+  it("EMPTY sin destino", () => {
+    expect(formatDireccion(null)).toBe(EMPTY);
+    expect(formatDireccion({})).toBe(EMPTY);
+  });
+});
+
+describe("formatPeso", () => {
+  it("formatea con separadores es-AR y unidad", () => {
+    expect(formatPeso(1234.5)).toBe("1.234,5 kg");
+    expect(formatPeso(0)).toBe("0 kg");
+  });
+
+  it("no muestra el artefacto de coma flotante y usa coma decimal", () => {
+    expect(formatPeso(40.099999999999994)).toBe("40,1 kg");
+    expect(formatPeso(0.1 + 0.2)).toBe("0,3 kg");
+    expect(formatPeso(2.5)).toBe("2,5 kg");
+    expect(formatPeso("2.5")).toBe("2,5 kg");
+  });
+
+  it("EMPTY para valores no numéricos", () => {
+    expect(formatPeso(null)).toBe(EMPTY);
+    expect(formatPeso(undefined)).toBe(EMPTY);
+    expect(formatPeso("")).toBe(EMPTY);
+    expect(formatPeso("abc")).toBe(EMPTY);
+  });
+});

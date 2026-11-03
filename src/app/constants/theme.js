@@ -5,11 +5,14 @@ import {
   TextInput,
   Select,
   MultiSelect,
+  NumberInput,
   Tooltip,
   Modal,
   Textarea,
   NumberFormatter,
   Loader,
+  Pagination,
+  PasswordInput,
 } from "@mantine/core";
 import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 
@@ -45,12 +48,30 @@ export const THEME = createTheme({
           marginBlockEnd: "0.5rem",
         },
       },
+      // Sin `aria-label` propio, el botón de limpiar de un `Select` clearable
+      // queda sin nombre accesible (axe-core `button-name`, crítico —
+      // SHG-FE-041). Default global: cualquier `Select` puede pisarlo con su
+      // propio `clearButtonProps` si el label no aplica.
+      defaultProps: {
+        clearButtonProps: { "aria-label": "Limpiar selección" },
+      },
     }),
     MultiSelect: MultiSelect.extend({
       styles: {
         label: {
           marginBlockEnd: "0.5rem",
         },
+      },
+    }),
+    NumberInput: NumberInput.extend({
+      styles: {
+        label: {
+          marginBlockEnd: "0.5rem",
+        },
+      },
+      defaultProps: {
+        autoCorrect: "off",
+        autoComplete: "off",
       },
     }),
     Textarea: Textarea.extend({
@@ -92,6 +113,25 @@ export const THEME = createTheme({
         type: "bars",
       },
     }),
+    // Mantine no le pone `aria-label` propio a los controles prev/next/first/
+    // last de `Pagination` — quedan como botones sin nombre accesible
+    // (axe-core `button-name`, crítico, en cada listado con paginación:
+    // envíos, viajes, y el resto de las listas que usan `<Pagination>` sin
+    // pasarle nada — ver SHG-FE-041). Default global en vez de repetirlo en
+    // cada página.
+    Pagination: Pagination.extend({
+      defaultProps: {
+        getControlProps: (control) => {
+          const labels = {
+            first: "Primera página",
+            previous: "Página anterior",
+            next: "Página siguiente",
+            last: "Última página",
+          };
+          return labels[control] ? { "aria-label": labels[control] } : {};
+        },
+      },
+    }),
     NumberFormatter: NumberFormatter.extend({
       defaultProps: {
         thousandSeparator: ".",
@@ -103,6 +143,15 @@ export const THEME = createTheme({
       defaultProps: {
         centered: true,
         padding: "lg",
+        // Sin nombre propio, la X de cierre queda como botón sin texto
+        // (axe-core `button-name`). Cubre también los de `@mantine/modals`.
+        closeButtonProps: { "aria-label": "Cerrar" },
+      },
+    }),
+    // Mantine pone "Toggle password visibility" (inglés) por defecto.
+    PasswordInput: PasswordInput.extend({
+      defaultProps: {
+        visibilityToggleButtonProps: { "aria-label": "Mostrar contraseña" },
       },
     }),
     Tooltip: Tooltip.extend({
@@ -130,6 +179,9 @@ export const THEME = createTheme({
       defaultProps: {
         valueFormat: "DD/MM/YYYY",
         // size: "md",
+        // Mismo motivo que en `Select` — botón de limpiar sin nombre
+        // accesible (axe-core `button-name`, crítico — SHG-FE-041).
+        clearButtonProps: { "aria-label": "Limpiar rango de fechas" },
       },
     }),
   },

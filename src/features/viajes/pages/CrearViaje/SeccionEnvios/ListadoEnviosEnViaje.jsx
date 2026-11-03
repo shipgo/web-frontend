@@ -3,6 +3,7 @@ import { GroupedVirtuoso } from "react-virtuoso";
 
 import ScreenContainer from "@components/ScreenContainer";
 import SelectableItemList from "@components/SelectableItemList";
+import { VirtuosoItem } from "@components/VirtuosoListA11y";
 
 import ItemPaquete from "./ItemPaquete";
 import { useFormContext } from "../contexts/EnviosFormContext";
@@ -63,13 +64,14 @@ const ListadoEnviosEnViaje = ({
         </SelectableItemList>
       )}
       components={{
+        Item: VirtuosoItem,
         EmptyPlaceholder: () => (
           <ScreenContainer
             styleProps={{ h: "100%" }}
             onEmptyData={{
               show: true,
               title: "No hay envíos seleccionados",
-              description: "Seleccioná los envíos que se incluirán en el viaje",
+              description: "Todavía no agregaste envíos. Elegilos de la lista de pendientes.",
             }}
           />
         ),

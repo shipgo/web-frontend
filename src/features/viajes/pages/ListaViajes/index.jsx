@@ -1,85 +1,47 @@
-import { useEffect } from 'react';
-import { Card } from '@mantine/core';
+import { useEffect, useState } from 'react';
+import { Card, Flex, Pagination, Text } from '@mantine/core';
 import { useSet } from '@mantine/hooks';
-import { useQuery } from '@tanstack/react-query';
 
-import { useParams } from '@hooks/useParams';
-import ScreenContainer from '@components/ScreenContainer';
 import PageContainer from '@components/PageContainer';
+import ScreenContainer from '@components/ScreenContainer';
 import SelectionBanner from '@components/SelectionBanner';
-import ListPagination from '@components/ListPagination';
+
+import { estadoLabel, normalizarEstado } from '@domain/estados';
+import { viajeApi } from '@api';
+import { useBulkDelete } from '@hooks/useBulkDelete';
+import { useCsvExport } from '@hooks/useCsvExport';
+import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
+import { listaEstados } from '@copy/common';
+
+import { ESTADOS_ELIMINABLES } from '../DetalleViaje/acciones';
 
 import ListaViajesHeader from './components/ListaViajesHeader';
 import ListaViajesTabla from './components/ListaViajesTabla';
 import ListaViajesFiltros from './components/ListaViajesFiltros';
 
-const PAGE_LIMIT = 10;
-const VIAJES = [
-  {
-    id: '1SDG56FHY4D',
-    fecha: '2026-03-15T10:00:00Z',
-    estado: 'Planificado',
-    chofer: { nombre: 'Juan Perez' },
-    vehiculo: { patente: 'ABC123', capacidad: 3000 },
-    carga: { envios: 15, bultos: 30, peso: 4500 },
-    paquetes_entregados: 0,
-  },
-  {
-    id: '2ASD89GHJ12',
-    fecha: '2026-03-12T03:00:00Z',
-    estado: 'ASIGNADO',
-    chofer: { nombre: 'Daniel Gomez' },
-    vehiculo: { patente: 'DEF456', capacidad: 2000 },
-    carga: { envios: 10, bultos: 20, peso: 3000 },
-    paquetes_entregados: 0,
-  },
-  {
-    id: '3GHJ12KLM34',
-    fecha: new Date(),
-    estado: 'EN CURSO',
-    chofer: { nombre: 'Martin Garcia' },
-    vehiculo: { patente: 'GHI789', capacidad: 2500 },
-    carga: { envios: 5, bultos: 10, peso: 2500 },
-    paquetes_entregados: 4,
-  },
-  {
-    id: '4JKL34MNO56',
-    fecha: '2026-03-10T08:00:00Z',
-    estado: 'FINALIZADO',
-    chofer: { nombre: 'Lucas Garcia' },
-    vehiculo: { patente: 'JKL012', capacidad: 4000 },
-    carga: { envios: 20, bultos: 40, peso: 4000 },
-    paquetes_entregados: 20,
-  },
-  {
-    id: '5MNO56PQR78',
-    fecha: '2026-03-11T12:00:00Z',
-    estado: 'INTERRUMPIDO',
-    chofer: { nombre: 'Andres Martinez' },
-    vehiculo: { patente: 'MNO345', capacidad: 3500 },
-    carga: { envios: 5, bultos: 16, peso: 2800 },
-    paquetes_entregados: 1,
-  },
-];
+import { useGetViajes } from './hooks/useGetViajes';
+import { VIAJES_CSV_COLUMNS } from './listaViajes.csv';
 
-const getViajes = (params, pageLimit) =>
-  new Promise((resolve) => {
-    const offset = (params.page - 1) * pageLimit;
-    setTimeout(() => {
-      resolve({
-        total: VIAJES.length,
-        results: VIAJES.slice(offset, offset + pageLimit),
-        totalPages: Math.ceil(VIAJES.length / pageLimit),
-      });
-    }, 1000);
-  });
+const ESTADOS_LISTA = listaEstados({ singular: 'viaje', plural: 'viajes', genero: 'm' });
 
 const ListaViajes = () => {
-  const { params, setFilters, setPage } = useParams();
+  const { params, setPage, setFilters, clearFilters, refetch, viajesQuery, fetchExportRows, PAGE_LIMIT } =
+    useGetViajes();
+  const { data = {}, isFetching: isLoading, isError } = viajesQuery;
 
-  const { isError, data = {}, isFetching: isLoading, refetch: refetchViajes } = useQuery({
-    queryFn: () => getViajes(params, PAGE_LIMIT),
-    queryKey: ['viajes', JSON.stringify(params)],
+  // Idem `ListaEnvios`: remontar `ListaViajesFiltros` al limpiar filtros para
+  // que el form interno (sin API de reset propia) vuelva a `DEFAULT_VALUES`.
+  const [filtrosKey, setFiltrosKey] = useState(0);
+  const handleClearFilters = () => {
+    clearFilters();
+    setFiltrosKey((k) => k + 1);
+  };
+
+  const { exportar, isExporting } = useCsvExport({
+    fetchRows: fetchExportRows,
+    columns: VIAJES_CSV_COLUMNS,
+    entidad: 'viajes',
+    entidadLabel: 'viajes',
   });
 
   const selectedIds = useSet();
@@ -87,6 +49,43 @@ const ListaViajes = () => {
   useEffect(() => {
     selectedIds.clear();
   }, [data.results]);
+
+  const { exportarSeleccionados } = useExportSelectedCsv({
+    columns: VIAJES_CSV_COLUMNS,
+    entidad: 'viajes-seleccionados',
+    entidadLabel: 'viajes',
+  });
+
+  const { confirmBulkDelete } = useBulkDelete({
+    deleteFn: (id) => viajeApi.delete(id),
+    singular: 'viaje',
+    plural: 'viajes',
+    getLabel: (item) => `viaje #${item.id}`,
+    onSettled: () => {
+      refetch();
+      selectedIds.clear();
+    },
+  });
+
+  // `DELETE /api/viaje/{id}` sólo admite `ESTADOS_ELIMINABLES` (409 fuera de eso,
+  // SHG-BE-113: `con_problemas` se cancela pero no se elimina). Se separan acá, antes
+  // de confirmar (SHG-FE-106), para que el diálogo diga qué no se va a eliminar.
+  // El export sí puede incluir cualquier estado.
+  const onBulkDeleteViajes = () => {
+    const seleccionados = (data.results ?? []).filter((item) => selectedIds.has(item.id));
+    const eliminables = [];
+    const excluidos = [];
+
+    seleccionados.forEach((item) => {
+      if (ESTADOS_ELIMINABLES.includes(normalizarEstado(item.estado))) {
+        eliminables.push(item);
+      } else {
+        excluidos.push({ item, reason: `no se puede eliminar porque está ${estadoLabel('viaje', item.estado)}` });
+      }
+    });
+
+    confirmBulkDelete(eliminables, excluidos);
+  };
 
   const onToggle = (id) => selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
   const onToggleAll = () => {
@@ -97,32 +96,41 @@ const ListaViajes = () => {
     }
   };
 
+  const showPagination = data.total > PAGE_LIMIT;
+
   return (
     <PageContainer>
-      <ListaViajesHeader />
+      <ListaViajesHeader
+        onExportCsv={exportar}
+        isExporting={isExporting}
+        exportDisabled={isLoading || isError}
+      />
 
-      <ListaViajesFiltros onFiltersChange={setFilters} disabled={isLoading} />
+      <ListaViajesFiltros key={filtrosKey} onFiltersChange={setFilters} disabled={isLoading} />
 
       <SelectionBanner
         count={selectedIds.size}
         singular="viaje seleccionado"
         plural="viajes seleccionados"
         onClear={() => selectedIds.clear()}
+        onExport={() => exportarSeleccionados(data.results, selectedIds)}
+        onDelete={onBulkDeleteViajes}
       />
 
       <Card>
         <ScreenContainer
           onLoading={{ show: isLoading, description: 'Cargando viajes...' }}
-          onError={{ show: isError, onClick: refetchViajes, description: 'Ocurrió un error al cargar los viajes' }}
+          onError={{ show: isError, onClick: refetch, title: ESTADOS_LISTA.error }}
           onEmptyData={{
             show: data.total === 0 && Object.keys(params.filters).length === 0,
-            title: 'Sin viajes que mostrar',
-            description: 'Parece que no cargaste ningún viaje todavía',
+            title: ESTADOS_LISTA.vacioTitulo,
+            description: ESTADOS_LISTA.vacioDescripcion,
           }}
           onEmptyFiltersData={{
             show: data.total === 0 && Object.keys(params.filters).length > 0,
-            title: 'Sin viajes que mostrar',
-            description: 'No se encontraron viajes con los filtros aplicados',
+            title: ESTADOS_LISTA.sinResultadosTitulo,
+            description: ESTADOS_LISTA.sinResultadosDescripcion,
+            onClick: handleClearFilters,
           }}
         >
           <ListaViajesTabla
@@ -130,17 +138,24 @@ const ListaViajes = () => {
             selectedIds={selectedIds}
             onToggle={onToggle}
             onToggleAll={onToggleAll}
+            onCancelSuccess={refetch}
           />
         </ScreenContainer>
       </Card>
 
-      <ListPagination
-        page={params.page}
-        onChange={setPage}
-        total={data.total}
-        pageLimit={PAGE_LIMIT}
-        isLoading={isLoading}
-      />
+      <Flex align="center">
+        <Pagination
+          value={params.page}
+          onChange={setPage}
+          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+          disabled={!showPagination}
+        />
+        <Text c="dimmed" ml="auto">
+          {data.total > 0
+            ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+            : '0 resultados'}
+        </Text>
+      </Flex>
     </PageContainer>
   );
 };

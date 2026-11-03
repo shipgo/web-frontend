@@ -6,6 +6,7 @@ import {
   NumberFormatter,
   Stack,
   Table,
+  Text,
   ThemeIcon,
   Title,
 } from "@mantine/core";
@@ -14,25 +15,21 @@ import { IconPackage, IconTrash } from "@tabler/icons-react";
 import ScreenContainer from "@components/ScreenContainer";
 
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
-import { CATEGORIAS, TAMANOS } from "../constants/mocks";
 import AgregarPaqueteModal from "./AgregarPaqueteModal";
 
-const getTamanoLabel = (value) =>
-  TAMANOS.find((t) => t.value === value)?.label ?? value;
+const getCategoriaLabel = (categorias, categoriaID) =>
+  categorias.find((c) => c.value === String(categoriaID))?.label ?? "-";
 
-const getCategoriaLabel = (value) =>
-  CATEGORIAS.find((c) => c.value === value)?.label ?? value;
-
-const SeccionCarga = () => {
+const SeccionCarga = ({ categorias = [], bloqueada = false }) => {
   const form = useEnvioFormContext();
-  const paquetes = form.values.paquetes;
+  const paquetes = form.values.detalleEnvios;
 
   const handleAddPaquete = (nuevoPaquete) => {
-    form.insertListItem("paquetes", nuevoPaquete);
+    form.insertListItem("detalleEnvios", nuevoPaquete);
   };
 
   const handleRemovePaquete = (index) => {
-    form.removeListItem("paquetes", index);
+    form.removeListItem("detalleEnvios", index);
   };
 
   return (
@@ -50,26 +47,32 @@ const SeccionCarga = () => {
               </Title>
             </Box>
           </Group>
-          <AgregarPaqueteModal onAdd={handleAddPaquete} />
+          {!bloqueada && (
+            <AgregarPaqueteModal categorias={categorias} onAdd={handleAddPaquete} />
+          )}
         </Group>
+
+        {form.errors.detalleEnvios && (
+          <Text c="red" size="sm">
+            {form.errors.detalleEnvios}
+          </Text>
+        )}
 
         <ScreenContainer
           onEmptyData={{
             show: paquetes.length === 0,
             title: "Sin paquetes cargados",
             description:
-              'Usá el botón "Añadir paquete" para agregar paquetes al envío',
+              'Usá el botón "Agregar paquete" para agregar paquetes al envío',
           }}
         >
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>#</Table.Th>
-                <Table.Th>Tamaño</Table.Th>
                 <Table.Th>Categoría</Table.Th>
                 <Table.Th>Peso</Table.Th>
                 <Table.Th>Descripción</Table.Th>
-                <Table.Th>Dimensiones</Table.Th>
                 <Table.Th />
               </Table.Tr>
             </Table.Thead>
@@ -77,26 +80,23 @@ const SeccionCarga = () => {
               {paquetes.map((paquete, index) => (
                 <Table.Tr key={index}>
                   <Table.Td>{index + 1}</Table.Td>
-                  <Table.Td>{getTamanoLabel(paquete.tamano)}</Table.Td>
-                  <Table.Td>{getCategoriaLabel(paquete.categoria)}</Table.Td>
+                  <Table.Td>{getCategoriaLabel(categorias, paquete.categoriaID)}</Table.Td>
                   <Table.Td>
                     <NumberFormatter value={paquete.peso} suffix=" kg" />
                   </Table.Td>
                   <Table.Td>{paquete.descripcion || "-"}</Table.Td>
                   <Table.Td>
-                    {paquete.tamano === "personalizado"
-                      ? `${paquete.largo} × ${paquete.ancho} × ${paquete.alto} cm`
-                      : "-"}
-                  </Table.Td>
-                  <Table.Td>
-                    <ActionIcon
-                      size="lg"
-                      color="red"
-                      variant="subtle"
-                      onClick={() => handleRemovePaquete(index)}
-                    >
-                      <IconTrash size={20} />
-                    </ActionIcon>
+                    {!bloqueada && (
+                      <ActionIcon
+                        size="lg"
+                        color="red"
+                        variant="subtle"
+                        onClick={() => handleRemovePaquete(index)}
+                        aria-label={`Quitar paquete ${index + 1}`}
+                      >
+                        <IconTrash size={20} />
+                      </ActionIcon>
+                    )}
                   </Table.Td>
                 </Table.Tr>
               ))}

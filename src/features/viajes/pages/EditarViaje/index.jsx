@@ -1,0 +1,256 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useParams } from "wouter";
+import { Badge, Box, Button, Card, Stack, Text } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { IconCheck, IconX } from "@tabler/icons-react";
+
+import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import ScreenContainer from "@components/ScreenContainer";
+import { isNotFoundError } from "@utils/httpErrors";
+
+import { estadoBadge, normalizarEstado } from "@domain/estados";
+import { applyApiError } from "@domain/apiError";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
+
+import { VIAJE_ESTADOS_EDITABLES } from "../../constants";
+import { viajeApi } from "../../api/viajes.api";
+import SeccionDetalles from "../CrearViaje/SeccionDetalles";
+import SeccionEnvios from "../CrearViaje/SeccionEnvios";
+import SeccionResumen from "../CrearViaje/SeccionResumen";
+import {
+  FormProvider,
+  useForm,
+} from "../CrearViaje/contexts/EnviosFormContext";
+import { INITIAL_VALUES, validate } from "../CrearViaje/contexts/enviosFormConfig";
+import { buildViajeReqDTO } from "../CrearViaje/utils";
+import { useRefrescarRecursosTras409 } from "../CrearViaje/hooks/useRefrescarRecursosTras409";
+
+import SeccionRecursos from "./SeccionRecursos";
+import Footer from "./Footer";
+import {
+  buildEnviosIncluidosFromRecorridos,
+  extraerEnviosDeRecorridos,
+  getChoferesDeViaje,
+} from "./utils";
+
+const EditarViaje = () => {
+  const { id } = useParams();
+  const [, navigate] = useLocation();
+
+  const [loading, setLoading] = useState(false);
+  const [loadingViaje, setLoadingViaje] = useState(true);
+  const [errorViaje, setErrorViaje] = useState(false);
+  const [viajeNoEncontrado, setViajeNoEncontrado] = useState(false);
+  const [viajeOriginal, setViajeOriginal] = useState(null);
+  // `SeccionRecursos` avisa cuando está validando la disponibilidad de la
+  // ventana nueva: mientras tanto no se puede guardar (SHG-FE-128).
+  const [validandoRecursos, setValidandoRecursos] = useState(false);
+
+  const form = useForm({ initialValues: INITIAL_VALUES, validate });
+
+  const esEditable = useMemo(
+    () =>
+      Boolean(
+        viajeOriginal &&
+          VIAJE_ESTADOS_EDITABLES.includes(normalizarEstado(viajeOriginal.estado)),
+      ),
+    [viajeOriginal],
+  );
+
+  const viajeEstadoInfo = viajeOriginal ? estadoBadge("viaje", viajeOriginal.estado) : null;
+
+  const refrescarRecursosTras409 = useRefrescarRecursosTras409();
+
+  const loadViaje = useCallback(async () => {
+    if (!id) return;
+
+    try {
+      setLoadingViaje(true);
+      setErrorViaje(false);
+      setViajeNoEncontrado(false);
+      const viaje = await viajeApi.getById(id);
+
+      setViajeOriginal(viaje);
+      if (viaje) {
+        form.setValues({
+          vehiculo: viaje.vehiculo ?? null,
+          choferes: getChoferesDeViaje(viaje),
+          fechaHoraInicioPlanificada: viaje.fechaHoraInicioPlanificada
+            ? new Date(viaje.fechaHoraInicioPlanificada)
+            : null,
+          fechaHoraFinPlanificada: viaje.fechaHoraFinPlanificada
+            ? new Date(viaje.fechaHoraFinPlanificada)
+            : null,
+          enviosIncluidos: buildEnviosIncluidosFromRecorridos(viaje.recorridos),
+        });
+        form.resetDirty();
+      }
+    } catch (err) {
+      if (isNotFoundError(err)) {
+        setViajeOriginal(null);
+        setViajeNoEncontrado(true);
+      } else {
+        console.error("Error cargando viaje:", err);
+        setErrorViaje(true);
+      }
+    } finally {
+      setLoadingViaje(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  useEffect(() => {
+    loadViaje();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const handleSubmit = useCallback(
+    async (values) => {
+      if (!viajeOriginal || !esEditable) return;
+
+      try {
+        setLoading(true);
+
+        const payload = buildViajeReqDTO(values);
+
+        await viajeApi.update(id, payload);
+
+        notifications.show({
+          title: "Viaje actualizado",
+          message: "Los cambios se guardaron correctamente",
+          color: "green",
+          icon: <IconCheck />,
+        });
+
+        navigate(`~/viajes/${id}`);
+      } catch (error) {
+        console.error("Error actualizando viaje:", error);
+        refrescarRecursosTras409(error);
+
+        // Body anidado (`ViajeReqDTO.viaje`): los `field` vienen prefijados
+        // "viaje." — el helper los alinea a los nombres planos del form.
+        const message = applyApiError(form, error, {
+          stripPrefix: "viaje",
+          fallbackMessage: REINTENTAR_MAS_TARDE,
+        });
+
+        notifications.show({
+          title: "No se pudo actualizar el viaje",
+          message,
+          color: "red",
+          icon: <IconX />,
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [id, navigate, viajeOriginal, esEditable, form, refrescarRecursosTras409],
+  );
+
+  // Envíos ya asignados al viaje, aplanados — ver `extraerEnviosDeRecorridos`
+  // (`./utils`) sobre por qué hace falta reinyectarlos en "Envíos pendientes".
+  const enviosDelViajeOriginal = useMemo(
+    () => extraerEnviosDeRecorridos(viajeOriginal?.recorridos),
+    [viajeOriginal],
+  );
+
+  return (
+    <PageContainer>
+      <PageBreadcrumbsHeader
+        entidad="Viajes"
+        accion="Editar viaje"
+        descripcion="Modificá los envíos, el vehículo, los choferes y las fechas planificadas del viaje."
+      />
+
+      <ScreenContainer
+        onLoading={{ show: loadingViaje, description: 'Cargando viaje...' }}
+        onNotFound={{
+          show: viajeNoEncontrado && !loadingViaje,
+          recurso: 'Viaje',
+          listaHref: '~/viajes',
+          listaLabel: 'Volver a viajes',
+        }}
+        onError={{
+          show: errorViaje && !loadingViaje,
+          title: 'No se pudo cargar el viaje',
+          description: 'No pudimos cargar el viaje. Probá de nuevo en unos minutos.',
+          onClick: loadViaje,
+        }}
+        onEmptyData={{
+          show: !loadingViaje && !errorViaje && !viajeNoEncontrado && !viajeOriginal,
+          title: 'Viaje no encontrado',
+          description: 'No encontramos información para este viaje.',
+        }}
+      >
+        {viajeOriginal && (
+          <>
+            {!esEditable ? (
+              <Card>
+                <Stack align="center" py="xl" gap="sm">
+                  {/* `c={viajeEstadoInfo.textColor}`: ver
+                      `BADGE_TEXT_CONTRAST_OVERRIDE` en `@domain/estados` —
+                      sin esto, "En camino"/"Finalizado" no llegan a 4.5:1
+                      (axe-core `color-contrast`, SHG-FE-041). `undefined`
+                      para el resto de los estados, sin efecto. */}
+                  <Badge
+                    color={viajeEstadoInfo.color}
+                    variant="light"
+                    size="lg"
+                    c={viajeEstadoInfo.textColor}
+                  >
+                    {viajeEstadoInfo.label}
+                  </Badge>
+                  <Box ta="center">
+                    <Text fw={600}>
+                      Este viaje no se puede editar en su estado actual
+                    </Text>
+                    <Text c="dimmed" size="sm">
+                      Solo se pueden editar viajes en estado &quot;Creado&quot; o
+                      &quot;Planificado&quot;.
+                    </Text>
+                  </Box>
+                  {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+                      `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el
+                      texto del color primario en `variant="light"` no llega
+                      a 4.5:1 en dark mode (axe-core `color-contrast`,
+                      SHG-FE-070). */}
+                  <Button
+                    variant="light"
+                    onClick={() => navigate(`~/viajes/${id}`)}
+                    c="var(--shg-button-text-primary)"
+                  >
+                    Volver al detalle
+                  </Button>
+                </Stack>
+              </Card>
+            ) : (
+              <FormProvider form={form}>
+                <SeccionDetalles />
+                <SeccionEnvios extraEnviosPendientes={enviosDelViajeOriginal} />
+                <SeccionRecursos
+                  viajeIdExcluido={id ? Number(id) : undefined}
+                  vehiculoActual={viajeOriginal?.vehiculo}
+                  choferesActuales={getChoferesDeViaje(viajeOriginal)}
+                  inicioOriginal={viajeOriginal.fechaHoraInicioPlanificada}
+                  finOriginal={viajeOriginal.fechaHoraFinPlanificada}
+                  sucursalId={viajeOriginal.sucursal?.id}
+                  onValidandoChange={setValidandoRecursos}
+                />
+                <SeccionResumen />
+                <Footer
+                  loading={loading}
+                  guardarDeshabilitado={validandoRecursos}
+                  onSubmit={handleSubmit}
+                  onCancel={() => navigate(`~/viajes/${id}`)}
+                />
+              </FormProvider>
+            )}
+          </>
+        )}
+      </ScreenContainer>
+    </PageContainer>
+  );
+};
+
+export default EditarViaje;

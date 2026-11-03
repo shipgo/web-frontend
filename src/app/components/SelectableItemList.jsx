@@ -40,10 +40,19 @@ const SelectableItemList = ({
   const renderSelectable = () => {
     if (selected === null) return null;
 
+    // `readOnly`: es sólo un indicador visual del estado "seleccionado" del
+    // `<li>` completo (que ya maneja el `onClick`), no un control independiente
+    // — sin `aria-hidden` queda como checkbox/radio sin label accesible
+    // (axe-core `label`, crítico). `tabIndex={-1}`: `readOnly` no lo saca del
+    // orden de tabulación, y un elemento enfocable dentro de algo
+    // `aria-hidden` es a su vez otra violación (axe-core `aria-hidden-focus`,
+    // serio) — ambas encontradas en SHG-FE-041.
     if (singleSelection) {
       return (
         <Radio
           readOnly
+          aria-hidden="true"
+          tabIndex={-1}
           variant="outline"
           checked={selected}
           disabled={disabled}
@@ -54,6 +63,8 @@ const SelectableItemList = ({
     return (
       <Checkbox
         readOnly
+        aria-hidden="true"
+        tabIndex={-1}
         checked={selected}
         variant="outline"
         disabled={disabled}

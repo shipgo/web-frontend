@@ -1,13 +1,33 @@
 import { Card, Stack, Group } from "@mantine/core";
 
-import { Map as MapComponent } from "@components";
 import ScreenContainer from "@components/ScreenContainer";
+import { useAuth } from "@contexts/auth";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
+
 import useRouteCalculation from "../hooks/useRouteCalculation";
+import { coordsDePunto, getGroupProperties, moverParada } from "../SeccionEnvios/utils";
+import { useFormContext } from "../contexts/EnviosFormContext";
 
 import SeccionHeader from "./SeccionHeader";
 import PaquetesTimeline from "./PaquetesTimeline";
+import RutaMapa from "./RutaMapa";
 
 const SeccionResumen = () => {
+  const { user } = useAuth();
+  const {
+    values: { enviosIncluidos, fechaHoraInicioPlanificada },
+    setFieldValue,
+  } = useFormContext();
+
+  const { groupLabels, groupCounts, groupCoords } =
+    getGroupProperties(enviosIncluidos);
+
+  // `POST /api/viaje` siempre resuelve el origen del viaje server-side desde
+  // la sucursal del usuario logueado (ver `SeccionDetalles.jsx`) — el mapa y
+  // el cálculo de ruta usan la misma fuente, nunca la sucursal "operativa"
+  // del selector de SUPERUSER (`SHG-FE-052`).
+  const origenCoords = coordsDePunto(user?.sucursal?.puntoEntrega);
+
   const {
     data,
     isPending,
@@ -17,7 +37,13 @@ const SeccionResumen = () => {
     showAlert,
     isError,
     handleRouteCalculation,
-  } = useRouteCalculation();
+  } = useRouteCalculation(origenCoords, groupCoords);
+
+  const handleMoveParada = (fromIndex, toIndex) =>
+    setFieldValue(
+      "enviosIncluidos",
+      moverParada(enviosIncluidos, fromIndex, toIndex),
+    );
 
   return (
     <Card padding="lg" component={Stack}>
@@ -34,30 +60,37 @@ const SeccionResumen = () => {
         styleProps={{ h: "400" }}
         onLoading={{
           show: isPending,
-          title: "Calculando ruta sugerida...",
+          title: "Calculando la ruta...",
           description:
-            "Esto puede tardar unos segundos. Por favor, no cierres ni recargues la página.",
+            "Puede tardar unos segundos. No cierres la página.",
         }}
         onError={{
           show: isError,
-          title: "Error al calcular la ruta",
+          title: "No pudimos calcular la ruta",
           description:
-            "Ocurrió un error al calcular el trayecto. Intentá nuevamente.",
+            REINTENTAR_MAS_TARDE,
           onClick: handleRouteCalculation,
-        }}
-        onEmptyData={{
-          show: data === undefined,
-          title: "No hay ruta calculada",
-          description:
-            "Seleccioná al menos un envío y clickeá en el botón para generar el trayecto sugerido",
         }}
       >
         <Group pos="relative">
           <Card withBorder shadow="0" p="0" h={400} flex={1}>
-            <MapComponent />
+            <RutaMapa
+              origenCoords={origenCoords}
+              paradas={groupLabels.map((label, index) => ({
+                label,
+                coords: groupCoords[index],
+              }))}
+              routeGeometry={data?.geometry}
+            />
           </Card>
 
-          <PaquetesTimeline route={data} />
+          <PaquetesTimeline
+            groupLabels={groupLabels}
+            groupCounts={groupCounts}
+            fechaSalida={fechaHoraInicioPlanificada}
+            sucursalOrigen={user?.sucursal?.nombre}
+            onMoveParada={handleMoveParada}
+          />
         </Group>
       </ScreenContainer>
     </Card>

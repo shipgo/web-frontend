@@ -1,0 +1,184 @@
+/**
+ * Verdad única de estados de dominio.
+ *
+ * La **clave** de cada mapa es SIEMPRE el valor canónico snake_case que
+ * devuelve el backend (ver `planning/GLOSSARY.md` y `CONTRACTS.md §1`).
+ * El front nunca envía ni compara labels: sólo mapea `valor -> { label, color }`.
+ * `color` es un color de la paleta de Mantine.
+ */
+
+export const ESTADO_ENVIO = {
+  creado: { label: 'Creado', color: 'gray' },
+  en_sucursal: { label: 'En sucursal', color: 'cyan' },
+  asignado_a_viaje: { label: 'Asignado a viaje', color: 'blue' },
+  en_vehiculo: { label: 'En vehículo', color: 'indigo' },
+  en_camino: { label: 'En camino', color: 'orange' },
+  entregado: { label: 'Entregado', color: 'green' },
+  rechazado: { label: 'No entregado', color: 'red' },
+};
+
+export const ESTADO_VIAJE = {
+  creado: { label: 'Creado', color: 'gray' },
+  planificado: { label: 'Planificado', color: 'blue' },
+  en_proceso_de_carga: { label: 'En carga', color: 'cyan' },
+  listo_para_viaje: { label: 'Listo para salir', color: 'indigo' },
+  en_camino: { label: 'En camino', color: 'orange' },
+  finalizado: { label: 'Finalizado', color: 'green' },
+  cancelado: { label: 'Cancelado', color: 'red' },
+  con_problemas: { label: 'Con problemas', color: 'red' },
+};
+
+export const ESTADO_RECORRIDO = {
+  planificado: { label: 'Planificado', color: 'blue' },
+  en_camino: { label: 'En camino', color: 'orange' },
+  finalizado: { label: 'Finalizado', color: 'green' },
+  finalizado_con_problemas: { label: 'Finalizado con problemas', color: 'orange' },
+};
+
+export const ESTADO_VEHICULO = {
+  disponible: { label: 'Disponible', color: 'green' },
+  asignado_a_viaje: { label: 'Asignado a viaje', color: 'blue' },
+  en_viaje: { label: 'En viaje', color: 'orange' },
+  en_service: { label: 'En service', color: 'yellow' },
+  fuera_de_servicio: { label: 'Fuera de servicio', color: 'red' },
+};
+
+/** Entidades válidas para `estadoBadge` / `estadoOptions`. */
+export const ENTIDADES_CON_ESTADO = {
+  envio: ESTADO_ENVIO,
+  viaje: ESTADO_VIAJE,
+  recorrido: ESTADO_RECORRIDO,
+  vehiculo: ESTADO_VEHICULO,
+};
+
+const FALLBACK = { label: '—', color: 'gray' };
+
+/**
+ * Ajuste de contraste para `<Badge variant="light">`: el shade más oscuro de
+ * "orange"/"green" en la paleta default de Mantine (el que ya usa ese
+ * variant) da ~3.8:1 contra su propio fondo tintado — por debajo del 4.5:1
+ * de WCAG 2 AA. Confirmado por axe-core (`color-contrast`, serio) en
+ * `/envios` y `/viajes` (SHG-FE-041: estados "En camino"/"Entregado"/
+ * "Finalizado").
+ *
+ * `indigo` (`ESTADO_ENVIO.en_vehiculo`, "En vehículo") se sumó en
+ * SHG-FE-067: pasaba con su shade default en light mode (auditado en
+ * SHG-FE-041) pero NO en dark mode — nunca se había auditado ese caso con
+ * axe-core real hasta correr `e2e/cases/axe-dark-mode-badges.js` en dark
+ * mode de verdad (`#748ffc` contra `#31364a`, 4.02:1). Auditados los 4 mapas
+ * `ESTADO_*` completos en dark mode (SHG-FE-067): el resto de los colores
+ * usados (`gray`/`blue`/`cyan`/`red`/`yellow`) sí pasa con su shade default
+ * en ambos modos, confirmado por axe-core real, así que no necesitan entrada
+ * acá.
+ *
+ * Los valores son `var(--shg-badge-text-*)`, NO un hex fijo: el fondo
+ * tintado de `variant="light"` es distinto en `light`/`dark` mode (shades y
+ * alpha distintos — ver `v8-css-variables-resolver` de Mantine), así que el
+ * texto que da ≥4.5:1 también tiene que ser distinto por modo. Cada token
+ * resuelve a un valor por color scheme en `cssVariablesResolver.js` (rama
+ * `light`/`dark`) — acá no se hardcodea ninguno de los dos, sólo se referencia
+ * el token. Dark mode agregado en SHG-FE-060 para `orange`/`green` (antes
+ * sólo existía la rama `light`, texto casi ilegible en dark — confirmado en
+ * vivo en `/envios` y `/viajes`); agregado para `indigo` en SHG-FE-067.
+ *
+ * `estadoBadge` expone esto como `textColor` — quien pinte el `<Badge>`
+ * decide si lo pasa a `c` (ver `ListaEnviosTabla`/`ListaViajesTabla`); no
+ * cambia nada para quien no lo use.
+ */
+const BADGE_TEXT_CONTRAST_OVERRIDE = {
+  orange: 'var(--shg-badge-text-orange)',
+  green: 'var(--shg-badge-text-green)',
+  indigo: 'var(--shg-badge-text-indigo)',
+};
+
+/**
+ * Ajuste de contraste análogo a `BADGE_TEXT_CONTRAST_OVERRIDE` pero para
+ * `<Button variant="light" color="green"|"red">` — los botones de acción
+ * sobre el estado de envíos/viajes (Entregar/Marcar fallo/Finalizar/
+ * Cancelar). Es un componente distinto (`Button`, no `Badge`) con su propia
+ * resolución de color de variant "light" en Mantine, así que el problema (y
+ * el fix) son independientes de `BADGE_TEXT_CONTRAST_OVERRIDE` aunque el
+ * síntoma sea el mismo: confirmado por axe-core (`color-contrast`, serious)
+ * en `/envios/:id` y `/viajes/:id` reales en estado `en_camino` (el único
+ * estado no terminal en el que estos botones se muestran — SHG-FE-045).
+ *
+ * Igual que `BADGE_TEXT_CONTRAST_OVERRIDE`, son tokens `var(--shg-button-text-*)`
+ * con un valor por color scheme (`cssVariablesResolver.js`), no un hex fijo
+ * — dark mode agregado en SHG-FE-060.
+ *
+ * No es un mapa entidad→estado como `ESTADO_*` (estos colores son semántica
+ * de acción positiva/negativa, no de un estado de dominio), así que vive
+ * acá como constante standalone en vez de una entrada de `ENTIDADES_CON_ESTADO`.
+ * Quien pinte el `<Button>` decide si lo pasa a `c` — no cambia nada para
+ * quien no lo use.
+ */
+export const BUTTON_ACTION_TEXT_COLOR = {
+  green: 'var(--shg-button-text-green)',
+  red: 'var(--shg-button-text-red)',
+};
+
+/**
+ * Normaliza un valor de estado al canónico snake_case en minúsculas.
+ * Acepta la basura histórica del front (`"EN_CAMINO"`, `"En curso"`, `null`).
+ */
+export const normalizarEstado = (valor) =>
+  typeof valor === 'string' ? valor.trim().toLowerCase().replace(/\s+/g, '_') : valor;
+
+/**
+ * Devuelve `{ label, color }` para pintar un `<Badge>`.
+ * @param {'envio'|'viaje'|'recorrido'|'vehiculo'} entidad
+ * @param {string} valor valor canónico del backend
+ */
+export const estadoBadge = (entidad, valor) => {
+  const mapa = ENTIDADES_CON_ESTADO[entidad];
+  const meta = mapa?.[normalizarEstado(valor)] ?? { ...FALLBACK, label: valor ?? FALLBACK.label };
+  return { ...meta, textColor: BADGE_TEXT_CONTRAST_OVERRIDE[meta.color] };
+};
+
+/** Sólo el label (o el valor crudo si no se conoce). */
+export const estadoLabel = (entidad, valor) => estadoBadge(entidad, valor).label;
+
+/**
+ * Opciones `{ value, label }` para selects / filtros de listado.
+ * `value` es SIEMPRE el valor canónico (lo que espera el backend).
+ */
+export const estadoOptions = (entidad) =>
+  Object.entries(ENTIDADES_CON_ESTADO[entidad] ?? {}).map(([value, { label }]) => ({
+    value,
+    label,
+  }));
+
+/**
+ * Estados terminales por entidad: la máquina de estados del backend ya no
+ * permite salir de ellos, así que el front no ofrece editar / accionar sobre
+ * una entidad que está en uno de estos.
+ */
+export const ESTADOS_TERMINALES = {
+  envio: ['entregado', 'rechazado'],
+  viaje: ['finalizado', 'cancelado'],
+  recorrido: ['finalizado', 'finalizado_con_problemas'],
+  vehiculo: [],
+};
+
+/**
+ * `true` si el estado es terminal para esa entidad (p. ej. un envío
+ * `entregado` / `rechazado` ya no es editable).
+ * @param {'envio'|'viaje'|'recorrido'|'vehiculo'} entidad
+ * @param {string} valor valor canónico del backend
+ */
+export const esEstadoTerminal = (entidad, valor) =>
+  (ESTADOS_TERMINALES[entidad] ?? []).includes(normalizarEstado(valor));
+
+/**
+ * Estados de Viaje en los que hay tracking en vivo con sentido de mostrar
+ * (chofer despachado, con o sin incidente). Usado por:
+ * - `ListaViajesTabla` (SHG-FE-096): visibilidad de "Monitorear" en el menú de fila.
+ * - `mapa/hooks/useViajesEnCurso` (SHG-FE-096): qué viajes trae el mapa en vivo.
+ * - `ListaEnviosTabla` (SHG-FE-097): habilitar "Localizar" según el viaje del envío.
+ *
+ * `con_problemas` no es terminal (`ESTADOS_TERMINALES.viaje`) — el viaje sigue
+ * despachado, sólo que con un incidente reportado — así que también es
+ * "trackeable" aunque no tenga sentido "monitorear" un viaje que todavía no
+ * salió (`creado`/`planificado`/`en_proceso_de_carga`/`listo_para_viaje`) ni uno ya cerrado.
+ */
+export const ESTADOS_VIAJE_CON_TRACKING = ['en_camino', 'con_problemas'];

@@ -1,15 +1,15 @@
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useSearch, Link as WouterLink } from "wouter";
 
 import logo from "/src/assets/logoipsum-custom-logo.svg";
+import background from "/src/assets/background.jpg";
 
-import { isEqual, omit } from "es-toolkit";
+import { omit } from "es-toolkit";
 import { IconExclamationMark } from "@tabler/icons-react";
-import { useLocation } from "wouter";
 
 import { useLocalStorage } from "@mantine/hooks";
 import { useForm, isNotEmpty } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { useAuth } from "@contexts/auth";
 import {
   Button,
   MantineProvider,
@@ -29,114 +29,207 @@ import {
   Image,
 } from "@mantine/core";
 
-const FORM_WIDHT = "35rem";
-const LOCAL_STORAGE_VALUES = { key: "storedUser", defaultValue: null };
-const DEFAULT_FORM_VALUES = { email: "", password: "", remember: false };
+import { useAuthStore } from "@stores/auth.store";
+import { getRateLimitMessage } from "@domain/apiError";
+import { landingPathFor } from "@domain/roles";
+import { resolvePostLoginRedirect } from "@utils/redirect";
+import { useCaptcha } from "@hooks/useCaptcha";
+import CaptchaField from "@components/CaptchaField";
+import { isCaptchaApiError } from "@config/captcha";
+import { LOGIN_VARIANTS } from "./constants/copy";
 
-const LoginPage = () => {
-  const { login } = useAuth();
-  const [, navigate] = useLocation();
+const FORM_WIDHT = "35rem";
+const LOCAL_STORAGE_KEY = "shipgo_stored_user";
+const DEFAULT_FORM_VALUES = { username: "", password: "", remember: false };
+
+/**
+ * @param {Object} props
+ * @param {'operator'|'customer'} [props.variant='operator']  Cambia el copy
+ *   (título/subtítulo) del formulario — el destino post-login sigue siendo el
+ *   mismo `landingPathFor(user)` en ambos casos, según el rol real del usuario
+ *   que loguea (SHG-FE-044: entrada dedicada del customer en `/portal/ingresar`,
+ *   sin duplicar el form).
+ */
+const LoginPage = ({ variant = "operator" }) => {
+  const copy = LOGIN_VARIANTS[variant] ?? LOGIN_VARIANTS.operator;
+  const [, setLocation] = useLocation();
+  const search = useSearch();
   const [loading, setLoading] = useState(false);
-  const [storedUser, setStoredUser] = useLocalStorage(LOCAL_STORAGE_VALUES);
+  const [storedUser, setStoredUser] = useLocalStorage({
+    key: LOCAL_STORAGE_KEY,
+    defaultValue: null,
+  });
+  const { login } = useAuthStore();
+  const captcha = useCaptcha();
 
   const form = useForm({
     mode: "uncontrolled",
     initialValues: DEFAULT_FORM_VALUES,
     validate: {
-      email: isNotEmpty(),
-      password: isNotEmpty(),
+      username: isNotEmpty("Ingresá tu usuario."),
+      password: isNotEmpty("Ingresá tu contraseña."),
     },
   });
 
-  useLayoutEffect(() => {
-    if (!storedUser) return;
-
-    form.initialize({
-      password: "",
-      remember: true,
-      email: storedUser,
-    });
-  }, []);
-
-  const handleRemember = ({ email, remember }) => {
-    if (remember) {
-      setStoredUser(email);
-      return;
+  // Cargar usuario guardado al montar el componente
+  useEffect(() => {
+    if (storedUser) {
+      form.setValues({
+        username: storedUser,
+        password: "",
+        remember: true,
+      });
     }
-
-    setStoredUser(null);
-  };
+  }, [storedUser]); // Solo depende de storedUser
 
   const handleFormSubmit = async (formValues) => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const userValues = omit(formValues, ["remember"]);
 
-    const correctCredentials = isEqual(userValues, {
-      email: "admin",
-      password: "admin",
-    });
+    try {
+      const credentials = {
+        ...omit(formValues, ["remember"]),
+        captchaToken: captcha.token,
+      };
 
-    if (correctCredentials) {
-      handleRemember(formValues);
+      // Llamar al login del auth store
+      await login(credentials);
+
+      // Guardar o limpiar usuario según "recordar"
+      if (formValues.remember) {
+        setStoredUser(formValues.username);
+      } else {
+        setStoredUser(null);
+      }
+
       notifications.clean();
-      login({
-        fullname: "Joaquín Dolcemascolo",
-        email: formValues.email,
-        role: "Administrador",
-      });
-      navigate("/");
-      return;
-    }
 
-    setLoading(false);
-    notifications.show({
-      color: "red",
-      title: "Usuario y/o contraseña incorrectos",
-      message: "Por favor, verificá los datos ingresados",
-      icon: <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />,
-    });
+      // Post-login (SHG-FE-054): si vino `?redirect=<ruta>` (acceso directo a
+      // una ruta protegida sin sesión) y sanea a una ruta interna válida,
+      // vuelve ahí; si no, al home que corresponde al rol (CUSTOMER → portal,
+      // SU/AD → `/`). Si el destino no fuera accesible para el rol logueado,
+      // la guarda de esa ruta lo rebota a su home sin loop — ver
+      // `@utils/redirect`.
+      const rawRedirect = new URLSearchParams(search).get("redirect");
+      const authenticatedUser = useAuthStore.getState().user;
+      setLocation(
+        resolvePostLoginRedirect(rawRedirect, landingPathFor(authenticatedUser)),
+      );
+    } catch (error) {
+      console.error("Login error:", error);
+
+      // Captcha faltante/inválido/vencido (SHG-BE-032): el backend nunca llega
+      // a intentar autenticar (TurnstileLoginFilter corta antes). Re-emitimos
+      // el challenge — el token es de un solo uso, no sirve reintentar con el
+      // mismo aunque el usuario no haya hecho nada mal.
+      if (isCaptchaApiError(error)) {
+        captcha.reset();
+        notifications.show({
+          color: "red",
+          title: "No pudimos completar la verificación de seguridad",
+          message:
+            "La verificación venció o no es válida. Completala de nuevo e intentá otra vez.",
+          icon: (
+            <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
+          ),
+        });
+        return;
+      }
+
+      // Límite de intentos (SHG-CONTRACT-013): 429 `rate_limited`. No es un
+      // error de credenciales: hay que esperar, no seguir probando.
+      const rateLimitMessage = getRateLimitMessage(error);
+      if (rateLimitMessage) {
+        notifications.show({
+          color: "red",
+          title: "Demasiados intentos",
+          message: rateLimitMessage,
+          icon: (
+            <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
+          ),
+        });
+        return;
+      }
+
+      // El backend bloquea el login de un CUSTOMER hasta verificar el email y
+      // devuelve un 401 con un mensaje explícito (SHG-BE-002) — mostrarlo tal cual.
+      const apiMessage = error?.response?.data?.message;
+      const isUnverified =
+        error?.response?.status === 401 &&
+        typeof apiMessage === "string" &&
+        apiMessage.toLowerCase().includes("verific");
+
+      notifications.show({
+        color: "red",
+        title: isUnverified
+          ? "Cuenta sin verificar"
+          : "Usuario y/o contraseña incorrectos",
+        message: isUnverified
+          ? apiMessage
+          : "Revisá tus datos e intentá de nuevo.",
+        icon: (
+          <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
+        ),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Fuerza tema light: esta vista tiene un fondo/hero de marca fijo que no fue diseñado
+  // para dark mode. Es una vista pública (sin autenticación requerida), similar a Landing;
+  // contrasta con las rutas autenticadas que sí respetan la preferencia del usuario (SHG-FE-061).
+  // Rediseñar para dark mode sería una tarea de diseño aparte, fuera del alcance.
   return (
     <MantineProvider forceColorScheme="light">
       <Group align="flex-start" gap="0" wrap="nowrap">
-        <Card miw={FORM_WIDHT} mih="100svh" p="xl" withBorder>
+        <Card
+          w={{ base: '100%', sm: FORM_WIDHT }}
+          miw={{ base: 0, sm: FORM_WIDHT }}
+          mih="100svh"
+          mah="100svh"
+          p="xl"
+          withBorder
+          style={{ overflowY: 'auto' }}
+        >
           <Stack
             p="xl"
             gap="lg"
             my="auto"
             component="form"
+            noValidate
             justify="center"
             onSubmit={form.onSubmit((values) => handleFormSubmit(values))}
           >
             <LoadingOverlay visible={loading} />
 
             <Stack gap={0}>
-              <Image src={logo} w="300" fit="contain" />
-              <Title order={1}>Iniciar sesión</Title>
-              <Text>Completá con tus datos</Text>
+              <Anchor component={WouterLink} href="/" aria-label="ShipGo — inicio" w="300">
+                <Image src={logo} alt="Logo de ShipGo" w="300" fit="contain" />
+              </Anchor>
+              <Title order={1}>{copy.title}</Title>
+              <Text>{copy.subtitle}</Text>
             </Stack>
 
             <FocusTrap active>
-              <Stack active gap="xs">
+              <Stack gap="xs">
                 <TextInput
-                  {...form.getInputProps("email")}
+                  {...form.getInputProps("username")}
                   autoFocus
                   size="md"
-                  label="Correo"
-                  autoComplete="off"
+                  label="Usuario"
+                  autoComplete="username"
                   disabled={loading}
-                  key={form.key("email")}
-                  placeholder="usuario@ejemplo.com"
+                  key={form.key("username")}
+                  placeholder="Ingresá tu usuario"
                 />
                 <PasswordInput
                   {...form.getInputProps("password")}
                   size="md"
                   label="Contraseña"
+                  autoComplete="current-password"
                   disabled={loading}
                   key={form.key("password")}
-                  placeholder="Introducí tu contraseña"
+                  placeholder="Ingresá tu contraseña"
                 />
               </Stack>
             </FocusTrap>
@@ -148,26 +241,35 @@ const LoginPage = () => {
                 label="Recordame"
                 key={form.key("remember")}
               />
-              <Anchor>Olvidé mi contraseña</Anchor>
+              <Anchor href="/recuperar-cuenta">Olvidé mi contraseña</Anchor>
             </Group>
 
-            <Button size="lg" type="submit" disabled={loading}>
+            <CaptchaField captcha={captcha} />
+
+            <Button
+              size="lg"
+              type="submit"
+              disabled={loading || !captcha.token}
+            >
               Iniciar sesión
             </Button>
 
             <Group justify="center">
               <Anchor href="https://shipgo.gitbook.io/manual" target="_blank">
-                Necesito ayuda
+                Ayuda
               </Anchor>
-              <Divider orientation="vertical" />
-              <Anchor>No tengo una cuenta</Anchor>
+              {/* A 390 px los links envuelven en dos filas y el divisor quedaba huérfano (SHG-FE-112). */}
+              <Divider orientation="vertical" visibleFrom="sm" />
+              <Anchor href="/registro">Crear una cuenta</Anchor>
             </Group>
           </Stack>
         </Card>
         <Image
           h="100svh"
-          src="src/assets/background.jpg"
+          src={background}
+          alt=""
           miw={`calc(100svw - ${FORM_WIDHT})`}
+          visibleFrom="sm"
         />
       </Group>
     </MantineProvider>

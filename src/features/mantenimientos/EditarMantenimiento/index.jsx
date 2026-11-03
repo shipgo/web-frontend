@@ -1,0 +1,86 @@
+import { useEffect, useState } from "react";
+import { useLocation, useParams } from "wouter";
+import { Card, Text } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { IconX } from "@tabler/icons-react";
+
+import PageContainer from "@components/PageContainer";
+import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import RecursoNoEncontrado from "@components/RecursoNoEncontrado";
+import { isNotFoundError } from "@utils/httpErrors";
+import { REINTENTAR_MAS_TARDE } from "@copy/common";
+import { mantenimientoApi } from "../api/mantenimientos.api";
+
+import EditarMantenimientoForm from "./components/EditarMantenimientoForm";
+
+/**
+ * Carga el mantenimiento y delega en `EditarMantenimientoForm`, que monta el
+ * form una sola vez con los `initialValues` ya resueltos (mismo patrón que
+ * `EditarEnvio` — `SHG-FE-031`).
+ */
+const EditarMantenimiento = () => {
+  const { id } = useParams();
+  const [, navigate] = useLocation();
+
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [mantenimiento, setMantenimiento] = useState(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+
+    mantenimientoApi
+      .getById(id)
+      .then((data) => {
+        if (!cancelled) setMantenimiento(data);
+      })
+      .catch((error) => {
+        if (isNotFoundError(error)) {
+          if (!cancelled) setNotFound(true);
+          return;
+        }
+        console.error("Error cargando mantenimiento:", error);
+        notifications.show({
+          title: "No se pudo cargar el mantenimiento",
+          message: REINTENTAR_MAS_TARDE,
+          color: "red",
+          icon: <IconX />,
+        });
+        navigate("~/mantenimientos");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, navigate]);
+
+  if (notFound) {
+    return (
+      <PageContainer>
+        <PageBreadcrumbsHeader entidad="Mantenimientos" accion="Editar mantenimiento" />
+        <RecursoNoEncontrado recurso="Mantenimiento" listaHref="~/mantenimientos" listaLabel="Volver a mantenimientos" />
+      </PageContainer>
+    );
+  }
+
+  if (loading || !mantenimiento) {
+    return (
+      <PageContainer>
+        <Card>
+          <Text>Cargando mantenimiento...</Text>
+        </Card>
+      </PageContainer>
+    );
+  }
+
+  return <EditarMantenimientoForm id={id} mantenimiento={mantenimiento} />;
+};
+
+export default EditarMantenimiento;

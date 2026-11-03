@@ -1,0 +1,209 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { act, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Route } from 'wouter';
+import { navigate } from 'wouter/use-browser-location';
+
+import { renderWithProviders } from '../../../../test/renderWithProviders';
+
+const mockTrack = vi.fn();
+vi.mock('../../api/tracking.api', () => ({
+  publicTrackingApi: { track: (...args) => mockTrack(...args) },
+}));
+
+// El mini-mapa depende de mapbox-gl (no anda en jsdom): lo stubeamos.
+vi.mock('../../components/TrackingUbicacionMapa', () => ({
+  default: () => <div data-testid="mapa-ubicacion" />,
+}));
+
+import TrackingPublicoPage from './index';
+
+const DTO_OK = {
+  codigoSeguimiento: '7K2M9QX4TP',
+  estado: 'en_camino',
+  estadoLabel: 'En camino',
+  historial: [
+    { estado: 'creado', fecha: '2026-09-01T10:00:00' },
+    { estado: 'en_sucursal', fecha: '2026-09-02T09:00:00' },
+    { estado: 'en_camino', fecha: '2026-09-03T08:00:00' },
+  ],
+  destino: { localidad: 'Rosario', provincia: 'Santa Fe' },
+  fechaEstimada: '2026-09-05',
+  ultimaUbicacionAprox: { lat: -32.94, lng: -60.65, fecha: '2026-09-03T12:00:00' },
+};
+
+// Se monta bajo un <Route> igual que en `app/routes/index.jsx` para que
+// `useParams()` de wouter resuelva `:codigo`.
+const renderAt = (route) =>
+  renderWithProviders(
+    <Route path="/tracking/:codigo?" component={TrackingPublicoPage} />,
+    { route },
+  );
+
+beforeEach(() => {
+  mockTrack.mockReset();
+});
+
+describe('TrackingPublicoPage', () => {
+  it('no exige login: renderiza el buscador sin sesión ni AuthProvider', () => {
+    renderAt('/tracking');
+    expect(
+      screen.getByRole('heading', { name: /seguí tu envío/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/código de seguimiento/i)).toBeInTheDocument();
+    expect(mockTrack).not.toHaveBeenCalled();
+  });
+
+  it('autoconsulta en /tracking/:codigo y muestra el resultado sin PII', async () => {
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking/7K2M9QX4TP');
+
+    expect(await screen.findByText('7K2M9QX4TP')).toBeInTheDocument();
+    // El captcha está desactivado bajo Vitest (SHG-FE-043, `@config/captcha`),
+    // así que `track` recibe igual un token "listo" (sin widget real).
+    expect(mockTrack).toHaveBeenCalledWith('7K2M9QX4TP', expect.any(String));
+    // estado + destino + ETA + timeline
+    expect(screen.getAllByText('En camino').length).toBeGreaterThan(0);
+    expect(screen.getByText('Rosario, Santa Fe')).toBeInTheDocument();
+    expect(screen.getByText('Creado')).toBeInTheDocument();
+    expect(screen.getByTestId('mapa-ubicacion')).toBeInTheDocument();
+  });
+
+  it('muestra la palabra de entrega cuando el DTO la trae (SHG-BE-042/SHG-FE-058)', async () => {
+    mockTrack.mockResolvedValue({ ...DTO_OK, palabraEntrega: 'AB23K9' });
+    renderAt('/tracking/7K2M9QX4TP');
+
+    expect(await screen.findByText('Tu palabra de entrega')).toBeInTheDocument();
+    expect(screen.getByText('AB23K9')).toBeInTheDocument();
+    expect(screen.getByText(/decísela al chofer/i)).toBeInTheDocument();
+  });
+
+  it('no muestra nada de palabra de entrega si el DTO no la trae (envíos viejos)', async () => {
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking/7K2M9QX4TP');
+
+    await screen.findByText('7K2M9QX4TP');
+    expect(screen.queryByText('Tu palabra de entrega')).not.toBeInTheDocument();
+  });
+
+  it('código con formato inválido: no llama al backend y avisa', async () => {
+    renderAt('/tracking/@@@');
+    expect(await screen.findByText(/código inválido/i)).toBeInTheDocument();
+    expect(mockTrack).not.toHaveBeenCalled();
+  });
+
+  it('404: muestra "no encontramos ese envío"', async () => {
+    mockTrack.mockRejectedValue({ response: { status: 404 } });
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(
+      await screen.findByText(/no encontramos ese envío/i),
+    ).toBeInTheDocument();
+  });
+
+  it('429: muestra el mensaje de rate-limit', async () => {
+    mockTrack.mockRejectedValue({ response: { status: 429 } });
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(await screen.findByText(/demasiadas consultas/i)).toBeInTheDocument();
+    expect(screen.getByText(/probá de nuevo en un minuto/i)).toBeInTheDocument();
+  });
+
+  it('desde /tracking, enviar el form navega a /tracking/:codigo y consulta', async () => {
+    const user = userEvent.setup();
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking');
+
+    await user.type(
+      screen.getByLabelText(/código de seguimiento/i),
+      '7k2m9qx4tp',
+    );
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+
+    await waitFor(() =>
+      expect(window.location.pathname).toBe('/tracking/7K2M9QX4TP'),
+    );
+    await waitFor(() =>
+      expect(mockTrack).toHaveBeenCalledWith('7K2M9QX4TP', expect.any(String)),
+    );
+  });
+
+  it('SHG-FE-112: una búsqueda inválida después de un resultado oculta el resultado anterior', async () => {
+    const user = userEvent.setup();
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/código de seguimiento/i);
+    await user.clear(input);
+    await user.type(input, 'ab');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+
+    await waitFor(() =>
+      expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId('mapa-ubicacion')).not.toBeInTheDocument();
+  });
+
+  it('SHG-FE-112: tras una búsqueda inválida, una válida vuelve a mostrar el resultado', async () => {
+    const user = userEvent.setup();
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/código de seguimiento/i);
+    await user.clear(input);
+    await user.type(input, 'ab');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+    await waitFor(() =>
+      expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument(),
+    );
+
+    await user.clear(input);
+    await user.type(input, '7K2M9QX4TP');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+  });
+
+  it('SHG-FE-112: un código inexistente (404) después de un resultado no deja el anterior', async () => {
+    const user = userEvent.setup();
+    mockTrack.mockImplementation((codigo) =>
+      codigo === '7K2M9QX4TP'
+        ? Promise.resolve(DTO_OK)
+        : Promise.reject({ response: { status: 404 } }),
+    );
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/código de seguimiento/i);
+    await user.clear(input);
+    await user.type(input, 'ZZZZZZZZZZ');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+
+    expect(await screen.findByText(/no encontramos/i)).toBeInTheDocument();
+    expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument();
+  });
+
+  it('SHG-FE-112: tras una búsqueda inválida, cambiar de código por la ruta (sin submit) muestra el nuevo resultado', async () => {
+    const user = userEvent.setup();
+    mockTrack.mockImplementation((codigo) =>
+      Promise.resolve(
+        codigo === '7K2M9QX4TP'
+          ? DTO_OK
+          : { ...DTO_OK, codigoSeguimiento: codigo, destino: { localidad: 'Salta', provincia: 'Salta' } },
+      ),
+    );
+    renderAt('/tracking/7K2M9QX4TP');
+    expect(await screen.findByText('Rosario, Santa Fe')).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/código de seguimiento/i);
+    await user.clear(input);
+    await user.type(input, 'ab');
+    await user.click(screen.getByRole('button', { name: /consultar/i }));
+    await waitFor(() =>
+      expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument(),
+    );
+
+    // Navegación externa al formulario (link / botón "atrás").
+    act(() => navigate('/tracking/9Z8Y7X6W5V'));
+    expect(await screen.findByText('Salta, Salta')).toBeInTheDocument();
+  });
+});

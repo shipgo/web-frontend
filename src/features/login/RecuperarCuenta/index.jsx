@@ -1,0 +1,144 @@
+import { useState } from "react";
+import { Link } from "wouter";
+
+import { useForm, schemaResolver } from "@mantine/form";
+import {
+  Alert,
+  Anchor,
+  Button,
+  Group,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
+import { IconArrowLeft, IconCheck } from "@tabler/icons-react";
+
+import { applyApiError, getRateLimitMessage } from "@domain/apiError";
+import { useAuthStore } from "@stores/auth.store";
+import { useCaptcha } from "@hooks/useCaptcha";
+import CaptchaField from "@components/CaptchaField";
+import { isCaptchaApiError } from "@config/captcha";
+
+import AuthCardShell from "../components/AuthCardShell";
+import {
+  RECUPERAR_EMAIL_INITIAL_VALUES,
+  RECUPERAR_EMAIL_SCHEMA,
+} from "../constants/schema";
+
+/**
+ * Paso 1 de "olvidé mi contraseña" (`/recuperar-cuenta`).
+ *
+ * Envía el email a `POST /api/user/resetPassword` (vía `verifyEmail` del store).
+ * El mensaje de éxito es deliberadamente neutro: no revela si el email existe.
+ */
+const RecuperarCuenta = () => {
+  const verifyEmail = useAuthStore((state) => state.verifyEmail);
+  const captcha = useCaptcha();
+  const [loading, setLoading] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [rateLimited, setRateLimited] = useState(false);
+
+  const form = useForm({
+    mode: "uncontrolled",
+    initialValues: RECUPERAR_EMAIL_INITIAL_VALUES,
+    validate: schemaResolver(RECUPERAR_EMAIL_SCHEMA, { sync: true }),
+  });
+
+  const handleSubmit = async ({ userEmail }) => {
+    setLoading(true);
+    setErrorMsg(null);
+    setRateLimited(false);
+    try {
+      await verifyEmail(userEmail.trim(), captcha.token);
+      setEnviado(true);
+    } catch (error) {
+      // Captcha faltante/inválido/vencido (SHG-BE-032): re-emitimos el
+      // challenge, el token es de un solo uso.
+      if (isCaptchaApiError(error)) {
+        captcha.reset();
+      }
+      const rateLimitMessage = getRateLimitMessage(error);
+      if (rateLimitMessage) {
+        setRateLimited(true);
+        setErrorMsg(rateLimitMessage);
+        return;
+      }
+      setErrorMsg(
+        applyApiError(form, error, {
+          fallbackMessage: "No pudimos procesar tu pedido. Intentá de nuevo.",
+        })
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (enviado) {
+    return (
+      <AuthCardShell title="Revisá tu correo">
+        <Alert color="green" icon={<IconCheck size={18} />} title="Listo">
+          Si el email está registrado, te enviamos un enlace para restablecer la
+          contraseña. Revisá también la carpeta de spam.
+        </Alert>
+        <Anchor component={Link} href="/login">
+          <Group gap={6}>
+            <IconArrowLeft size={16} />
+            Volver a iniciar sesión
+          </Group>
+        </Anchor>
+      </AuthCardShell>
+    );
+  }
+
+  return (
+    <AuthCardShell
+      title="Recuperá tu cuenta"
+      subtitle="Ingresá tu email y te enviamos un enlace para crear una nueva contraseña."
+    >
+      <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
+        <Stack gap="lg">
+          {errorMsg ? (
+            <Alert color="red" title={rateLimited ? "Demasiados intentos" : "No se pudo enviar"}>
+              {errorMsg}
+            </Alert>
+          ) : null}
+
+          <TextInput
+            {...form.getInputProps("userEmail")}
+            key={form.key("userEmail")}
+            size="md"
+            inputMode="email"
+            label="Email"
+            autoComplete="email"
+            autoFocus
+            disabled={loading}
+            placeholder="tu@email.com"
+          />
+
+          <CaptchaField captcha={captcha} />
+
+          <Button
+            type="submit"
+            size="md"
+            loading={loading}
+            disabled={!captcha.token}
+          >
+            Enviar enlace
+          </Button>
+
+          <Group justify="center">
+            <Anchor component={Link} href="/login" c="dimmed">
+              <Group gap={6}>
+                <IconArrowLeft size={16} />
+                <Text size="sm">Volver a iniciar sesión</Text>
+              </Group>
+            </Anchor>
+          </Group>
+        </Stack>
+      </form>
+    </AuthCardShell>
+  );
+};
+
+export default RecuperarCuenta;

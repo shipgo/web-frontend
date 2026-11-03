@@ -14,9 +14,9 @@ const SeccionRecursos = () => {
         </ThemeIcon>
 
         <Box>
-          <Title order={4}>Asignación de recursos</Title>
+          <Title order={4}>Vehículo y choferes</Title>
           <Text c="dimmed" size="sm">
-            Asigná el vehículo y el chofer al viaje
+            Asigná el vehículo y los choferes del viaje.
           </Text>
         </Box>
       </Group>

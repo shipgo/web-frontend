@@ -29,7 +29,7 @@ const SearchVehiculos = ({ handleOnSearch, handleRefetch, isFetching }) => {
           flex={1}
           onChange={handleOnChange}
           rightSection={<IconSearch size={16} />}
-          placeholder="Buscá por patente, modelo o capacidad..."
+          placeholder="Buscá por patente o modelo..."
         />
 
         {/* <Switch

@@ -9,9 +9,11 @@ import {
   IconMap,
 } from '@tabler/icons-react';
 
+import { ROLES_WEB } from '@domain/roles';
+
 const ITEMS = [
   {
-    title: 'Gestionar',
+    title: 'Operación',
     color: 'blue',
     options: [
       {
@@ -20,6 +22,7 @@ const ITEMS = [
         icon: <IconMap size={28} />,
         color: 'blue',
         to: '/mapa',
+        roles: ROLES_WEB,
       },
       {
         title: 'Viajes',
@@ -27,6 +30,7 @@ const ITEMS = [
         icon: <IconRoute size={28} />,
         color: 'indigo',
         to: '/viajes',
+        roles: ROLES_WEB,
       },
       {
         title: 'Envíos',
@@ -34,18 +38,20 @@ const ITEMS = [
         icon: <IconPackages size={28} />,
         color: 'teal',
         to: '/envios',
+        roles: ROLES_WEB,
       },
       {
         title: 'Dashboard',
-        description: 'Métricas y resumen operativo del día',
+        description: 'Métricas y resumen de tus envíos y viajes',
         icon: <IconChartBar size={28} />,
         color: 'violet',
         to: '/dashboard',
+        roles: ROLES_WEB,
       },
     ],
   },
   {
-    title: 'Administrar',
+    title: 'Administración',
     options: [
       {
         title: 'Usuarios',
@@ -53,6 +59,7 @@ const ITEMS = [
         icon: <IconUsers size={28} />,
         color: 'orange',
         to: '/usuarios',
+        roles: ROLES_WEB,
       },
       {
         title: 'Vehículos',
@@ -60,6 +67,7 @@ const ITEMS = [
         icon: <IconTruckDelivery size={28} />,
         color: 'red',
         to: '/vehiculos',
+        roles: ROLES_WEB,
       },
     ],
   },
@@ -71,6 +79,7 @@ const ITEMS = [
         description: 'Consultá la documentación de la plataforma',
         icon: <IconBook size={28} />,
         color: 'gray',
+        // Verificado en SHG-FE-051: URL https://shipgo.gitbook.io/manual existe y es funcional
         href: 'https://shipgo.gitbook.io/manual',
       },
       {
