@@ -63,7 +63,17 @@ const renderMenu = ({ portal = false, base = '' } = {}) => {
     </QueryClientProvider>,
   );
 
-  return { history };
+  return { history, queryClient };
+};
+
+const sinResolver = () => new Promise(() => {});
+
+const deferred = () => {
+  let resolve;
+  const promise = new Promise((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
 };
 
 describe('NotificacionesMenu', () => {
@@ -293,5 +303,142 @@ describe('NotificacionesMenu', () => {
     expect(
       screen.queryByText('No tenés notificaciones.'),
     ).not.toBeInTheDocument();
+  });
+  describe('actualización optimista (SHG-FE-141)', () => {
+    it('al hacer click en una notificación sin leer, la marca como leída antes de que responda el backend y navega sin esperar', async () => {
+      mockGetMias.mockResolvedValue(NOTIFS);
+      mockDelete.mockReturnValue(sinResolver());
+      const { history } = renderMenu();
+
+      await userEvent.click(
+        await screen.findByLabelText('Notificaciones, 1 sin leer'),
+      );
+      await userEvent.click(await screen.findByText('Viaje planificado'));
+
+      // el DELETE sigue en vuelo, pero la pantalla ya cambió...
+      expect(mockDelete).toHaveBeenCalledWith(1);
+      await waitFor(() => expect(screen.queryByText('Sin leer')).not.toBeInTheDocument());
+      expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument();
+      // ...y la navegación no esperó a la respuesta.
+      expect(history.at(-1)).toBe('/viajes/7');
+    });
+
+    it('al tocar la tilde, la marca como leída al instante (sin punto, sin botón y sin contador)', async () => {
+      mockGetMias.mockResolvedValue(NOTIFS);
+      mockDelete.mockReturnValue(sinResolver());
+      renderMenu();
+
+      await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+      await userEvent.click(await screen.findByLabelText('Marcar como leída'));
+
+      await waitFor(() =>
+        expect(screen.queryByLabelText('Marcar como leída')).not.toBeInTheDocument(),
+      );
+      expect(screen.queryByText('Sin leer')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument();
+    });
+
+    it('si el DELETE falla, la notificación vuelve a figurar sin leer y se muestra un aviso sin términos internos', async () => {
+      mockGetMias.mockResolvedValueOnce(NOTIFS).mockReturnValue(sinResolver());
+      mockDelete.mockRejectedValue({
+        response: { status: 500, data: { message: 'Error interno del servidor' } },
+      });
+      renderMenu();
+
+      await userEvent.click(
+        await screen.findByLabelText('Notificaciones, 1 sin leer'),
+      );
+      await userEvent.click(await screen.findByLabelText('Marcar como leída'));
+
+      expect(
+        await screen.findByText('No se pudo marcar la notificación como leída'),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Probá de nuevo en unos minutos.')).toBeInTheDocument();
+      // el mensaje crudo del backend no se muestra
+      expect(screen.queryByText('Error interno del servidor')).not.toBeInTheDocument();
+
+      // rollback (el refetch de onSettled nunca resuelve: no es él quien restaura)
+      expect(screen.getByText('Sin leer')).toBeInTheDocument();
+      expect(screen.getByLabelText('Marcar como leída')).toBeInTheDocument();
+      expect(screen.getByLabelText('Notificaciones, 1 sin leer')).toBeInTheDocument();
+    });
+
+    it('un refetch en curso no pisa el cambio optimista (se cancela la query al empezar)', async () => {
+      const stale = deferred();
+      mockGetMias
+        .mockResolvedValueOnce(NOTIFS)
+        .mockReturnValueOnce(stale.promise)
+        .mockReturnValue(sinResolver());
+      mockDelete.mockReturnValue(sinResolver());
+      const { queryClient } = renderMenu();
+
+      await userEvent.click(
+        await screen.findByLabelText('Notificaciones, 1 sin leer'),
+      );
+      // refetch en vuelo (como el del intervalo o el de un push)...
+      void queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
+      await waitFor(() => expect(mockGetMias).toHaveBeenCalledTimes(2));
+
+      await userEvent.click(await screen.findByLabelText('Marcar como leída'));
+      await waitFor(() => expect(screen.queryByText('Sin leer')).not.toBeInTheDocument());
+
+      // ...que responde tarde con la lista vieja (sin leer): no tiene que volver a pintarla.
+      stale.resolve(NOTIFS);
+      await Promise.resolve();
+      await new Promise((r) => setTimeout(r, 20));
+      expect(screen.queryByText('Sin leer')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument();
+    });
+
+    it('si falla marcar una, no revierte otra que sí se marcó', async () => {
+      const dos = [
+        { ...NOTIFS[0] },
+        { ...NOTIFS[0], id: 3, title: 'Otro aviso' },
+      ];
+      mockGetMias.mockResolvedValueOnce(dos).mockReturnValue(sinResolver());
+      mockDelete.mockImplementation((id) =>
+        id === 1 ? Promise.reject(new Error('boom')) : sinResolver(),
+      );
+      renderMenu();
+
+      await userEvent.click(
+        await screen.findByLabelText('Notificaciones, 2 sin leer'),
+      );
+      const tildes = await screen.findAllByLabelText('Marcar como leída');
+      await userEvent.click(tildes[1]);
+      await userEvent.click(tildes[0]);
+
+      await screen.findByText('No se pudo marcar la notificación como leída');
+      // sólo vuelve la que falló
+      expect(screen.getAllByText('Sin leer')).toHaveLength(1);
+      expect(screen.getByLabelText('Notificaciones, 1 sin leer')).toBeInTheDocument();
+    });
+
+    it('"Vaciar todas" deja el listado vacío al instante y lo restaura si falla', async () => {
+      mockGetMias.mockResolvedValueOnce(NOTIFS).mockReturnValue(sinResolver());
+      const rechazo = deferred();
+      mockVaciarTodas.mockReturnValue(rechazo.promise);
+      renderMenu();
+
+      await userEvent.click(
+        await screen.findByLabelText('Notificaciones, 1 sin leer'),
+      );
+      await userEvent.click(
+        await screen.findByLabelText('Vaciar todas las notificaciones'),
+      );
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'Vaciar todas' }),
+      );
+
+      expect(await screen.findByText('No tenés notificaciones.')).toBeInTheDocument();
+
+      rechazo.resolve(Promise.reject({ response: { status: 500, data: {} } }));
+      expect(
+        await screen.findByText('No se pudieron vaciar las notificaciones'),
+      ).toBeInTheDocument();
+      expect(await screen.findByText('Viaje planificado')).toBeInTheDocument();
+      expect(screen.getByText('Viaje rechazado')).toBeInTheDocument();
+    });
   });
 });
