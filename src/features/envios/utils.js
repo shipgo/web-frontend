@@ -51,6 +51,12 @@ export const formatDestinoEnvio = (envio, opts = {}) => {
  * ausente), se manda `destino` como siempre y no se incluye
  * `sucursalEntregaId`.
  *
+ * `generarPalabraEntrega` (`SHG-CONTRACT-025`, `SHG-FE-144`): sólo en el alta.
+ * Se manda explícito (`true`/`false`) cuando `values` lo trae como booleano; si
+ * no (p. ej. `EditarEnvio`, cuyos `values` no lo incluyen porque la palabra no
+ * se puede cambiar después de creado el envío) se omite y el backend aplica su
+ * default.
+ *
  * @param {Object} values
  * @param {{ id?: number, latitud?: number, longitud?: number }} [destinoExtra]
  */
@@ -145,6 +151,9 @@ export const buildEnvioReqDTO = (values, destinoExtra = {}) => {
     prefijo: values.prefijo,
     telefono: values.telefono,
     tipoEntrega,
+    ...(typeof values.generarPalabraEntrega === "boolean"
+      ? { generarPalabraEntrega: values.generarPalabraEntrega }
+      : {}),
     detalleEnvios: values.detalleEnvios.map((paquete) => ({
       ...(paquete.id != null ? { id: paquete.id } : {}),
       categoria: { id: Number(paquete.categoriaID) },

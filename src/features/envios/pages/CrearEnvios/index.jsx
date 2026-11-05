@@ -17,6 +17,7 @@ import { EnvioFormProvider, useEnvioForm } from "./contexts/CrearEnvioContext";
 import { CREAR_ENVIO_SCHEMA, INITIAL_VALUES } from "./constants/schema";
 import SeccionOrigen from "./components/SeccionOrigen";
 import SeccionCarga from "./components/SeccionCarga";
+import OpcionPalabraEntrega from "./components/OpcionPalabraEntrega";
 import Footer from "./components/Footer";
 import { buildEnvioReqDTO } from "../../utils";
 
@@ -97,6 +98,7 @@ const CrearEnvios = () => {
         <Stack>
           <SeccionOrigen />
           <SeccionCarga categorias={categorias} />
+          <OpcionPalabraEntrega />
         </Stack>
         <Footer onSubmit={handleSubmit} isSubmitting={isSubmitting} />
       </EnvioFormProvider>

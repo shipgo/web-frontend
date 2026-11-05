@@ -478,6 +478,66 @@ describe("DetalleEnvio", () => {
       });
     });
 
+    it("SHG-FE-144: sin palabra de entrega (tienePalabraEntrega: false) el modal de Entregar no la pide ni la manda", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, tienePalabraEntrega: false });
+      envioApi.entregar.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).queryByLabelText(/palabra/i)).not.toBeInTheDocument();
+      expect(within(dialog).queryByText(/palabra/i)).not.toBeInTheDocument();
+
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      await waitFor(() => {
+        expect(envioApi.entregar).toHaveBeenCalledWith("9", { dniReceptor: "30111222" });
+      });
+    });
+
+    it("SHG-FE-144: con tienePalabraEntrega: true el modal de Entregar sigue ofreciendo la palabra", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue({ ...EXISTING_ENVIO, tienePalabraEntrega: true });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByLabelText(/palabra de entrega/i)).toBeInTheDocument();
+    });
+
+    it("SHG-FE-144: acepta una palabra de dos palabras tal cual se tipea, sin transformarla", async () => {
+      const user = userEvent.setup();
+      envioApi.entregar.mockResolvedValue({ ...EXISTING_ENVIO, estado: "entregado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /entregar/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/dni de quien recibe/i), "30111222");
+      await user.type(within(dialog).getByLabelText(/palabra de entrega/i), "luna perro");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, entregar" }));
+
+      await waitFor(() => {
+        expect(envioApi.entregar).toHaveBeenCalledWith("9", {
+          dniReceptor: "30111222",
+          palabraEntregaIngresada: "luna perro",
+        });
+      });
+    });
+
     it("regresión SHG-FE-058: el modal de Entregar no confirma sin dniReceptor, y no llama a la API sin body", async () => {
       const user = userEvent.setup();
 
@@ -716,6 +776,35 @@ describe("DetalleEnvio", () => {
       expect(envioApi.entregar).not.toHaveBeenCalled();
     });
 
+    it("SHG-FE-144: sin palabra de entrega (tienePalabraEntrega: false) el retiro pide solo el DNI y no menciona la palabra", async () => {
+      const user = userEvent.setup();
+      envioApi.getById.mockResolvedValue({
+        ...ENVIO_EN_SUCURSAL_PARA_RETIRO,
+        tienePalabraEntrega: false,
+      });
+      envioApi.entregar.mockResolvedValue({ ...ENVIO_EN_SUCURSAL_PARA_RETIRO, estado: "entregado" });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await user.click(await screen.findByRole("button", { name: /confirmar retiro/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).queryByText(/palabra/i)).not.toBeInTheDocument();
+
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+      expect(within(dialog).getByText("Ingresá el DNI de quien retira.")).toBeInTheDocument();
+      expect(envioApi.entregar).not.toHaveBeenCalled();
+
+      await user.type(within(dialog).getByLabelText(/dni de quien retira/i), "30111222");
+      await user.click(within(dialog).getByRole("button", { name: "Sí, confirmar retiro" }));
+
+      await waitFor(() => {
+        expect(envioApi.entregar).toHaveBeenCalledWith("9", { dniReceptor: "30111222" });
+      });
+    });
+
     it("confirma el retiro con DNI + palabra, refetchea el detalle y no pisa el flujo de Entregar", async () => {
       const user = userEvent.setup();
       envioApi.getById.mockResolvedValue(ENVIO_EN_SUCURSAL_PARA_RETIRO);
@@ -837,6 +926,21 @@ describe("DetalleEnvio", () => {
 
       await screen.findByText("Juan García");
       expect(screen.queryByText("DNI de quien recibió")).not.toBeInTheDocument();
+    });
+
+    it("SHG-FE-144: un envío sin palabra (tienePalabraEntrega: false) no menciona la palabra en el detalle", async () => {
+      envioApi.getById.mockResolvedValue({
+        ...EXISTING_ENVIO,
+        estado: "en_camino",
+        tienePalabraEntrega: false,
+      });
+
+      renderWithProviders(<Route path="/envios/:id" component={DetalleEnvio} />, {
+        route: "/envios/9",
+      });
+
+      await screen.findByText("Juan García");
+      expect(screen.queryByText(/palabra/i)).not.toBeInTheDocument();
     });
 
     it("nunca muestra palabraEntrega en el panel de operador, aunque el backend la mande por error", async () => {

@@ -44,6 +44,21 @@ describe('EtiquetaEnvio', () => {
     window.print = vi.fn();
   });
 
+  it('no menciona la palabra de entrega, con o sin palabra (SHG-FE-144)', async () => {
+    envioApi.getById.mockResolvedValue({ ...ENVIO, tienePalabraEntrega: false });
+    const { unmount } = renderPage();
+
+    const sinPalabra = await screen.findByTestId('etiqueta-envio');
+    expect(sinPalabra.textContent).not.toMatch(/palabra/i);
+    unmount();
+
+    envioApi.getById.mockResolvedValue({ ...ENVIO, tienePalabraEntrega: true, palabraEntrega: 'LUNA-PERRO' });
+    renderPage();
+
+    const conPalabra = await screen.findByTestId('etiqueta-envio');
+    expect(conPalabra.textContent).not.toMatch(/palabra|LUNA-PERRO/i);
+  });
+
   it('muestra QR, código y datos de apoyo, e imprime con window.print', async () => {
     const user = userEvent.setup();
     renderPage();

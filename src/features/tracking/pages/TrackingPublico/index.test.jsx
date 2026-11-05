@@ -134,6 +134,22 @@ describe('TrackingPublicoPage', () => {
     expect(screen.queryByText('Tu palabra de entrega')).not.toBeInTheDocument();
   });
 
+  it('muestra la palabra de dos palabras tal cual la manda el backend (SHG-FE-144)', async () => {
+    mockTrack.mockResolvedValue({ ...DTO_OK, palabraEntrega: 'LUNA-PERRO' });
+    renderAt('/tracking/7K2M9QX4TP');
+
+    expect(await screen.findByText('LUNA-PERRO')).toBeInTheDocument();
+  });
+
+  it('un envío sin palabra (palabraEntrega ausente) no muestra la palabra ni textos que la mencionen (SHG-FE-144)', async () => {
+    mockTrack.mockResolvedValue({ ...DTO_OK, estado: 'en_camino', estadoLabel: 'En camino' });
+    renderAt('/tracking/7K2M9QX4TP');
+
+    await screen.findByText('7K2M9QX4TP');
+    expect(screen.queryByText(/palabra/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/decísela al chofer/i)).not.toBeInTheDocument();
+  });
+
   it('código con formato inválido: no llama al backend y avisa', async () => {
     renderAt('/tracking/@@@');
     expect(await screen.findByText(/código inválido/i)).toBeInTheDocument();

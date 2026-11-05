@@ -49,6 +49,14 @@ describe("buildEnvioReqDTO", () => {
     });
   });
 
+  it("generarPalabraEntrega (SHG-CONTRACT-025): se manda tal cual si es booleano y se omite si no viene (edición)", () => {
+    const values = { ...baseValues, coordenadas: { lat: 0, lng: 0 } };
+
+    expect(buildEnvioReqDTO({ ...values, generarPalabraEntrega: true }).generarPalabraEntrega).toBe(true);
+    expect(buildEnvioReqDTO({ ...values, generarPalabraEntrega: false }).generarPalabraEntrega).toBe(false);
+    expect(buildEnvioReqDTO(values)).not.toHaveProperty("generarPalabraEntrega");
+  });
+
   it("por defecto (sin tipoEntrega en los values) manda tipoEntrega: domicilio", () => {
     const values = { ...baseValues, coordenadas: { lat: 0, lng: 0 } };
     delete values.tipoEntrega;

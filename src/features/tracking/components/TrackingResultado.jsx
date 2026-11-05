@@ -53,7 +53,9 @@ const InfoRow = ({ icon, label, children }) => (
  * Reutilizable por el portal CUSTOMER (`SHG-FE-026`).
  *
  * `palabraEntrega` (`SHG-BE-042`) se muestra sólo si el DTO la trae (ausente si
- * el envío no tiene una generada) — es secreto remitente↔destinatario↔chofer,
+ * el envío no tiene una generada, `SHG-CONTRACT-025`: ni la palabra ni ningún
+ * texto que la mencione). Es dos palabras (ej. `LUNA-PERRO`): no se asume largo
+ * ni formato, se muestra tal cual la manda el backend. Es secreto remitente↔destinatario↔chofer,
  * nunca se le pide de vuelta al backend después de creado el envío, y NUNCA se
  * muestra en las vistas de operador (`ListaEnvios`/`DetalleEnvio`).
  *
@@ -79,7 +81,7 @@ const TrackingResultado = ({ data }) => {
                 Código de seguimiento
               </Text>
               <Group gap={6} align="center">
-                <Title order={3} style={{ letterSpacing: '0.05em' }}>
+                <Title order={3}>
                   {data.codigoSeguimiento}
                 </Title>
                 <CopyButton value={data.codigoSeguimiento} timeout={1500}>
@@ -129,7 +131,7 @@ const TrackingResultado = ({ data }) => {
       {data.palabraEntrega ? (
         <Alert color="yellow" variant="light" icon={<IconKey size={18} />} title="Tu palabra de entrega">
           <Stack gap={2}>
-            <Title order={3} style={{ letterSpacing: '0.05em' }}>
+            <Title order={3}>
               {data.palabraEntrega}
             </Title>
             <Text size="sm">

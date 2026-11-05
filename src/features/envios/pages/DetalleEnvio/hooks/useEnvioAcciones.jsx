@@ -59,10 +59,13 @@ const handleAccionError = (error, accionLabel, estadosPermitidos) => {
  * muestra un toast de resultado y dispara `onSuccess` (refetch del detalle) si
  * salió bien.
  *
+ * `tienePalabraEntrega` (`EnvioDTO`, `SHG-CONTRACT-024`/`025`): `false` oculta el
+ * campo de la palabra en los modales de entrega y retiro; ausente = como antes.
+ *
  * `puedeAccionarEntrega` (`../acciones.js`) ya decide si los botones se
  * muestran según estado + rol; acá sólo se ejecuta la transición.
  */
-export const useEnvioAcciones = (id, { onSuccess } = {}) => {
+export const useEnvioAcciones = (id, { onSuccess, tienePalabraEntrega } = {}) => {
   const confirmEntregar = () => {
     modals.open({
       title: 'Entregar envío',
@@ -70,6 +73,7 @@ export const useEnvioAcciones = (id, { onSuccess } = {}) => {
       children: (
         <EntregarModalBody
           id={id}
+          tienePalabraEntrega={tienePalabraEntrega}
           onVolver={() => modals.closeAll()}
           onEntregado={() => {
             modals.closeAll();
@@ -130,6 +134,7 @@ export const useEnvioAcciones = (id, { onSuccess } = {}) => {
       children: (
         <ConfirmarRetiroModalBody
           id={id}
+          tienePalabraEntrega={tienePalabraEntrega}
           onVolver={() => modals.closeAll()}
           onRetirado={() => {
             modals.closeAll();
