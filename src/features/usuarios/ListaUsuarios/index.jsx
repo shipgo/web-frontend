@@ -144,6 +144,7 @@ const ListaUsuarios = () => {
       {isMobile ? (
         <ResultsCounter
           amount={data.total}
+          isLoading={isLoading}
           limit={PAGE_LIMIT}
           currentPage={params.page}
           onPageChange={setPage}

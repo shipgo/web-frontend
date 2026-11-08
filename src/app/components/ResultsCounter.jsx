@@ -41,7 +41,9 @@ const ResultsCounter = memo(
       };
     }, [limit, currentPage, amount]);
 
-    if (isLoading) {
+    // Sólo en la primera carga (todavía no hay total). En una recarga el total anterior
+    // se mantiene (`keepPreviousData`), así que no parpadea ni dice "Sin resultados".
+    if (isLoading && !isNumber(amount)) {
       return <Skeleton height={36} width={150} />;
     }
 

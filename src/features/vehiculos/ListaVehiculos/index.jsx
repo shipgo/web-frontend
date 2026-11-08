@@ -135,6 +135,7 @@ const ListaVehiculos = () => {
       {isMobile ? (
         <ResultsCounter
           amount={data.total}
+          isLoading={isLoading}
           limit={PAGE_LIMIT}
           currentPage={page}
           onPageChange={setPage}

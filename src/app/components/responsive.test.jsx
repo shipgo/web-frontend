@@ -105,21 +105,61 @@ describe('ResponsiveList', () => {
       expect(screen.getByRole('status')).toHaveTextContent('Cargando envíos...');
     });
 
-    it('primera carga (sin tarjetas): tarjeta de carga completa, sin indicador', () => {
+    it('primera carga (sin tarjetas): tarjetas fantasma, sin tarjeta de carga ni indicador', () => {
       mobile.value = true;
       renderCargando({ items: [] });
 
       expect(screen.queryAllByTestId('list-card')).toHaveLength(0);
+      expect(screen.getAllByTestId('list-card-skeleton')).toHaveLength(6);
       expect(screen.queryByTestId('responsive-list-refreshing')).not.toBeInTheDocument();
-      expect(screen.getByText('Cargando envíos...')).toBeInTheDocument();
+      // Se anuncia a lectores de pantalla.
+      expect(screen.getByRole('status')).toHaveTextContent('Cargando envíos...');
     });
 
-    it('escritorio sigue mostrando la tarjeta de carga (no cambia)', () => {
+    it('primera carga con `onLoading.children` propio: respeta el contenido a medida', () => {
+      mobile.value = true;
+      renderWithProviders(
+        <ResponsiveList
+          items={[]}
+          onLoading={{ show: true, children: <p>carga a medida</p> }}
+          renderCard={(row) => <ListCard title={row.codigo} />}
+        >
+          <table />
+        </ResponsiveList>,
+      );
+
+      expect(screen.getByText('carga a medida')).toBeInTheDocument();
+      expect(screen.queryAllByTestId('list-card-skeleton')).toHaveLength(0);
+    });
+
+    it('escritorio: la tabla se conserva atenuada e inerte con un indicador, sin tarjeta de carga', () => {
       renderCargando();
 
+      expect(screen.getByTestId('tabla')).toBeInTheDocument();
       expect(screen.queryAllByTestId('list-card')).toHaveLength(0);
-      expect(screen.queryByTestId('responsive-list-refreshing')).not.toBeInTheDocument();
-      expect(screen.getByText('Cargando envíos...')).toBeInTheDocument();
+      expect(screen.getByTestId('responsive-list-table')).toHaveAttribute('inert');
+      expect(screen.getByTestId('responsive-list-table').style.opacity).toBe('0.45');
+      expect(screen.getByRole('status')).toHaveTextContent('Cargando envíos...');
+    });
+
+    it('escritorio, primera carga: filas fantasma en lugar de la tabla y de la tarjeta de carga', () => {
+      renderCargando({ items: [] });
+
+      expect(screen.queryByTestId('tabla')).not.toBeInTheDocument();
+      expect(screen.getByTestId('list-table-skeleton')).toBeInTheDocument();
+      expect(screen.queryAllByTestId('list-card-skeleton')).toHaveLength(0);
+      expect(screen.getByRole('status')).toHaveTextContent('Cargando envíos...');
+    });
+
+    it('escritorio con `onLoading.children` propio: respeta el contenido a medida', () => {
+      renderWithProviders(
+        <ResponsiveList items={[]} onLoading={{ show: true, children: <p>carga a medida</p> }}>
+          <table data-testid="tabla" />
+        </ResponsiveList>,
+      );
+
+      expect(screen.getByText('carga a medida')).toBeInTheDocument();
+      expect(screen.queryByTestId('list-table-skeleton')).not.toBeInTheDocument();
     });
 
     it('al terminar de cargar las tarjetas vuelven a ser interactivas', () => {
@@ -252,6 +292,18 @@ describe('ResultsCounter mobile', () => {
     mobile.value = true;
     renderWithProviders(<ResultsCounter amount={48} limit={10} currentPage={1} />);
     expect(screen.getByText(/Mostrando 1–10 de 48/)).toBeInTheDocument();
+  });
+
+  it('primera carga (sin total todavía): esqueleto, no «Sin resultados»', () => {
+    mobile.value = true;
+    renderWithProviders(<ResultsCounter amount={undefined} isLoading />);
+    expect(screen.queryByText('Sin resultados')).not.toBeInTheDocument();
+  });
+
+  it('recarga con el total anterior retenido: mantiene el contador', () => {
+    mobile.value = true;
+    renderWithProviders(<ResultsCounter amount={48} limit={10} currentPage={2} isLoading />);
+    expect(screen.getByText(/Mostrando 11–20 de 48/)).toBeInTheDocument();
   });
 
   it('al cambiar de página avisa a la pantalla y vuelve al inicio de la página', async () => {
