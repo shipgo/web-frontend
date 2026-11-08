@@ -5,7 +5,7 @@ import { AuthContext } from "@contexts/auth";
 import { landingPathFor } from "@domain/roles";
 import { isProtectedPath } from "@utils/protectedPaths";
 import ConnectionErrorScreen from "@components/ConnectionErrorScreen";
-import { Center, Loader } from "@mantine/core";
+import SplashScreen from "@components/SplashScreen";
 
 const AuthProvider = ({ children }) => {
   const [, setLocation] = useLocation();
@@ -45,13 +45,9 @@ const AuthProvider = ({ children }) => {
     }
   }, [isAuthenticated, isLoading, isInitialized, connectionError, setLocation, user]);
 
-  // Mostrar loader mientras se inicializa la autenticación
+  // Splash de marca mientras se inicializa la autenticación (verde, como app-mobile).
   if (!isInitialized || isLoading) {
-    return (
-      <Center h="100vh">
-        <Loader size="lg" />
-      </Center>
-    );
+    return <SplashScreen />;
   }
 
   // Bootstrap sin respuesta de la API (timeout / red / 5xx; SHG-FE-110): en una
