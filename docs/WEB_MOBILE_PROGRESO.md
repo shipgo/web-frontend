@@ -33,11 +33,13 @@ Sin tareas SHG-FE: se hace todo en esta rama y este archivo es el registro. Al r
 - Revisión visual a 390 px (segunda pasada, 2026-11-07): además de lo anterior se vieron crear usuario, detalle de usuario, crear vehículo, detalle de vehículo, marcas, mantenimientos (lista y crear), historial de notificaciones, etiqueta de envío y el portal del cliente (lista con búsqueda y chips, detalle con tarjeta de estado). Sin scroll horizontal en ninguna.
 - Verificación: suite completa 163 archivos / 1343 tests OK, `eslint .` 0 errores (8 warnings que ya existían), build OK; escritorio comparado contra las capturas del relevamiento (envíos, detalle, mapa, crear viaje) sin cambios. Mobile visto a 390 px en iframe: landing, login, tracking, shell y cajón, lista y detalle de envíos, crear envío, lista/detalle/crear viaje, usuarios, vehículos, mapa, dashboard.
 
+- [x] Prueba en emulador Android (Pixel_10, Chrome real, 2026-11-07; `adb reverse tcp:5173 tcp:5173` y `tcp:8080`, la web corre en `localhost:5173`): landing, tracking (búsqueda con la tecla de acción del teclado), login con teclado, inicio, cajón de navegación, mapa con arrastre de la hoja, crear envío con teclado, detalle de envío. Encontró y se corrigió: formulario de login centrado verticalmente que dejaba contraseña y botón detrás del teclado; campo enfocado pegado al teclado (ahora `scroll-padding`); Prefijo/Teléfono en filas separadas; "Cerrar sesión" bajo la barra de gestos; tecla de acción del teclado sin "Buscar" (`enterKeyHint`).
+
 ## Pendiente (para retomar en otra sesión)
-Verificación visual a 390/360 px de lo que NO se vio todavía:
+Verificación visual de lo que NO se vio todavía:
 - [ ] Editar usuario/vehículo/mantenimiento/sucursal, detalle de mantenimiento y de sucursal, modelos, onboarding de empresa, 404, "usá la app", error de conexión, recuperar cuenta con token, verificar cuenta, registro.
 - [ ] Dropdowns de `Select`/`MultiSelect` dentro de los acordeones de usuarios/vehículos, modal del selector de rango del dashboard, etiquetas de ejes de los gráficos.
-- [ ] Probar en un teléfono real: teclado abierto en login/registro/formularios, safe-area, arrastre de la hoja del mapa (choque de gestos con el mapa), primer render del mapa mobile, scroll de listas virtualizadas (Virtuoso) dentro de acordeones plegados.
+Pruebas que faltan en un dispositivo (el emulador no las cubre): safe-area de iOS (no hay simulador de iOS en esta máquina: `xcrun simctl` no está disponible), pellizco del mapa, scroll de listas virtualizadas (Virtuoso) dentro de acordeones plegados, los tiles del mapa se vieron en blanco en el emulador (revisar si es red del emulador o la restricción de URL del token de Mapbox).
 Cosas que quedaron distintas de la propuesta:
 - [ ] Crear/editar envío, mantenimiento y sucursal: tarjetas apiladas sin `Accordion` (si un error cae en una sección cerrada no se vería). Crear envío: el mapa va debajo del campo con 240 px, sin hoja a pantalla completa; falta probar si el arrastre del mapa pelea con el scroll de la página.
 - [ ] Modales de eliminar (`useDeleteMantenimiento`, `useDeleteSucursal`, `useDeleteMarca`, `useDeleteModelo`, y similares) siguen `centered`; pasarlos a `fullScreen: isMobile`.
@@ -51,20 +53,19 @@ Cosas que quedaron distintas de la propuesta:
 - [ ] Portal: búsqueda y contadores cuentan solo la página cargada (`useMisEnvios(page)`).
 - [ ] Footer fijo en iOS: el `padding-bottom` de safe-area reduce el alto útil (alto fijo de 70 px); subir el alto en `AppShell footer` si queda justo.
 - [ ] Etiqueta del burger pasa a "Cerrar menú" pero el scrim lo tapa con el cajón abierto.
-- [ ] Menores vistos en la segunda pasada: en crear mantenimiento el botón fijo corta el texto ("Crear mantenimient…") a 390 px; el título "Crear mantenimiento" ocupa 3 líneas; el campo numérico "Año de compra" de crear vehículo recorta su control de +/-.
 - [ ] Hay un caso donde el detalle de viaje deja "Cancelar viaje" como acción única (estado listo para salir): ya va en rojo; confirmar que ese es el comportamiento deseado.
 Cierre de la rama:
 - [ ] Decidir si se pushea `feat/web-mobile` y se abre PR (no se hizo; el owner decide). La rama tiene 5 commits sobre `main` @ a05ca76. Idem la rama del backend.
 - [ ] Actualizar el artefacto "Web mobile ShipGo" marcando lo hecho (opcional).
 
-## Backend (repo `../backend`)
-- [x] Hecho en la rama `feat/tracking-publico-sin-gps-ni-palabra` (commit 0ab5052, desde `develop`, sin push): `PublicTrackingDTO` ya no tiene `ultimaUbicacionAprox` ni `palabraEntrega`; `PublicTrackingService` sin `UbicacionViajeRepository`; tests de servicio, controller y el barrido de `EnvioTienePalabraEntregaTest` (ahora incluye `/api/public`) pasan (24 tests de esos patrones; no se corrió la suite completa del backend). La palabra sigue yendo por el email de seguimiento y el chofer la valida al entregar (sin cambios).
-- [ ] Mergear esa rama (PR contra `develop`) y reconstruir el backend local (`make up` en `../backend`, recrea esquema y seed; pide permiso al owner) para que el contenedor deje de exponer los campos. Mientras no se haga, el backend en ejecución los sigue devolviendo (la web ya los ignora).
-- [ ] Actualizar `../planning/CONTRACTS.md` (SHG-CONTRACT-007 y la parte de la palabra de entrega del tracking guest, SHG-CONTRACT-025) y las notas de coordinación que mencionan `ultimaUbicacionAprox`/`palabraEntrega` en el tracking público. No se tocó `../planning` (checkout compartido).
-- [ ] Revisar `../app-mobile`: no hay referencias a `ultimaUbicacionAprox` en su `src`, pero confirmar que no consume `palabraEntrega` del tracking público.
+## Backend (repo `../backend`) y contrato
+- [x] Rama `feat/tracking-publico-sin-gps-ni-palabra` (commit 0ab5052, desde `develop`): `PublicTrackingDTO` ya no tiene `ultimaUbicacionAprox` ni `palabraEntrega`; `PublicTrackingService` sin `UbicacionViajeRepository`; tests de servicio, controller y el barrido de `EnvioTienePalabraEntregaTest` (ahora incluye `/api/public`). La palabra sigue yendo por el email de seguimiento y el chofer la valida al entregar (sin cambios).
+- [x] Backend local reconstruido con `make up` desde esa rama (autorizado por el owner el 2026-11-07): `GET /api/public/tracking/{codigo}` devuelve solo `codigoSeguimiento, destino, estado, estadoLabel, historial` (+ `fechaEstimada` si hay viaje) y el esquema OpenAPI coincide. El seed se recargó: los estados de SEED000001..22 cambiaron respecto del relevamiento.
+- [x] Contrato actualizado en `../planning` (`CONTRACTS.md` §7 y `ENDPOINTS.md`, commit 07dad05 en `main` de planning).
+- [x] `../app-mobile` no consume `ultimaUbicacionAprox` ni el endpoint público (usa `palabraEntrega` solo en el flujo de entrega, que no cambia).
 
 ## Bitácora
 - 2026-11-07: relevamiento (77 capturas) y artefacto de propuesta. Se crea la rama y este registro.
 - 2026-11-07: ola 1 completa y commiteada (e57a5f0).
 - 2026-11-07: ola 2 completa (6d53fe8) con pulido posterior; verificación a 390 px en iframe.
-- 2026-11-07: fix de backend hecho en `../backend` (rama `feat/tracking-publico-sin-gps-ni-palabra`, commit 0ab5052); segunda pasada visual de pantallas faltantes.
+- 2026-11-07: fix de backend hecho en `../backend` (rama `feat/tracking-publico-sin-gps-ni-palabra`, commit 0ab5052), `make up`, contrato en planning, segunda pasada visual y prueba en emulador Android con correcciones.
