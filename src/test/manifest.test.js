@@ -39,24 +39,16 @@ describe('manifest.webmanifest (instalación de la web)', () => {
     }
   });
 
-  // El splash nativo de Chrome (web instalada) usa `background_color`: debe ser el verde de
-  // marca, igual que el de app-mobile, y no blanco.
-  it('el fondo del splash es el verde de marca (#006b5a), igual que app-mobile', () => {
+  // El splash por defecto que arma Chrome al abrir la web instalada usa `background_color` (+ el
+  // ícono y el nombre): debe ser el verde de marca, igual que el de app-mobile, y no blanco.
+  it('el fondo del splash nativo es el verde de marca (#006b5a), igual que app-mobile', () => {
     expect(manifest.background_color).toBe('#006b5a');
     expect(manifest.theme_color).toBe('#006b5a');
   });
 
-  it('index.html trae un splash verde dentro de #root (se ve antes que React) con el logo precargado', () => {
-    expect(html).toMatch(/<div id="root">\s*<div id="splash"/);
-    expect(html).toContain('background: #006b5a');
-    expect(html).toContain('<link rel="preload" as="image" href="/splash.svg" />');
-    expect(html).toContain('src="/splash.svg"');
-  });
-
-  it('public/splash.svg existe y es el logo en blanco, sin fondo propio', () => {
-    const svg = readFileSync(join(root, 'public/splash.svg'), 'utf-8');
-    expect(svg).toContain('fill="#ffffff"');
-    expect(svg).not.toMatch(/<rect/);
+  it('index.html no trae un splash propio: el splash es el nativo de Chrome (verde por background_color)', () => {
+    expect(html).not.toContain('id="splash"');
+    expect(html).toContain('<div id="root"></div>');
   });
 
   it('index.html enlaza el manifest y fija el nombre en iOS y en el instalador', () => {
