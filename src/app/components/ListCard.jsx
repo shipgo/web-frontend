@@ -7,6 +7,7 @@ import { Badge, Checkbox, Group, Paper, Stack, Text } from '@mantine/core';
  * @param {import('react').ReactNode} props.title Título; con `mono` va en monoespaciado (códigos).
  * @param {boolean} [props.mono] Título monoespaciado.
  * @param {{label: string, color?: string, textColor?: string}} [props.badge] Estado (ver `estadoBadge`).
+ * @param {boolean} [props.badgeBelow] Muestra el badge debajo del título en vez de a su derecha (títulos largos, ej. nombres).
  * @param {Array<import('react').ReactNode | {label?: string, value: import('react').ReactNode}>} [props.lines]
  *   Líneas secundarias; `{label, value}` renderiza "label: value".
  * @param {import('react').ReactNode} [props.footer] Pie (ej. fecha relativa).
@@ -20,6 +21,7 @@ const ListCard = ({
   title,
   mono = false,
   badge,
+  badgeBelow = false,
   lines = [],
   footer,
   actions,
@@ -51,13 +53,21 @@ const ListCard = ({
         <Text fw={600} ff={mono ? 'monospace' : undefined} truncate flex={1} miw={0}>
           {title}
         </Text>
-        {badge && (
+        {badge && !badgeBelow && (
           <Badge color={badge.color} c={badge.textColor} variant="light" radius="md">
             {badge.label}
           </Badge>
         )}
         {actions && <div onClick={(e) => e.stopPropagation()}>{actions}</div>}
       </Group>
+
+      {badge && badgeBelow && (
+        <div>
+          <Badge color={badge.color} c={badge.textColor} variant="light" radius="md">
+            {badge.label}
+          </Badge>
+        </div>
+      )}
 
       {lines.map((line, i) =>
         line && typeof line === 'object' && 'value' in line ? (

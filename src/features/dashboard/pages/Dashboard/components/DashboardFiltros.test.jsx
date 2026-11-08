@@ -96,3 +96,19 @@ describe('DashboardFiltros — quick filters', () => {
     expect(emitted.date[1]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });
+
+describe('DashboardFiltros — mobile', () => {
+  it('los chips de período van en una fila con scroll horizontal', async () => {
+    vi.resetModules();
+    vi.doMock('@hooks/useIsMobile', () => ({ useIsMobile: () => true, MOBILE_QUERY: '' }));
+    setUser(['ROLE_ADMIN']);
+    const { default: Filtros } = await import('./DashboardFiltros');
+    renderWithProviders(<Filtros value={getDefaultFiltros()} onChange={vi.fn()} />);
+
+    const fila = screen.getByTestId('dashboard-quick-filters');
+    expect(fila.style.overflowX).toBe('auto');
+    expect(fila.style.flexWrap).toBe('nowrap');
+    expect(screen.getByLabelText('Últimos 7 días')).toBeInTheDocument();
+    vi.doUnmock('@hooks/useIsMobile');
+  });
+});

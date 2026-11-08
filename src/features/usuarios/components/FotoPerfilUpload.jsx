@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 
 import { API_URLS } from "@constants/apiUrls";
 import { usuarioApi } from "@api";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
 // Mismos formatos que valida `FileService.isImage` en el backend — el chequeo
@@ -27,6 +28,7 @@ const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
  * @param {(usuarioActualizado: object) => void} props.onUploaded - Recibe el `UserDTO` actualizado.
  */
 const FotoPerfilUpload = ({ profile, fullName, onUploaded }) => {
+  const isMobile = useIsMobile();
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (file) => {
@@ -94,7 +96,7 @@ const FotoPerfilUpload = ({ profile, fullName, onUploaded }) => {
                 <Button
                   {...buttonProps}
                   variant="light"
-                  size="xs"
+                  size={isMobile ? "md" : "xs"}
                   leftSection={<IconCamera size={16} />}
                   loading={uploading}
                   c="var(--shg-button-text-primary)"

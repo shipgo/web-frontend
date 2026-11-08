@@ -5,6 +5,10 @@ import { useDebouncedCallback } from "@mantine/hooks";
 import { Card, Flex, NumberInput, Select, TextInput } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
 
+import FilterSheet from "@components/FilterSheet";
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
+
 import { marcaApi } from "../../api/catalogoVehiculos.api";
 
 const DEFAULT_VALUES = { nombre: "", marcaId: null, anio: "" };
@@ -16,7 +20,9 @@ const formatValues = (values) =>
       .map(([key, value]) => [key, { label: key, values: value }])
   );
 
-const ListaModelosFiltros = ({ onFiltersChange }) => {
+const ListaModelosFiltros = ({ onFiltersChange, resultsCount }) => {
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
   const lastValuesRef = useRef(DEFAULT_VALUES);
   const [marcas, setMarcas] = useState([]);
 
@@ -42,33 +48,65 @@ const ListaModelosFiltros = ({ onFiltersChange }) => {
     },
   });
 
+  const handleClear = () => {
+    form.reset();
+    onFiltersChange({});
+  };
+
+  const nombreField = (
+    <TextInput
+      {...form.getInputProps("nombre")}
+      flex={1}
+      size={size}
+      label="Nombre"
+      placeholder="Ej: Sprinter"
+      rightSection={<IconSearch size={18} />}
+    />
+  );
+
+  const marcaField = (
+    <Select
+      {...form.getInputProps("marcaId")}
+      flex={1}
+      size={size}
+      label="Marca"
+      placeholder="Todas las marcas"
+      data={marcas}
+      searchable
+      clearable
+    />
+  );
+
+  const anioField = (
+    <NumberInput
+      {...form.getInputProps("anio")}
+      flex={1}
+      size={size}
+      label="Año"
+      placeholder="Ej: 2020"
+    />
+  );
+
+  if (isMobile) {
+    return (
+      <FilterSheet
+        search={nombreField}
+        activeCount={Object.keys(formatValues(form.values)).length}
+        resultsCount={resultsCount}
+        onClear={handleClear}
+      >
+        {marcaField}
+        {anioField}
+      </FilterSheet>
+    );
+  }
+
   return (
     <Card component="search">
       <Flex gap="md">
-        <TextInput
-          {...form.getInputProps("nombre")}
-          flex={1}
-          label="Nombre"
-          placeholder="Ej: Sprinter"
-          rightSection={<IconSearch size={18} />}
-        />
-
-        <Select
-          {...form.getInputProps("marcaId")}
-          flex={1}
-          label="Marca"
-          placeholder="Todas las marcas"
-          data={marcas}
-          searchable
-          clearable
-        />
-
-        <NumberInput
-          {...form.getInputProps("anio")}
-          flex={1}
-          label="Año"
-          placeholder="Ej: 2020"
-        />
+        {nombreField}
+        {marcaField}
+        {anioField}
       </Flex>
     </Card>
   );

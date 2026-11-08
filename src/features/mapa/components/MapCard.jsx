@@ -17,6 +17,7 @@ const MapCard = ({
   initialCenter = DEFAULT_CENTER,
   initialZoom = 13,
   onClick,
+  showControls = true,
   ...rest
 }) => {
   const colorScheme = useComputedColorScheme('light');
@@ -35,8 +36,8 @@ const MapCard = ({
         onClick={onClick}
       >
         {children}
-        <FullscreenControl position="bottom-right" />
-        <NavigationControl showCompass={false} position="bottom-right" />
+        {showControls && <FullscreenControl position="bottom-right" />}
+        {showControls && <NavigationControl showCompass={false} position="bottom-right" />}
       </Map>
     </Card>
   );

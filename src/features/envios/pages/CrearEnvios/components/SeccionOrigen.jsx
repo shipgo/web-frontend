@@ -22,6 +22,8 @@ import { IconCurrentLocation, IconMapPin, IconRefresh } from "@tabler/icons-reac
 import { Marker } from "react-map-gl/mapbox";
 
 import MapCard from "@features/mapa/components/MapCard";
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
 import ScreenContainer from "@components/ScreenContainer";
 import { provinciaApi, localidadApi } from "@api";
 import { REINTENTAR_MAS_TARDE } from "@copy/common";
@@ -74,6 +76,8 @@ const parseStreetAddress = (line) => {
  */
 const SeccionOrigen = ({ destinoBloqueado = false }) => {
   const form = useEnvioFormContext();
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
   const tipoEntrega = form.values.tipoEntrega ?? TIPO_ENTREGA.DOMICILIO;
   const esRetiroEnSucursal = tipoEntrega === TIPO_ENTREGA.SUCURSAL;
 
@@ -230,9 +234,13 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
     });
   };
 
+  // Mobile: una sola columna, el mapa va debajo de la dirección con alto fijo (240 px).
+  const Layout = isMobile ? Stack : Group;
+  const layoutProps = isMobile ? { gap: "md" } : { align: "stretch", gap: "md" };
+
   return (
-    <Group align="stretch" gap="md">
-      <Card flex={esRetiroEnSucursal ? 12 : 7}>
+    <Layout {...layoutProps}>
+      <Card flex={isMobile ? undefined : esRetiroEnSucursal ? 12 : 7}>
         <Stack>
           <Group gap="0.75rem">
             <ThemeIcon size="xl" variant="light">
@@ -259,17 +267,21 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
             <Input.Label>Método de entrega</Input.Label>
             <SegmentedControl
               fullWidth
+              size={size}
               aria-label="Método de entrega"
               value={tipoEntrega}
               disabled={destinoBloqueado}
               onChange={(value) => form.setFieldValue("tipoEntrega", value)}
               data={TIPO_ENTREGA_OPTIONS}
+              // Mobile: "Retiro en sucursal" no entra en media barra; que envuelva en vez de cortarse.
+              styles={{ label: { whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 } }}
             />
           </Box>
 
           <Grid>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInput
+                size={size}
                 autoFocus
                 key={form.key("nombre")}
                 {...form.getInputProps("nombre")}
@@ -278,8 +290,9 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 placeholder="Ej: Juan"
               />
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInput
+                size={size}
                 key={form.key("apellido")}
                 {...form.getInputProps("apellido")}
                 required
@@ -287,8 +300,9 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 placeholder="Ej: García"
               />
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInput
+                size={size}
                 key={form.key("prefijo")}
                 {...form.getInputProps("prefijo")}
                 required
@@ -296,8 +310,9 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 placeholder="Ej: 351"
               />
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInput
+                size={size}
                 key={form.key("telefono")}
                 {...form.getInputProps("telefono")}
                 required
@@ -305,8 +320,9 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 placeholder="Ej: 1234567"
               />
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInput
+                size={size}
                 key={form.key("emailRemitente")}
                 {...form.getInputProps("emailRemitente")}
                 required
@@ -315,8 +331,9 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 placeholder="remitente@ejemplo.com"
               />
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInput
+                size={size}
                 key={form.key("emailReceptor")}
                 {...form.getInputProps("emailReceptor")}
                 required
@@ -328,6 +345,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
             {esRetiroEnSucursal ? (
               <Grid.Col span={12}>
                 <Select
+                  size={size}
                   label="Sucursal de retiro"
                   description="El destinatario va a poder retirar el envío en esta sucursal."
                   placeholder="Seleccioná una sucursal"
@@ -367,6 +385,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
               <>
                 <Grid.Col span={12}>
                   <Autocomplete
+                    size={size}
                     disabled={destinoBloqueado}
                     label="Buscar dirección"
                     description="Completá automáticamente la calle, localidad y ubicación en el mapa"
@@ -383,6 +402,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 </Grid.Col>
                 <Grid.Col span={8}>
                   <TextInput
+                    size={size}
                     key={form.key("nombreCalle")}
                     {...form.getInputProps("nombreCalle")}
                     required
@@ -393,6 +413,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 </Grid.Col>
                 <Grid.Col span={4}>
                   <TextInput
+                    size={size}
                     key={form.key("numeroCalle")}
                     {...form.getInputProps("numeroCalle")}
                     disabled={destinoBloqueado}
@@ -402,6 +423,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 </Grid.Col>
                 <Grid.Col span={6}>
                   <TextInput
+                    size={size}
                     key={form.key("piso")}
                     {...form.getInputProps("piso")}
                     disabled={destinoBloqueado}
@@ -411,6 +433,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 </Grid.Col>
                 <Grid.Col span={6}>
                   <TextInput
+                    size={size}
                     key={form.key("departamento")}
                     {...form.getInputProps("departamento")}
                     disabled={destinoBloqueado}
@@ -418,8 +441,9 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                     placeholder="Ej: B"
                   />
                 </Grid.Col>
-                <Grid.Col span={6}>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                   <Select
+                    size={size}
                     disabled={destinoBloqueado}
                     label="Provincia"
                     placeholder="Seleccioná una provincia"
@@ -434,8 +458,9 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                     }}
                   />
                 </Grid.Col>
-                <Grid.Col span={6}>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                   <Select
+                    size={size}
                     key={form.key("localidadID")}
                     {...form.getInputProps("localidadID")}
                     required
@@ -457,7 +482,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
       </Card>
 
       {!esRetiroEnSucursal && (
-        <Card padding={0} flex={5}>
+        <Card padding={0} flex={isMobile ? undefined : 5} h={isMobile ? 240 : undefined}>
           <Box pos="relative" h="100%">
             <ScreenContainer
               onLoading={{
@@ -530,7 +555,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
           </Box>
         </Card>
       )}
-    </Group>
+    </Layout>
   );
 };
 

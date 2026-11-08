@@ -3,11 +3,14 @@ import { useState, useRef } from 'react';
 import { useForm } from '@mantine/form';
 import { useDebouncedCallback } from '@mantine/hooks';
 import { DatePickerInput } from '@mantine/dates';
-import { Card, Chip, Flex, Loader, MultiSelect, TextInput } from '@mantine/core';
+import { Card, Chip, Loader, MultiSelect, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 
 import dayjs from 'dayjs';
 
+import FilterSheet from '@components/FilterSheet';
+import { useFieldSize } from '@components/useFieldSize';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { estadoOptions } from '@domain/estados';
 
 const ESTADO_OPTIONS = estadoOptions('envio');
@@ -61,7 +64,9 @@ const buildFilters = (values) => {
   return filters;
 };
 
-const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
+const ListaEnviosFiltros = ({ disabled, onFiltersChange, activeCount = 0, resultsCount, onClear }) => {
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
   const [selectedQuickFilter, setSelectedQuickFilter] = useState(null);
   const isQuickFilterChange = useRef(false);
 
@@ -100,48 +105,24 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
 
   return (
     <Card component="search">
-      <Flex mb="md" gap="md" align="flex-start">
-        <TextInput
-          {...form.getInputProps('search')}
-          flex={1}
-          label="Buscar envío"
-          placeholder="Nombre, apellido o código de seguimiento..."
-          rightSection={disabled ? <Loader size={16} /> : <IconSearch size={18} />}
-        />
-
-        <TextInput
-          {...form.getInputProps('destino')}
-          flex={1}
-          label="Destino"
-          placeholder="Calle, localidad o provincia..."
-          rightSection={<IconSearch size={18} />}
-        />
-
-        <DatePickerInput
-          {...form.getInputProps('date')}
-          flex={1}
-          type="range"
-          clearable
-          label="Fecha de creación"
-          placeholder="Seleccioná un rango"
-        />
-
-        <MultiSelect
-          {...form.getInputProps('estado')}
-          flex={1}
-          label="Estado"
-          placeholder="Seleccioná..."
-          data={ESTADO_OPTIONS}
-          clearable
-          maxDropdownHeight={320}
-          styles={MULTISELECT_STYLES}
-        />
-      </Flex>
-
-      <Flex gap="xs">
-        {QUICK_FILTERS.map(({ label }) => (
+      <FilterSheet
+        activeCount={activeCount}
+        resultsCount={resultsCount}
+        onClear={onClear}
+        search={
+          <TextInput
+            {...form.getInputProps('search')}
+            size={size}
+            flex={1}
+            label="Buscar envío"
+            placeholder="Nombre, apellido o código de seguimiento..."
+            rightSection={disabled ? <Loader size={16} /> : <IconSearch size={18} />}
+          />
+        }
+        quickFilters={QUICK_FILTERS.map(({ label }) => (
           <Chip
             key={label}
+            size={isMobile ? 'md' : undefined}
             disabled={disabled}
             variant="light"
             checked={selectedQuickFilter === label}
@@ -150,7 +131,39 @@ const ListaEnviosFiltros = ({ disabled, onFiltersChange }) => {
             {label}
           </Chip>
         ))}
-      </Flex>
+      >
+        <TextInput
+          {...form.getInputProps('destino')}
+          size={size}
+          flex={1}
+          label="Destino"
+          placeholder="Calle, localidad o provincia..."
+          rightSection={<IconSearch size={18} />}
+        />
+
+        <DatePickerInput
+          {...form.getInputProps('date')}
+          size={size}
+          flex={1}
+          type="range"
+          clearable
+          dropdownType={isMobile ? 'modal' : 'popover'}
+          label="Fecha de creación"
+          placeholder="Seleccioná un rango"
+        />
+
+        <MultiSelect
+          {...form.getInputProps('estado')}
+          size={size}
+          flex={1}
+          label="Estado"
+          placeholder="Seleccioná..."
+          data={ESTADO_OPTIONS}
+          clearable
+          maxDropdownHeight={320}
+          styles={MULTISELECT_STYLES}
+        />
+      </FilterSheet>
     </Card>
   );
 };

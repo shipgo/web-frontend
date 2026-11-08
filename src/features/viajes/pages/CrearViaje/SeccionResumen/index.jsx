@@ -1,6 +1,7 @@
 import { Card, Stack, Group } from "@mantine/core";
 
 import ScreenContainer from "@components/ScreenContainer";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { useAuth } from "@contexts/auth";
 import { REINTENTAR_MAS_TARDE } from "@copy/common";
 
@@ -13,6 +14,7 @@ import PaquetesTimeline from "./PaquetesTimeline";
 import RutaMapa from "./RutaMapa";
 
 const SeccionResumen = () => {
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   const {
     values: { enviosIncluidos, fechaHoraInicioPlanificada },
@@ -57,7 +59,7 @@ const SeccionResumen = () => {
       />
 
       <ScreenContainer
-        styleProps={{ h: "400" }}
+        styleProps={{ h: isMobile ? undefined : "400" }}
         onLoading={{
           show: isPending,
           title: "Calculando la ruta...",
@@ -72,8 +74,8 @@ const SeccionResumen = () => {
           onClick: handleRouteCalculation,
         }}
       >
-        <Group pos="relative">
-          <Card withBorder shadow="0" p="0" h={400} flex={1}>
+        <Group pos="relative" wrap={isMobile ? "wrap" : undefined}>
+          <Card withBorder shadow="0" p="0" h={isMobile ? 300 : 400} flex={1} w={isMobile ? "100%" : undefined}>
             <RutaMapa
               origenCoords={origenCoords}
               paradas={groupLabels.map((label, index) => ({
@@ -90,6 +92,7 @@ const SeccionResumen = () => {
             fechaSalida={fechaHoraInicioPlanificada}
             sucursalOrigen={user?.sucursal?.nombre}
             onMoveParada={handleMoveParada}
+            fullWidth={isMobile}
           />
         </Group>
       </ScreenContainer>

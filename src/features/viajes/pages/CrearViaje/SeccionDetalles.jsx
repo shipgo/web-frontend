@@ -2,26 +2,19 @@ import dayjs from "dayjs";
 import { IconInfoCircle } from "@tabler/icons-react";
 
 import { DateTimePicker } from "@mantine/dates";
-import {
-  Alert,
-  Box,
-  Card,
-  Group,
-  SimpleGrid,
-  Stack,
-  Text,
-  TextInput,
-  ThemeIcon,
-  Title,
-} from "@mantine/core";
+import { Alert, SimpleGrid, TextInput } from "@mantine/core";
+
+import { useFieldSize } from "@components/useFieldSize";
 
 import { useAuth } from "@contexts/auth";
 import { useOperatingContext } from "@contexts/operatingContext";
 
 import { useFormContext } from "./contexts/EnviosFormContext";
+import SeccionPlegable from "./SeccionPlegable";
 
 const SeccionDetalles = () => {
   const { user } = useAuth();
+  const fieldSize = useFieldSize();
   const { getInputProps, values } = useFormContext();
 
   // Validación inline (SHG-FE-106): la llegada tiene que ser posterior a la
@@ -35,24 +28,15 @@ const SeccionDetalles = () => {
   const sucursalPropia = user?.sucursal ?? null;
 
   return (
-    <Card>
-      <Stack>
-        <Group gap="0.75rem">
-          <ThemeIcon size="xl" variant="light">
-            <IconInfoCircle />
-          </ThemeIcon>
-
-          <Box>
-            <Title order={4}>Detalles del viaje</Title>
-            <Text c="dimmed" size="sm">
-              Seleccioná la fecha y hora planificadas de salida y llegada del
-              viaje
-            </Text>
-          </Box>
-        </Group>
-
+    <SeccionPlegable
+      value="detalles"
+      icon={<IconInfoCircle />}
+      title="Detalles del viaje"
+      description="Seleccioná la fecha y hora planificadas de salida y llegada del viaje"
+    >
         <SimpleGrid cols={{ base: 1, sm: 3 }}>
           <DateTimePicker
+            size={fieldSize}
             label="Salida planificada"
             placeholder="Seleccioná una fecha"
             valueFormat="DD/MM/YYYY HH:mm"
@@ -78,6 +62,7 @@ const SeccionDetalles = () => {
           />
 
           <DateTimePicker
+            size={fieldSize}
             label="Llegada planificada"
             placeholder="Seleccioná una fecha"
             valueFormat="DD/MM/YYYY HH:mm"
@@ -91,6 +76,7 @@ const SeccionDetalles = () => {
           />
 
           <TextInput
+            size={fieldSize}
             disabled
             label="Sucursal de origen"
             description="Es la sucursal de tu usuario."
@@ -128,8 +114,7 @@ const SeccionDetalles = () => {
             .
           </Alert>
         )}
-      </Stack>
-    </Card>
+    </SeccionPlegable>
   );
 };
 

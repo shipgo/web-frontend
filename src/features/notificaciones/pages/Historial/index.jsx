@@ -5,6 +5,7 @@ import { IconBellOff } from '@tabler/icons-react';
 
 import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { REINTENTAR_MAS_TARDE } from '@copy/common';
 
 import NotificacionFila from '../../components/NotificacionFila';
@@ -26,6 +27,7 @@ import { useNotificacionesHistorial } from '../../hooks/useNotificacionesHistori
  * @param {boolean} [props.portal]
  */
 const NotificacionesHistorialPage = ({ portal = false }) => {
+  const isMobile = useIsMobile();
   const [, navigate] = useLocation();
   const [page, setPage] = useState(1);
   const {
@@ -95,7 +97,7 @@ const NotificacionesHistorialPage = ({ portal = false }) => {
       </Card>
 
       {totalPages > 1 ? (
-        <Group justify="space-between" align="center">
+        <Group justify={isMobile ? "center" : "space-between"} align="center">
           <Text size="xs" c="dimmed">
             {totalElements} notificaciones
           </Text>
@@ -104,7 +106,7 @@ const NotificacionesHistorialPage = ({ portal = false }) => {
             onChange={setPage}
             total={totalPages}
             disabled={isFetching}
-            size="sm"
+            size={isMobile ? "md" : "sm"}
           />
         </Group>
       ) : null}

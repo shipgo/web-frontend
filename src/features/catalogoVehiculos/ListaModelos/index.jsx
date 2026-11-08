@@ -1,14 +1,22 @@
 import { Card, Flex, Pagination, Text } from "@mantine/core";
+import { Fragment } from "react";
 
 import PageContainer from "@components/PageContainer";
-import ScreenContainer from "@components/ScreenContainer";
+import ResponsiveList from "@components/ResponsiveList";
+import ListCard from "@components/ListCard";
+import ResultsCounter from "@components/ResultsCounter";
+import RowActionsMenu from "@components/RowActionsMenu";
+import { useIsMobile } from "@hooks/useIsMobile";
 
 import { useCsvExport } from "@hooks/useCsvExport";
 import { listaEstados } from "@copy/common";
+import { IconEdit, IconTrash } from "@tabler/icons-react";
+import { useLocation } from "wouter";
 
 import CatalogoVehiculosHeader from "../components/CatalogoVehiculosHeader";
 import ListaModelosFiltros from "./components/ListaModelosFiltros";
 import ListaModelosTabla from "./components/ListaModelosTabla";
+import { useDeleteModelo } from "./hooks/useDeleteModelo";
 
 import { useGetModelos } from "./hooks/useGetModelos";
 import { MODELOS_CSV_COLUMNS } from "./listaModelos.csv";
@@ -16,6 +24,17 @@ import { MODELOS_CSV_COLUMNS } from "./listaModelos.csv";
 const ESTADOS_LISTA = listaEstados({ singular: 'modelo', plural: 'modelos', genero: 'm' });
 
 const PAGE_LIMIT = 10;
+
+const renderCard = (item, { actions }) => (
+  <ListCard
+    title={item.nombre || "Sin nombre"}
+    actions={actions}
+    lines={[
+      { label: "Marca", value: item.marca?.nombre || "Sin marca" },
+      { label: "Año", value: item.anio ?? "Sin año" },
+    ]}
+  />
+);
 
 const ListaModelos = () => {
   const {
@@ -38,6 +57,31 @@ const ListaModelos = () => {
 
   const showPagination = data.total > PAGE_LIMIT;
 
+  const isMobile = useIsMobile();
+  const [, navigate] = useLocation();
+  const { openDeleteModal } = useDeleteModelo(refetchModelos);
+  const ListWrapper = isMobile ? Fragment : Card;
+
+  const getActions = (item) => (
+    <RowActionsMenu
+      ariaLabel={`Acciones de ${item.nombre || "Sin nombre"}`}
+      actions={[
+        {
+          label: "Editar",
+          color: "blue",
+          icon: <IconEdit size={18} />,
+          onClick: () => navigate(`/modelos/${item.id}/editar`),
+        },
+        {
+          label: "Eliminar",
+          color: "red",
+          icon: <IconTrash size={18} />,
+          onClick: () => openDeleteModal(item),
+        },
+      ]}
+    />
+  );
+
   return (
     <PageContainer>
       <CatalogoVehiculosHeader
@@ -51,10 +95,13 @@ const ListaModelos = () => {
         exportDisabled={isLoading || isError}
       />
 
-      <ListaModelosFiltros onFiltersChange={setFilters} />
+      <ListaModelosFiltros onFiltersChange={setFilters} resultsCount={data.total} />
 
-      <Card>
-        <ScreenContainer
+      <ListWrapper>
+        <ResponsiveList
+          items={data.results}
+          getActions={getActions}
+          renderCard={renderCard}
           onLoading={{ show: isLoading, description: "Cargando modelos..." }}
           onError={{
             show: isError,
@@ -73,22 +120,34 @@ const ListaModelos = () => {
           }}
         >
           <ListaModelosTabla items={data.results} onRefresh={refetchModelos} />
-        </ScreenContainer>
-      </Card>
+        </ResponsiveList>
+      </ListWrapper>
 
-      <Flex align="center">
-        <Pagination
-          value={page}
-          onChange={setPage}
-          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
-          disabled={!showPagination}
+      {isMobile ? (
+        <ResultsCounter
+          amount={data.total}
+          limit={PAGE_LIMIT}
+          currentPage={page}
+          isLoading={isLoading}
+          onRefresh={refetchModelos}
+          onPageChange={setPage}
+          totalPages={Math.ceil(data.total / PAGE_LIMIT) || 1}
         />
-        <Text c="dimmed" ml="auto">
-          {data.total > 0
-            ? `Mostrando ${(page - 1) * PAGE_LIMIT + 1} - ${Math.min(page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
-            : "0 resultados"}
-        </Text>
-      </Flex>
+      ) : (
+        <Flex align="center">
+          <Pagination
+            value={page}
+            onChange={setPage}
+            total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+            disabled={!showPagination}
+          />
+          <Text c="dimmed" ml="auto">
+            {data.total > 0
+              ? `Mostrando ${(page - 1) * PAGE_LIMIT + 1} - ${Math.min(page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+              : "0 resultados"}
+          </Text>
+        </Flex>
+      )}
     </PageContainer>
   );
 };

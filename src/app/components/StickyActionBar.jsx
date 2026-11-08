@@ -20,6 +20,7 @@ export const STICKY_ACTION_BAR_HEIGHT = 76;
  * @param {string} props.label Texto de la acción primaria.
  * @param {() => void} [props.onClick] Handler de la acción primaria.
  * @param {import('react').ReactNode} [props.icon] Ícono a la izquierda del texto.
+ * @param {string} [props.color] Color de Mantine del botón primario (ej. `red` si la única acción es destructiva).
  * @param {boolean} [props.loading]
  * @param {boolean} [props.disabled]
  * @param {'button' | 'submit'} [props.type] Usar `submit` + `form` para formularios.
@@ -32,6 +33,7 @@ const StickyActionBar = ({
   label,
   onClick,
   icon,
+  color,
   loading,
   disabled,
   type = 'button',
@@ -65,6 +67,7 @@ const StickyActionBar = ({
         mih={44}
         type={type}
         form={form}
+        color={color}
         leftSection={icon}
         onClick={onClick}
         loading={loading}

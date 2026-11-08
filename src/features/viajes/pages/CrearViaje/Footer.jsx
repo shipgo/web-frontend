@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 import PageFooter from "@components/PageFooter";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { applyApiError } from "@domain/apiError";
 import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE, FORMULARIO_INVALIDO } from "@copy/common";
 
@@ -15,6 +16,7 @@ import { useRefrescarRecursosTras409 } from "./hooks/useRefrescarRecursosTras409
 import { buildViajeReqDTO } from "./utils";
 
 const Footer = () => {
+  const isMobile = useIsMobile();
   const [, navigate] = useLocation();
   const form = useFormContext();
   const {
@@ -97,32 +99,38 @@ const Footer = () => {
 
   return (
     <PageFooter>
-      {totalPackages > 0 && (
+      {!isMobile && totalPackages > 0 && (
         <Badge variant="dot" color="blue">
           {totalPackages} Envíos
         </Badge>
       )}
-      {vehiculo && (
+      {!isMobile && vehiculo && (
         <Badge variant="dot" color="green">
           {vehiculo.modelo?.nombre ?? "Vehículo"} ({vehiculo.patente})
         </Badge>
       )}
-      <Text size="sm" c="dimmed" fw={500} mr="auto">
-        {totalStops > 0 && `${totalStops} ${totalStops === 1 ? 'parada' : 'paradas'} en total`}
-      </Text>
+      {!isMobile && (
+        <Text size="sm" c="dimmed" fw={500} mr="auto">
+          {totalStops > 0 && `${totalStops} ${totalStops === 1 ? 'parada' : 'paradas'} en total`}
+        </Text>
+      )}
       <Button
         color="red"
         variant="light"
+        mih={isMobile ? 44 : undefined}
         disabled={isPending}
         onClick={handleCancel}
       >
         Cancelar
       </Button>
       <Button
+        mih={isMobile ? 44 : undefined}
         loading={isPending}
         onClick={() => form.onSubmit(handleSubmit, handleInvalid)()}
       >
-        Crear viaje
+        {isMobile && totalPackages > 0
+          ? `Crear viaje · ${totalPackages} ${totalPackages === 1 ? 'envío' : 'envíos'}`
+          : 'Crear viaje'}
       </Button>
     </PageFooter>
   );

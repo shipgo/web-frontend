@@ -1,13 +1,14 @@
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
 import { Card, Flex, Pagination, Text } from '@mantine/core';
 import { useSet } from '@mantine/hooks';
 
 import PageContainer from '@components/PageContainer';
-import ScreenContainer from '@components/ScreenContainer';
+import ResultsCounter from '@components/ResultsCounter';
 import SelectionBanner from '@components/SelectionBanner';
 
 import { usuarioApi } from '@api';
 import { useAuthStore } from '@stores/auth.store';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
 import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
@@ -15,6 +16,7 @@ import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
 import ListaUsuariosHeader from './components/ListaUsuariosHeader';
 import ListaUsuariosFiltros from './components/ListaUsuariosFiltros';
 import ListaUsuariosTabla from './components/ListaUsuariosTabla';
+import ListaUsuariosCards from './components/ListaUsuariosCards';
 
 import { useGetUsuarios } from './hooks/useGetUsuarios';
 import { canManageUsuario } from '../utils';
@@ -84,6 +86,8 @@ const ListaUsuarios = () => {
   };
 
   const showPagination = data.total > PAGE_LIMIT;
+  const isMobile = useIsMobile();
+  const Wrapper = isMobile ? Fragment : Card;
 
   return (
     <PageContainer>
@@ -108,8 +112,12 @@ const ListaUsuarios = () => {
         }
       />
 
-      <Card>
-        <ScreenContainer
+      <Wrapper>
+        <ListaUsuariosCards
+          items={data.results}
+          selectedIds={selectedIds}
+          onToggle={onToggle}
+          onRefresh={refetch}
           onLoading={{ show: isLoading, description: 'Cargando usuarios...' }}
           onError={{ show: isError, onClick: refetch, title: ESTADOS_LISTA.error }}
           onEmptyData={{
@@ -130,22 +138,32 @@ const ListaUsuarios = () => {
             onToggleAll={onToggleAll}
             onRefresh={refetch}
           />
-        </ScreenContainer>
-      </Card>
+        </ListaUsuariosCards>
+      </Wrapper>
 
-      <Flex align="center">
-        <Pagination
-          value={params.page}
-          onChange={setPage}
-          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
-          disabled={!showPagination}
+      {isMobile ? (
+        <ResultsCounter
+          amount={data.total}
+          limit={PAGE_LIMIT}
+          currentPage={params.page}
+          onPageChange={setPage}
+          totalPages={Math.ceil(data.total / PAGE_LIMIT) || 1}
         />
-        <Text c="dimmed" ml="auto">
-          {data.total > 0
-            ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
-            : '0 resultados'}
-        </Text>
-      </Flex>
+      ) : (
+        <Flex align="center">
+          <Pagination
+            value={params.page}
+            onChange={setPage}
+            total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+            disabled={!showPagination}
+          />
+          <Text c="dimmed" ml="auto">
+            {data.total > 0
+              ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+              : '0 resultados'}
+          </Text>
+        </Flex>
+      )}
     </PageContainer>
   );
 };

@@ -9,6 +9,7 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { IconFileDescription, IconAlertTriangle } from "@tabler/icons-react";
 
 const SeccionHeader = ({
@@ -19,9 +20,11 @@ const SeccionHeader = ({
   isPending,
   onRouteCalculation,
 }) => {
+  const isMobile = useIsMobile();
+
   return (
     <>
-      <Group gap="0.75rem">
+      <Group gap="0.75rem" wrap={isMobile ? "wrap" : undefined}>
         <ThemeIcon size="xl" variant="light">
           <IconFileDescription />
         </ThemeIcon>
@@ -34,7 +37,8 @@ const SeccionHeader = ({
         </Box>
 
         <Switch
-          ml="auto"
+          ml={isMobile ? undefined : "auto"}
+          size={isMobile ? "md" : undefined}
           label="Volver a la sucursal de origen al final"
           checked={returnOrigin}
           disabled={isPending}
@@ -55,6 +59,7 @@ const SeccionHeader = ({
               mode (axe-core `color-contrast`, SHG-FE-070). */}
           <Button
             variant="light"
+            mih={isMobile ? 44 : undefined}
             onClick={onRouteCalculation}
             disabled={!canCalculateNewRoute}
             loading={isPending}

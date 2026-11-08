@@ -19,6 +19,8 @@ import {
 
 import { EMPTY, formatPeso } from "@domain/format";
 import { toLocalDate } from "@utils/dates";
+import FormSections from "./FormSections";
+import { useFormSections } from "./useFormSections";
 import { mantenimientoEtiqueta } from "../utils/mantenimiento";
 
 const InfoItem = ({ icon, label, value, color = "blue" }) => {
@@ -69,14 +71,101 @@ const getStatusLabel = (status) => {
  * @param {{ fechaHoraMantenimiento: string, fechaHoraFin: string, vigente: boolean }} [props.mantenimiento] -
  *   Mantenimiento vigente o próximo (`VehiculoDTO.mantenimiento`, SHG-BE-108), si lo hay.
  */
-const VehiculoPerfil = ({ vehiculo, showAllInfo = true, mantenimiento = null }) => {
-  if (!vehiculo) {
-    return (
-      <Card>
-        <Text c="dimmed">No se encontró información del vehículo</Text>
-      </Card>
-    );
-  }
+const VehiculoPerfilContenido = ({ vehiculo, showAllInfo, mantenimiento }) => {
+
+  const sections = [
+    {
+      value: "specs",
+      title: "Especificaciones técnicas",
+      icon: <IconGasStation size={20} stroke={1.5} />,
+      fields: [],
+      children: (
+        <>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                <InfoItem
+                  icon={IconGasStation}
+                  label="Combustible"
+                  value={vehiculo.combustible?.nombre}
+                  color="red"
+                />
+                <InfoItem
+                  icon={IconGauge}
+                  label="Consumo promedio"
+                  value={
+                    vehiculo.consumoPromedio
+                      ? `${vehiculo.consumoPromedio} L/100km`
+                      : null
+                  }
+                  color="orange"
+                />
+              </SimpleGrid>
+        </>
+      ),
+    },
+    {
+      value: "ruedas",
+      title: "Ruedas y capacidad",
+      icon: <IconRuler size={20} stroke={1.5} />,
+      fields: [],
+      children: (
+        <>
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+                <InfoItem
+                  icon={IconRuler}
+                  label="Tipo de rueda"
+                  value={vehiculo.tipoRueda?.nombre || vehiculo.tipo_rueda?.nombre}
+                  color="violet"
+                />
+                <InfoItem
+                  icon={IconId}
+                  label="Cantidad de ruedas"
+                  value={vehiculo.cantidadRuedas}
+                  color="violet"
+                />
+                <InfoItem
+                  icon={IconWeight}
+                  label="Peso máximo"
+                  value={
+                    vehiculo.pesoMaximo
+                      ? formatPeso(vehiculo.pesoMaximo)
+                      : null
+                  }
+                  color="violet"
+                />
+              </SimpleGrid>
+        </>
+      ),
+    },
+    {
+      value: "adicional",
+      title: "Información adicional",
+      icon: <IconCalendar size={20} stroke={1.5} />,
+      fields: [],
+      children: (
+        <>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                  {vehiculo.sucursal && (
+                    <InfoItem
+                      icon={IconCar}
+                      label="Sucursal"
+                      value={vehiculo.sucursal.nombre}
+                      color="green"
+                    />
+                  )}
+                  {(vehiculo.fechaCreacion || vehiculo.createdAt) && (
+                    <InfoItem
+                      icon={IconCalendar}
+                      label="Fecha de registro"
+                      value={toLocalDate(vehiculo.fechaCreacion || vehiculo.createdAt)}
+                      color="green"
+                    />
+                  )}
+                </SimpleGrid>
+        </>
+      ),
+    },
+  ].filter((s) => s.value !== "adicional" || vehiculo.sucursal || vehiculo.fechaCreacion || vehiculo.createdAt);
+  const { opened, setOpened } = useFormSections(sections);
 
   const marcaModelo = vehiculo.modelo?.marca?.nombre && vehiculo.modelo?.nombre
     ? `${vehiculo.modelo.marca.nombre} ${vehiculo.modelo.nombre}`
@@ -144,103 +233,20 @@ const VehiculoPerfil = ({ vehiculo, showAllInfo = true, mantenimiento = null }) 
       </Card>
 
       {showAllInfo && (
-        <>
-          {/* Especificaciones Técnicas */}
-          <Card>
-            <Stack gap="md">
-              <Group gap="0.75rem">
-                <IconGasStation size={20} stroke={1.5} />
-                <Title order={4}>Especificaciones técnicas</Title>
-              </Group>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-                <InfoItem
-                  icon={IconGasStation}
-                  label="Combustible"
-                  value={vehiculo.combustible?.nombre}
-                  color="red"
-                />
-                <InfoItem
-                  icon={IconGauge}
-                  label="Consumo promedio"
-                  value={
-                    vehiculo.consumoPromedio
-                      ? `${vehiculo.consumoPromedio} L/100km`
-                      : null
-                  }
-                  color="orange"
-                />
-              </SimpleGrid>
-            </Stack>
-          </Card>
-
-          {/* Información de Ruedas y Capacidad */}
-          <Card>
-            <Stack gap="md">
-              <Group gap="0.75rem">
-                <IconRuler size={20} stroke={1.5} />
-                <Title order={4}>Ruedas y capacidad</Title>
-              </Group>
-              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-                <InfoItem
-                  icon={IconRuler}
-                  label="Tipo de rueda"
-                  value={vehiculo.tipoRueda?.nombre || vehiculo.tipo_rueda?.nombre}
-                  color="violet"
-                />
-                <InfoItem
-                  icon={IconId}
-                  label="Cantidad de ruedas"
-                  value={vehiculo.cantidadRuedas}
-                  color="violet"
-                />
-                <InfoItem
-                  icon={IconWeight}
-                  label="Peso máximo"
-                  value={
-                    vehiculo.pesoMaximo
-                      ? formatPeso(vehiculo.pesoMaximo)
-                      : null
-                  }
-                  color="violet"
-                />
-              </SimpleGrid>
-            </Stack>
-          </Card>
-
-          {/* Información Adicional */}
-          {(vehiculo.sucursal || vehiculo.fechaCreacion || vehiculo.createdAt) && (
-            <Card>
-              <Stack gap="md">
-                <Group gap="0.75rem">
-                  <IconCalendar size={20} stroke={1.5} />
-                  <Title order={4}>Información adicional</Title>
-                </Group>
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-                  {vehiculo.sucursal && (
-                    <InfoItem
-                      icon={IconCar}
-                      label="Sucursal"
-                      value={vehiculo.sucursal.nombre}
-                      color="green"
-                    />
-                  )}
-                  {(vehiculo.fechaCreacion || vehiculo.createdAt) && (
-                    <InfoItem
-                      icon={IconCalendar}
-                      label="Fecha de registro"
-                      value={toLocalDate(vehiculo.fechaCreacion || vehiculo.createdAt)}
-                      color="green"
-                    />
-                  )}
-                </SimpleGrid>
-              </Stack>
-            </Card>
-          )}
-        </>
+        <FormSections sections={sections} opened={opened} onChange={setOpened} />
       )}
     </Stack>
   );
 };
+
+const VehiculoPerfil = ({ vehiculo, showAllInfo = true, mantenimiento = null }) =>
+  vehiculo ? (
+    <VehiculoPerfilContenido vehiculo={vehiculo} showAllInfo={showAllInfo} mantenimiento={mantenimiento} />
+  ) : (
+    <Card>
+      <Text c="dimmed">No se encontró información del vehículo</Text>
+    </Card>
+  );
 
 export default VehiculoPerfil;
 

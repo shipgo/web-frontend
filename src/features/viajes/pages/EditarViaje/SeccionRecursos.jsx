@@ -1,19 +1,10 @@
 import { useEffect, useState } from "react";
 
-import {
-  Box,
-  Card,
-  Group,
-  MultiSelect,
-  Select,
-  SimpleGrid,
-  Stack,
-  Text,
-  ThemeIcon,
-  Title,
-} from "@mantine/core";
+import { MultiSelect, Select, SimpleGrid } from "@mantine/core";
 import { IconTruckDelivery } from "@tabler/icons-react";
 
+import { useFieldSize } from "@components/useFieldSize";
+import SeccionPlegable from "../CrearViaje/SeccionPlegable";
 import { useFormContext } from "../CrearViaje/contexts/EnviosFormContext";
 import { useDisponibilidadParams } from "../CrearViaje/hooks/useDisponibilidadParams";
 import { useGetVehiculosDisponibles } from "../CrearViaje/hooks/useGetVehiculosDisponibles";
@@ -75,6 +66,7 @@ const SeccionRecursos = ({
   sucursalId,
   onValidandoChange,
 }) => {
+  const fieldSize = useFieldSize();
   const { getInputProps, values, setFieldValue } = useFormContext();
   const { desde, hasta } = useDisponibilidadParams();
   const [avisoVehiculo, setAvisoVehiculo] = useState(null);
@@ -224,23 +216,16 @@ const SeccionRecursos = ({
   };
 
   return (
-    <Card padding="lg" component={Stack}>
-      <Group gap="0.75rem">
-        <ThemeIcon size="xl" variant="light">
-          <IconTruckDelivery />
-        </ThemeIcon>
-
-        <Box>
-          <Title order={4}>Asignación de recursos</Title>
-          <Text c="dimmed" size="sm">
-            Asigná el vehículo y los choferes disponibles para la ventana de
-            fechas planificada
-          </Text>
-        </Box>
-      </Group>
-
+    <SeccionPlegable
+      value="recursos"
+      icon={<IconTruckDelivery />}
+      title="Asignación de recursos"
+      description="Asigná el vehículo y los choferes disponibles para la ventana de fechas planificada"
+      cardProps={{ padding: "lg" }}
+    >
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <Select
+          size={fieldSize}
           {...getInputProps("vehiculo")}
           error={getInputProps("vehiculo").error || avisoVehiculo}
           label="Vehículo"
@@ -254,6 +239,7 @@ const SeccionRecursos = ({
         />
 
         <MultiSelect
+          size={fieldSize}
           {...getInputProps("choferes")}
           error={getInputProps("choferes").error || avisoChoferes}
           label="Choferes"
@@ -266,7 +252,7 @@ const SeccionRecursos = ({
           disabled={choferesQuery.isFetching}
         />
       </SimpleGrid>
-    </Card>
+    </SeccionPlegable>
   );
 };
 

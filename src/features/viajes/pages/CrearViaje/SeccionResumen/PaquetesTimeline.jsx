@@ -33,9 +33,10 @@ const PaquetesTimeline = ({
   fechaSalida,
   sucursalOrigen,
   onMoveParada,
+  fullWidth = false,
 }) => {
   return (
-    <Card withBorder shadow="0" p="0" h={400} maw="35%">
+    <Card withBorder shadow="0" p="0" h={fullWidth ? 320 : 400} maw={fullWidth ? "100%" : "35%"} w={fullWidth ? "100%" : undefined}>
       <ScrollArea flex={1}>
         <Timeline bulletSize={24} lineWidth={2} m="md">
           <Timeline.Item
@@ -76,7 +77,7 @@ const PaquetesTimeline = ({
                   </Text>
                   <Group gap={2} wrap="nowrap">
                     <ActionIcon
-                      size="sm"
+                      size={fullWidth ? 40 : "sm"}
                       variant="subtle"
                       color="gray"
                       disabled={index === 0}
@@ -86,7 +87,7 @@ const PaquetesTimeline = ({
                       <IconChevronUp size={14} />
                     </ActionIcon>
                     <ActionIcon
-                      size="sm"
+                      size={fullWidth ? 40 : "sm"}
                       variant="subtle"
                       color="gray"
                       disabled={index === groupLabels.length - 1}

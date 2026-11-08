@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 
+import { useFieldSize } from '@components/useFieldSize';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { envioApi } from '@api';
 import { applyApiError } from '@domain/apiError';
 
@@ -42,6 +44,8 @@ const EntregarModalBody = ({
   onErrorInesperado,
   onVolver,
 }) => {
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
   const pideLaPalabra = tienePalabraEntrega !== false;
   const [submitting, setSubmitting] = useState(false);
 
@@ -88,6 +92,7 @@ const EntregarModalBody = ({
           ¿Confirmás que el envío <strong>#{id}</strong> fue entregado?
         </Text>
         <TextInput
+          size={size}
           label="DNI de quien recibe"
           placeholder="Ej: 30111222"
           required
@@ -95,17 +100,18 @@ const EntregarModalBody = ({
         />
         {pideLaPalabra && (
           <TextInput
+          size={size}
             label="Palabra de entrega"
             description="Opcional. Si el destinatario la tiene, ingresala."
             placeholder="Ej: LUNA-PERRO"
             {...form.getInputProps('palabraEntregaIngresada')}
           />
         )}
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onVolver} disabled={submitting}>
+        <Group justify="flex-end" grow={isMobile}>
+          <Button variant="default" size={size} onClick={onVolver} disabled={submitting}>
             Volver
           </Button>
-          <Button type="submit" color="green" loading={submitting}>
+          <Button type="submit" color="green" size={size} loading={submitting}>
             Sí, entregar
           </Button>
         </Group>

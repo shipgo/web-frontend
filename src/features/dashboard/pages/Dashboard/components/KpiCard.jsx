@@ -28,11 +28,11 @@ const KpiCard = ({
 }) => (
   <Card>
     <Group justify="space-between" wrap="nowrap">
-      <Flex gap="sm" align="flex-start">
+      <Flex gap="sm" align="flex-start" direction={{ base: 'column', sm: 'row' }} miw={0}>
         <ThemeIcon variant="light" color={color} size="xl">
           {icon}
         </ThemeIcon>
-        <Stack gap={4}>
+        <Stack gap={4} miw={0}>
           <Group gap={4} align="center">
             <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
               {title}
@@ -56,7 +56,7 @@ const KpiCard = ({
             }}
             styleProps={{ bg: 'transparent', mih: '64px', shadow: 'none' }}
           >
-            <Title order={2} c={!ring ? color : undefined}>
+            <Title order={2} c={!ring ? color : undefined} fz={{ base: 24, sm: undefined }} style={{ overflowWrap: 'anywhere' }}>
               {value}
             </Title>
             <Text size="xs" c="dimmed">
@@ -67,6 +67,7 @@ const KpiCard = ({
       </Flex>
       {ring && !isLoading && !isError && (
         <RingProgress
+          visibleFrom="sm"
           size={70}
           thickness={6}
           roundCaps

@@ -10,7 +10,10 @@ import { useDebouncedCallback } from "@mantine/hooks";
 
 import { IconSearch } from "@tabler/icons-react";
 
+import { useFieldSize } from "@components/useFieldSize";
+
 const SearchVehiculos = ({ handleOnSearch, handleRefetch, isFetching }) => {
+  const fieldSize = useFieldSize();
   const handleOnChange = useDebouncedCallback((event) => {
     handleOnSearch(event.target.value);
   }, 500);
@@ -26,6 +29,7 @@ const SearchVehiculos = ({ handleOnSearch, handleRefetch, isFetching }) => {
 
       <Stack mt="xs" gap="sm">
         <TextInput
+          size={fieldSize}
           flex={1}
           onChange={handleOnChange}
           rightSection={<IconSearch size={16} />}

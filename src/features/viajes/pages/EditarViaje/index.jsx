@@ -16,6 +16,7 @@ import { REINTENTAR_MAS_TARDE } from "@copy/common";
 import { VIAJE_ESTADOS_EDITABLES } from "../../constants";
 import { viajeApi } from "../../api/viajes.api";
 import SeccionDetalles from "../CrearViaje/SeccionDetalles";
+import { SeccionesAcordeon } from "../CrearViaje/SeccionPlegable";
 import SeccionEnvios from "../CrearViaje/SeccionEnvios";
 import SeccionResumen from "../CrearViaje/SeccionResumen";
 import {
@@ -226,17 +227,19 @@ const EditarViaje = () => {
               </Card>
             ) : (
               <FormProvider form={form}>
-                <SeccionDetalles />
-                <SeccionEnvios extraEnviosPendientes={enviosDelViajeOriginal} />
-                <SeccionRecursos
-                  viajeIdExcluido={id ? Number(id) : undefined}
-                  vehiculoActual={viajeOriginal?.vehiculo}
-                  choferesActuales={getChoferesDeViaje(viajeOriginal)}
-                  inicioOriginal={viajeOriginal.fechaHoraInicioPlanificada}
-                  finOriginal={viajeOriginal.fechaHoraFinPlanificada}
-                  sucursalId={viajeOriginal.sucursal?.id}
-                  onValidandoChange={setValidandoRecursos}
-                />
+                <SeccionesAcordeon valoresAbiertos={["detalles", "envios", "recursos"]}>
+                  <SeccionDetalles />
+                  <SeccionEnvios extraEnviosPendientes={enviosDelViajeOriginal} />
+                  <SeccionRecursos
+                    viajeIdExcluido={id ? Number(id) : undefined}
+                    vehiculoActual={viajeOriginal?.vehiculo}
+                    choferesActuales={getChoferesDeViaje(viajeOriginal)}
+                    inicioOriginal={viajeOriginal.fechaHoraInicioPlanificada}
+                    finOriginal={viajeOriginal.fechaHoraFinPlanificada}
+                    sucursalId={viajeOriginal.sucursal?.id}
+                    onValidandoChange={setValidandoRecursos}
+                  />
+                </SeccionesAcordeon>
                 <SeccionResumen />
                 <Footer
                   loading={loading}

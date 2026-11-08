@@ -12,7 +12,7 @@ const DESCRIPCIONES = {
  * @param {{ kind?: 'network'|'server', onRetry: () => void }} props
  */
 const ConnectionErrorScreen = ({ kind = 'network', onRetry }) => (
-  <Center h="100vh" p="xl">
+  <Center mih="100dvh" p="xl" style={{ overflowX: 'hidden' }}>
     <EmptyState mih="17rem">
       <EmptyState.Indicator>
         <IconPlugConnectedX size={50} color="var(--mantine-color-dimmed)" />
@@ -22,7 +22,7 @@ const ConnectionErrorScreen = ({ kind = 'network', onRetry }) => (
         {DESCRIPCIONES[kind] ?? DESCRIPCIONES.network}
       </EmptyState.Description>
       <EmptyState.Actions>
-        <Button onClick={onRetry}>Reintentar</Button>
+        <Button onClick={onRetry} w={{ base: '100%', sm: 'auto' }} mih={{ base: 44, sm: 'auto' }}>Reintentar</Button>
       </EmptyState.Actions>
     </EmptyState>
   </Center>

@@ -18,6 +18,8 @@ import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE, FORMULARIO_INVALIDO } from "@copy/common";
 import { marcaApi } from "../api/catalogoVehiculos.api";
 
@@ -66,6 +68,9 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
     loadMarcas();
   }, []);
 
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
+
   const handleInvalid = (errors) => {
     const firstError = Object.values(errors).find(Boolean);
     notifications.show({
@@ -84,6 +89,7 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
 
     modals.openConfirmModal({
       title: SALIR_SIN_GUARDAR.titulo,
+      fullScreen: isMobile,
       children: (
         <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
@@ -112,6 +118,7 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
             </Group>
 
             <TextInput
+              size={size}
               label="Nombre"
               placeholder="Ej: Sprinter"
               leftSection={<IconCar size={18} />}
@@ -121,6 +128,7 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
 
             <SimpleGrid cols={{ base: 1, sm: 2 }}>
               <Select
+                size={size}
                 label="Marca"
                 placeholder="Seleccioná una marca"
                 data={marcas}
@@ -131,6 +139,7 @@ const ModeloForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
               />
 
               <NumberInput
+                size={size}
                 label="Año"
                 placeholder={`Ej: ${currentYear}`}
                 leftSection={<IconCalendar size={18} />}

@@ -2,12 +2,17 @@ import { useRef, useState } from 'react';
 
 import { Button, Group, Stack, Text, Textarea } from '@mantine/core';
 
+import { useIsMobile } from '@hooks/useIsMobile';
+import { useFieldSize } from '@components/useFieldSize';
+
 /**
  * Contenido del modal de confirmación de "Cancelar viaje" (`SHG-FE-012`).
  * El motivo es opcional (`CancelarViajeReqDTO.motivo`, SHG-BE-009): se manda
  * sólo si el usuario escribió algo.
  */
 const CancelarViajeModalBody = ({ id, onCancelar, onVolver }) => {
+  const isMobile = useIsMobile();
+  const fieldSize = useFieldSize();
   const [motivo, setMotivo] = useState('');
   const [submitting, setSubmitting] = useState(false);
   // El ref cierra la ventana entre el primer click y el re-render con `disabled`:
@@ -35,15 +40,16 @@ const CancelarViajeModalBody = ({ id, onCancelar, onVolver }) => {
       <Textarea
         label="Motivo (opcional)"
         placeholder="Ej: vehículo con desperfecto mecánico"
+        size={fieldSize}
         rows={2}
         value={motivo}
         onChange={(event) => setMotivo(event.currentTarget.value)}
       />
       <Group justify="flex-end">
-        <Button variant="default" onClick={onVolver} disabled={submitting}>
+        <Button variant="default" flex={isMobile ? 1 : undefined} mih={isMobile ? 44 : undefined} onClick={onVolver} disabled={submitting}>
           Volver
         </Button>
-        <Button color="red" onClick={handleCancelar} loading={submitting}>
+        <Button color="red" flex={isMobile ? 1 : undefined} mih={isMobile ? 44 : undefined} onClick={handleCancelar} loading={submitting}>
           Cancelar viaje
         </Button>
       </Group>

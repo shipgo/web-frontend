@@ -4,6 +4,7 @@ import { IconBan, IconEdit, IconFlagCheck, IconPlayerPlay } from '@tabler/icons-
 import { BUTTON_ACTION_TEXT_COLOR, estadoBadge } from '@domain/estados';
 import { formatFechaHora } from '@domain/format';
 import { useAuthStore } from '@stores/auth.store';
+import { useIsMobile } from '@hooks/useIsMobile';
 
 import { puedeCancelar, puedeEditar, puedeFinalizar, puedeReanudar } from '../acciones';
 
@@ -23,6 +24,7 @@ const choferLabel = (chofer) =>
 
 const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onReanudar, onCancelar }) => {
   const user = useAuthStore((state) => state.user);
+  const isMobile = useIsMobile();
   const estadoInfo = estadoBadge('viaje', viaje.estado);
   const choferes = viaje.choferes?.length ? viaje.choferes : viaje.chofer ? [viaje.chofer] : [];
 
@@ -45,7 +47,7 @@ const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onReanudar, onCa
           </Text>
         </Box>
 
-        <Group>
+        {!isMobile && <Group>
           {/* Editar ya está implementado (EditarViaje): navegación real, no es
               una transición de estado bloqueada por SHG-FE-012. */}
           {puedeEditar(user, viaje.estado) && (
@@ -90,12 +92,12 @@ const DetalleViajeHeader = ({ viaje, id, onEditar, onFinalizar, onReanudar, onCa
               Cancelar viaje
             </Button>
           )}
-        </Group>
+        </Group>}
       </Group>
 
       <Divider />
 
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }}>
+      <SimpleGrid cols={{ base: 2, sm: 2, md: 4 }}>
         <InfoItem label="Salida planificada" value={formatFechaHora(viaje.fechaHoraInicioPlanificada)} />
         <InfoItem label="Salida real" value={formatFechaHora(viaje.fechaHoraInicio)} />
         <InfoItem label="Llegada planificada" value={formatFechaHora(viaje.fechaHoraFinPlanificada)} />

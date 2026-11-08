@@ -1,11 +1,16 @@
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Card, Flex, Pagination, Text } from "@mantine/core";
 import { useSet } from "@mantine/hooks";
 
 import PageContainer from "@components/PageContainer";
-import ScreenContainer from "@components/ScreenContainer";
+import ResponsiveList from "@components/ResponsiveList";
+import ListCard from "@components/ListCard";
+import ResultsCounter from "@components/ResultsCounter";
+import RowActionsMenu from "@components/RowActionsMenu";
 import SelectionBanner from "@components/SelectionBanner";
 
+import { useIsMobile } from "@hooks/useIsMobile";
 import { useBulkDelete } from "@hooks/useBulkDelete";
 import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
 import { listaEstados } from "@copy/common";
@@ -15,13 +20,43 @@ import { sucursalApi } from "../api/sucursales.api";
 import ListaSucursalesHeader from "./components/ListaSucursalesHeader";
 import ListaSucursalesFiltros from "./components/ListaSucursalesFiltros";
 import ListaSucursalesTabla from "./components/ListaSucursalesTabla";
+import { ACTIONS } from "./components/actions";
 
+import { useDeleteSucursal } from "./hooks/useDeleteSucursal";
 import { useGetSucursales } from "./hooks/useGetSucursales";
 import { SUCURSALES_CSV_COLUMNS } from "./listaSucursales.csv";
 
 const ESTADOS_LISTA = listaEstados({ singular: 'sucursal', plural: 'sucursales', genero: 'f' });
 
 const PAGE_LIMIT = 10;
+
+const renderCard = (item, { selected, onToggle, actions }) => {
+  const nombre = item.nombre || "Sin nombre";
+  const punto = item.puntoEntrega || {};
+  const direccion =
+    punto.nombreCalle || punto.numeroCalle
+      ? `${punto.nombreCalle || ""} ${punto.numeroCalle || ""}`.trim()
+      : "Sin dirección";
+  const provincia = punto.localidad?.provincia?.nombre || "Sin provincia";
+  const telefono = item.prefijo
+    ? `${item.prefijo} ${item.telefono || ""}`.trim()
+    : item.telefono || "Sin teléfono";
+
+  return (
+    <ListCard
+      title={nombre}
+      selected={selected}
+      onToggle={onToggle}
+      selectLabel={`Seleccionar ${nombre}`}
+      actions={actions}
+      lines={[
+        { label: "Dirección", value: direccion },
+        { label: "Provincia", value: provincia },
+        { label: "Teléfono", value: telefono },
+      ]}
+    />
+  );
+};
 
 const ListaSucursales = () => {
   const {
@@ -68,11 +103,32 @@ const ListaSucursales = () => {
 
   const showPagination = data.total > PAGE_LIMIT;
 
+  const isMobile = useIsMobile();
+  const [, navigate] = useLocation();
+  const { openDeleteModal } = useDeleteSucursal(refetchSucursales);
+  const ListWrapper = isMobile ? Fragment : Card;
+
+  const handleAction = (label, item) => {
+    if (label === "Ver detalles") navigate(`~/sucursales/${item.id}`);
+    else if (label === "Editar") navigate(`~/sucursales/${item.id}/editar`);
+    else if (label === "Eliminar") openDeleteModal(item);
+  };
+
+  const getActions = (item) => (
+    <RowActionsMenu
+      ariaLabel={`Acciones de ${item.nombre || "Sin nombre"}`}
+      actions={ACTIONS.map(({ name, items }) => ({
+        name,
+        items: items.map((action) => ({ ...action, onClick: () => handleAction(action.label, item) })),
+      }))}
+    />
+  );
+
   return (
     <PageContainer>
       <ListaSucursalesHeader />
 
-      <ListaSucursalesFiltros onFiltersChange={setFilters} />
+      <ListaSucursalesFiltros onFiltersChange={setFilters} resultsCount={data.total} />
 
       <SelectionBanner
         count={selectedIds.size}
@@ -83,8 +139,13 @@ const ListaSucursales = () => {
         onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
       />
 
-      <Card>
-        <ScreenContainer
+      <ListWrapper>
+        <ResponsiveList
+          items={data.results}
+          selectedIds={selectedIds}
+          onToggle={onToggle}
+          getActions={getActions}
+          renderCard={renderCard}
           onLoading={{ show: isLoading, description: "Cargando sucursales..." }}
           onError={{
             show: isError,
@@ -109,22 +170,34 @@ const ListaSucursales = () => {
             onToggleAll={onToggleAll}
             onRefresh={refetchSucursales}
           />
-        </ScreenContainer>
-      </Card>
+        </ResponsiveList>
+      </ListWrapper>
 
-      <Flex align="center">
-        <Pagination
-          value={page}
-          onChange={setPage}
-          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
-          disabled={!showPagination}
+      {isMobile ? (
+        <ResultsCounter
+          amount={data.total}
+          limit={PAGE_LIMIT}
+          currentPage={page}
+          isLoading={isLoading}
+          onRefresh={refetchSucursales}
+          onPageChange={setPage}
+          totalPages={Math.ceil(data.total / PAGE_LIMIT) || 1}
         />
-        <Text c="dimmed" ml="auto">
-          {data.total > 0
-            ? `Mostrando ${(page - 1) * PAGE_LIMIT + 1} - ${Math.min(page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
-            : "0 resultados"}
-        </Text>
-      </Flex>
+      ) : (
+        <Flex align="center">
+          <Pagination
+            value={page}
+            onChange={setPage}
+            total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+            disabled={!showPagination}
+          />
+          <Text c="dimmed" ml="auto">
+            {data.total > 0
+              ? `Mostrando ${(page - 1) * PAGE_LIMIT + 1} - ${Math.min(page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+              : "0 resultados"}
+          </Text>
+        </Flex>
+      )}
     </PageContainer>
   );
 };

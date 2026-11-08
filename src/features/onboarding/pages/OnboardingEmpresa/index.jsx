@@ -6,6 +6,7 @@ import { Card, Group, Stack, TextInput, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconBriefcase, IconCheck, IconX } from "@tabler/icons-react";
 
+import { useFieldSize } from "@components/useFieldSize";
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import { applyApiError } from "@domain/apiError";
@@ -32,6 +33,7 @@ const OnboardingEmpresa = () => {
   const queryClient = useQueryClient();
   const setUser = useAuthStore((state) => state.setUser);
   const getUserInfo = useAuthStore((state) => state.getUserInfo);
+  const fieldSize = useFieldSize();
   const [loading, setLoading] = useState(false);
   // Guarda contra doble submit: `loading` es estado y se aplica en el próximo
   // render, un segundo clic dentro del mismo tick lo pasaría.
@@ -133,6 +135,7 @@ const OnboardingEmpresa = () => {
               </Group>
 
               <TextInput
+                size={fieldSize}
                 label="Nombre de la empresa"
                 placeholder="Ej: Mi Empresa S.R.L."
                 leftSection={<IconBriefcase size={18} />}

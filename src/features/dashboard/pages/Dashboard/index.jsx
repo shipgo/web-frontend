@@ -10,6 +10,8 @@ import {
 } from '@tabler/icons-react';
 
 import PageContainer from '@components/PageContainer';
+import PageHeader from '@components/PageHeader';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { useOperatingContext } from '@contexts/operatingContext';
 
 import { getDefaultFiltros, getPeriodoLabel, toDashboardParams } from './dashboard.helpers';
@@ -37,6 +39,7 @@ const DashboardPage = () => {
   // propio selector, ya existente) manda; cambiar la sucursal del header
   // mientras el dashboard sigue abierto no lo pisa, para no pelear con una
   // elección manual que el usuario ya haya hecho en esta pantalla.
+  const isMobile = useIsMobile();
   const { activeSucursalId } = useOperatingContext();
   const [filtros, setFiltros] = useState(() =>
     getDefaultFiltros(activeSucursalId != null ? String(activeSucursalId) : null),
@@ -59,47 +62,60 @@ const DashboardPage = () => {
   const seriesLoading = seriesQuery.isFetching;
   const seriesError = seriesQuery.isError;
 
+  const handleExportar = () =>
+    exportarDashboardPDF({
+      filtros,
+      params,
+      resumen: resumenQuery.data,
+      series: seriesQuery.data,
+    });
+
   return (
     <PageContainer>
-      <Flex justify="space-between" align="flex-end" wrap="wrap" gap="md">
-        <Stack gap="0">
-          <Title order={2}>Dashboard</Title>
-          <Text c="dimmed">Resumen · {periodoLabel}</Text>
-        </Stack>
-        <Flex gap="xs">
-          {/* `c="var(--shg-button-text-primary)"`: ver ese token en
-              `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto
-              del color primario en `variant="light"` no llega a 4.5:1 en
-              dark mode (axe-core `color-contrast`, SHG-FE-070). */}
-          <Button
-            variant="light"
-            leftSection={<IconDownload size={16} />}
-            onClick={() =>
-              exportarDashboardPDF({
-                filtros,
-                params,
-                resumen: resumenQuery.data,
-                series: seriesQuery.data,
-              })
-            }
-            c="var(--shg-button-text-primary)"
-          >
-            Exportar PDF
-          </Button>
-          <Button
-            variant="subtle"
-            component="a"
-            href="https://shipgo.gitbook.io/manual"
-            target="_blank"
-          >
-            Ayuda
-          </Button>
+      {isMobile ? (
+        <PageHeader
+          title="Dashboard"
+          subtitle={periodoLabel}
+          primaryAction={{
+            label: 'Exportar PDF',
+            icon: <IconDownload size={20} />,
+            onClick: handleExportar,
+          }}
+        />
+      ) : (
+        <Flex justify="space-between" align="flex-end" wrap="wrap" gap="md">
+          <Stack gap="0">
+            <Title order={2}>Dashboard</Title>
+            <Text c="dimmed">Resumen · {periodoLabel}</Text>
+          </Stack>
+          <Flex gap="xs">
+            {/* `c="var(--shg-button-text-primary)"`: ver ese token en
+                `cssVariablesResolver.js` (SHG-FE-069) — sin esto, el texto
+                del color primario en `variant="light"` no llega a 4.5:1 en
+                dark mode (axe-core `color-contrast`, SHG-FE-070). */}
+            <Button
+              variant="light"
+              leftSection={<IconDownload size={16} />}
+              onClick={handleExportar}
+              c="var(--shg-button-text-primary)"
+            >
+              Exportar PDF
+            </Button>
+            <Button
+              variant="subtle"
+              component="a"
+              href="https://shipgo.gitbook.io/manual"
+              target="_blank"
+            >
+              Ayuda
+            </Button>
+          </Flex>
         </Flex>
-      </Flex>
+      )}
 
       <DashboardFiltros value={filtros} onChange={setFiltros} />
 
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
+      <SimpleGrid cols={{ base: 2, lg: 4 }} spacing={{ base: 'xs', sm: 'md' }}>
         <KpiCard
           title="Envíos del período"
           value={kpis ? kpis.envios.value : '—'}

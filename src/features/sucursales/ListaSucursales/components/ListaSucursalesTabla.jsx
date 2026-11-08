@@ -7,31 +7,13 @@ import {
   Table,
   Text,
 } from "@mantine/core";
-import {
-  IconDotsVertical,
-  IconEdit,
-  IconFileDescription,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconDotsVertical } from "@tabler/icons-react";
 import { useLocation } from "wouter";
 
 import { EMPTY } from "@domain/format";
 import { timeFromNow, toLocalDate } from "@utils/dates";
+import { ACTIONS } from "./actions";
 import { useDeleteSucursal } from "../hooks/useDeleteSucursal";
-
-const ACTIONS = [
-  {
-    name: "Detalles",
-    items: [{ icon: <IconFileDescription size={18} />, label: "Ver detalles" }],
-  },
-  {
-    name: "Opciones",
-    items: [
-      { icon: <IconEdit size={18} />, label: "Editar", color: "blue" },
-      { icon: <IconTrash size={18} />, label: "Eliminar", color: "red" },
-    ],
-  },
-];
 
 const COLUMNS = [
   "",

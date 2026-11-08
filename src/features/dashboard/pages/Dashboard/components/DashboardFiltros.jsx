@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { DatePickerInput } from '@mantine/dates';
 import { Card, Chip, Flex, Select } from '@mantine/core';
 
+import { useIsMobile } from '@hooks/useIsMobile';
+
 import {
   DEFAULT_QUICK_FILTER,
   QUICK_FILTERS,
@@ -21,6 +23,7 @@ import { useSucursalesOptions } from '../hooks/useDashboardData';
  * `useSucursalesOptions().isSuperUser` (deriva de `useAuthStore`).
  */
 const DashboardFiltros = ({ value, onChange }) => {
+  const isMobile = useIsMobile();
   const { isSuperUser, options: sucursalOptions } = useSucursalesOptions();
 
   const [date, setDate] = useState(value.date);
@@ -71,7 +74,7 @@ const DashboardFiltros = ({ value, onChange }) => {
 
   return (
     <Card component="search">
-      <Flex gap="md" align="flex-end" mb="md" wrap="wrap">
+      <Flex gap="md" align="flex-end" mb="md" wrap="wrap" direction={isMobile ? 'column' : 'row'}>
         <DatePickerInput
           value={date}
           onChange={handleDateChange}
@@ -79,7 +82,10 @@ const DashboardFiltros = ({ value, onChange }) => {
           clearable
           label="Rango de fechas"
           placeholder="Seleccioná un rango"
-          w={260}
+          size={isMobile ? 'md' : 'sm'}
+          w={isMobile ? '100%' : 260}
+          // En mobile el selector se abre como modal (el popover se corta a 360 px).
+          dropdownType={isMobile ? 'modal' : 'popover'}
         />
         {isSuperUser && (
           <Select
@@ -88,18 +94,26 @@ const DashboardFiltros = ({ value, onChange }) => {
             label="Sucursal"
             placeholder="Todas las sucursales"
             data={sucursalOptions}
-            w={220}
+            size={isMobile ? 'md' : 'sm'}
+            w={isMobile ? '100%' : 220}
             searchable
             clearable
           />
         )}
       </Flex>
 
-      <Flex gap="xs" wrap="wrap">
+      <Flex
+        gap="xs"
+        wrap={isMobile ? 'nowrap' : 'wrap'}
+        data-testid="dashboard-quick-filters"
+        style={isMobile ? { overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4 } : undefined}
+      >
         {QUICK_FILTERS.map(({ label }) => (
           <Chip
             key={label}
             variant="light"
+            size={isMobile ? 'md' : 'sm'}
+            style={isMobile ? { flexShrink: 0 } : undefined}
             checked={activeQuick === label}
             onChange={() => handleQuickFilter(label)}
           >

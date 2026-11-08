@@ -5,7 +5,7 @@ import { useLocation } from 'wouter';
 
 import { timeFromNow, toLocalDate } from '@utils/dates';
 import { ESTADOS_VIAJE_CON_TRACKING, estadoBadge, normalizarEstado } from '@domain/estados';
-import { RowActionsMenu } from '@components';
+import { ListCard, ResponsiveList, RowActionsMenu } from '@components';
 import { useAuthStore } from '@stores/auth.store';
 
 import { VIAJE_ESTADOS_EDITABLES } from '../../../constants';
@@ -56,16 +56,15 @@ const enviosCount = (item) =>
  * "Cancelar viaje", SHG-FE-096) con el `id` de ESTE viaje; un hook no se puede
  * invocar condicionalmente ni dentro del callback de `.map()`.
  */
-const ViajeRow = ({ item, isSelected, onToggle, onCancelSuccess }) => {
+/**
+ * Acciones de fila de un viaje (ver, editar, cancelar, mapa). Hook porque usa
+ * `useViajeAcciones` (confirmación + llamada real de "Cancelar viaje", SHG-FE-096).
+ */
+const useViajeRowActions = (item, onCancelSuccess) => {
   const [, navigate] = useLocation();
   const user = useAuthStore((state) => state.user);
   const estado = normalizarEstado(item.estado);
   const { confirmCancelar } = useViajeAcciones(item.id, { onSuccess: onCancelSuccess });
-
-  const { label: estadoLabel, color: estadoColor, textColor: estadoTextColor } = estadoBadge('viaje', item.estado);
-  const fecha = item.fechaHoraInicioPlanificada;
-  const cantidadRecorridos = recorridosCount(item);
-  const cantidadEnvios = enviosCount(item);
 
   const actions = [
     { icon: <IconRoute size={18} />, label: 'Ver hoja de ruta', onClick: () => navigate(`/${item.id}`) },
@@ -90,15 +89,69 @@ const ViajeRow = ({ item, isSelected, onToggle, onCancelSuccess }) => {
   }
 
   if (ESTADOS_VIAJE_CON_TRACKING.includes(estado)) {
-    // Ruta absoluta (`~`): `/mapa` no está anidado bajo `/viajes` (ver
-    // `app/routes/index.jsx`). El mapa lee `?viaje=` y preselecciona/centra
-    // ese viaje (genérico: lo reusa también SHG-FE-097 desde Envíos).
+    // Ruta absoluta (`~`): `/mapa` no está anidado bajo `/viajes`.
     actions.push({
       icon: <IconMapSearch size={18} />,
       label: 'Ver en el mapa',
       onClick: () => navigate(`~/mapa?viaje=${item.id}`),
     });
   }
+
+  return { actions, navigate };
+};
+
+/** Tarjeta de un viaje para mobile. */
+const ViajeCard = ({ item, selected, onToggle, onCancelSuccess }) => {
+  const { actions, navigate } = useViajeRowActions(item, onCancelSuccess);
+  const { label, color, textColor } = estadoBadge('viaje', item.estado);
+  const fecha = item.fechaHoraInicioPlanificada;
+  const cantidadRecorridos = recorridosCount(item);
+  const cantidadEnvios = enviosCount(item);
+  const chofer = item.chofer
+    ? nombreCompleto(item.chofer)
+    : item.choferes?.length > 0
+      ? nombreCompleto(item.choferes[0]) + (item.choferes.length > 1 ? ` +${item.choferes.length - 1}` : '')
+      : 'Sin chofer asignado';
+
+  return (
+    <ListCard
+      title={`Viaje #${item.id}`}
+      badge={{ label, color, textColor }}
+      selected={selected}
+      onToggle={onToggle}
+      selectLabel={`Seleccionar viaje ${item.id}`}
+      onClick={() => navigate(`/${item.id}`)}
+      actions={<RowActionsMenu actions={actions} ariaLabel={`Acciones del viaje ${item.id}`} />}
+      lines={[
+        { label: 'Chofer', value: chofer },
+        { label: 'Vehículo', value: item.vehiculo?.patente || 'Sin vehículo' },
+        {
+          label: 'Fecha',
+          value: (
+            <Group component="span" gap={6} display="inline-flex" wrap="nowrap">
+              <span>{toLocalDate(fecha)}</span>
+              {showWarning(item, fecha) && (
+                <Tooltip withArrow label="Viaje retrasado">
+                  <IconAlertTriangle size={18} color="orange" aria-label="Viaje retrasado" />
+                </Tooltip>
+              )}
+            </Group>
+          ),
+        },
+        `${cantidadRecorridos} recorrido${cantidadRecorridos === 1 ? '' : 's'} · ${cantidadEnvios} envío${cantidadEnvios === 1 ? '' : 's'}`,
+      ]}
+      footer={timeFromNow(fecha)}
+    />
+  );
+};
+
+const ViajeRow = ({ item, isSelected, onToggle, onCancelSuccess }) => {
+  const { actions, navigate } = useViajeRowActions(item, onCancelSuccess);
+
+  const { label: estadoLabel, color: estadoColor, textColor: estadoTextColor } = estadoBadge('viaje', item.estado);
+  const fecha = item.fechaHoraInicioPlanificada;
+  const cantidadRecorridos = recorridosCount(item);
+  const cantidadEnvios = enviosCount(item);
 
   return (
     // `role="button"` en la fila para que "ver detalle" sea alcanzable con
@@ -224,4 +277,5 @@ const ListaViajesTabla = ({ items = [], selectedIds, onToggle, onToggleAll, onCa
   );
 };
 
+export { ViajeCard };
 export default ListaViajesTabla;

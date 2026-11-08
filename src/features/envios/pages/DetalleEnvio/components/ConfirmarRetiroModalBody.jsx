@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 
+import { useFieldSize } from '@components/useFieldSize';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { envioApi } from '@api';
 import { applyApiError } from '@domain/apiError';
 
@@ -48,6 +50,8 @@ const ConfirmarRetiroModalBody = ({
   onErrorInesperado,
   onVolver,
 }) => {
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
   const pideLaPalabra = tienePalabraEntrega !== false;
   const [submitting, setSubmitting] = useState(false);
 
@@ -97,6 +101,7 @@ const ConfirmarRetiroModalBody = ({
             : 'Pedile al destinatario su DNI.'}
         </Text>
         <TextInput
+          size={size}
           label="DNI de quien retira"
           placeholder="Ej: 30111222"
           required
@@ -104,6 +109,7 @@ const ConfirmarRetiroModalBody = ({
         />
         {pideLaPalabra && (
           <TextInput
+          size={size}
             label="Palabra de entrega"
             description="Pedile al destinatario que te la diga."
             placeholder="Ej: LUNA-PERRO"
@@ -111,11 +117,11 @@ const ConfirmarRetiroModalBody = ({
             {...form.getInputProps('palabraEntregaIngresada')}
           />
         )}
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onVolver} disabled={submitting}>
+        <Group justify="flex-end" grow={isMobile}>
+          <Button variant="default" size={size} onClick={onVolver} disabled={submitting}>
             Volver
           </Button>
-          <Button type="submit" color="green" loading={submitting}>
+          <Button type="submit" color="green" size={size} loading={submitting}>
             Sí, confirmar retiro
           </Button>
         </Group>

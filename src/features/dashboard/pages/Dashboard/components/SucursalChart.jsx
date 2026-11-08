@@ -2,6 +2,7 @@ import { BarChart } from '@mantine/charts';
 import { IconBuildingWarehouse } from '@tabler/icons-react';
 
 import ChartCard from './ChartCard';
+import { useBarChartProps } from './useChartProps';
 import { isSerieVacia, mapVolumenPorSucursal } from '../dashboard.mappers';
 
 /**
@@ -10,6 +11,7 @@ import { isSerieVacia, mapVolumenPorSucursal } from '../dashboard.mappers';
  * una sola barra; con "todas" (SUPERUSER) se ven todas las del alcance.
  */
 const SucursalChart = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
+  const chartProps = useBarChartProps(280);
   const data = mapVolumenPorSucursal(series);
 
   return (
@@ -26,7 +28,7 @@ const SucursalChart = ({ series, periodoLabel, isLoading, isError, onRetry }) =>
       minHeight={280}
     >
       <BarChart
-        h={280}
+        {...chartProps}
         data={data}
         dataKey="sucursal"
         series={[{ name: 'cantidad', color: 'violet.5', label: 'Envíos' }]}

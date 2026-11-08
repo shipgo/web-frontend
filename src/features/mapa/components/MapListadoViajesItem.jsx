@@ -2,11 +2,13 @@ import { ActionIcon, Badge, Box, Divider, Group, Text, Tooltip } from '@mantine/
 import { useHover } from '@mantine/hooks';
 import { IconBrandWhatsapp } from '@tabler/icons-react';
 
+import { useIsMobile } from '@hooks/useIsMobile';
 import { digitosWhatsapp, formatFechaHora } from '@domain/format';
 import { useSelectedViaje } from '../contexts/selectedViaje';
 import { getEstadoEtaViaje } from '../utils/estadoEtaViaje';
 
 const MapListadoViajesItem = ({ viaje, isLast }) => {
+  const isMobile = useIsMobile();
   const { hovered, ref } = useHover();
   const { selectedViajeId, setSelectedViajeId } = useSelectedViaje();
 
@@ -50,7 +52,7 @@ const MapListadoViajesItem = ({ viaje, isLast }) => {
                 <ActionIcon
                   variant="subtle"
                   color="green"
-                  size="sm"
+                  size={isMobile ? 44 : 'sm'}
                   onClick={handleWhatsApp}
                   aria-label={`Contactar a ${viaje.choferNombre || 'chofer'} por WhatsApp`}
                 >

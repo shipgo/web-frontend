@@ -1,29 +1,34 @@
 import { useEffect, useState } from 'react';
-import { Card, Flex, Pagination, Text } from '@mantine/core';
+import { Box, Card, Flex, Pagination, Text } from '@mantine/core';
 import { useSet } from '@mantine/hooks';
 
 import PageContainer from '@components/PageContainer';
-import ScreenContainer from '@components/ScreenContainer';
+import ResultsCounter from '@components/ResultsCounter';
 import SelectionBanner from '@components/SelectionBanner';
 
 import { envioApi } from '@api';
 import { useBulkDelete } from '@hooks/useBulkDelete';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { useCsvExport } from '@hooks/useCsvExport';
 import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
 import { listaEstados } from '@copy/common';
 
 import ListaEnviosHeader from './components/ListaEnviosHeader';
 import ListaEnviosFiltros from './components/ListaEnviosFiltros';
-import ListaEnviosTabla from './components/ListaEnviosTabla';
+import ListaEnviosLista from './components/ListaEnviosLista';
 
 import { useGetEnvios } from './hooks/useGetEnvios';
 import { ENVIOS_CSV_COLUMNS } from './listaEnvios.csv';
 
 const ESTADOS_LISTA = listaEstados({ singular: 'envío', plural: 'envíos', genero: 'm' });
 
+// En mobile las tarjetas van sueltas (sin Card contenedora) para aprovechar el ancho.
+const ListaWrapper = ({ isMobile, children }) => (isMobile ? <Box>{children}</Box> : <Card>{children}</Card>);
+
 const ListaEnvios = () => {
   const { params, setPage, setFilters, clearFilters, refetch, enviosQuery, fetchExportRows, PAGE_LIMIT } =
     useGetEnvios();
+  const isMobile = useIsMobile();
   const { data = {}, isFetching: isLoading, isError } = enviosQuery;
 
   // Al limpiar filtros desde el estado "vacío con filtros" hace falta también
@@ -86,7 +91,14 @@ const ListaEnvios = () => {
         exportDisabled={isLoading || isError}
       />
 
-      <ListaEnviosFiltros key={filtrosKey} onFiltersChange={setFilters} disabled={isLoading} />
+      <ListaEnviosFiltros
+        key={filtrosKey}
+        onFiltersChange={setFilters}
+        disabled={isLoading}
+        activeCount={Object.keys(params.filters).length}
+        resultsCount={data.total}
+        onClear={handleClearFilters}
+      />
 
       <SelectionBanner
         count={selectedIds.size}
@@ -97,8 +109,13 @@ const ListaEnvios = () => {
         onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
       />
 
-      <Card>
-        <ScreenContainer
+      <ListaWrapper isMobile={isMobile}>
+        <ListaEnviosLista
+          items={data.results}
+          selectedIds={selectedIds}
+          onToggle={onToggle}
+          onToggleAll={onToggleAll}
+          onRefresh={refetch}
           onLoading={{ show: isLoading, description: 'Cargando envíos...' }}
           onError={{ show: isError, onClick: refetch, title: ESTADOS_LISTA.error }}
           onEmptyData={{
@@ -112,30 +129,33 @@ const ListaEnvios = () => {
             description: ESTADOS_LISTA.sinResultadosDescripcion,
             onClick: handleClearFilters,
           }}
-        >
-          <ListaEnviosTabla
-            items={data.results}
-            selectedIds={selectedIds}
-            onToggle={onToggle}
-            onToggleAll={onToggleAll}
-            onRefresh={refetch}
-          />
-        </ScreenContainer>
-      </Card>
-
-      <Flex align="center">
-        <Pagination
-          value={params.page}
-          onChange={setPage}
-          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
-          disabled={!showPagination}
         />
-        <Text c="dimmed" ml="auto">
-          {data.total > 0
-            ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
-            : '0 resultados'}
-        </Text>
-      </Flex>
+      </ListaWrapper>
+
+      {isMobile ? (
+        <ResultsCounter
+          amount={data.total}
+          limit={PAGE_LIMIT}
+          currentPage={params.page}
+          isLoading={isLoading}
+          onPageChange={setPage}
+          totalPages={Math.ceil(data.total / PAGE_LIMIT) || 1}
+        />
+      ) : (
+        <Flex align="center">
+          <Pagination
+            value={params.page}
+            onChange={setPage}
+            total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+            disabled={!showPagination}
+          />
+          <Text c="dimmed" ml="auto">
+            {data.total > 0
+              ? `Mostrando ${(params.page - 1) * PAGE_LIMIT + 1} - ${Math.min(params.page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+              : '0 resultados'}
+          </Text>
+        </Flex>
+      )}
     </PageContainer>
   );
 };

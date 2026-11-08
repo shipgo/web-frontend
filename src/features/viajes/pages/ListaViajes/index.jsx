@@ -3,11 +3,13 @@ import { Card, Flex, Pagination, Text } from '@mantine/core';
 import { useSet } from '@mantine/hooks';
 
 import PageContainer from '@components/PageContainer';
-import ScreenContainer from '@components/ScreenContainer';
+import ResponsiveList from '@components/ResponsiveList';
+import ResultsCounter from '@components/ResultsCounter';
 import SelectionBanner from '@components/SelectionBanner';
 
 import { estadoLabel, normalizarEstado } from '@domain/estados';
 import { viajeApi } from '@api';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { useBulkDelete } from '@hooks/useBulkDelete';
 import { useCsvExport } from '@hooks/useCsvExport';
 import { useExportSelectedCsv } from '@hooks/useExportSelectedCsv';
@@ -16,7 +18,7 @@ import { listaEstados } from '@copy/common';
 import { ESTADOS_ELIMINABLES } from '../DetalleViaje/acciones';
 
 import ListaViajesHeader from './components/ListaViajesHeader';
-import ListaViajesTabla from './components/ListaViajesTabla';
+import ListaViajesTabla, { ViajeCard } from './components/ListaViajesTabla';
 import ListaViajesFiltros from './components/ListaViajesFiltros';
 
 import { useGetViajes } from './hooks/useGetViajes';
@@ -25,6 +27,7 @@ import { VIAJES_CSV_COLUMNS } from './listaViajes.csv';
 const ESTADOS_LISTA = listaEstados({ singular: 'viaje', plural: 'viajes', genero: 'm' });
 
 const ListaViajes = () => {
+  const isMobile = useIsMobile();
   const { params, setPage, setFilters, clearFilters, refetch, viajesQuery, fetchExportRows, PAGE_LIMIT } =
     useGetViajes();
   const { data = {}, isFetching: isLoading, isError } = viajesQuery;
@@ -106,7 +109,7 @@ const ListaViajes = () => {
         exportDisabled={isLoading || isError}
       />
 
-      <ListaViajesFiltros key={filtrosKey} onFiltersChange={setFilters} disabled={isLoading} />
+      <ListaViajesFiltros key={filtrosKey} onFiltersChange={setFilters} disabled={isLoading} resultsCount={data.total} />
 
       <SelectionBanner
         count={selectedIds.size}
@@ -117,8 +120,14 @@ const ListaViajes = () => {
         onDelete={onBulkDeleteViajes}
       />
 
-      <Card>
-        <ScreenContainer
+      <Card {...(isMobile ? { p: 0, bg: 'transparent', style: { border: 'none' } } : {})}>
+        <ResponsiveList
+          items={data.results}
+          selectedIds={selectedIds}
+          onToggle={onToggle}
+          renderCard={(item, { selected, onToggle: toggle }) => (
+            <ViajeCard item={item} selected={selected} onToggle={toggle} onCancelSuccess={refetch} />
+          )}
           onLoading={{ show: isLoading, description: 'Cargando viajes...' }}
           onError={{ show: isError, onClick: refetch, title: ESTADOS_LISTA.error }}
           onEmptyData={{
@@ -140,9 +149,19 @@ const ListaViajes = () => {
             onToggleAll={onToggleAll}
             onCancelSuccess={refetch}
           />
-        </ScreenContainer>
+        </ResponsiveList>
       </Card>
 
+      {isMobile ? (
+        <ResultsCounter
+          amount={data.total}
+          limit={PAGE_LIMIT}
+          currentPage={params.page}
+          onPageChange={setPage}
+          totalPages={Math.ceil(data.total / PAGE_LIMIT) || 1}
+          onRefresh={refetch}
+        />
+      ) : (
       <Flex align="center">
         <Pagination
           value={params.page}
@@ -156,6 +175,7 @@ const ListaViajes = () => {
             : '0 resultados'}
         </Text>
       </Flex>
+      )}
     </PageContainer>
   );
 };

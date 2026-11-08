@@ -25,6 +25,8 @@ import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { vehiculoApi } from "@api";
 import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE } from "@copy/common";
 import { tipoMantenimientoApi } from "../api/mantenimientos.api";
@@ -68,6 +70,8 @@ const MantenimientoForm = ({
   onCancel,
   isEdit = false,
 }) => {
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [tiposMantenimiento, setTiposMantenimiento] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
@@ -82,6 +86,7 @@ const MantenimientoForm = ({
 
     modals.openConfirmModal({
       title: SALIR_SIN_GUARDAR.titulo,
+      fullScreen: isMobile,
       children: (
         <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
@@ -159,6 +164,7 @@ const MantenimientoForm = ({
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <TextInput
+                  size={size}
                   label="Nombre del mecánico"
                   placeholder="Ingresá el nombre"
                   leftSection={<IconUser size={18} />}
@@ -167,6 +173,7 @@ const MantenimientoForm = ({
                 />
 
                 <TextInput
+                  size={size}
                   label="Apellido del mecánico"
                   placeholder="Ingresá el apellido"
                   leftSection={<IconUser size={18} />}
@@ -187,6 +194,7 @@ const MantenimientoForm = ({
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <Select
+                  size={size}
                   label="Vehículo"
                   placeholder="Seleccioná un vehículo"
                   data={vehiculos}
@@ -199,6 +207,7 @@ const MantenimientoForm = ({
                 />
 
                 <Select
+                  size={size}
                   label="Tipo de mantenimiento"
                   placeholder="Seleccioná el tipo"
                   data={tiposMantenimiento}
@@ -212,6 +221,8 @@ const MantenimientoForm = ({
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <DateTimePicker
+                  size={size}
+                  dropdownType={isMobile ? "modal" : "popover"}
                   label="Desde"
                   placeholder="Fecha y hora de inicio"
                   leftSection={<IconCalendar size={18} />}
@@ -222,6 +233,8 @@ const MantenimientoForm = ({
                 />
 
                 <DateTimePicker
+                  size={size}
+                  dropdownType={isMobile ? "modal" : "popover"}
                   label="Hasta"
                   placeholder="Fecha y hora de fin"
                   leftSection={<IconCalendar size={18} />}
@@ -237,6 +250,7 @@ const MantenimientoForm = ({
               </Text>
 
               <Textarea
+                size={size}
                 label="Descripción"
                 placeholder="Describí los detalles del mantenimiento..."
                 leftSection={<IconFileDescription size={18} />}

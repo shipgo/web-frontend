@@ -8,6 +8,7 @@ import {
 } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
 
+import { useIsMobile } from '@hooks/useIsMobile';
 import { formatDesdeAhora, formatFechaHora } from '@domain/format';
 
 import { notificacionHref } from '../constants';
@@ -34,6 +35,7 @@ const NotificacionFila = ({
   onMarcarLeida,
   lineasCuerpo = 2,
 }) => {
+  const isMobile = useIsMobile();
   const href = notificacionHref(notificacion, { portal });
   const noLeida = !notificacion?.visto;
 
@@ -43,7 +45,7 @@ const NotificacionFila = ({
       wrap="nowrap"
       align="flex-start"
       px="sm"
-      py="xs"
+      py={isMobile ? 'sm' : 'xs'}
       bg={noLeida ? 'var(--mantine-color-default-hover)' : undefined}
     >
       {noLeida ? (
@@ -60,10 +62,10 @@ const NotificacionFila = ({
         />
       ) : null}
       <UnstyledButton
-        style={{ flex: 1, cursor: href ? 'pointer' : 'default' }}
+        style={{ flex: 1, minWidth: 0, cursor: href ? 'pointer' : 'default', minHeight: isMobile ? 44 : undefined }}
         onClick={() => onNavigate(notificacion, href)}
       >
-        <Text size="sm" fw={noLeida ? 700 : 500} lineClamp={1}>
+        <Text size="sm" fw={noLeida ? 700 : 500} lineClamp={isMobile ? 2 : 1}>
           {notificacion?.title || 'Notificación'}
         </Text>
         {notificacion?.body ? (
@@ -89,7 +91,7 @@ const NotificacionFila = ({
       {noLeida ? (
         <Tooltip label="Marcar como leída" withArrow>
           <ActionIcon
-            size="sm"
+            size={isMobile ? 44 : 'sm'}
             variant="subtle"
             color="gray"
             aria-label="Marcar como leída"

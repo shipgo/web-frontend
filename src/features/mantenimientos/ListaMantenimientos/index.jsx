@@ -1,29 +1,65 @@
-import { useEffect } from "react";
-import { useSearch } from "wouter";
+import { Fragment, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
 import { Card, Flex, Pagination, Text } from "@mantine/core";
 import { useSet } from "@mantine/hooks";
 
 import PageContainer from "@components/PageContainer";
-import ScreenContainer from "@components/ScreenContainer";
+import ResponsiveList from "@components/ResponsiveList";
+import ListCard from "@components/ListCard";
+import ResultsCounter from "@components/ResultsCounter";
+import RowActionsMenu from "@components/RowActionsMenu";
 import SelectionBanner from "@components/SelectionBanner";
 
+import { useIsMobile } from "@hooks/useIsMobile";
 import { useBulkDelete } from "@hooks/useBulkDelete";
 import { useCsvExport } from "@hooks/useCsvExport";
 import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
 import { listaEstados } from "@copy/common";
+import { EMPTY } from "@domain/format";
+import { timeFromNow, toLocalDateTime } from "@utils/dates";
 
 import { mantenimientoApi } from "../api/mantenimientos.api";
 
 import ListaMantenimientosHeader from "./components/ListaMantenimientosHeader";
 import ListaMantenimientosFiltros from "./components/ListaMantenimientosFiltros";
 import ListaMantenimientosTabla from "./components/ListaMantenimientosTabla";
+import { getActionsForRow } from "./components/actions";
 
+import { useDeleteMantenimiento } from "./hooks/useDeleteMantenimiento";
 import { useGetMantenimientos } from "./hooks/useGetMantenimientos";
 import { MANTENIMIENTOS_CSV_COLUMNS } from "./listaMantenimientos.csv";
 
 const ESTADOS_LISTA = listaEstados({ singular: 'mantenimiento', plural: 'mantenimientos', genero: 'm' });
 
 const PAGE_LIMIT = 10;
+
+const renderCard = (item, { selected, onToggle, actions }) => {
+  const patente = item.vehiculo?.patente ?? "-";
+  const mecanico = `${item.nombreMecanico ?? ""} ${item.apellidoMecanico ?? ""}`.trim() || "-";
+  const fecha = item.fechaHoraMantenimiento;
+  const fin = item.fechaHoraFin;
+
+  return (
+    <ListCard
+      title={patente}
+      mono
+      badge={item.tipoMantenimiento?.nombre ? { label: item.tipoMantenimiento.nombre } : undefined}
+      selected={selected}
+      onToggle={onToggle}
+      selectLabel={`Seleccionar ${patente}`}
+      actions={actions}
+      lines={[
+        { label: "Mecánico", value: mecanico },
+        {
+          label: "Período",
+          value: fecha ? `${toLocalDateTime(fecha)}${fin ? ` a ${toLocalDateTime(fin)}` : ""}` : EMPTY,
+        },
+        { label: "Sucursal", value: item.sucursal?.nombre ?? "-" },
+      ]}
+      footer={fecha ? timeFromNow(fecha) : undefined}
+    />
+  );
+};
 
 const ListaMantenimientos = () => {
   // "Historial mantenimiento" (SHG-FE-098) llega desde `ListaVehiculosTabla` /
@@ -97,6 +133,23 @@ const ListaMantenimientos = () => {
 
   const showPagination = data.total > PAGE_LIMIT;
 
+  const isMobile = useIsMobile();
+  const [, navigate] = useLocation();
+  const { confirmDelete } = useDeleteMantenimiento(refetchMantenimientos);
+  const ListWrapper = isMobile ? Fragment : Card;
+
+  const getActions = (item) => (
+    <RowActionsMenu
+      actions={getActionsForRow({
+        onVerDetalles: () => navigate(`~/mantenimientos/${item.id}`),
+        onEditar: () => navigate(`~/mantenimientos/${item.id}/editar`),
+        onEliminar: () => confirmDelete(item),
+      })}
+      width={160}
+      ariaLabel={`Acciones de ${item.vehiculo?.patente ?? "-"}`}
+    />
+  );
+
   return (
     <PageContainer>
       <ListaMantenimientosHeader
@@ -108,6 +161,7 @@ const ListaMantenimientos = () => {
       <ListaMantenimientosFiltros
         onFiltersChange={setFilters}
         initialPatente={patenteFromUrl}
+        resultsCount={data.total}
       />
 
       <SelectionBanner
@@ -119,8 +173,13 @@ const ListaMantenimientos = () => {
         onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
       />
 
-      <Card>
-        <ScreenContainer
+      <ListWrapper>
+        <ResponsiveList
+          items={data.results}
+          selectedIds={selectedIds}
+          onToggle={onToggle}
+          getActions={getActions}
+          renderCard={renderCard}
           onLoading={{ show: isLoading, description: "Cargando mantenimientos..." }}
           onError={{
             show: isError,
@@ -145,22 +204,34 @@ const ListaMantenimientos = () => {
             onToggleAll={onToggleAll}
             onRefresh={refetchMantenimientos}
           />
-        </ScreenContainer>
-      </Card>
+        </ResponsiveList>
+      </ListWrapper>
 
-      <Flex align="center">
-        <Pagination
-          value={page}
-          onChange={setPage}
-          total={Math.ceil(data.total / PAGE_LIMIT) || 1}
-          disabled={!showPagination}
+      {isMobile ? (
+        <ResultsCounter
+          amount={data.total}
+          limit={PAGE_LIMIT}
+          currentPage={page}
+          isLoading={isLoading}
+          onRefresh={refetchMantenimientos}
+          onPageChange={setPage}
+          totalPages={Math.ceil(data.total / PAGE_LIMIT) || 1}
         />
-        <Text c="dimmed" ml="auto">
-          {data.total > 0
-            ? `Mostrando ${(page - 1) * PAGE_LIMIT + 1} - ${Math.min(page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
-            : "0 resultados"}
-        </Text>
-      </Flex>
+      ) : (
+        <Flex align="center">
+          <Pagination
+            value={page}
+            onChange={setPage}
+            total={Math.ceil(data.total / PAGE_LIMIT) || 1}
+            disabled={!showPagination}
+          />
+          <Text c="dimmed" ml="auto">
+            {data.total > 0
+              ? `Mostrando ${(page - 1) * PAGE_LIMIT + 1} - ${Math.min(page * PAGE_LIMIT, data.total)} de ${data.total} resultados`
+              : "0 resultados"}
+          </Text>
+        </Flex>
+      )}
     </PageContainer>
   );
 };

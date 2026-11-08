@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Button, Card, Text } from "@mantine/core";
+import { Card, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconEdit, IconX } from "@tabler/icons-react";
 
@@ -81,14 +81,12 @@ const DetalleMantenimiento = () => {
         entidad="Mantenimientos"
         accion="Detalle de mantenimiento"
         descripcion={`Información completa del mantenimiento #${id}`}
-      >
-        <Button
-          leftSection={<IconEdit size={18} />}
-          onClick={() => navigate(`~/mantenimientos/${id}/editar`)}
-        >
-          Editar
-        </Button>
-      </PageBreadcrumbsHeader>
+        primaryAction={{
+          label: "Editar",
+          icon: <IconEdit size={18} />,
+          onClick: () => navigate(`~/mantenimientos/${id}/editar`),
+        }}
+      />
 
       <MantenimientoPerfil mantenimiento={mantenimiento} />
     </PageContainer>

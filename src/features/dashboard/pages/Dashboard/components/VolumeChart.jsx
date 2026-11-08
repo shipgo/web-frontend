@@ -2,6 +2,7 @@ import { BarChart } from '@mantine/charts';
 import { IconChartBar } from '@tabler/icons-react';
 
 import ChartCard from './ChartCard';
+import { useBarChartProps } from './useChartProps';
 import { isSerieVacia, mapVolumenPorDia } from '../dashboard.mappers';
 
 /**
@@ -9,6 +10,7 @@ import { isSerieVacia, mapVolumenPorDia } from '../dashboard.mappers';
  * El backend rellena los días en 0, así que el eje X no tiene huecos.
  */
 const VolumeChart = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
+  const chartProps = useBarChartProps(260);
   const data = mapVolumenPorDia(series);
 
   return (
@@ -24,7 +26,7 @@ const VolumeChart = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
       onRetry={onRetry}
     >
       <BarChart
-        h={260}
+        {...chartProps}
         data={data}
         dataKey="fecha"
         series={[{ name: 'cantidad', color: 'blue.5', label: 'Envíos' }]}
