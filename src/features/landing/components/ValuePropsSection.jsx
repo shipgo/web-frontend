@@ -59,7 +59,7 @@ const ValuePropsSection = () => {
                   {item.icon}
                 </ThemeIcon>
                 <Text size="sm" c="dimmed" style={{ flex: 1 }}>
-                  <Text span fw={600} c="dark.8">
+                  <Text span fw={600} c="var(--mantine-color-text)">
                     {item.title}.
                   </Text>{' '}
                   {item.description}

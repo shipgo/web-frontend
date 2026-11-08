@@ -2,6 +2,7 @@ import { Link } from 'wouter';
 import { AppShell, Anchor, Box, Button, Group, Text } from '@mantine/core';
 
 import BrandLogo from '@components/BrandLogo';
+import ThemeMenu from '@components/ThemeMenu';
 import { useAuth } from '@contexts/auth';
 import { landingPathFor } from '@domain/roles';
 
@@ -48,7 +49,11 @@ const PublicLayout = ({
           <Anchor component={Link} href={resolvedHomeHref} aria-label="ShipGo — inicio">
             <BrandLogo h={32} alt="ShipGo" />
           </Anchor>
-          {headerRight ?? defaultRight}
+          <Group gap="xs" wrap="nowrap">
+            {/* Guest y customer no tienen el menú de usuario de gestión: el tema se cambia acá. */}
+            <ThemeMenu />
+            {headerRight ?? defaultRight}
+          </Group>
         </Group>
       </AppShell.Header>
 
