@@ -51,6 +51,12 @@ const ResultsCounter = memo(
 
     if (isMobile) {
       const pages = totalPages ?? Math.ceil(amount / limit);
+      // Al pasar de página desde el final de una lista larga, se vuelve al inicio:
+      // si no, la página nueva aparece con el scroll en el pie.
+      const handlePageChange = (page) => {
+        onPageChange?.(page);
+        window.scrollTo?.({ top: 0 });
+      };
       return (
         <Group wrap="nowrap" justify="space-between" gap="xs">
           <Text {...TEXT_PROPS}>
@@ -64,7 +70,7 @@ const ResultsCounter = memo(
                 boundaries={0}
                 withEdges={false}
                 value={currentPage}
-                onChange={onPageChange}
+                onChange={handlePageChange}
                 total={pages}
                 aria-label="Paginación"
               />

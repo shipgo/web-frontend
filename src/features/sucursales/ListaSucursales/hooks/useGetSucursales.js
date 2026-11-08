@@ -1,5 +1,5 @@
 import { mapValues } from "es-toolkit";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { useParams } from "@hooks/useParams";
 import { sucursalApi } from "../../api/sucursales.api";
@@ -26,6 +26,8 @@ export const useGetSucursales = (pageLimit = 10) => {
     isFetching: isLoading,
     refetch: refetchSucursales,
   } = useQuery({
+    // Mantiene la página anterior mientras llega la nueva (no vacía la lista ni el contador).
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const response = await sucursalApi.get(normalizedParams);
       return response;

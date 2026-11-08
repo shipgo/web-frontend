@@ -1,5 +1,5 @@
 import { mapValues } from "es-toolkit";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { useParams } from "@hooks/useParams";
 import { useOperatingContext } from "@contexts/operatingContext";
@@ -65,6 +65,8 @@ export const useGetUsuarios = (pageLimit = PAGE_LIMIT) => {
   };
 
   const usuariosQuery = useQuery({
+    // Mantiene la página anterior mientras llega la nueva (no vacía la lista ni el contador).
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (scopedBySucursal) {
         const filtered = await fetchScoped(filterParams);
