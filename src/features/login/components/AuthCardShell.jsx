@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import {
   Anchor,
   Card,
-  Center,
+  Flex,
   Image,
   MantineProvider,
   Stack,
@@ -25,7 +25,13 @@ const FORM_WIDTH = "32rem";
  */
 const AuthCardShell = ({ title, subtitle, children }) => (
   <MantineProvider forceColorScheme="light">
-    <Center mih="100dvh" p={{ base: 'md', sm: 'xl' }}>
+    <Flex
+      mih="100dvh"
+      justify="center"
+      // Mobile: arriba (no centrada) para que con el teclado abierto se vea el campo y el botón.
+      align={{ base: 'flex-start', sm: 'center' }}
+      p={{ base: 'md', sm: 'xl' }}
+    >
       <Card w={FORM_WIDTH} maw="100%" p={{ base: 'md', sm: 'xl' }} withBorder shadow="sm">
         <Stack gap="lg" p={{ base: 0, sm: 'md' }}>
           <Stack gap={4}>
@@ -52,7 +58,7 @@ const AuthCardShell = ({ title, subtitle, children }) => (
           {children}
         </Stack>
       </Card>
-    </Center>
+    </Flex>
   </MantineProvider>
 );
 

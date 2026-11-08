@@ -42,6 +42,9 @@ const TrackingSearchForm = ({
     placeholder: 'Ej. 7K2M9QX4TP',
     autoFocus,
     autoCapitalize: 'characters',
+    autoCorrect: 'off',
+    // La tecla de acción del teclado dice "Buscar" en vez de una flecha genérica.
+    enterKeyHint: 'search',
     autoComplete: 'off',
     spellCheck: false,
     disabled,

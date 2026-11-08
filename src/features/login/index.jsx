@@ -194,7 +194,8 @@ const LoginPage = ({ variant = "operator" }) => {
           <Stack
             p={{ base: 'xs', sm: 'xl' }}
             gap="lg"
-            my="auto"
+            // Mobile: arriba (no centrado) para que con el teclado abierto se vean contraseña y botón.
+            my={{ base: 0, sm: 'auto' }}
             component="form"
             noValidate
             justify="center"

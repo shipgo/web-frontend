@@ -262,6 +262,8 @@ const VehiculoForm = () => {
               label="Año de compra"
               placeholder="Ej: 2020"
               required
+              // Mobile: sin los botones +/- (se recortan y se escribe con el teclado numérico).
+              hideControls={isMobile}
               min={1900}
               max={new Date().getFullYear()}
               {...form.getInputProps("anioCompra")}

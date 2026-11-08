@@ -275,7 +275,7 @@ const MantenimientoForm = ({
             Cancelar
           </Button>
           <Button type="submit" loading={loading}>
-            {isEdit ? "Guardar cambios" : "Crear mantenimiento"}
+            {isEdit ? "Guardar cambios" : isMobile ? "Crear" : "Crear mantenimiento"}
           </Button>
         </PageFooter>
       </form>

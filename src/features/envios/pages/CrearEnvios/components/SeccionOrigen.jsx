@@ -300,7 +300,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 placeholder="Ej: García"
               />
             </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}>
+            <Grid.Col span={{ base: 5, sm: 6 }}>
               <TextInput
                 size={size}
                 key={form.key("prefijo")}
@@ -310,7 +310,7 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
                 placeholder="Ej: 351"
               />
             </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}>
+            <Grid.Col span={{ base: 7, sm: 6 }}>
               <TextInput
                 size={size}
                 key={form.key("telefono")}

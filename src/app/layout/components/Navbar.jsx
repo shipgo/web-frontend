@@ -169,6 +169,8 @@ const AppNavbar = ({ opened = false, onClose }) => {
           <>
             <div style={{ paddingTop: 12, paddingBottom: 4 }}>{manualLink}</div>
             <MobileUserSection />
+            {/* Aire final: "Cerrar sesión" no debe quedar bajo la barra de gestos. */}
+            <div style={{ height: 'calc(24px + env(safe-area-inset-bottom))' }} aria-hidden />
           </>
         )}
       </AppShellSection>
