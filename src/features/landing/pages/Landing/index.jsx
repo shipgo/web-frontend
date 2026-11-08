@@ -1,4 +1,6 @@
-import { Box, MantineProvider } from '@mantine/core';
+import { Box } from '@mantine/core';
+
+import ForcedLightScheme from '@components/ForcedLightScheme';
 
 import { LANDING_SEO } from '../../constants/seo';
 import { useDocumentMeta } from '../../hooks/useDocumentMeta';
@@ -26,7 +28,7 @@ const LandingPage = () => {
   useDocumentMeta(LANDING_SEO);
 
   return (
-    <MantineProvider forceColorScheme="light">
+    <ForcedLightScheme>
       <Box style={{ overflowX: 'hidden' }}>
         <LandingHeader />
         <Box component="main">
@@ -38,7 +40,7 @@ const LandingPage = () => {
         </Box>
         <LandingFooter />
       </Box>
-    </MantineProvider>
+    </ForcedLightScheme>
   );
 };
 

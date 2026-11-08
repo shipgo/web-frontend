@@ -12,7 +12,6 @@ import { useForm, isNotEmpty } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
   Button,
-  MantineProvider,
   PasswordInput,
   Stack,
   Text,
@@ -28,6 +27,7 @@ import {
   FocusTrap,
   Image,
 } from "@mantine/core";
+import ForcedLightScheme from "@components/ForcedLightScheme";
 
 import { useAuthStore } from "@stores/auth.store";
 import { getRateLimitMessage } from "@domain/apiError";
@@ -180,7 +180,7 @@ const LoginPage = ({ variant = "operator" }) => {
   // contrasta con las rutas autenticadas que sí respetan la preferencia del usuario (SHG-FE-061).
   // Rediseñar para dark mode sería una tarea de diseño aparte, fuera del alcance.
   return (
-    <MantineProvider forceColorScheme="light">
+    <ForcedLightScheme>
       <Group align="flex-start" gap="0" wrap="nowrap">
         <Card
           w={{ base: '100%', sm: FORM_WIDHT }}
@@ -287,7 +287,7 @@ const LoginPage = ({ variant = "operator" }) => {
           visibleFrom="sm"
         />
       </Group>
-    </MantineProvider>
+    </ForcedLightScheme>
   );
 };
 

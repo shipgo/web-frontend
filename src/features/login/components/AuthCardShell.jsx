@@ -4,11 +4,11 @@ import {
   Card,
   Flex,
   Image,
-  MantineProvider,
   Stack,
   Text,
   Title,
 } from "@mantine/core";
+import ForcedLightScheme from "@components/ForcedLightScheme";
 
 import logo from "/src/assets/logoipsum-custom-logo.svg";
 
@@ -24,7 +24,7 @@ const FORM_WIDTH = "32rem";
  * Centra una `Card` con el logo, un título y un subtítulo.
  */
 const AuthCardShell = ({ title, subtitle, children }) => (
-  <MantineProvider forceColorScheme="light">
+  <ForcedLightScheme>
     <Flex
       mih="100dvh"
       justify="center"
@@ -59,7 +59,7 @@ const AuthCardShell = ({ title, subtitle, children }) => (
         </Stack>
       </Card>
     </Flex>
-  </MantineProvider>
+  </ForcedLightScheme>
 );
 
 export default AuthCardShell;
