@@ -1,6 +1,7 @@
 import { Box, Group, Loader, Paper, Stack, Text } from '@mantine/core';
 
 import { useIsMobile } from '@hooks/useIsMobile';
+import ListCardsSkeleton, { ListTableSkeleton } from './ListCardSkeleton';
 import ScreenContainer from './ScreenContainer';
 
 /**
@@ -21,6 +22,9 @@ import ScreenContainer from './ScreenContainer';
  * La tarjeta de carga completa queda para la primera carga, cuando no hay nada que mostrar.
  * Para que haya tarjetas durante la recarga, el hook de datos tiene que conservar la página
  * anterior (`placeholderData: keepPreviousData`).
+ *
+ * Primera carga en mobile (todavía no hay tarjetas): en vez de la tarjeta de "Cargando…" se
+ * dibujan tarjetas fantasma del mismo tamaño (`ListCardsSkeleton`), así la lista aparece sin saltos.
  *
  * La selección múltiple la maneja la pantalla (`selectedIds` con `.has`, `onToggle(id)`),
  * igual que con la tabla. No hay virtualización: la paginación es del servidor.
@@ -72,7 +76,52 @@ const ResponsiveList = ({
 }) => {
   const isMobile = useIsMobile();
   const showCards = isMobile && typeof renderCard === 'function';
-  const refreshing = showCards && Boolean(onLoading?.show) && items.length > 0;
+  const loading = Boolean(onLoading?.show);
+  // Recarga (ya hay filas/tarjetas): se conservan atenuadas, con un indicador.
+  const refreshing = loading && items.length > 0;
+  // Primera carga (todavía no hay nada): placeholders del mismo tamaño que lo real.
+  const firstLoad = loading && !onLoading.children && items.length === 0;
+
+  if (firstLoad) {
+    const Skeleton = showCards ? ListCardsSkeleton : ListTableSkeleton;
+    return (
+      <>
+        <Skeleton description={onLoading.description ?? 'Cargando...'} />
+        {footer}
+      </>
+    );
+  }
+
+  const refreshingIndicator = refreshing && (
+    // Alto 0 + sticky: el indicador queda a la vista aunque la lista sea larga.
+    <Box
+      pos="sticky"
+      h={0}
+      style={{
+        top: 'calc(var(--app-shell-header-offset, 0px) + var(--mantine-spacing-sm))',
+        zIndex: 5,
+        display: 'flex',
+        justifyContent: 'center',
+        overflow: 'visible',
+      }}
+    >
+      <Paper
+        withBorder
+        shadow="md"
+        radius="xl"
+        px="md"
+        py={6}
+        role="status"
+        data-testid="responsive-list-refreshing"
+        style={{ alignSelf: 'flex-start' }}
+      >
+        <Group gap="xs" wrap="nowrap">
+          <Loader size="xs" />
+          <Text size="sm">{onLoading?.description ?? 'Cargando...'}</Text>
+        </Group>
+      </Paper>
+    </Box>
+  );
 
   return (
     <>
@@ -87,36 +136,7 @@ const ResponsiveList = ({
           // Con selección activa el `SelectionBanner` queda fijo abajo: dejar aire
           // para que no tape la última tarjeta.
           <Box aria-busy={refreshing || undefined}>
-            {refreshing && (
-              // Alto 0 + sticky: el indicador queda a la vista aunque la lista sea larga.
-              <Box
-                pos="sticky"
-                h={0}
-                style={{
-                  top: 'calc(var(--app-shell-header-offset, 0px) + var(--mantine-spacing-sm))',
-                  zIndex: 5,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  overflow: 'visible',
-                }}
-              >
-                <Paper
-                  withBorder
-                  shadow="md"
-                  radius="xl"
-                  px="md"
-                  py={6}
-                  role="status"
-                  data-testid="responsive-list-refreshing"
-                  style={{ alignSelf: 'flex-start' }}
-                >
-                  <Group gap="xs" wrap="nowrap">
-                    <Loader size="xs" />
-                    <Text size="sm">{onLoading?.description ?? 'Cargando...'}</Text>
-                  </Group>
-                </Paper>
-              </Box>
-            )}
+            {refreshingIndicator}
             <Stack
               gap="xs"
               data-testid="responsive-list-cards"
@@ -142,7 +162,21 @@ const ResponsiveList = ({
             </Stack>
           </Box>
         ) : (
-          <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>{children}</Box>
+          <Box aria-busy={refreshing || undefined}>
+            {refreshingIndicator}
+            <Box
+              inert={refreshing || undefined}
+              data-testid="responsive-list-table"
+              style={{
+                overflowX: 'auto',
+                maxWidth: '100%',
+                opacity: refreshing ? 0.45 : 1,
+                transition: 'opacity 150ms ease',
+              }}
+            >
+              {children}
+            </Box>
+          </Box>
         )}
       </ScreenContainer>
       {footer}
