@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "ShipGo!",
-  "short_name": "ShipGo!",
+  "name": "ShipGO!",
+  "short_name": "ShipGO!",
   "description": "Gestión de envíos, viajes y seguimiento en vivo",
   "lang": "es-AR",
   "start_url": "/",
