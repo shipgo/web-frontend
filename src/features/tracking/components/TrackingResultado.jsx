@@ -61,7 +61,11 @@ const TrackingResultado = ({ data }) => {
       <Card withBorder padding="lg">
         <Stack gap="md">
           <Title order={5}>Historial</Title>
-          <TrackingTimeline historial={data.historial} />
+          <TrackingTimeline
+            historial={data.historial}
+            estado={data.estado}
+            tipoEntrega={data.tipoEntrega}
+          />
         </Stack>
       </Card>
     </Stack>

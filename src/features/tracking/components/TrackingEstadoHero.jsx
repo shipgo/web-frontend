@@ -1,45 +1,41 @@
 import { Box, Card, Group, Stack, Text, ThemeIcon } from '@mantine/core';
 import { IconCheck, IconMapPin, IconX } from '@tabler/icons-react';
 
-import {
-  ESTADO_ENVIO_PASOS,
-  estadoLabel,
-  normalizarEstado,
-} from '@domain/estados';
+import { estadoLabel, normalizarEstado } from '@domain/estados';
 import { formatFecha, formatFechaHora } from '@domain/format';
 
+import { progresoEnvio } from '../fases';
 import { fechaEntrega, historialDescendente } from '../utils';
 
 const FRASES = {
   creado: 'Registramos tu envío',
   en_sucursal: 'Tu envío está en la sucursal',
-  asignado_a_viaje: 'Tu envío ya tiene un viaje asignado',
+  asignado_a_viaje: 'Estamos preparando tu envío',
   en_vehiculo: 'Tu envío está cargado y por salir',
   en_camino: 'Tu envío va en camino',
   entregado: 'Tu envío fue entregado',
   rechazado: 'No pudimos entregarlo',
 };
 
-const TOTAL = ESTADO_ENVIO_PASOS.length;
-
 /**
- * Posición (0-based) del paso actual en `ESTADO_ENVIO_PASOS`. Para
- * `rechazado` (salida alternativa) se toma el último estado "feliz" del
- * historial, o el primero si no hay. -1 si el estado es desconocido.
+ * Frase del hero. `en_sucursal` y `entregado` cambian según el progreso: al
+ * principio es "en nuestra sucursal", tras un viaje es "listo para retirar" (retiro)
+ * o "estamos preparando tu envío" (domicilio); un retiro entregado es "retirado".
  */
-const indicePaso = (estado, historial) => {
-  const directo = ESTADO_ENVIO_PASOS.indexOf(estado);
-  if (directo >= 0) return directo;
-  if (estado !== 'rechazado') return -1;
-  const previo = historialDescendente(historial).find(
-    (h) => ESTADO_ENVIO_PASOS.indexOf(normalizarEstado(h?.estado)) >= 0,
-  );
-  return previo ? ESTADO_ENVIO_PASOS.indexOf(normalizarEstado(previo.estado)) : 0;
+const fraseDe = (estado, progreso) => {
+  if (estado === 'en_sucursal') {
+    if (progreso.tipo === 'listo') return 'Tu envío está listo para retirar';
+    return progreso.actual === 1 ? 'Estamos preparando tu envío' : 'Tu envío está en nuestra sucursal';
+  }
+  if (estado === 'entregado' && progreso.retiro) return 'Tu envío fue retirado';
+  return FRASES[estado] ?? estadoLabel('envio', estado);
 };
 
 /**
  * Tarjeta de estado actual del tracking: etiqueta, frase, destino y
- * segmentos de avance. Degrada sin romper si el estado no es conocido.
+ * segmentos de avance por fases (ver `../fases`: 4 fases que entiende quien
+ * espera el envío, en lugar de los estados internos). Degrada sin romper si el
+ * estado no es conocido.
  *
  * @param {Object} props
  * @param {import('../api/tracking.api').PublicTrackingDTO} props.data
@@ -48,8 +44,13 @@ const TrackingEstadoHero = ({ data }) => {
   const estado = normalizarEstado(data.estado);
   const rechazado = estado === 'rechazado';
   const entregado = estado === 'entregado';
-  const paso = indicePaso(estado, data.historial);
-  const frase = FRASES[estado] ?? estadoLabel('envio', data.estado);
+  const progreso = progresoEnvio({
+    estado,
+    historial: data.historial,
+    tipoEntrega: data.tipoEntrega,
+  });
+  const paso = progreso.actual;
+  const frase = fraseDe(estado, progreso);
   const destino = data.destino
     ? [data.destino.localidad, data.destino.provincia].filter(Boolean).join(', ')
     : null;
@@ -81,14 +82,14 @@ const TrackingEstadoHero = ({ data }) => {
           ) : null}
           <Stack gap={2}>
             <Text size="xs" fw={700} tt="uppercase" lts={0.8} c="dimmed">
-              {estadoLabel('envio', data.estado)}
+              {progreso.etiqueta}
             </Text>
             <Text fw={700} fz={{ base: 20, sm: 24 }} lh={1.25}>
               {frase}
             </Text>
             {entregado && entregadoEl ? (
               <Text size="sm" fw={500}>
-                Entregado el {formatFecha(entregadoEl)}
+                {progreso.retiro ? 'Retirado' : 'Entregado'} el {formatFecha(entregadoEl)}
               </Text>
             ) : null}
           </Stack>
@@ -103,8 +104,8 @@ const TrackingEstadoHero = ({ data }) => {
 
         {paso >= 0 ? (
           <Stack gap={6}>
-            <Group gap={4} wrap="nowrap" role="img" aria-label={`Paso ${paso + 1} de ${TOTAL}`}>
-              {ESTADO_ENVIO_PASOS.map((p, i) => {
+            <Group gap={4} wrap="nowrap" role="img" aria-label={`Paso ${paso + 1} de ${progreso.fases.length}`}>
+              {progreso.fases.map((fase, i) => {
                 const color =
                   rechazado && i === paso
                     ? 'var(--mantine-color-red-filled)'
@@ -113,7 +114,7 @@ const TrackingEstadoHero = ({ data }) => {
                       : 'var(--mantine-color-default-border)';
                 return (
                   <Box
-                    key={p}
+                    key={fase.id}
                     data-testid="hero-segmento"
                     data-activo={i <= paso ? 'true' : 'false'}
                     style={{ flex: 1, height: 6, borderRadius: 3, background: color }}
@@ -123,7 +124,7 @@ const TrackingEstadoHero = ({ data }) => {
             </Group>
             <Group justify="space-between" gap="xs">
               <Text size="xs" c="dimmed">
-                Paso {paso + 1} de {TOTAL}
+                Paso {paso + 1} de {progreso.fases.length}
               </Text>
               {ultimo?.fecha ? (
                 <Text size="xs" c="dimmed">

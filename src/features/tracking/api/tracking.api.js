@@ -31,6 +31,9 @@ import { captchaHeader } from '@config/captcha';
  * @property {PublicTrackingHistorialItem[]} historial
  * @property {PublicTrackingDestino} [destino]            Sólo localidad + provincia (sin dirección exacta).
  * @property {string} [fechaEstimada]                     ISO `LocalDate`, sólo si el envío ya está en un viaje.
+ * @property {'domicilio'|'sucursal'} [tipoEntrega]       Cómo se entrega (no es sensible). Define el último paso de la
+ *                                                        barra de avance ("Entregado" o "Retiro en sucursal"); si falta
+ *                                                        (backend viejo) se asume `domicilio`.
  *
  * Campos OMITIDOS a propósito por privacidad (el DTO del backend ya los filtra):
  * nombre / apellido / email / teléfono del remitente y del receptor, y la
