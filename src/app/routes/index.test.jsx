@@ -276,7 +276,8 @@ describe("AppRoutes", () => {
 
     expect(await screen.findByText("Registro")).toBeInTheDocument();
     expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
-    expect(screen.getByTestId("public-layout")).toBeInTheDocument();
+    // El registro usa el molde de acceso (`AuthShell`), no el header de `PublicLayout`.
+    expect(screen.queryByTestId("public-layout")).not.toBeInTheDocument();
   });
 
   it("con sesión, /registro redirige (no muestra el registro)", async () => {

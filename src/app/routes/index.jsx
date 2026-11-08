@@ -349,11 +349,9 @@ const AppRoutes = () => {
           `PortalLayout` para el portal), NUNCA el AppShell de admin. */}
       <Route path='/registro'>
         <PublicRoute>
-          <PublicLayout>
-            <Suspense fallback={<RouteFallback />}>
-              <RegistroPage />
-            </Suspense>
-          </PublicLayout>
+          <Suspense fallback={<RouteFallback />}>
+            <RegistroPage />
+          </Suspense>
         </PublicRoute>
       </Route>
       <Route path='/registro/verificar'>

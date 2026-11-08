@@ -1,33 +1,26 @@
 import { useEffect, useState } from "react";
 import { useLocation, useSearch, Link as WouterLink } from "wouter";
 
-import logo from "/src/assets/logoipsum-custom-logo.svg";
-import background from "/src/assets/background.jpg";
-
 import { omit } from "es-toolkit";
-import { IconExclamationMark } from "@tabler/icons-react";
+import { IconAlertCircle } from "@tabler/icons-react";
 
 import { useLocalStorage } from "@mantine/hooks";
 import { useForm, isNotEmpty } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
+  Alert,
   Button,
   PasswordInput,
   Stack,
-  Text,
   TextInput,
-  Title,
-  Card,
   LoadingOverlay,
   Group,
   Switch,
   Anchor,
   Divider,
-  rem,
   FocusTrap,
-  Image,
 } from "@mantine/core";
-import ForcedLightScheme from "@components/ForcedLightScheme";
+import AuthShell from "@components/AuthShell";
 
 import { useAuthStore } from "@stores/auth.store";
 import { getRateLimitMessage } from "@domain/apiError";
@@ -38,7 +31,6 @@ import CaptchaField from "@components/CaptchaField";
 import { isCaptchaApiError } from "@config/captcha";
 import { LOGIN_VARIANTS } from "./constants/copy";
 
-const FORM_WIDHT = "35rem";
 const LOCAL_STORAGE_KEY = "shipgo_stored_user";
 const DEFAULT_FORM_VALUES = { username: "", password: "", remember: false };
 
@@ -55,6 +47,8 @@ const LoginPage = ({ variant = "operator" }) => {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const [loading, setLoading] = useState(false);
+  // Error del último intento (se muestra dentro del formulario, sobre los campos).
+  const [formError, setFormError] = useState(null);
   const [storedUser, setStoredUser] = useLocalStorage({
     key: LOCAL_STORAGE_KEY,
     defaultValue: null,
@@ -84,6 +78,7 @@ const LoginPage = ({ variant = "operator" }) => {
 
   const handleFormSubmit = async (formValues) => {
     setLoading(true);
+    setFormError(null);
 
     try {
       const credentials = {
@@ -123,14 +118,10 @@ const LoginPage = ({ variant = "operator" }) => {
       // mismo aunque el usuario no haya hecho nada mal.
       if (isCaptchaApiError(error)) {
         captcha.reset();
-        notifications.show({
-          color: "red",
+        setFormError({
           title: "No pudimos completar la verificación de seguridad",
           message:
             "La verificación venció o no es válida. Completala de nuevo e intentá otra vez.",
-          icon: (
-            <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
-          ),
         });
         return;
       }
@@ -139,14 +130,7 @@ const LoginPage = ({ variant = "operator" }) => {
       // error de credenciales: hay que esperar, no seguir probando.
       const rateLimitMessage = getRateLimitMessage(error);
       if (rateLimitMessage) {
-        notifications.show({
-          color: "red",
-          title: "Demasiados intentos",
-          message: rateLimitMessage,
-          icon: (
-            <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
-          ),
-        });
+        setFormError({ title: "Demasiados intentos", message: rateLimitMessage });
         return;
       }
 
@@ -158,136 +142,119 @@ const LoginPage = ({ variant = "operator" }) => {
         typeof apiMessage === "string" &&
         apiMessage.toLowerCase().includes("verific");
 
-      notifications.show({
-        color: "red",
+      setFormError({
         title: isUnverified
           ? "Cuenta sin verificar"
           : "Usuario y/o contraseña incorrectos",
         message: isUnverified
           ? apiMessage
           : "Revisá tus datos e intentá de nuevo.",
-        icon: (
-          <IconExclamationMark style={{ width: rem(20), height: rem(20) }} />
-        ),
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // Fuerza tema light: esta vista tiene un fondo/hero de marca fijo que no fue diseñado
-  // para dark mode. Es una vista pública (sin autenticación requerida), similar a Landing;
-  // contrasta con las rutas autenticadas que sí respetan la preferencia del usuario (SHG-FE-061).
-  // Rediseñar para dark mode sería una tarea de diseño aparte, fuera del alcance.
+  // El molde `AuthShell` fuerza tema light (foto de marca fija que no fue diseñada
+  // para dark mode) y arma las dos mitades: formulario a la izquierda, foto a la
+  // derecha desde `sm`. Es una vista pública; contrasta con las rutas
+  // autenticadas que sí respetan la preferencia del usuario (SHG-FE-061).
   return (
-    <ForcedLightScheme>
-      <Group align="flex-start" gap="0" wrap="nowrap">
-        <Card
-          w={{ base: '100%', sm: FORM_WIDHT }}
-          miw={{ base: 0, sm: FORM_WIDHT }}
-          mih="100dvh"
-          mah={{ sm: '100dvh' }}
-          p={{ base: 'md', sm: 'xl' }}
-          withBorder
-          style={{ overflowY: 'auto' }}
-        >
-          <Stack
-            p={{ base: 'xs', sm: 'xl' }}
-            gap="lg"
-            // Mobile: arriba (no centrado) para que con el teclado abierto se vean contraseña y botón.
-            my={{ base: 0, sm: 'auto' }}
-            component="form"
-            noValidate
-            justify="center"
-            onSubmit={form.onSubmit((values) => handleFormSubmit(values))}
+    <AuthShell
+      variant="split"
+      title={copy.title}
+      subtitle={copy.subtitle}
+      footer={
+        <>
+          <Anchor href="https://shipgo.gitbook.io/manual" target="_blank" size="sm" c="dimmed">
+            Ayuda
+          </Anchor>
+          <Anchor component={WouterLink} href="/" size="sm" c="dimmed">
+            Volver al inicio
+          </Anchor>
+        </>
+      }
+    >
+      <Stack
+        gap="lg"
+        component="form"
+        noValidate
+        pos="relative"
+        onSubmit={form.onSubmit((values) => handleFormSubmit(values))}
+      >
+        <LoadingOverlay visible={loading} />
+
+        {formError ? (
+          <Alert
+            color="red"
+            icon={<IconAlertCircle size={18} />}
+            title={formError.title}
           >
-            <LoadingOverlay visible={loading} />
+            {formError.message}
+          </Alert>
+        ) : null}
 
-            <Stack gap={0}>
-              {/* Mobile: logo de 36 px de alto (~87 px de ancho) en vez de 300 px. */}
-              <Anchor
-                component={WouterLink}
-                href="/"
-                aria-label="ShipGo — inicio"
-                w={{ base: 'fit-content', sm: 300 }}
-                mb={{ base: 'sm', sm: 0 }}
-              >
-                <Image
-                  src={logo}
-                  alt="Logo de ShipGo"
-                  h={{ base: 36, sm: 'auto' }}
-                  w={{ base: 'auto', sm: 300 }}
-                  fit="contain"
-                />
-              </Anchor>
-              <Title order={1}>{copy.title}</Title>
-              <Text>{copy.subtitle}</Text>
-            </Stack>
-
-            <FocusTrap active>
-              <Stack gap="xs">
-                <TextInput
-                  {...form.getInputProps("username")}
-                  autoFocus
-                  size="md"
-                  label="Usuario"
-                  autoComplete="username"
-                  disabled={loading}
-                  key={form.key("username")}
-                  placeholder="Ingresá tu usuario"
-                />
-                <PasswordInput
-                  {...form.getInputProps("password")}
-                  size="md"
-                  label="Contraseña"
-                  autoComplete="current-password"
-                  disabled={loading}
-                  key={form.key("password")}
-                  placeholder="Ingresá tu contraseña"
-                />
-              </Stack>
-            </FocusTrap>
-
-            <Group justify="space-between">
-              <Switch
-                {...form.getInputProps("remember", { type: "checkbox" })}
-                size="md"
-                label="Recordame"
-                key={form.key("remember")}
-              />
-              <Anchor href="/recuperar-cuenta">Olvidé mi contraseña</Anchor>
-            </Group>
-
-            <CaptchaField captcha={captcha} />
-
-            <Button
+        <FocusTrap active>
+          <Stack gap="sm">
+            <TextInput
+              {...form.getInputProps("username")}
+              autoFocus
               size="lg"
-              h={48}
-              type="submit"
-              disabled={loading || !captcha.token}
-            >
-              Iniciar sesión
-            </Button>
-
-            <Group justify="center">
-              <Anchor href="https://shipgo.gitbook.io/manual" target="_blank">
-                Ayuda
-              </Anchor>
-              {/* A 390 px los links envuelven en dos filas y el divisor quedaba huérfano (SHG-FE-112). */}
-              <Divider orientation="vertical" visibleFrom="sm" />
-              <Anchor href="/registro">Crear una cuenta</Anchor>
-            </Group>
+              label="Usuario"
+              autoComplete="username"
+              disabled={loading}
+              key={form.key("username")}
+              placeholder="Ingresá tu usuario"
+            />
+            <PasswordInput
+              {...form.getInputProps("password")}
+              size="lg"
+              label="Contraseña"
+              autoComplete="current-password"
+              disabled={loading}
+              key={form.key("password")}
+              placeholder="Ingresá tu contraseña"
+            />
           </Stack>
-        </Card>
-        <Image
-          h="100svh"
-          src={background}
-          alt=""
-          miw={`calc(100svw - ${FORM_WIDHT})`}
-          visibleFrom="sm"
-        />
-      </Group>
-    </ForcedLightScheme>
+        </FocusTrap>
+
+        <Group justify="space-between">
+          <Switch
+            {...form.getInputProps("remember", { type: "checkbox" })}
+            size="md"
+            label="Recordame"
+            key={form.key("remember")}
+          />
+          <Anchor href="/recuperar-cuenta" fw={600}>
+            Olvidé mi contraseña
+          </Anchor>
+        </Group>
+
+        <CaptchaField captcha={captcha} />
+
+        <Button
+          size="lg"
+          h={48}
+          type="submit"
+          disabled={loading || !captcha.token}
+        >
+          Iniciar sesión
+        </Button>
+
+        <Stack gap="sm">
+          <Divider label="¿Primera vez en ShipGo?" labelPosition="center" />
+          <Button
+            component={WouterLink}
+            href="/registro"
+            variant="outline"
+            size="lg"
+            h={48}
+          >
+            Crear una cuenta
+          </Button>
+        </Stack>
+      </Stack>
+    </AuthShell>
   );
 };
 

@@ -59,7 +59,8 @@ const CaptchaField = ({ captcha }) => {
 
       {/* Cloudflare monta/desmonta el widget acá — nunca queda vacío mudo:
           siempre hay uno de los mensajes de arriba mientras no esté "ready". */}
-      <div ref={containerRef} data-testid="captcha-widget" />
+      {/* Alto reservado (el widget de Turnstile mide 65 px): al cargar no empuja el botón. */}
+      <div ref={containerRef} data-testid="captcha-widget" style={{ minHeight: 65 }} />
     </Box>
   );
 };

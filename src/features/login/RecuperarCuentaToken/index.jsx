@@ -18,7 +18,7 @@ import { IconArrowLeft, IconCheck } from "@tabler/icons-react";
 import { applyApiError } from "@domain/apiError";
 import { useAuthStore } from "@stores/auth.store";
 
-import AuthCardShell from "../components/AuthCardShell";
+import AuthShell from "@components/AuthShell";
 import {
   NUEVA_PASSWORD_INITIAL_VALUES,
   NUEVA_PASSWORD_SCHEMA,
@@ -132,17 +132,17 @@ const RecuperarCuentaToken = ({ variant = "recuperar" }) => {
 
   if (estado === ESTADO.VALIDANDO) {
     return (
-      <AuthCardShell title="Verificando el enlace">
+      <AuthShell title="Verificando el enlace">
         <Center py="lg">
           <Loader size="md" />
         </Center>
-      </AuthCardShell>
+      </AuthShell>
     );
   }
 
   if (estado === ESTADO.INVALIDO) {
     return (
-      <AuthCardShell title="Enlace no válido">
+      <AuthShell title="Enlace no válido">
         <Alert color="red" title="El enlace expiró o ya se usó">
           {textos.invalidoMensaje}
         </Alert>
@@ -155,25 +155,25 @@ const RecuperarCuentaToken = ({ variant = "recuperar" }) => {
             <Text size="sm">Volver a iniciar sesión</Text>
           </Group>
         </Anchor>
-      </AuthCardShell>
+      </AuthShell>
     );
   }
 
   if (estado === ESTADO.LISTO) {
     return (
-      <AuthCardShell title={textos.exitoTitulo}>
+      <AuthShell title={textos.exitoTitulo}>
         <Alert color="green" icon={<IconCheck size={18} />} title="Listo">
           {textos.exitoMensaje}
         </Alert>
         <Anchor component={Link} href="/login">
           Ir a iniciar sesión
         </Anchor>
-      </AuthCardShell>
+      </AuthShell>
     );
   }
 
   return (
-    <AuthCardShell
+    <AuthShell
       title={textos.titulo}
       subtitle={textos.subtitulo}
     >
@@ -187,7 +187,7 @@ const RecuperarCuentaToken = ({ variant = "recuperar" }) => {
         <PasswordInput
           {...form.getInputProps("newPassword")}
           key={form.key("newPassword")}
-          size="md"
+          size="lg"
           label="Nueva contraseña"
           autoComplete="new-password"
           autoFocus
@@ -196,13 +196,13 @@ const RecuperarCuentaToken = ({ variant = "recuperar" }) => {
         <PasswordInput
           {...form.getInputProps("confirmPassword")}
           key={form.key("confirmPassword")}
-          size="md"
+          size="lg"
           label="Repetí la contraseña"
           autoComplete="new-password"
           disabled={loading}
         />
 
-        <Button type="submit" size="md" loading={loading}>
+        <Button type="submit" size="lg" h={48} loading={loading}>
           {textos.boton}
         </Button>
 
@@ -215,7 +215,7 @@ const RecuperarCuentaToken = ({ variant = "recuperar" }) => {
           </Anchor>
         </Group>
       </Stack>
-    </AuthCardShell>
+    </AuthShell>
   );
 };
 

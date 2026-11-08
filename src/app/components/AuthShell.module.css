@@ -1,0 +1,26 @@
+/* Tarjeta de las pantallas de acceso centradas (recuperar, reset, registro).
+   Mobile: sin tarjeta (fondo blanco, sin borde ni sombra). Desde `sm`: borde y
+   sombra suave sobre el fondo gris de la web. */
+.card {
+  width: 100%;
+  background: transparent;
+}
+
+@media (min-width: 48em) {
+  .card {
+    background: var(--mantine-color-white);
+    border: 1px solid var(--mantine-color-gray-3);
+    border-radius: var(--mantine-radius-md);
+    box-shadow: var(--mantine-shadow-sm);
+  }
+}
+
+.page {
+  background: var(--mantine-color-white);
+}
+
+@media (min-width: 48em) {
+  .page {
+    background: var(--mantine-color-gray-0);
+  }
+}

@@ -4,18 +4,17 @@ import {
   Alert,
   Anchor,
   Button,
-  Card,
   Group,
   SimpleGrid,
   Stack,
   Text,
   TextInput,
   PasswordInput,
-  Title,
 } from '@mantine/core';
 import { useForm, schemaResolver } from '@mantine/form';
 import { IconCircleCheck, IconMailCheck } from '@tabler/icons-react';
 
+import AuthShell from '@components/AuthShell';
 import { parseApiError } from '@domain/apiError';
 import { useCaptcha } from '@hooks/useCaptcha';
 import CaptchaField from '@components/CaptchaField';
@@ -31,6 +30,8 @@ import { REGISTRO_SCHEMA, REGISTRO_INITIAL_VALUES } from './constants/schema';
  * No hay auto-login: el backend exige verificar el email antes de poder entrar.
  * Al éxito se muestra una pantalla "revisá tu email".
  */
+const REGISTRO_WIDTH = 460;
+
 const RegistroPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState(null);
@@ -87,12 +88,11 @@ const RegistroPage = () => {
 
   if (registeredEmail) {
     return (
-      <Stack gap="lg" maw={520} mx="auto">
+      <AuthShell title="Revisá tu email" width={REGISTRO_WIDTH}>
         <Alert
           color="teal"
           variant="light"
           icon={<IconMailCheck size={20} />}
-          title="Revisá tu email"
         >
           Te enviamos un correo a <strong>{registeredEmail}</strong> con un enlace
           para verificar tu cuenta. El enlace vence en 24 horas. Una vez
@@ -103,92 +103,88 @@ const RegistroPage = () => {
             Ir a iniciar sesión
           </Anchor>
         </Group>
-      </Stack>
+      </AuthShell>
     );
   }
 
   return (
-    <Stack gap="lg" maw={520} mx="auto">
-      <Stack gap={4}>
-        <Title order={2}>Creá tu cuenta</Title>
-        <Text c="dimmed">
-          Registrate para seguir todos tus envíos desde un solo lugar.
+    <AuthShell
+      title="Creá tu cuenta"
+      subtitle="Registrate para seguir todos tus envíos desde un solo lugar."
+      width={REGISTRO_WIDTH}
+    >
+      <Stack gap="md" component="form" onSubmit={handleSubmit} noValidate>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <TextInput
+            label="Nombre"
+            size="lg"
+            placeholder="Tu nombre"
+            withAsterisk
+            key={form.key('nombre')}
+            {...form.getInputProps('nombre')}
+          />
+          <TextInput
+            label="Apellido"
+            size="lg"
+            placeholder="Tu apellido"
+            withAsterisk
+            key={form.key('apellido')}
+            {...form.getInputProps('apellido')}
+          />
+        </SimpleGrid>
+
+        <TextInput
+          label="Email"
+          size="lg"
+          type="email"
+          placeholder="vos@email.com"
+          autoComplete="email"
+          withAsterisk
+          key={form.key('email')}
+          {...form.getInputProps('email')}
+        />
+
+        <TextInput
+          label="Teléfono"
+          size="lg"
+          placeholder="3511234567"
+          autoComplete="tel"
+          withAsterisk
+          key={form.key('telefono')}
+          {...form.getInputProps('telefono')}
+        />
+
+        <PasswordInput
+          label="Contraseña"
+          size="lg"
+          placeholder="Al menos 8 caracteres"
+          autoComplete="new-password"
+          withAsterisk
+          key={form.key('password')}
+          {...form.getInputProps('password')}
+        />
+
+        <CaptchaField captcha={captcha} />
+
+        <Button
+          type="submit"
+          size="lg"
+          h={48}
+          loading={submitting}
+          disabled={!captcha.token}
+          leftSection={<IconCircleCheck size={18} />}
+        >
+          Crear cuenta
+        </Button>
+
+        <Text size="sm" c="dimmed" ta="center">
+          ¿Ya tenés cuenta?{' '}
+          <Anchor component={Link} href="/login">
+            Iniciá sesión
+          </Anchor>
         </Text>
       </Stack>
-
-      <Card withBorder padding={{ base: 'md', sm: 'lg' }} component="form" onSubmit={handleSubmit} noValidate>
-        <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-            <TextInput
-              label="Nombre"
-            size="md"
-              placeholder="Tu nombre"
-              withAsterisk
-              key={form.key('nombre')}
-              {...form.getInputProps('nombre')}
-            />
-            <TextInput
-              label="Apellido"
-            size="md"
-              placeholder="Tu apellido"
-              withAsterisk
-              key={form.key('apellido')}
-              {...form.getInputProps('apellido')}
-            />
-          </SimpleGrid>
-
-          <TextInput
-            label="Email"
-            size="md"
-            type="email"
-            placeholder="vos@email.com"
-            autoComplete="email"
-            withAsterisk
-            key={form.key('email')}
-            {...form.getInputProps('email')}
-          />
-
-          <TextInput
-            label="Teléfono"
-            size="md"
-            placeholder="3511234567"
-            autoComplete="tel"
-            withAsterisk
-            key={form.key('telefono')}
-            {...form.getInputProps('telefono')}
-          />
-
-          <PasswordInput
-            label="Contraseña"
-            size="md"
-            placeholder="Al menos 8 caracteres"
-            autoComplete="new-password"
-            withAsterisk
-            key={form.key('password')}
-            {...form.getInputProps('password')}
-          />
-
-          <CaptchaField captcha={captcha} />
-
-          <Button
-            type="submit"
-            size="md"
-            loading={submitting}
-            disabled={!captcha.token}
-            leftSection={<IconCircleCheck size={18} />}
-          >
-            Crear cuenta
-          </Button>
-
-          <Text size="sm" c="dimmed" ta="center">
-            ¿Ya tenés cuenta?{' '}
-            <Anchor component={Link} href="/login">
-              Iniciá sesión
-            </Anchor>
-          </Text>
-        </Stack>
-      </Card>
-    </Stack>
+    </AuthShell>
   );
 };
 

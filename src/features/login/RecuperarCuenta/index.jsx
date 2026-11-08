@@ -6,9 +6,9 @@ import {
   Alert,
   Anchor,
   Button,
+  Divider,
   Group,
   Stack,
-  Text,
   TextInput,
 } from "@mantine/core";
 import { IconArrowLeft, IconCheck } from "@tabler/icons-react";
@@ -19,7 +19,7 @@ import { useCaptcha } from "@hooks/useCaptcha";
 import CaptchaField from "@components/CaptchaField";
 import { isCaptchaApiError } from "@config/captcha";
 
-import AuthCardShell from "../components/AuthCardShell";
+import AuthShell from "@components/AuthShell";
 import {
   RECUPERAR_EMAIL_INITIAL_VALUES,
   RECUPERAR_EMAIL_SCHEMA,
@@ -76,7 +76,7 @@ const RecuperarCuenta = () => {
 
   if (enviado) {
     return (
-      <AuthCardShell title="Revisá tu correo">
+      <AuthShell title="Revisá tu correo">
         <Alert color="green" icon={<IconCheck size={18} />} title="Listo">
           Si el email está registrado, te enviamos un enlace para restablecer la
           contraseña. Revisá también la carpeta de spam.
@@ -87,12 +87,12 @@ const RecuperarCuenta = () => {
             Volver a iniciar sesión
           </Group>
         </Anchor>
-      </AuthCardShell>
+      </AuthShell>
     );
   }
 
   return (
-    <AuthCardShell
+    <AuthShell
       title="Recuperá tu cuenta"
       subtitle="Ingresá tu email y te enviamos un enlace para crear una nueva contraseña."
     >
@@ -107,7 +107,7 @@ const RecuperarCuenta = () => {
           <TextInput
             {...form.getInputProps("userEmail")}
             key={form.key("userEmail")}
-            size="md"
+            size="lg"
             inputMode="email"
             label="Email"
             autoComplete="email"
@@ -120,24 +120,28 @@ const RecuperarCuenta = () => {
 
           <Button
             type="submit"
-            size="md"
+            size="lg"
+            h={48}
             loading={loading}
             disabled={!captcha.token}
           >
             Enviar enlace
           </Button>
 
-          <Group justify="center">
-            <Anchor component={Link} href="/login" c="dimmed">
-              <Group gap={6}>
-                <IconArrowLeft size={16} />
-                <Text size="sm">Volver a iniciar sesión</Text>
-              </Group>
-            </Anchor>
-          </Group>
+          <Divider label="o" labelPosition="center" />
+          <Button
+            component={Link}
+            href="/login"
+            variant="outline"
+            size="lg"
+            h={48}
+            leftSection={<IconArrowLeft size={18} />}
+          >
+            Volver a iniciar sesión
+          </Button>
         </Stack>
       </form>
-    </AuthCardShell>
+    </AuthShell>
   );
 };
 

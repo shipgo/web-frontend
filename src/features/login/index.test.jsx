@@ -77,12 +77,23 @@ describe("LoginPage — captcha (SHG-FE-043)", () => {
     );
   });
 
-  it("SHG-FE-112: el divisor vertical entre los links sólo se muestra desde sm (a 390 px quedaba huérfano)", () => {
+  it("«Crear una cuenta» es un botón con contorno que lleva a /registro", () => {
     renderWithProviders(<LoginPage />, { route: "/login" });
 
-    const divisor = screen.getByText("Ayuda").parentElement.querySelector('[data-orientation="vertical"]');
-    expect(divisor).not.toBeNull();
-    expect(divisor.className).toMatch(/visible-from-sm/);
+    expect(screen.getByRole("link", { name: "Crear una cuenta" })).toHaveAttribute(
+      "href",
+      "/registro",
+    );
+  });
+
+  it("el pie tiene «Ayuda» (manual) y «Volver al inicio»", () => {
+    renderWithProviders(<LoginPage />, { route: "/login" });
+
+    expect(screen.getByRole("link", { name: "Ayuda" })).toHaveAttribute(
+      "href",
+      "https://shipgo.gitbook.io/manual",
+    );
+    expect(screen.getByRole("link", { name: "Volver al inicio" })).toHaveAttribute("href", "/");
   });
 
   // --- SHG-FE-054: logo → landing / redirect post-login ---
@@ -208,5 +219,31 @@ describe("LoginPage — captcha (SHG-FE-043)", () => {
     await submit(user);
 
     expect(await screen.findByText("Cuenta sin verificar")).toBeInTheDocument();
+  });
+
+  it("el error de login se muestra dentro del formulario (role=alert), no como notificación flotante", async () => {
+    const user = userEvent.setup();
+    mockLogin.mockRejectedValue({
+      response: { status: 401, data: { message: "Bad credentials" } },
+    });
+    await submit(user);
+
+    const alerta = await screen.findByRole("alert");
+    expect(alerta).toHaveTextContent(/usuario y\/o contraseña incorrectos/i);
+    expect(alerta.closest("form")).not.toBeNull();
+  });
+
+  it("el error se limpia al volver a enviar el formulario", async () => {
+    const user = userEvent.setup();
+    mockLogin.mockRejectedValueOnce({
+      response: { status: 401, data: { message: "Bad credentials" } },
+    });
+    await submit(user);
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+
+    mockLogin.mockResolvedValue(true);
+    await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
+
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
   });
 });
