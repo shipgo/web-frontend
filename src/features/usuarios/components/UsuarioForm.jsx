@@ -1,29 +1,25 @@
 import { useEffect, useState } from "react";
 import {
+  Box,
   Button,
-  Card,
-  Group,
   LoadingOverlay,
   MultiSelect,
   Select,
   SimpleGrid,
-  Stack,
   Text,
-  Title,
   TextInput,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import {
-  IconUser,
-  IconMail,
-  IconMapPin,
-  IconBriefcase,
-} from "@tabler/icons-react";
+import { IconUser, IconMail, IconMapPin, IconBriefcase } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { modals } from "@mantine/modals";
 import dayjs from "dayjs";
 
 import PageFooter from "@components/PageFooter";
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
+import FormSections from "./FormSections";
+import { useFormSections } from "./useFormSections";
 import { sucursalApi, authorityApi } from "@api";
 import { catalogsApi, locationApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
@@ -112,6 +108,8 @@ const UsuarioForm = ({
       onConfirm: onCancel,
     });
   };
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
   const isSuper = user?.hasRole(ROLE_SUPERUSER);
   const isAdmin = user?.hasRole(ROLE_ADMIN);
 
@@ -269,24 +267,18 @@ const UsuarioForm = ({
       ]
     : authorities;
 
-  return (
-    <form onSubmit={form.onSubmit(onSubmit)} noValidate>
-      <Stack>
-        {/* Información Personal */}
-        <Card pos="relative">
-          <LoadingOverlay
-            visible={catalogsLoading}
-            overlayProps={{ radius: "md", blur: 2 }}
-          />
-
-          <Stack gap="md">
-            <Group gap="0.75rem">
-              <IconUser size={20} />
-              <Title order={4}>Información personal</Title>
-            </Group>
-
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+  const sections = [
+    {
+      value: "personal",
+      title: "Información personal",
+      icon: <IconUser size={20} />,
+      fields: ["username", "nombre", "apellido", "fechaNacimiento", "tipoDocumentoID", "dni", "sexoID"],
+      cardProps: { pos: "relative" },
+      children: (
+        <>
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing={isMobile ? "md" : "lg"}>
               <TextInput
+                size={size}
                 label="Usuario"
                 placeholder="Ej: jperez"
                 required
@@ -294,12 +286,14 @@ const UsuarioForm = ({
                 {...form.getInputProps("username")}
               />
               <TextInput
+                size={size}
                 label="Nombre"
                 placeholder="Ej: Juan"
                 required
                 {...form.getInputProps("nombre")}
               />
               <TextInput
+                size={size}
                 label="Apellido"
                 placeholder="Ej: Pérez"
                 required
@@ -309,14 +303,17 @@ const UsuarioForm = ({
 
             <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
               <DateInput
+                size={size}
                 label="Fecha de nacimiento"
                 placeholder="Seleccioná la fecha"
                 required
                 valueFormat="DD/MM/YYYY"
+                dropdownType={isMobile ? "modal" : "popover"}
                 maxDate={dayjs().format("YYYY-MM-DD")}
                 {...form.getInputProps("fechaNacimiento")}
               />
               <Select
+                size={size}
                 label="Tipo de documento"
                 placeholder="Seleccioná una opción"
                 required
@@ -326,12 +323,14 @@ const UsuarioForm = ({
                 {...form.getInputProps("tipoDocumentoID")}
               />
               <TextInput
+                size={size}
                 label="DNI"
                 placeholder="Ej: 12345678"
                 required
                 {...form.getInputProps("dni")}
               />
               <Select
+                size={size}
                 label="Sexo"
                 placeholder="Seleccioná una opción"
                 required
@@ -339,18 +338,18 @@ const UsuarioForm = ({
                 {...form.getInputProps("sexoID")}
               />
             </SimpleGrid>
-          </Stack>
-        </Card>
-
-        {/* Información de Contacto */}
-        <Card>
-          <Stack gap="md">
-            <Group gap="0.75rem">
-              <IconMail size={20} />
-              <Title order={4}>Información de contacto</Title>
-            </Group>
-
+        </>
+      ),
+    },
+    {
+      value: "contacto",
+      title: "Información de contacto",
+      icon: <IconMail size={20} />,
+      fields: ["email", "prefijo", "telefono"],
+      children: (
+        <>
             <TextInput
+                size={size}
               label="Email"
               placeholder="Ej: juan@example.com"
               required
@@ -359,37 +358,40 @@ const UsuarioForm = ({
             />
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <TextInput
+                size={size}
                 label="Prefijo"
                 placeholder="Ej: 351"
                 required
                 {...form.getInputProps("prefijo")}
               />
               <TextInput
+                size={size}
                 label="Teléfono"
                 placeholder="Ej: 1234567890"
                 required
                 {...form.getInputProps("telefono")}
               />
             </SimpleGrid>
-          </Stack>
-        </Card>
-
-        {/* Dirección */}
-        <Card>
-          <Stack gap="md">
-            <Group gap="0.75rem">
-              <IconMapPin size={20} />
-              <Title order={4}>Dirección</Title>
-            </Group>
-
+        </>
+      ),
+    },
+    {
+      value: "direccion",
+      title: "Dirección",
+      icon: <IconMapPin size={20} />,
+      fields: ["nombreCalle", "numeroCalle", "provinciaID", "localidadID"],
+      children: (
+        <>
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <TextInput
+                size={size}
                 label="Nombre de la calle"
                 placeholder="Ej: Av. Corrientes"
                 required
                 {...form.getInputProps("nombreCalle")}
               />
               <TextInput
+                size={size}
                 label="Número de la calle"
                 placeholder="Ej: 1234"
                 required
@@ -399,6 +401,7 @@ const UsuarioForm = ({
 
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <Select
+                size={size}
                 label="Provincia"
                 placeholder="Seleccioná una opción"
                 required
@@ -412,6 +415,7 @@ const UsuarioForm = ({
                 }}
               />
               <Select
+                size={size}
                 label="Localidad"
                 placeholder="Seleccioná primero una provincia"
                 required
@@ -422,19 +426,19 @@ const UsuarioForm = ({
                 {...form.getInputProps("localidadID")}
               />
             </SimpleGrid>
-          </Stack>
-        </Card>
-
-        {/* Información Laboral */}
-        <Card>
-          <Stack gap="md">
-            <Group gap="0.75rem">
-              <IconBriefcase size={20} />
-              <Title order={4}>Información laboral</Title>
-            </Group>
-
+        </>
+      ),
+    },
+    {
+      value: "laboral",
+      title: "Información laboral",
+      icon: <IconBriefcase size={20} />,
+      fields: ["authorities", "sucursalID"],
+      children: (
+        <>
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <MultiSelect
+                size={size}
                 label="Roles"
                 placeholder="Seleccioná los roles"
                 required
@@ -454,6 +458,7 @@ const UsuarioForm = ({
               />
               {isSuper ? (
                 <Select
+                size={size}
                   label="Sucursal"
                   placeholder="Seleccioná una sucursal"
                   data={sucursales}
@@ -467,6 +472,7 @@ const UsuarioForm = ({
                 />
               ) : (
                 <TextInput
+                size={size}
                   label="Sucursal"
                   description="Los usuarios que crees quedan asignados a tu sucursal"
                   value={user?.sucursal?.nombre || ""}
@@ -474,9 +480,21 @@ const UsuarioForm = ({
                 />
               )}
             </SimpleGrid>
-          </Stack>
-        </Card>
-      </Stack>
+        </>
+      ),
+    },
+  ];
+  const { opened, setOpened, revealErrors } = useFormSections(sections);
+
+  return (
+    <form onSubmit={form.onSubmit(onSubmit, revealErrors)} noValidate>
+      <Box pos="relative">
+        <LoadingOverlay
+          visible={catalogsLoading}
+          overlayProps={{ radius: "md", blur: 2 }}
+        />
+        <FormSections sections={sections} opened={opened} onChange={setOpened} />
+      </Box>
 
       {/* Footer canónico (SHG-FE-036): el slot vive en `AppShell.footer`; el
           botón sigue dentro del `<form>` para conservar el submit nativo. */}

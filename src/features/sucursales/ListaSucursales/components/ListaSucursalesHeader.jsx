@@ -1,4 +1,3 @@
-import { Button } from "@mantine/core";
 import { IconPlus } from "@tabler/icons-react";
 import { Link } from "wouter";
 
@@ -8,11 +7,13 @@ const ListaSucursalesHeader = () => (
   <PageHeader
     title="Sucursales"
     subtitle="Administrá tus sucursales"
-  >
-    <Button to="/crear" component={Link} leftSection={<IconPlus />}>
-      Crear sucursal
-    </Button>
-  </PageHeader>
+    primaryAction={{
+      label: "Crear sucursal",
+      icon: <IconPlus />,
+      component: Link,
+      to: "/crear",
+    }}
+  />
 );
 
 export default ListaSucursalesHeader;

@@ -12,7 +12,6 @@ import { useForm, isNotEmpty } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
   Button,
-  MantineProvider,
   PasswordInput,
   Stack,
   Text,
@@ -28,6 +27,7 @@ import {
   FocusTrap,
   Image,
 } from "@mantine/core";
+import ForcedLightScheme from "@components/ForcedLightScheme";
 
 import { useAuthStore } from "@stores/auth.store";
 import { getRateLimitMessage } from "@domain/apiError";
@@ -180,21 +180,22 @@ const LoginPage = ({ variant = "operator" }) => {
   // contrasta con las rutas autenticadas que sí respetan la preferencia del usuario (SHG-FE-061).
   // Rediseñar para dark mode sería una tarea de diseño aparte, fuera del alcance.
   return (
-    <MantineProvider forceColorScheme="light">
+    <ForcedLightScheme>
       <Group align="flex-start" gap="0" wrap="nowrap">
         <Card
           w={{ base: '100%', sm: FORM_WIDHT }}
           miw={{ base: 0, sm: FORM_WIDHT }}
-          mih="100svh"
-          mah="100svh"
-          p="xl"
+          mih="100dvh"
+          mah={{ sm: '100dvh' }}
+          p={{ base: 'md', sm: 'xl' }}
           withBorder
           style={{ overflowY: 'auto' }}
         >
           <Stack
-            p="xl"
+            p={{ base: 'xs', sm: 'xl' }}
             gap="lg"
-            my="auto"
+            // Mobile: arriba (no centrado) para que con el teclado abierto se vean contraseña y botón.
+            my={{ base: 0, sm: 'auto' }}
             component="form"
             noValidate
             justify="center"
@@ -203,8 +204,21 @@ const LoginPage = ({ variant = "operator" }) => {
             <LoadingOverlay visible={loading} />
 
             <Stack gap={0}>
-              <Anchor component={WouterLink} href="/" aria-label="ShipGo — inicio" w="300">
-                <Image src={logo} alt="Logo de ShipGo" w="300" fit="contain" />
+              {/* Mobile: logo de 36 px de alto (~87 px de ancho) en vez de 300 px. */}
+              <Anchor
+                component={WouterLink}
+                href="/"
+                aria-label="ShipGo — inicio"
+                w={{ base: 'fit-content', sm: 300 }}
+                mb={{ base: 'sm', sm: 0 }}
+              >
+                <Image
+                  src={logo}
+                  alt="Logo de ShipGo"
+                  h={{ base: 36, sm: 'auto' }}
+                  w={{ base: 'auto', sm: 300 }}
+                  fit="contain"
+                />
               </Anchor>
               <Title order={1}>{copy.title}</Title>
               <Text>{copy.subtitle}</Text>
@@ -248,6 +262,7 @@ const LoginPage = ({ variant = "operator" }) => {
 
             <Button
               size="lg"
+              h={48}
               type="submit"
               disabled={loading || !captcha.token}
             >
@@ -272,7 +287,7 @@ const LoginPage = ({ variant = "operator" }) => {
           visibleFrom="sm"
         />
       </Group>
-    </MantineProvider>
+    </ForcedLightScheme>
   );
 };
 

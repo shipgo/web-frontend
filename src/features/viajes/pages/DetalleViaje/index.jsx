@@ -2,11 +2,15 @@ import { Card } from '@mantine/core';
 import { useLocation, useParams } from 'wouter';
 
 import PageContainer from '@components/PageContainer';
+import StickyActionBar, { STICKY_ACTION_BAR_HEIGHT } from '@components/StickyActionBar';
+import { useIsMobile } from '@hooks/useIsMobile';
+import { useAuthStore } from '@stores/auth.store';
 import PageBreadcrumbsHeader from '@components/PageBreadcrumbsHeader';
 import ScreenContainer from '@components/ScreenContainer';
 import { isNotFoundError } from '@utils/httpErrors';
 
 import DetalleViajeHeader from './components/DetalleViajeHeader';
+import { buildAccionesMobile } from './accionesMobile';
 import HistorialTimeline from './components/HistorialTimeline';
 import RecorridosList from './components/RecorridosList';
 import ViajeMapa from './components/ViajeMapa';
@@ -23,8 +27,20 @@ const DetalleViaje = () => {
     onSuccess: refetch,
   });
 
+  const isMobile = useIsMobile();
+  const user = useAuthStore((state) => state.user);
+  const accionesMobile =
+    isMobile && viaje
+      ? buildAccionesMobile(user, viaje, {
+          onEditar: () => navigate(`~/viajes/${id}/editar`),
+          onFinalizar: confirmFinalizar,
+          onReanudar: confirmReanudar,
+          onCancelar: confirmCancelar,
+        })
+      : null;
+
   return (
-    <PageContainer>
+    <PageContainer pb={accionesMobile ? STICKY_ACTION_BAR_HEIGHT + 16 : undefined}>
       <PageBreadcrumbsHeader entidad="Viajes" accion="Detalle de viaje" />
 
       <Card>
@@ -72,6 +88,17 @@ const DetalleViaje = () => {
             historial={historialQuery.data}
           />
         </>
+      )}
+
+      {accionesMobile && (
+        <StickyActionBar
+          fixed
+          label={accionesMobile.primary.label}
+          icon={accionesMobile.primary.icon}
+          color={accionesMobile.primary.color}
+          onClick={accionesMobile.primary.onClick}
+          actions={accionesMobile.actions}
+        />
       )}
     </PageContainer>
   );

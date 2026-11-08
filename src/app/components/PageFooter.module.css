@@ -1,0 +1,7 @@
+/* Mobile: con dos botones, cada uno ocupa el 50 % del ancho. */
+@media (max-width: 47.99em) {
+  .inner > :global(.mantine-Button-root) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

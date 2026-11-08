@@ -1,5 +1,5 @@
 import { Link } from 'wouter';
-import { AppShell, Anchor, Box, Group, Text } from '@mantine/core';
+import { AppShell, Anchor, Box, Button, Group, Text } from '@mantine/core';
 
 import BrandLogo from '@components/BrandLogo';
 import { useAuth } from '@contexts/auth';
@@ -24,6 +24,7 @@ import { landingPathFor } from '@domain/roles';
  *   accesibles con o sin sesión.
  * @param {number|string} [props.maxWidth=760]   Ancho máximo del contenido.
  * @param {React.ReactNode} [props.headerRight]  Slot opcional a la derecha del header.
+ *   Si se omite y no hay sesión, se muestra un botón "Ingresar" (`/login`).
  */
 const PublicLayout = ({
   children,
@@ -32,6 +33,11 @@ const PublicLayout = ({
   headerRight = null,
 }) => {
   const { user, isAuthenticated } = useAuth();
+  const defaultRight = isAuthenticated ? null : (
+    <Button component={Link} href="/login" variant="light" size="sm">
+      Ingresar
+    </Button>
+  );
   const resolvedHomeHref =
     homeHref ?? (isAuthenticated ? landingPathFor(user) : '/');
 
@@ -42,7 +48,7 @@ const PublicLayout = ({
           <Anchor component={Link} href={resolvedHomeHref} aria-label="ShipGo — inicio">
             <BrandLogo h={32} alt="ShipGo" />
           </Anchor>
-          {headerRight}
+          {headerRight ?? defaultRight}
         </Group>
       </AppShell.Header>
 
@@ -50,6 +56,7 @@ const PublicLayout = ({
         <Box
           mx="auto"
           px="md"
+          miw={0}
           py={{ base: 'lg', sm: 'xl' }}
           style={{ maxWidth, width: '100%' }}
         >

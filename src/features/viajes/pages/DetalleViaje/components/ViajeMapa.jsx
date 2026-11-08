@@ -5,6 +5,7 @@ import { Layer, Marker, Source, useMap } from 'react-map-gl/mapbox';
 import { LngLatBounds } from 'mapbox-gl';
 
 import Map from '@components/Map';
+import { useIsMobile } from '@hooks/useIsMobile';
 
 /** Coordenadas de la parada de un recorrido (`puntoEntrega` o `sucursalDestino`, XOR). */
 const coordsDeRecorrido = (recorrido) => {
@@ -92,6 +93,7 @@ const MapAutoFit = ({ puntos }) => {
  * se muestra igual con sólo las paradas.
  */
 const ViajeMapa = ({ recorridos = [], estado, ubicacion, historial = [] }) => {
+  const isMobile = useIsMobile();
   const paradas = useMemo(
     () =>
       [...recorridos]
@@ -136,7 +138,7 @@ const ViajeMapa = ({ recorridos = [], estado, ubicacion, historial = [] }) => {
         <Title order={4} p="md" pb="xs">
           Mapa del viaje
         </Title>
-        <div style={{ height: 350 }} data-testid="viaje-mapa-track" data-track-puntos={trackPuntos.length}>
+        <div style={{ height: isMobile ? 280 : 350 }} data-testid="viaje-mapa-track" data-track-puntos={trackPuntos.length}>
           <Map initialViewState={initialViewState}>
             <MapAutoFit puntos={puntos} />
             {trackGeoJson && (

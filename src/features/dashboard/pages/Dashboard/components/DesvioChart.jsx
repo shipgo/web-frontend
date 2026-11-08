@@ -2,6 +2,7 @@ import { BarChart } from '@mantine/charts';
 import { IconRoute } from '@tabler/icons-react';
 
 import ChartCard from './ChartCard';
+import { useBarChartProps } from './useChartProps';
 import { mapDesvioViajes } from '../dashboard.mappers';
 
 /**
@@ -10,6 +11,7 @@ import { mapDesvioViajes } from '../dashboard.mappers';
  * (positivo = terminó tarde, negativo = se adelantó).
  */
 const DesvioChart = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
+  const chartProps = useBarChartProps(280);
   const data = mapDesvioViajes(series);
 
   return (
@@ -26,7 +28,7 @@ const DesvioChart = ({ series, periodoLabel, isLoading, isError, onRetry }) => {
       minHeight={280}
     >
       <BarChart
-        h={280}
+        {...chartProps}
         data={data}
         dataKey="viaje"
         series={[{ name: 'desvio', color: 'orange.5', label: 'Minutos' }]}

@@ -26,6 +26,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 
+import { useIsMobile } from '@hooks/useIsMobile';
 import { esEstadoTerminal } from '@domain/estados';
 import {
   digitosWhatsapp as calcularDigitosWhatsapp,
@@ -76,6 +77,7 @@ const InfoRow = ({ icon, label, children, action }) => (
  *   `TrackingProvider`) se limpia la selección y el panel se cierra solo.
  */
 const MapDetalles = () => {
+  const isMobile = useIsMobile();
   const { selectedViajeId, setSelectedViajeId } = useSelectedViaje();
   const { viajes, isLoading: isLoadingActivos } = useViajesConUbicacion();
 
@@ -132,9 +134,12 @@ const MapDetalles = () => {
       radius="md"
       withBorder
       pos="absolute"
-      top={12}
+      top={{ base: 108, sm: 12 }}
+      left={{ base: 12, sm: 'auto' }}
       right={12}
-      style={{ zIndex: 1, width: 300, maxHeight: 'calc(100% - 24px)', overflowY: 'auto' }}
+      w={{ base: 'auto', sm: 300 }}
+      mah={{ base: 'calc(100% - 230px)', sm: 'calc(100% - 24px)' }}
+      style={{ zIndex: 1, overflowY: 'auto' }}
     >
       <Stack gap="sm">
         <Group justify="space-between" wrap="nowrap" align="flex-start">
@@ -151,6 +156,7 @@ const MapDetalles = () => {
             <ActionIcon
               variant="subtle"
               color="gray"
+              size={isMobile ? 44 : 'md'}
               aria-label="Cerrar panel"
               onClick={() => setSelectedViajeId(null)}
             >
@@ -170,7 +176,7 @@ const MapDetalles = () => {
                 <ActionIcon
                   variant="subtle"
                   color="green"
-                  size="sm"
+                  size={isMobile ? 44 : 'sm'}
                   component="a"
                   href={`https://wa.me/54${digitosWhatsapp}`}
                   target="_blank"
@@ -242,6 +248,7 @@ const MapDetalles = () => {
           to={`~/viajes/${selectedViajeId}`}
           variant="light"
           size="xs"
+          mih={{ base: 44, sm: 'auto' }}
           fullWidth
           c="var(--shg-button-text-primary)"
         >

@@ -5,6 +5,8 @@ import { useDebouncedCallback } from "@mantine/hooks";
 import { Card, Flex, TextInput } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
 
+import { useFieldSize } from "@components/useFieldSize";
+
 const DEFAULT_VALUES = { nombre: "" };
 
 const formatValues = (values) =>
@@ -15,6 +17,7 @@ const formatValues = (values) =>
   );
 
 const ListaMarcasFiltros = ({ onFiltersChange }) => {
+  const size = useFieldSize();
   const lastValuesRef = useRef(DEFAULT_VALUES);
 
   const debounceChange = useDebouncedCallback((values) => {
@@ -36,6 +39,7 @@ const ListaMarcasFiltros = ({ onFiltersChange }) => {
         <TextInput
           {...form.getInputProps("nombre")}
           flex={1}
+          size={size}
           label="Nombre"
           placeholder="Ej: Mercedes-Benz"
           rightSection={<IconSearch size={18} />}

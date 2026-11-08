@@ -13,9 +13,14 @@ import MapTruckMarkers from './components/MapTruckMarkers';
 import MapRoute from './components/MapRoute';
 import MapDetalles from './components/MapDetalles';
 import MapTrackingStatus from './components/MapTrackingStatus';
+import MapaMobile from './components/MapaMobile';
+import { useIsMobile } from '@hooks/useIsMobile';
 
 const MapaContent = () => {
   useSeleccionarViajeDeQueryParam();
+  const isMobile = useIsMobile();
+
+  if (isMobile) return <MapaMobile />;
 
   return (
     <PageContainer

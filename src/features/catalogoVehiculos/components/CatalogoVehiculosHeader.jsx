@@ -1,9 +1,9 @@
-import { Button, Stack, Tabs } from "@mantine/core";
-import { IconPlus } from "@tabler/icons-react";
+import { Stack, Tabs } from "@mantine/core";
+import { IconFileTypeCsv, IconPlus } from "@tabler/icons-react";
 import { Link, useLocation } from "wouter";
 
 import PageHeader from "@components/PageHeader";
-import ExportCsvButton from "@components/ExportCsvButton";
+import { useIsMobile } from "@hooks/useIsMobile";
 
 const TABS = [
   { value: "marcas", label: "Marcas" },
@@ -39,6 +39,19 @@ const CatalogoVehiculosHeader = ({
   exportDisabled,
 }) => {
   const [, navigate] = useLocation();
+  const isMobile = useIsMobile();
+
+  const secondaryActions = onExportCsv
+    ? [
+        {
+          label: "Exportar CSV",
+          icon: <IconFileTypeCsv size={18} />,
+          onClick: onExportCsv,
+          loading: isExporting,
+          disabled: exportDisabled,
+        },
+      ]
+    : [];
 
   return (
     <Stack gap="md">
@@ -46,27 +59,26 @@ const CatalogoVehiculosHeader = ({
         value={active}
         onChange={(value) => navigate(`/${value}`)}
       >
-        <Tabs.List>
+        <Tabs.List grow={isMobile}>
           {TABS.map((tab) => (
-            <Tabs.Tab key={tab.value} value={tab.value}>
+            <Tabs.Tab key={tab.value} value={tab.value} mih={isMobile ? 44 : undefined}>
               {tab.label}
             </Tabs.Tab>
           ))}
         </Tabs.List>
       </Tabs>
 
-      <PageHeader title={title} subtitle={subtitle}>
-        <Button to={createHref} component={Link} leftSection={<IconPlus />}>
-          {createLabel}
-        </Button>
-        {onExportCsv && (
-          <ExportCsvButton
-            onExport={onExportCsv}
-            loading={isExporting}
-            disabled={exportDisabled}
-          />
-        )}
-      </PageHeader>
+      <PageHeader
+        title={title}
+        subtitle={subtitle}
+        primaryAction={{
+          label: createLabel,
+          icon: <IconPlus />,
+          component: Link,
+          to: createHref,
+        }}
+        secondaryActions={secondaryActions}
+      />
     </Stack>
   );
 };

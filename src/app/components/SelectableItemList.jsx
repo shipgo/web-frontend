@@ -12,6 +12,7 @@ const COLORS = {
   },
 };
 
+/** Ítems con alto táctil mínimo de 44 px. En mobile, combinar con `AvailableSelectedTabs`. */
 const SelectableItemList = ({
   children,
   onClick,
@@ -77,6 +78,7 @@ const SelectableItemList = ({
   return (
     <Box
       p="md"
+      mih={44}
       pr="lg"
       ref={ref}
       component="li"

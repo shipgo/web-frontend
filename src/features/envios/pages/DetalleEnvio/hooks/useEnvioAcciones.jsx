@@ -2,6 +2,7 @@ import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
 
+import { useIsMobile } from '@hooks/useIsMobile';
 import { envioApi } from '@api';
 
 import ConfirmarRetiroModalBody from '../components/ConfirmarRetiroModalBody';
@@ -66,10 +67,14 @@ const handleAccionError = (error, accionLabel, estadosPermitidos) => {
  * muestran según estado + rol; acá sólo se ejecuta la transición.
  */
 export const useEnvioAcciones = (id, { onSuccess, tienePalabraEntrega } = {}) => {
+  // Web mobile: los modales de acción abren a pantalla completa (formulario + botones alcanzables).
+  const isMobile = useIsMobile();
+
   const confirmEntregar = () => {
     modals.open({
       title: 'Entregar envío',
       centered: true,
+      fullScreen: isMobile,
       children: (
         <EntregarModalBody
           id={id}
@@ -116,6 +121,7 @@ export const useEnvioAcciones = (id, { onSuccess, tienePalabraEntrega } = {}) =>
     modals.open({
       title: 'Registrar entrega fallida',
       centered: true,
+      fullScreen: isMobile,
       children: (
         <FalloEntregaModalBody id={id} onConfirmar={ejecutarFalloEntrega} onVolver={() => modals.closeAll()} />
       ),
@@ -131,6 +137,7 @@ export const useEnvioAcciones = (id, { onSuccess, tienePalabraEntrega } = {}) =>
     modals.open({
       title: 'Confirmar retiro en sucursal',
       centered: true,
+      fullScreen: isMobile,
       children: (
         <ConfirmarRetiroModalBody
           id={id}

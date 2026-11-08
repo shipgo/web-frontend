@@ -1,40 +1,23 @@
 import { useMemo, useState } from 'react';
-import { Card, Center, Loader, TextInput, Select, Stack, ScrollArea, Text } from '@mantine/core';
+import { Card, Select, Stack, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
-
-import { coincideBusqueda } from '@utils/text';
 
 import { useSelectedViaje } from '../contexts/selectedViaje';
 import { useViajesConUbicacion } from '../hooks/useViajesConUbicacion';
-import { getEstadoVisualViaje } from '../utils/estadoVisual';
-import MapListadoViajesItem from './MapListadoViajesItem';
+import { filtrarViajes, getSucursalesOptions } from '../utils/filtrarViajes';
+import MapListadoContenido from './MapListadoContenido';
 
 const MapListadoViajes = () => {
   const { selectedSucursal: sucursal, setSelectedSucursal: setSucursal } = useSelectedViaje();
   const [search, setSearch] = useState('');
   const { viajes, isLoading } = useViajesConUbicacion();
 
-  const sucursales = useMemo(() => {
-    const nombres = [...new Set(viajes.map((v) => v.sucursalNombre).filter(Boolean))].sort();
-    return [
-      { value: 'todas', label: 'Todas las sucursales' },
-      ...nombres.map((nombre) => ({ value: nombre, label: nombre })),
-    ];
-  }, [viajes]);
+  const sucursales = useMemo(() => getSucursalesOptions(viajes), [viajes]);
 
-  const viajesFiltrados = useMemo(() => {
-    return viajes
-      .filter((v) => {
-        const matchSucursal = sucursal === 'todas' || v.sucursalNombre === sucursal;
-        const matchSearch = coincideBusqueda(search, [v.patente, v.choferNombre]);
-        return matchSucursal && matchSearch;
-      })
-      .sort((a, b) => {
-        const prioridadA = getEstadoVisualViaje(a, a.ultimaActualizacion).prioridad;
-        const prioridadB = getEstadoVisualViaje(b, b.ultimaActualizacion).prioridad;
-        return prioridadA - prioridadB;
-      });
-  }, [viajes, sucursal, search]);
+  const viajesFiltrados = useMemo(
+    () => filtrarViajes(viajes, { sucursal, search }),
+    [viajes, sucursal, search],
+  );
 
   return (
     <Card w={340} h="100%" p="md" style={{ flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
@@ -58,25 +41,7 @@ const MapListadoViajes = () => {
         />
       </Stack>
 
-      <ScrollArea style={{ flex: 1 }} offsetScrollbars>
-        {isLoading ? (
-          <Center mt="xl">
-            <Loader size="sm" />
-          </Center>
-        ) : viajesFiltrados.length === 0 ? (
-          <Text c="dimmed" size="sm" ta="center" mt="xl">
-            Sin viajes para los filtros seleccionados
-          </Text>
-        ) : (
-          viajesFiltrados.map((viaje, index) => (
-            <MapListadoViajesItem
-              key={viaje.id}
-              viaje={viaje}
-              isLast={index === viajesFiltrados.length - 1}
-            />
-          ))
-        )}
-      </ScrollArea>
+      <MapListadoContenido viajes={viajesFiltrados} isLoading={isLoading} />
     </Card>
   );
 };

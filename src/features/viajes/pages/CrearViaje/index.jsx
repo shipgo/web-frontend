@@ -5,6 +5,7 @@ import SeccionEnvios from "./SeccionEnvios";
 import SeccionRecursos from "./SeccionRecursos";
 import SeccionResumen from "./SeccionResumen";
 import SeccionDetalles from "./SeccionDetalles";
+import { SeccionesAcordeon } from "./SeccionPlegable";
 
 import EnviosFormProvider from "./contexts/EnviosFormProvider";
 import Footer from "./Footer";
@@ -19,9 +20,11 @@ const CrearViaje = () => {
       />
 
       <EnviosFormProvider>
-        <SeccionDetalles />
-        <SeccionEnvios />
-        <SeccionRecursos />
+        <SeccionesAcordeon valoresAbiertos={["detalles", "envios", "recursos"]}>
+          <SeccionDetalles />
+          <SeccionEnvios />
+          <SeccionRecursos />
+        </SeccionesAcordeon>
         <SeccionResumen />
         <Footer />
       </EnviosFormProvider>

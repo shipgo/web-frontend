@@ -1,4 +1,5 @@
 import {
+  Accordion,
   Box,
   Card,
   Group,
@@ -13,6 +14,8 @@ import {
   IconMapPin,
   IconPhone,
 } from "@tabler/icons-react";
+
+import { useIsMobile } from "@hooks/useIsMobile";
 
 const InfoItem = ({ icon, label, value }) => (
   <Box>
@@ -32,6 +35,8 @@ const InfoItem = ({ icon, label, value }) => (
  * Componente reutilizable para mostrar el perfil/detalle de una sucursal
  */
 const SucursalPerfil = ({ sucursal }) => {
+  const isMobile = useIsMobile();
+
   if (!sucursal) {
     return (
       <Card>
@@ -53,63 +58,92 @@ const SucursalPerfil = ({ sucursal }) => {
     ? `${sucursal.prefijo} ${sucursal.telefono || ""}`.trim()
     : sucursal.telefono || "Sin teléfono";
 
+  const sections = [
+    {
+      value: "seccion-0",
+      icon: <IconBuilding size={20} />,
+      title: "Información de la sucursal",
+      content: (
+        <>
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <InfoItem
+        icon={<IconBuilding size={16} />}
+        label="Nombre"
+        value={sucursal.nombre}
+      />
+      <InfoItem
+        icon={<IconMail size={16} />}
+        label="Email"
+        value={sucursal.email}
+      />
+      <InfoItem
+        icon={<IconPhone size={16} />}
+        label="Teléfono"
+        value={telefono}
+      />
+    </SimpleGrid>
+        </>
+      ),
+    },
+    {
+      value: "seccion-1",
+      icon: <IconMapPin size={20} />,
+      title: "Dirección",
+      content: (
+        <>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+      <InfoItem
+        icon={<IconMapPin size={16} />}
+        label="Calle"
+        value={direccion}
+      />
+      <InfoItem
+        icon={<IconMapPin size={16} />}
+        label="Localidad"
+        value={localidad.nombre}
+      />
+      <InfoItem
+        icon={<IconMapPin size={16} />}
+        label="Provincia"
+        value={provincia.nombre}
+      />
+    </SimpleGrid>
+        </>
+      ),
+    },
+  ];
+
+  if (isMobile) {
+    return (
+      <Accordion multiple defaultValue={[sections[0].value]} variant="separated">
+        {sections.map(({ value, icon, title, content }) => (
+          <Accordion.Item key={value} value={value}>
+            <Accordion.Control icon={icon}>
+              <Title order={4}>{title}</Title>
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Stack gap="md">{content}</Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+        ))}
+      </Accordion>
+    );
+  }
+
   return (
     <Stack>
-      {/* Información de la Sucursal */}
-      <Card>
-        <Stack gap="md">
-          <Group gap="0.75rem">
-            <IconBuilding size={20} />
-            <Title order={4}>Información de la sucursal</Title>
-          </Group>
+      {sections.map(({ value, icon, title, content }) => (
+        <Card key={value}>
+          <Stack gap="md">
+            <Group gap="0.75rem">
+              {icon}
+              <Title order={4}>{title}</Title>
+            </Group>
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <InfoItem
-              icon={<IconBuilding size={16} />}
-              label="Nombre"
-              value={sucursal.nombre}
-            />
-            <InfoItem
-              icon={<IconMail size={16} />}
-              label="Email"
-              value={sucursal.email}
-            />
-            <InfoItem
-              icon={<IconPhone size={16} />}
-              label="Teléfono"
-              value={telefono}
-            />
-          </SimpleGrid>
-        </Stack>
-      </Card>
-
-      {/* Dirección */}
-      <Card>
-        <Stack gap="md">
-          <Group gap="0.75rem">
-            <IconMapPin size={20} />
-            <Title order={4}>Dirección</Title>
-          </Group>
-
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-            <InfoItem
-              icon={<IconMapPin size={16} />}
-              label="Calle"
-              value={direccion}
-            />
-            <InfoItem
-              icon={<IconMapPin size={16} />}
-              label="Localidad"
-              value={localidad.nombre}
-            />
-            <InfoItem
-              icon={<IconMapPin size={16} />}
-              label="Provincia"
-              value={provincia.nombre}
-            />
-          </SimpleGrid>
-        </Stack>
-      </Card>
+            {content}
+          </Stack>
+        </Card>
+      ))}
     </Stack>
   );
 };

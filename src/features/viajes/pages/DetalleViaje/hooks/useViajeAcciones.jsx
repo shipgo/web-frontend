@@ -4,6 +4,7 @@ import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconCheck, IconX } from '@tabler/icons-react';
 
 import { viajeApi } from '@api';
+import { useIsMobile } from '@hooks/useIsMobile';
 
 import CancelarViajeModalBody from '../components/CancelarViajeModalBody';
 
@@ -62,6 +63,7 @@ const handleAccionError = (error, accionLabel, estadosPermitidos) => {
  * Mobile inicia desde ROLE_CHOFER en su propio repo.
  */
 export const useViajeAcciones = (id, { onSuccess } = {}) => {
+  const isMobile = useIsMobile();
   const confirmReanudar = () => {
     // Mismo guard contra doble click que `confirmFinalizar`.
     let isRunning = false;
@@ -163,6 +165,7 @@ export const useViajeAcciones = (id, { onSuccess } = {}) => {
     modals.open({
       title: 'Cancelar viaje',
       centered: true,
+      fullScreen: isMobile,
       children: (
         <CancelarViajeModalBody
           id={id}

@@ -1,7 +1,6 @@
 import {
   Button,
   Group,
-  Modal,
   Select,
   Stack,
   TextInput,
@@ -9,6 +8,10 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { useForm, schemaResolver } from "@mantine/form";
 import { IconPlus } from "@tabler/icons-react";
+
+import ResponsiveModal from "@components/ResponsiveModal";
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
 
 import { PAQUETE_INITIAL_VALUES, PAQUETE_SCHEMA } from "../constants/schema";
 
@@ -24,6 +27,8 @@ const toNumber = (val) => (val === "" || val == null ? undefined : Number(val));
  */
 const AgregarPaqueteModal = ({ categorias = [], onAdd }) => {
   const [opened, { open, close }] = useDisclosure(false);
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
 
   const form = useForm({
     mode: "controlled",
@@ -58,16 +63,16 @@ const AgregarPaqueteModal = ({ categorias = [], onAdd }) => {
       >
         Agregar paquete
       </Button>
-      <Modal
+      <ResponsiveModal
         opened={opened}
         onClose={handleClose}
         title="Agregar paquete"
-        centered
         size="md"
       >
         <form onSubmit={handleSubmit} noValidate>
           <Stack>
             <Select
+              size={size}
               key={form.key("categoriaID")}
               {...form.getInputProps("categoriaID")}
               error={form.errors.categoriaID}
@@ -78,6 +83,7 @@ const AgregarPaqueteModal = ({ categorias = [], onAdd }) => {
               searchable
             />
             <TextInput
+              size={size}
               key={form.key("peso")}
               {...form.getInputProps("peso")}
               error={form.errors.peso}
@@ -87,20 +93,21 @@ const AgregarPaqueteModal = ({ categorias = [], onAdd }) => {
               placeholder="0"
             />
             <TextInput
+              size={size}
               key={form.key("descripcion")}
               {...form.getInputProps("descripcion")}
               label="Descripción"
               placeholder="Ej: Caja con documentación"
             />
-            <Group justify="flex-end" gap="xs" mt="xs">
-              <Button variant="subtle" onClick={handleClose}>
+            <Group justify="flex-end" gap="xs" mt="xs" grow={isMobile}>
+              <Button variant="subtle" size={size} onClick={handleClose}>
                 Cancelar
               </Button>
-              <Button type="submit">Agregar paquete</Button>
+              <Button type="submit" size={size}>Agregar paquete</Button>
             </Group>
           </Stack>
         </form>
-      </Modal>
+      </ResponsiveModal>
     </>
   );
 };

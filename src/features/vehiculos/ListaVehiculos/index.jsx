@@ -1,12 +1,13 @@
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import { Card, Flex, Pagination, Text } from "@mantine/core";
 import { useSet } from "@mantine/hooks";
 
 import PageContainer from "@components/PageContainer";
-import ScreenContainer from "@components/ScreenContainer";
+import ResultsCounter from "@components/ResultsCounter";
 import SelectionBanner from "@components/SelectionBanner";
 
 import { vehiculoApi } from "@api";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { useBulkDelete } from "@hooks/useBulkDelete";
 import { useCsvExport } from "@hooks/useCsvExport";
 import { useExportSelectedCsv } from "@hooks/useExportSelectedCsv";
@@ -15,6 +16,7 @@ import { listaEstados } from "@copy/common";
 import ListaVehiculosHeader from "./components/ListaVehiculosHeader";
 import ListaVehiculosFiltros from "./components/ListaVehiculosFiltros";
 import ListaVehiculosTabla from "./components/ListaVehiculosTabla";
+import ListaVehiculosCards from "./components/ListaVehiculosCards";
 
 import { useGetVehiculos } from "./hooks/useGetVehiculos";
 import { VEHICULOS_CSV_COLUMNS } from "./listaVehiculos.csv";
@@ -75,6 +77,8 @@ const ListaVehiculos = () => {
   };
 
   const showPagination = data.total > PAGE_LIMIT;
+  const isMobile = useIsMobile();
+  const Wrapper = isMobile ? Fragment : Card;
 
   return (
     <PageContainer>
@@ -95,8 +99,12 @@ const ListaVehiculos = () => {
         onDelete={() => confirmBulkDelete((data.results ?? []).filter((item) => selectedIds.has(item.id)))}
       />
 
-      <Card>
-        <ScreenContainer
+      <Wrapper>
+        <ListaVehiculosCards
+          items={data.results}
+          selectedIds={selectedIds}
+          onToggle={onToggle}
+          onRefresh={refetchVehiculos}
           onLoading={{ show: isLoading, description: "Cargando vehículos..." }}
           onError={{
             show: isError,
@@ -121,9 +129,18 @@ const ListaVehiculos = () => {
             onToggleAll={onToggleAll}
             onRefresh={refetchVehiculos}
           />
-        </ScreenContainer>
-      </Card>
+        </ListaVehiculosCards>
+      </Wrapper>
 
+      {isMobile ? (
+        <ResultsCounter
+          amount={data.total}
+          limit={PAGE_LIMIT}
+          currentPage={page}
+          onPageChange={setPage}
+          totalPages={Math.ceil(data.total / PAGE_LIMIT) || 1}
+        />
+      ) : (
       <Flex align="center">
         <Pagination
           value={page}
@@ -137,6 +154,7 @@ const ListaVehiculos = () => {
             : "0 resultados"}
         </Text>
       </Flex>
+      )}
     </PageContainer>
   );
 };

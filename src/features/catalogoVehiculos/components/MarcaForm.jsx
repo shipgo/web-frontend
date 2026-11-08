@@ -4,6 +4,8 @@ import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { SALIR_SIN_GUARDAR, FORMULARIO_INVALIDO } from "@copy/common";
 
 /**
@@ -20,6 +22,9 @@ import { SALIR_SIN_GUARDAR, FORMULARIO_INVALIDO } from "@copy/common";
  * @param {boolean} [props.isEdit]
  */
 const MarcaForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
+
   const handleInvalid = (errors) => {
     const firstError = Object.values(errors).find(Boolean);
     notifications.show({
@@ -38,6 +43,7 @@ const MarcaForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
 
     modals.openConfirmModal({
       title: SALIR_SIN_GUARDAR.titulo,
+      fullScreen: isMobile,
       children: (
         <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
@@ -60,6 +66,7 @@ const MarcaForm = ({ form, onSubmit, loading, onCancel, isEdit = false }) => {
             </Group>
 
             <TextInput
+              size={size}
               label="Nombre"
               placeholder="Ej: Mercedes-Benz"
               leftSection={<IconTag size={18} />}

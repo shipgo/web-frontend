@@ -32,7 +32,7 @@ const OperatingSucursalSelector = () => {
       aria-label="Ver datos de la sucursal"
       placeholder="Todas las sucursales"
       leftSection={<IconBuildingWarehouse size={16} />}
-      w={220}
+      w={{ base: "100%", sm: 220 }}
       data={data}
       value={activeSucursalId != null ? String(activeSucursalId) : ALL_VALUE}
       onChange={(value) => setActiveSucursalId(value || null)}

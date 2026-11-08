@@ -35,7 +35,7 @@ const RecursoNoEncontrado = ({ recurso, listaHref, listaLabel, descripcion, clas
       {descripcion ?? `Este ${recurso.toLowerCase()} no existe o no tenés acceso a él.`}
     </EmptyState.Description>
     <EmptyState.Actions>
-      <Button component={Link} to={listaHref} variant='light'>
+      <Button component={Link} to={listaHref} variant='light' w={{ base: '100%', sm: 'auto' }} mih={{ base: 44, sm: 'auto' }}>
         {listaLabel}
       </Button>
     </EmptyState.Actions>

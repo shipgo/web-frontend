@@ -46,17 +46,17 @@ const Footer = ({
   return (
     <PageFooter>
       {nombreDestinatario && (
-        <Badge variant="dot" color="blue">
+        <Badge variant="dot" color="blue" visibleFrom="sm">
           {nombreDestinatario}
         </Badge>
       )}
       {totalBultos > 0 && (
-        <Badge variant="dot" color="violet">
+        <Badge variant="dot" color="violet" visibleFrom="sm">
           {totalBultos} {totalBultos === 1 ? "bulto" : "bultos"}
         </Badge>
       )}
       {totalPeso > 0 && (
-        <Badge variant="dot" color="orange">
+        <Badge variant="dot" color="orange" visibleFrom="sm">
           {formatPeso(totalPeso)}
         </Badge>
       )}

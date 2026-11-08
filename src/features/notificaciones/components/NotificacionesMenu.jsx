@@ -14,6 +14,7 @@ import {
 import { modals } from '@mantine/modals';
 import { IconBell, IconTrash } from '@tabler/icons-react';
 
+import { useIsMobile } from '@hooks/useIsMobile';
 import { notificacionesHistorialHref } from '../constants';
 import { useNotificaciones } from '../hooks/useNotificaciones';
 import NotificacionFila from './NotificacionFila';
@@ -32,6 +33,7 @@ const MAX_BADGE = 9;
  * @param {boolean} [props.portal]
  */
 const NotificacionesMenu = ({ portal = false }) => {
+  const isMobile = useIsMobile();
   const [, navigate] = useLocation();
   const [opened, setOpened] = useState(false);
   const { notificaciones, unreadCount, isLoading, isError, marcarLeida, vaciarTodas } =
@@ -88,7 +90,7 @@ const NotificacionesMenu = ({ portal = false }) => {
       <Indicator inline disabled={unreadCount === 0} label={badge} size={16} offset={5} color="red">
         <Menu.Target>
           <ActionIcon
-            size="input-sm"
+            size={isMobile ? 44 : "input-sm"}
             variant="subtle"
             aria-label={
               unreadCount > 0
@@ -107,7 +109,7 @@ const NotificacionesMenu = ({ portal = false }) => {
           {notificaciones.length > 0 ? (
             <Tooltip label="Vaciar todas" withArrow>
               <ActionIcon
-                size="sm"
+                size={isMobile ? 44 : 'sm'}
                 variant="subtle"
                 color="gray"
                 aria-label="Vaciar todas las notificaciones"
@@ -151,7 +153,7 @@ const NotificacionesMenu = ({ portal = false }) => {
         {!isLoading && !isError && notificaciones.length > 0 ? (
           <>
             <Menu.Divider />
-            <Menu.Item ta="center" fw={500} onClick={handleVerTodas}>
+            <Menu.Item ta="center" fw={500} mih={isMobile ? 44 : undefined} onClick={handleVerTodas}>
               Ver todas
             </Menu.Item>
           </>

@@ -12,7 +12,7 @@ const MobileOnlyScreen = () => {
   const logout = useAuthStore((state) => state.logout);
 
   return (
-    <Center h="100vh" p="xl">
+    <Center mih="100dvh" p="xl" style={{ overflowX: 'hidden' }}>
       <EmptyState mih="17rem">
         <EmptyState.Indicator>
           <IconDeviceMobile size={50} color="var(--mantine-color-dimmed)" />
@@ -22,7 +22,7 @@ const MobileOnlyScreen = () => {
           Tu cuenta no tiene acceso al panel web de ShipGo. Descargá la app móvil para continuar.
         </EmptyState.Description>
         <EmptyState.Actions>
-          <Button variant="subtle" onClick={logout}>
+          <Button variant="subtle" onClick={logout} w={{ base: '100%', sm: 'auto' }} mih={{ base: 44, sm: 'auto' }}>
             Cerrar sesión
           </Button>
         </EmptyState.Actions>

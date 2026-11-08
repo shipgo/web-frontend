@@ -10,11 +10,14 @@ import ScreenContainer from '@components/ScreenContainer';
 import { isNotFoundError } from '@utils/httpErrors';
 import { envioApi } from '@api';
 
+import { useIsMobile } from '@hooks/useIsMobile';
+
 import EtiquetaEnvio from './components/EtiquetaEnvio';
 
 const EtiquetaEnvioPage = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
+  const isMobile = useIsMobile();
 
   const [envio, setEnvio] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,23 +80,33 @@ const EtiquetaEnvioPage = () => {
               entidad="Envíos"
               accion="Etiqueta"
               descripcion={tieneCodigo ? `Código de seguimiento: ${envio.codigoSeguimiento}` : `Envío #${id}`}
+              // Web mobile: "Imprimir" pasa a ser el ícono principal; "Volver" ya es la flecha del header.
+              primaryAction={
+                isMobile && tieneCodigo
+                  ? { label: 'Imprimir', icon: <IconPrinter size={20} />, onClick: () => window.print() }
+                  : undefined
+              }
             >
-              <Button
-                variant="default"
-                leftSection={<IconArrowLeft size={18} />}
-                onClick={() => navigate(`~/envios/${id}`)}
-              >
-                Volver
-              </Button>
-              {tieneCodigo && (
-                <Button leftSection={<IconPrinter size={18} />} onClick={() => window.print()}>
-                  Imprimir
-                </Button>
+              {!isMobile && (
+                <>
+                  <Button
+                    variant="default"
+                    leftSection={<IconArrowLeft size={18} />}
+                    onClick={() => navigate(`~/envios/${id}`)}
+                  >
+                    Volver
+                  </Button>
+                  {tieneCodigo && (
+                    <Button leftSection={<IconPrinter size={18} />} onClick={() => window.print()}>
+                      Imprimir
+                    </Button>
+                  )}
+                </>
               )}
             </PageBreadcrumbsHeader>
 
             {tieneCodigo ? (
-              <Box style={{ display: 'flex', justifyContent: 'center', overflow: 'auto' }}>
+              <Box style={{ display: 'flex', justifyContent: isMobile ? 'flex-start' : 'center', overflow: 'auto', maxWidth: '100%' }}>
                 <EtiquetaEnvio envio={envio} />
               </Box>
             ) : (

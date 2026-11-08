@@ -2,9 +2,11 @@ import { useState, useRef } from 'react';
 
 import { useForm } from '@mantine/form';
 import { useDebouncedCallback } from '@mantine/hooks';
-import { Card, Chip, Flex, Select, TextInput } from '@mantine/core';
+import { Card, Chip, Select, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 
+import { FilterSheet, useFieldSize } from '@components';
+import { useIsMobile } from '@hooks/useIsMobile';
 import {
   rolOptions,
   ROLE_ADMIN,
@@ -64,6 +66,10 @@ const ListaUsuariosFiltros = ({ disabled, onFiltersChange }) => {
     },
   });
 
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
+  const activeCount = Object.values(form.values).filter(Boolean).length;
+
   const handleQuickFilter = (label) => {
     const isDeselecting = selectedQuickFilter === label;
     const next = isDeselecting ? null : label;
@@ -72,63 +78,72 @@ const ListaUsuariosFiltros = ({ disabled, onFiltersChange }) => {
     form.setValues(next ? QUICK_FILTERS.find((f) => f.label === label).getFilters() : DEFAULT_VALUES);
   };
 
-  return (
-    <Card component="search">
-      <Flex mb="md" gap="md">
+  const content = (
+    <FilterSheet
+      activeCount={activeCount}
+      onClear={() => {
+        setSelectedQuickFilter(null);
+        form.setValues(DEFAULT_VALUES);
+      }}
+      search={
         <TextInput
           {...form.getInputProps('nombre')}
+          size={size}
           flex={1}
           label="Nombre"
           placeholder="Ej: Juan"
         />
+      }
+      quickFilters={QUICK_FILTERS.map(({ label }) => (
+        <Chip
+          key={label}
+          disabled={disabled}
+          variant="light"
+          checked={selectedQuickFilter === label}
+          onChange={() => handleQuickFilter(label)}
+        >
+          {label}
+        </Chip>
+      ))}
+    >
+      <TextInput
+        {...form.getInputProps('email')}
+        size={size}
+        flex={1}
+        label="Email"
+        placeholder="Ej: juan@example.com"
+        rightSection={<IconSearch size={18} />}
+      />
 
-        <TextInput
-          {...form.getInputProps('email')}
-          flex={1}
-          label="Email"
-          placeholder="Ej: juan@example.com"
-          rightSection={<IconSearch size={18} />}
-        />
+      <TextInput
+        {...form.getInputProps('username')}
+        size={size}
+        flex={1}
+        label="Usuario"
+        placeholder="Ej: jperez"
+      />
 
-        <TextInput
-          {...form.getInputProps('username')}
-          flex={1}
-          label="Usuario"
-          placeholder="Ej: jperez"
-        />
+      <Select
+        {...form.getInputProps('authority')}
+        size={size}
+        flex={1}
+        clearable
+        label="Rol"
+        placeholder="Seleccioná un rol"
+        data={ROLES}
+      />
 
-        <Select
-          {...form.getInputProps('authority')}
-          flex={1}
-          clearable
-          label="Rol"
-          placeholder="Seleccioná un rol"
-          data={ROLES}
-        />
-
-        <TextInput
-          {...form.getInputProps('localidad')}
-          flex={1}
-          label="Localidad"
-          placeholder="Ej: Rosario"
-        />
-      </Flex>
-
-      <Flex gap="xs">
-        {QUICK_FILTERS.map(({ label }) => (
-          <Chip
-            key={label}
-            disabled={disabled}
-            variant="light"
-            checked={selectedQuickFilter === label}
-            onChange={() => handleQuickFilter(label)}
-          >
-            {label}
-          </Chip>
-        ))}
-      </Flex>
-    </Card>
+      <TextInput
+        {...form.getInputProps('localidad')}
+        size={size}
+        flex={1}
+        label="Localidad"
+        placeholder="Ej: Rosario"
+      />
+    </FilterSheet>
   );
+
+  return isMobile ? <div role="search">{content}</div> : <Card component="search">{content}</Card>;
 };
 
 export default ListaUsuariosFiltros;

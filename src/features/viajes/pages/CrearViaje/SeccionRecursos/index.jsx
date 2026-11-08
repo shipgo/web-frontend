@@ -1,31 +1,30 @@
-import { Stack, Card, Group, Text, Title, Box, ThemeIcon } from "@mantine/core";
+import { Group, Stack } from "@mantine/core";
 
 import { IconTruckDelivery } from "@tabler/icons-react";
 
+import { useIsMobile } from "@hooks/useIsMobile";
+
+import SeccionPlegable from "../SeccionPlegable";
 import ListadoChoferes from "./ListadoChoferes";
 import ListadoVehiculos from "./ListadoVehiculos";
 
 const SeccionRecursos = () => {
+  const isMobile = useIsMobile();
+  const Contenedor = isMobile ? Stack : Group;
+
   return (
-    <Card padding="lg" component={Stack}>
-      <Group gap="0.75rem">
-        <ThemeIcon size="xl" variant="light">
-          <IconTruckDelivery />
-        </ThemeIcon>
-
-        <Box>
-          <Title order={4}>Vehículo y choferes</Title>
-          <Text c="dimmed" size="sm">
-            Asigná el vehículo y los choferes del viaje.
-          </Text>
-        </Box>
-      </Group>
-
-      <Group justify="space-between">
+    <SeccionPlegable
+      value="recursos"
+      icon={<IconTruckDelivery />}
+      title="Vehículo y choferes"
+      description="Asigná el vehículo y los choferes del viaje."
+      cardProps={{ padding: "lg" }}
+    >
+      <Contenedor justify={isMobile ? undefined : "space-between"}>
         <ListadoVehiculos />
         <ListadoChoferes />
-      </Group>
-    </Card>
+      </Contenedor>
+    </SeccionPlegable>
   );
 };
 

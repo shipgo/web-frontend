@@ -24,7 +24,7 @@ const MapTrackingStatus = () => {
       radius="xl"
       withBorder
       pos="absolute"
-      top={12}
+      top={{ base: 68, sm: 12 }}
       left={12}
       px="sm"
       py={6}

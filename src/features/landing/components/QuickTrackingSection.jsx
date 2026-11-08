@@ -3,6 +3,8 @@ import { Box, Card, Container, Image, SimpleGrid, Stack, Text, Title } from '@ma
 
 import { TrackingSearchForm } from '@features/tracking';
 
+import { useIsMobile } from '@hooks/useIsMobile';
+
 import { LANDING_QUICK_TRACKING } from '../constants/content';
 
 /**
@@ -14,10 +16,14 @@ import { LANDING_QUICK_TRACKING } from '../constants/content';
  */
 const QuickTrackingSection = () => {
   const [, setLocation] = useLocation();
+  const isMobile = useIsMobile();
 
   const handleSubmit = (codigo) => {
     setLocation(`/tracking/${codigo}`);
   };
+
+  // En mobile el campo de seguimiento vive en el hero (`HeroSection`).
+  if (isMobile) return null;
 
   return (
     <Box component="section" id="seguimiento" py={{ base: 'xl', sm: 64 }}>

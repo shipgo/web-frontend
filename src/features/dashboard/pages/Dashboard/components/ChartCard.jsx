@@ -22,7 +22,7 @@ const ChartCard = ({
   minHeight = 260,
   children,
 }) => (
-  <Card h="100%">
+  <Card h="100%" miw={0}>
     <Group gap="xs" mb="md" wrap="nowrap" align="flex-start">
       <ThemeIcon variant="light" color={color} size="xl">
         {icon}

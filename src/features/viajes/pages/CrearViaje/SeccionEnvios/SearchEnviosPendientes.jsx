@@ -3,7 +3,10 @@ import { CardSection, Stack, Switch, TextInput, Title } from "@mantine/core";
 
 import { IconSearch } from "@tabler/icons-react";
 
+import { useFieldSize } from "@components/useFieldSize";
+
 const SearchEnviosPendientes = ({ onSearchChange, onToggleShowIncluded }) => {
+  const fieldSize = useFieldSize();
   const debouncedOnSearchChange = useDebouncedCallback(onSearchChange, 500);
 
   return (
@@ -12,6 +15,7 @@ const SearchEnviosPendientes = ({ onSearchChange, onToggleShowIncluded }) => {
 
       <Stack mt="xs" gap="sm">
         <TextInput
+          size={fieldSize}
           flex={1}
           placeholder="Buscá por código o por destino..."
           rightSection={<IconSearch size={16} />}

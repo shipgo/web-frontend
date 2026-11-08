@@ -6,6 +6,8 @@ import { notifications } from "@mantine/notifications";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import StickyActionBar from "@components/StickyActionBar";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { usuarioApi } from "@api";
 import { useAuthStore } from "@stores/auth.store";
 import { canManageUsuario } from "../utils";
@@ -20,6 +22,7 @@ const DetalleUsuario = () => {
 
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
   const { confirmReset } = usePasswordReset();
   const currentUser = useAuthStore((state) => state.user);
 
@@ -61,6 +64,8 @@ const DetalleUsuario = () => {
     );
   }
 
+  const puedeGestionar = canManageUsuario(currentUser, usuario);
+
   const descripcion =
     usuario?.nombre || usuario?.apellido
       ? nombreCompleto(usuario)
@@ -75,7 +80,7 @@ const DetalleUsuario = () => {
         accion="Detalle de usuario"
         descripcion={descripcion}
       >
-        {canManageUsuario(currentUser, usuario) && (
+        {!isMobile && puedeGestionar && (
           <Button
             variant="light"
             color="orange"
@@ -85,7 +90,7 @@ const DetalleUsuario = () => {
             Restablecer contraseña
           </Button>
         )}
-        {canManageUsuario(currentUser, usuario) && (
+        {!isMobile && puedeGestionar && (
           <Button leftSection={<IconEdit size={18} />} onClick={handleEdit}>
             Editar
           </Button>
@@ -93,6 +98,22 @@ const DetalleUsuario = () => {
       </PageBreadcrumbsHeader>
 
       <UsuarioPerfil usuario={usuario} showAllInfo={true} />
+
+      {isMobile && puedeGestionar && (
+        <StickyActionBar
+          label="Editar"
+          icon={<IconEdit size={18} />}
+          onClick={handleEdit}
+          actions={[
+            {
+              label: "Restablecer contraseña",
+              icon: <IconKey size={18} />,
+              color: "orange",
+              onClick: () => confirmReset(usuario),
+            },
+          ]}
+        />
+      )}
     </PageContainer>
   );
 };

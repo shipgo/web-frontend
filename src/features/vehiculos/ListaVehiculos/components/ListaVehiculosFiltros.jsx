@@ -2,9 +2,11 @@ import { useRef, useState, useEffect } from "react";
 
 import { useForm } from "@mantine/form";
 import { useDebouncedCallback } from "@mantine/hooks";
-import { Card, Chip, Flex, TextInput, Select, LoadingOverlay } from "@mantine/core";
+import { Card, Chip, TextInput, Select, LoadingOverlay } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
 
+import { FilterSheet, useFieldSize } from "@components";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { tipoVehiculoApi, combustibleApi } from "@api/vehiculo.api";
 
 // Chips de acceso rápido por "familia" de tipo. `termino` es lo que se manda en
@@ -114,20 +116,48 @@ const ListaVehiculosFiltros = ({ disabled, onFiltersChange }) => {
     form.setValues(next ? quickFilters.find((f) => f.label === label).getFilters() : DEFAULT_VALUES);
   };
 
-  return (
-    <Card component="search">
-      <LoadingOverlay visible={catalogsLoading} overlayProps={{ radius: "md", blur: 2 }} />
-      <Flex mb="md" gap="md">
-        <TextInput
-          {...form.getInputProps("patente")}
-          flex={1}
-          label="Patente"
-          placeholder="Ej: AB123CD"
-          rightSection={<IconSearch size={18} />}
-        />
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
+  const activeCount = Object.values(form.values).filter(Boolean).length;
 
+  const content = (
+    <>
+      <LoadingOverlay visible={catalogsLoading} overlayProps={{ radius: "md", blur: 2 }} />
+      <FilterSheet
+        activeCount={activeCount}
+        onClear={() => {
+          setSelectedQuickFilter(null);
+          form.setValues(DEFAULT_VALUES);
+        }}
+        search={
+          <TextInput
+            {...form.getInputProps("patente")}
+            size={size}
+            flex={1}
+            label="Patente"
+            placeholder="Ej: AB123CD"
+            rightSection={<IconSearch size={18} />}
+          />
+        }
+        quickFilters={
+          quickFilters.length > 0
+            ? quickFilters.map(({ label }) => (
+                <Chip
+                  key={label}
+                  disabled={disabled}
+                  variant="light"
+                  checked={selectedQuickFilter === label}
+                  onChange={() => handleQuickFilter(label)}
+                >
+                  {label}
+                </Chip>
+              ))
+            : undefined
+        }
+      >
         <TextInput
           {...form.getInputProps("modelo")}
+          size={size}
           flex={1}
           label="Modelo"
           placeholder="Ej: Hilux"
@@ -135,6 +165,7 @@ const ListaVehiculosFiltros = ({ disabled, onFiltersChange }) => {
 
         <Select
           {...form.getInputProps("tipoVehiculo")}
+          size={size}
           flex={1}
           label="Tipo de vehículo"
           placeholder="Seleccioná un tipo"
@@ -145,6 +176,7 @@ const ListaVehiculosFiltros = ({ disabled, onFiltersChange }) => {
 
         <Select
           {...form.getInputProps("combustible")}
+          size={size}
           flex={1}
           label="Combustible"
           placeholder="Seleccioná un combustible"
@@ -152,22 +184,14 @@ const ListaVehiculosFiltros = ({ disabled, onFiltersChange }) => {
           searchable
           clearable
         />
-      </Flex>
+      </FilterSheet>
+    </>
+  );
 
-      <Flex gap="xs">
-        {quickFilters.map(({ label }) => (
-          <Chip
-            key={label}
-            disabled={disabled}
-            variant="light"
-            checked={selectedQuickFilter === label}
-            onChange={() => handleQuickFilter(label)}
-          >
-            {label}
-          </Chip>
-        ))}
-      </Flex>
-    </Card>
+  return isMobile ? (
+    <div role="search" style={{ position: "relative" }}>{content}</div>
+  ) : (
+    <Card component="search">{content}</Card>
   );
 };
 

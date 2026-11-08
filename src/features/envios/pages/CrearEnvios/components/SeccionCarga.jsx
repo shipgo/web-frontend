@@ -4,6 +4,7 @@ import {
   Card,
   Group,
   NumberFormatter,
+  Paper,
   Stack,
   Table,
   Text,
@@ -13,6 +14,7 @@ import {
 import { IconPackage, IconTrash } from "@tabler/icons-react";
 
 import ScreenContainer from "@components/ScreenContainer";
+import { useIsMobile } from "@hooks/useIsMobile";
 
 import { useEnvioFormContext } from "../contexts/CrearEnvioContext";
 import AgregarPaqueteModal from "./AgregarPaqueteModal";
@@ -22,6 +24,7 @@ const getCategoriaLabel = (categorias, categoriaID) =>
 
 const SeccionCarga = ({ categorias = [], bloqueada = false }) => {
   const form = useEnvioFormContext();
+  const isMobile = useIsMobile();
   const paquetes = form.values.detalleEnvios;
 
   const handleAddPaquete = (nuevoPaquete) => {
@@ -36,7 +39,7 @@ const SeccionCarga = ({ categorias = [], bloqueada = false }) => {
     <Card>
       <Stack>
         <Group justify="space-between">
-          <Group gap="0.75rem">
+          <Group gap="0.75rem" wrap="nowrap">
             <ThemeIcon size="xl" variant="light">
               <IconPackage />
             </ThemeIcon>
@@ -66,6 +69,40 @@ const SeccionCarga = ({ categorias = [], bloqueada = false }) => {
               'Usá el botón "Agregar paquete" para agregar paquetes al envío',
           }}
         >
+          {isMobile ? (
+            <Stack gap="xs">
+              {paquetes.map((paquete, index) => (
+                <Paper key={index} withBorder radius="md" p="sm">
+                  <Group justify="space-between" wrap="nowrap" align="flex-start">
+                    <Box miw={0}>
+                      <Text size="sm" fw={600}>
+                        {index + 1}. {getCategoriaLabel(categorias, paquete.categoriaID)}
+                      </Text>
+                      <Text size="sm">
+                        <NumberFormatter value={paquete.peso} suffix=" kg" />
+                      </Text>
+                      {paquete.descripcion && (
+                        <Text size="sm" c="dimmed">
+                          {paquete.descripcion}
+                        </Text>
+                      )}
+                    </Box>
+                    {!bloqueada && (
+                      <ActionIcon
+                        size={44}
+                        color="red"
+                        variant="subtle"
+                        onClick={() => handleRemovePaquete(index)}
+                        aria-label={`Quitar paquete ${index + 1}`}
+                      >
+                        <IconTrash size={20} />
+                      </ActionIcon>
+                    )}
+                  </Group>
+                </Paper>
+              ))}
+            </Stack>
+          ) : (
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
@@ -102,6 +139,7 @@ const SeccionCarga = ({ categorias = [], bloqueada = false }) => {
               ))}
             </Table.Tbody>
           </Table>
+          )}
         </ScreenContainer>
       </Stack>
     </Card>

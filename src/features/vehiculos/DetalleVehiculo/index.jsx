@@ -6,6 +6,8 @@ import { notifications } from "@mantine/notifications";
 
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
+import StickyActionBar from "@components/StickyActionBar";
+import { useIsMobile } from "@hooks/useIsMobile";
 import RecursoNoEncontrado from "@components/RecursoNoEncontrado";
 import { isNotFoundError } from "@utils/httpErrors";
 import { vehiculoApi } from "@api";
@@ -20,6 +22,7 @@ const DetalleVehiculo = () => {
   const [vehiculo, setVehiculo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const loadVehiculo = async () => {
@@ -66,13 +69,15 @@ const DetalleVehiculo = () => {
         accion="Detalle de vehículo"
         descripcion={vehiculo ? `Patente ${vehiculo.patente}` : undefined}
       >
+        {!isMobile && (
         <Button
           leftSection={<IconEdit size={18} />}
           onClick={() => navigate(`~/vehiculos/${id}/editar`)}
         >
           Editar
         </Button>
-        {vehiculo?.patente && (
+        )}
+        {!isMobile && vehiculo?.patente && (
           <Button
             variant="default"
             leftSection={<IconTool size={18} />}
@@ -91,6 +96,26 @@ const DetalleVehiculo = () => {
         </Card>
       ) : (
         <VehiculoPerfil vehiculo={vehiculo} showAllInfo={true} mantenimiento={vehiculo?.mantenimiento ?? null} />
+      )}
+
+      {isMobile && !loading && vehiculo && (
+        <StickyActionBar
+          label="Editar"
+          icon={<IconEdit size={18} />}
+          onClick={() => navigate(`~/vehiculos/${id}/editar`)}
+          actions={
+            vehiculo.patente
+              ? [
+                  {
+                    label: "Ver mantenimientos",
+                    icon: <IconTool size={18} />,
+                    onClick: () =>
+                      navigate(`~/mantenimientos?patente=${encodeURIComponent(vehiculo.patente)}`),
+                  },
+                ]
+              : []
+          }
+        />
       )}
     </PageContainer>
   );

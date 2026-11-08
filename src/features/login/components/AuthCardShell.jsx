@@ -2,13 +2,13 @@ import { Link } from "wouter";
 import {
   Anchor,
   Card,
-  Center,
+  Flex,
   Image,
-  MantineProvider,
   Stack,
   Text,
   Title,
 } from "@mantine/core";
+import ForcedLightScheme from "@components/ForcedLightScheme";
 
 import logo from "/src/assets/logoipsum-custom-logo.svg";
 
@@ -24,15 +24,33 @@ const FORM_WIDTH = "32rem";
  * Centra una `Card` con el logo, un título y un subtítulo.
  */
 const AuthCardShell = ({ title, subtitle, children }) => (
-  <MantineProvider forceColorScheme="light">
-    <Center mih="100svh" p="xl">
-      <Card w={FORM_WIDTH} maw="100%" p="xl" withBorder shadow="sm">
-        <Stack gap="lg" p="md">
+  <ForcedLightScheme>
+    <Flex
+      mih="100dvh"
+      justify="center"
+      // Mobile: arriba (no centrada) para que con el teclado abierto se vea el campo y el botón.
+      align={{ base: 'flex-start', sm: 'center' }}
+      p={{ base: 'md', sm: 'xl' }}
+    >
+      <Card w={FORM_WIDTH} maw="100%" p={{ base: 'md', sm: 'xl' }} withBorder shadow="sm">
+        <Stack gap="lg" p={{ base: 0, sm: 'md' }}>
           <Stack gap={4}>
             {/* SHG-FE-100: el logo no linkeaba a `/` acá (sí en `LoginPage`) —
                 mismo `Anchor` que usa el login para que sea consistente. */}
-            <Anchor component={Link} href="/" aria-label="ShipGo — inicio" w={220}>
-              <Image src={logo} alt="Logo de ShipGo" w={220} fit="contain" />
+            <Anchor
+              component={Link}
+              href="/"
+              aria-label="ShipGo — inicio"
+              w={{ base: 'fit-content', sm: 220 }}
+              mb={{ base: 'xs', sm: 0 }}
+            >
+              <Image
+                src={logo}
+                alt="Logo de ShipGo"
+                h={{ base: 36, sm: 'auto' }}
+                w={{ base: 'auto', sm: 220 }}
+                fit="contain"
+              />
             </Anchor>
             <Title order={1}>{title}</Title>
             {subtitle ? <Text c="dimmed">{subtitle}</Text> : null}
@@ -40,8 +58,8 @@ const AuthCardShell = ({ title, subtitle, children }) => (
           {children}
         </Stack>
       </Card>
-    </Center>
-  </MantineProvider>
+    </Flex>
+  </ForcedLightScheme>
 );
 
 export default AuthCardShell;

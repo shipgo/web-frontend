@@ -2,11 +2,13 @@ import { Badge, Flex, Group, Stack, Text, ThemeIcon } from "@mantine/core";
 import { IconBuildingStore, IconMapPin, IconTrash } from "@tabler/icons-react";
 
 import { formatPeso } from "@domain/format";
+import { useIsMobile } from "@hooks/useIsMobile";
 
 import { TIPO_ENTREGA } from "@features/envios/constants";
 import { formatDestinoEnvio } from "@features/envios/utils";
 
 const ItemPaquete = ({ item, onRemove, isIncludedInTrip = false }) => {
+  const isMobile = useIsMobile();
   const esRetiroSucursal = item.tipoEntrega === TIPO_ENTREGA.SUCURSAL;
 
   return (
@@ -37,6 +39,8 @@ const ItemPaquete = ({ item, onRemove, isIncludedInTrip = false }) => {
       {onRemove && (
         <ThemeIcon
           color="red"
+          size={isMobile ? 44 : undefined}
+          aria-label="Quitar envío"
           variant="transparent"
           style={{ cursor: "pointer" }}
           onClick={onRemove}

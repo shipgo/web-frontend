@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
+  Accordion,
   ActionIcon,
   Alert,
   Anchor,
@@ -11,6 +12,7 @@ import {
   CopyButton,
   Divider,
   Group,
+  Paper,
   SimpleGrid,
   Stack,
   Table,
@@ -42,6 +44,8 @@ import {
 import PageContainer from "@components/PageContainer";
 import PageBreadcrumbsHeader from "@components/PageBreadcrumbsHeader";
 import ScreenContainer from "@components/ScreenContainer";
+import StickyActionBar from "@components/StickyActionBar";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { isNotFoundError } from "@utils/httpErrors";
 import { envioApi } from "@api";
 import { BUTTON_ACTION_TEXT_COLOR, estadoBadge, estadoLabel, normalizarEstado } from "@domain/estados";
@@ -67,6 +71,60 @@ const InfoItem = ({ icon, label, value }) => (
   </Box>
 );
 
+/**
+ * Sección del detalle. Escritorio: la tarjeta de siempre. Mobile: ítem de un
+ * `Accordion` (el padre lo arma `DetalleEnvio`).
+ */
+const Seccion = ({ isMobile, value, icon, title, subtitle, header, divider = true, children }) => {
+  if (isMobile) {
+    return (
+      <Accordion.Item value={value}>
+        <Accordion.Control icon={icon} aria-label={title}>
+          <Text fw={600}>{title}</Text>
+          {subtitle && (
+            <Text size="xs" c="dimmed">
+              {subtitle}
+            </Text>
+          )}
+        </Accordion.Control>
+        <Accordion.Panel>{children}</Accordion.Panel>
+      </Accordion.Item>
+    );
+  }
+
+  return (
+    <Card withBorder shadow="sm">
+      <Stack gap="md">
+        {header ?? (
+          <Group gap="xs">
+            {icon}
+            <Box>
+              <Text size="lg" fw={600}>
+                {title}
+              </Text>
+              <Text size="sm" c="dimmed">
+                {subtitle}
+              </Text>
+            </Box>
+          </Group>
+        )}
+        {divider && <Divider />}
+        {children}
+      </Stack>
+    </Card>
+  );
+};
+
+/** Mobile: las secciones son un único `Accordion`; escritorio: tarjetas apiladas (fragmento). */
+const SeccionesWrapper = ({ isMobile, children }) =>
+  isMobile ? (
+    <Accordion multiple defaultValue={["ubicacion"]} variant="separated">
+      {children}
+    </Accordion>
+  ) : (
+    <>{children}</>
+  );
+
 const fechaHistorial = (item) => item.fechaHoraInicio ?? item.fecha;
 
 /** `puntoEntrega` y `sucursalDestino` son XOR (ver CONTRACTS.md §8). */
@@ -86,6 +144,7 @@ const DetalleEnvio = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const user = useAuthStore((state) => state.user);
+  const isMobile = useIsMobile();
 
   const [envio, setEnvio] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -161,6 +220,45 @@ const DetalleEnvio = () => {
   const viajeAsociado = getViajeAsociado(envio);
   const recorridoEstadoInfo = recorridoActual ? estadoBadge("recorrido", recorridoActual.estado) : null;
 
+  // Web mobile: la acción principal de estado (Entregar / Confirmar retiro) va en una barra
+  // fija abajo con el resto en su menú; Imprimir etiqueta y Editar van al menú del encabezado.
+  const accionesMobile = {
+    secundarias: [
+      envio?.codigoSeguimiento && {
+        label: "Imprimir etiqueta",
+        icon: <IconPrinter size={16} />,
+        onClick: () => navigate(`~/envios/${id}/etiqueta`),
+      },
+      canEdit && {
+        label: "Editar",
+        icon: <IconEdit size={16} />,
+        onClick: () => navigate(`~/envios/editar/${id}`),
+      },
+    ].filter(Boolean),
+    barra: canAccionarEstado
+      ? {
+          label: "Entregar",
+          icon: <IconTruckDelivery size={18} />,
+          onClick: confirmEntregar,
+          actions: [
+            {
+              label: "Registrar entrega fallida",
+              icon: <IconBan size={16} />,
+              color: "red",
+              onClick: confirmFalloEntrega,
+            },
+          ],
+        }
+      : canConfirmarRetiro
+        ? {
+            label: "Confirmar retiro",
+            icon: <IconBuildingStore size={18} />,
+            onClick: confirmRetiroSucursal,
+            actions: [],
+          }
+        : null,
+  };
+
   return (
     <PageContainer>
       {notFound && !loading && <PageBreadcrumbsHeader entidad="Envíos" accion="Detalle de envío" />}
@@ -189,6 +287,7 @@ const DetalleEnvio = () => {
             <PageBreadcrumbsHeader
         entidad="Envíos"
         accion="Detalle de envío"
+        secondaryActions={isMobile ? accionesMobile.secundarias : undefined}
         descripcion={
           <Group gap={4}>
             {envio.estado && (
@@ -225,6 +324,8 @@ const DetalleEnvio = () => {
           </Group>
         }
       >
+        {!isMobile && (
+          <>
         {envio.codigoSeguimiento && (
           <Button
             variant="default"
@@ -282,6 +383,8 @@ const DetalleEnvio = () => {
             Confirmar retiro
           </Button>
         )}
+          </>
+        )}
       </PageBreadcrumbsHeader>
 
       {esRechazado && (
@@ -302,20 +405,8 @@ const DetalleEnvio = () => {
         </Alert>
       )}
 
-      <Card withBorder shadow="sm">
-        <Stack gap="md">
-          <Group gap="xs">
-            <IconBuilding size={24} />
-            <Box>
-              <Text size="lg" fw={600}>
-                Ubicación actual y seguimiento
-              </Text>
-              <Text size="sm" c="dimmed">
-                Origen, ubicación actual y fecha de entrega
-              </Text>
-            </Box>
-          </Group>
-          <Divider />
+      <SeccionesWrapper isMobile={isMobile}>
+      <Seccion isMobile={isMobile} value="ubicacion" icon={<IconBuilding size={24} />} title="Ubicación actual y seguimiento" subtitle="Origen, ubicación actual y fecha de entrega">
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             <InfoItem
               icon={<IconBuilding size={16} />}
@@ -333,23 +424,8 @@ const DetalleEnvio = () => {
               value={envio.fechaEntrega ? formatFecha(envio.fechaEntrega) : null}
             />
           </SimpleGrid>
-        </Stack>
-      </Card>
-
-      <Card withBorder shadow="sm">
-        <Stack gap="md">
-          <Group gap="xs">
-            <IconUser size={24} />
-            <Box>
-              <Text size="lg" fw={600}>
-                Remitente y destinatario
-              </Text>
-              <Text size="sm" c="dimmed">
-                Datos de contacto del envío
-              </Text>
-            </Box>
-          </Group>
-          <Divider />
+      </Seccion>
+      <Seccion isMobile={isMobile} value="contacto" icon={<IconUser size={24} />} title="Remitente y destinatario" subtitle="Datos de contacto del envío">
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             <InfoItem
               icon={<IconUser size={16} />}
@@ -387,23 +463,8 @@ const DetalleEnvio = () => {
               />
             )}
           </SimpleGrid>
-        </Stack>
-      </Card>
-
-      <Card withBorder shadow="sm">
-        <Stack gap="md">
-          <Group gap="xs">
-            {esRetiroSucursal ? <IconBuildingStore size={24} /> : <IconMapPin size={24} />}
-            <Box>
-              <Text size="lg" fw={600}>
-                Destino
-              </Text>
-              <Text size="sm" c="dimmed">
-                {esRetiroSucursal ? "Retiro en sucursal" : "Dirección de entrega"}
-              </Text>
-            </Box>
-          </Group>
-          <Divider />
+      </Seccion>
+      <Seccion isMobile={isMobile} value="destino" icon={esRetiroSucursal ? <IconBuildingStore size={24} /> : <IconMapPin size={24} />} title="Destino" subtitle={esRetiroSucursal ? "Retiro en sucursal" : "Dirección de entrega"}>
           {esRetiroSucursal ? (
             <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
               <InfoItem
@@ -429,30 +490,32 @@ const DetalleEnvio = () => {
               <InfoItem icon={<IconMapPin size={16} />} label="Provincia" value={provincia.nombre} />
             </SimpleGrid>
           )}
-        </Stack>
-      </Card>
-
-      <Card withBorder shadow="sm">
-        <Stack gap="md">
-          <Group justify="space-between">
-            <Group gap="xs">
-              <IconPackage size={24} />
-              <Box>
-                <Text size="lg" fw={600}>
-                  Paquetes
-                </Text>
-                <Text size="sm" c="dimmed">
-                  {detalleEnvios.length} {detalleEnvios.length === 1 ? "paquete" : "paquetes"} · {formatPeso(pesoTotal)} en total
-                </Text>
-              </Box>
-            </Group>
-          </Group>
-          <Divider />
+      </Seccion>
+      <Seccion isMobile={isMobile} value="paquetes" icon={<IconPackage size={24} />} title="Paquetes" subtitle={`${detalleEnvios.length} ${detalleEnvios.length === 1 ? "paquete" : "paquetes"} · ${formatPeso(pesoTotal)} en total`}>
           {detalleEnvios.length === 0 ? (
             <Text c="dimmed" size="sm">
               Este envío no tiene paquetes cargados
             </Text>
           ) : (
+            isMobile ? (
+              <Stack gap="xs">
+                {detalleEnvios.map((d, index) => (
+                  <Paper key={d.id ?? index} withBorder p="sm" radius="md">
+                    <Group justify="space-between" wrap="nowrap">
+                      <Text size="sm" fw={600}>
+                        {index + 1}. {d.categoria?.nombre ?? "-"}
+                      </Text>
+                      <Text size="sm">{formatPeso(d.peso)}</Text>
+                    </Group>
+                    {d.descripcion && (
+                      <Text size="sm" c="dimmed">
+                        {d.descripcion}
+                      </Text>
+                    )}
+                  </Paper>
+                ))}
+              </Stack>
+            ) : (
             <Table striped highlightOnHover>
               <Table.Thead>
                 <Table.Tr>
@@ -473,24 +536,10 @@ const DetalleEnvio = () => {
                 ))}
               </Table.Tbody>
             </Table>
+            )
           )}
-        </Stack>
-      </Card>
-
-      <Card withBorder shadow="sm">
-        <Stack gap="md">
-          <Group gap="xs">
-            <IconRoute size={24} />
-            <Box>
-              <Text size="lg" fw={600}>
-                Viaje
-              </Text>
-              <Text size="sm" c="dimmed">
-                Estado de la parada de este envío
-              </Text>
-            </Box>
-          </Group>
-          <Divider />
+      </Seccion>
+      <Seccion isMobile={isMobile} value="viaje" icon={<IconRoute size={24} />} title="Viaje" subtitle="Estado de la parada de este envío">
           {!recorridoActual || !viajeAsociado ? (
             <Text c="dimmed" size="sm">
               Este envío todavía no fue asignado a un viaje.
@@ -530,12 +579,15 @@ const DetalleEnvio = () => {
               </Button>
             </Group>
           )}
-        </Stack>
-      </Card>
-
-      <Card withBorder shadow="sm">
-        <Stack gap="md">
-          <Title order={4}>Historial de estados</Title>
+      </Seccion>
+      <Seccion
+        isMobile={isMobile}
+        value="historial"
+        icon={<IconCircleDot size={24} />}
+        title="Historial de estados"
+        divider={false}
+        header={<Title order={4}>Historial de estados</Title>}
+      >
           {historial.length === 0 ? (
             <Text c="dimmed" size="sm">
               Este envío todavía no tiene historial de estados.
@@ -565,8 +617,16 @@ const DetalleEnvio = () => {
               })}
             </Timeline>
           )}
-        </Stack>
-      </Card>
+      </Seccion>
+      </SeccionesWrapper>
+      {isMobile && accionesMobile.barra && (
+        <StickyActionBar
+          label={accionesMobile.barra.label}
+          icon={accionesMobile.barra.icon}
+          onClick={accionesMobile.barra.onClick}
+          actions={accionesMobile.barra.actions}
+        />
+      )}
             </>
           )}
       </ScreenContainer>

@@ -32,7 +32,16 @@ export const LANDING_HERO = {
   eyebrow: 'Gestión logística para tu flota',
   title: 'Enviá, viajá y hacé seguimiento, todo en un solo lugar',
   subtitle:
-    'ShipGo conecta a tu equipo operativo con tus clientes: cargá envíos, planificá viajes con tu flota y dejá que cualquiera siga su paquete en tiempo real con un solo código, sin llamar a nadie.',
+    'ShipGo conecta a tu equipo operativo con tus clientes: cargá envíos, planificá viajes con tu flota y dejá que cualquiera siga el estado de su paquete con un solo código, sin llamar a nadie.',
+  // Copy del hero en mobile (< sm): el campo de seguimiento vive en el hero y
+  // el título va directo a la tarea más frecuente (seguir un envío).
+  mobile: {
+    title: 'Seguí tu envío con el código que te llegó',
+    subtitle: 'Mirá en qué estado está, sin crear una cuenta.',
+    accountPrompt: '¿Querés ver todos tus envíos?',
+    accountLinkLabel: 'Creá tu cuenta',
+    accountHref: '/registro',
+  },
   primaryCta: { label: 'Seguir un envío', href: '#seguimiento' },
   secondaryCta: { label: 'Crear una cuenta', href: '/registro' },
   image: {
@@ -83,6 +92,34 @@ export const LANDING_ACCESSES = [
   },
 ];
 
+/**
+ * Variante compacta de los accesos para mobile: sólo los dos que no cubre ya
+ * el hero ("Seguir envío", "Crear cuenta") ni el botón "Ingresar" del header
+ * con la misma jerarquía — acá quedan como filas con descripción corta.
+ */
+export const LANDING_ACCESSES_COMPACT = [
+  {
+    id: 'customer-login',
+    icon: <IconUser size={ICON_SIZE} />,
+    title: 'Soy cliente',
+    description: 'Mirá todos tus envíos en tu portal.',
+    href: '/portal/ingresar',
+  },
+  {
+    id: 'operador',
+    icon: <IconLogin2 size={ICON_SIZE} />,
+    title: 'Soy del equipo',
+    description: 'Acceso interno de operación y flota.',
+    href: '/login',
+  },
+];
+
+/** Opciones del menú "Ingresar" del header de la landing. */
+export const LANDING_LOGIN_OPTIONS = [
+  { id: 'cliente', label: 'Soy cliente', href: '/portal/ingresar' },
+  { id: 'equipo', label: 'Soy del equipo', href: '/login' },
+];
+
 export const LANDING_VALUE_PROPS = [
   {
     id: 'envios',
@@ -99,8 +136,8 @@ export const LANDING_VALUE_PROPS = [
   {
     id: 'tracking-vivo',
     icon: <IconMapPin size={ICON_SIZE} />,
-    title: 'Seguimiento en vivo',
-    description: 'Tus clientes ven la ubicación y el estado de su envío en tiempo real.',
+    title: 'Seguimiento',
+    description: 'Tus clientes ven el estado de su envío en cada paso, sin llamar a nadie.',
   },
 ];
 

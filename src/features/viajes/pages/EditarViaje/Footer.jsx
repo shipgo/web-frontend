@@ -3,6 +3,7 @@ import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 
 import PageFooter from "@components/PageFooter";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { FORMULARIO_INVALIDO } from "@copy/common";
 
 import { useFormContext } from "../CrearViaje/contexts/EnviosFormContext";
@@ -13,6 +14,7 @@ import { useFormContext } from "../CrearViaje/contexts/EnviosFormContext";
  * de errores + navegación) vive en `index.jsx` y llega por `onSubmit`.
  */
 const Footer = ({ loading, onSubmit, onCancel, guardarDeshabilitado = false }) => {
+  const isMobile = useIsMobile();
   const form = useFormContext();
 
   const handleInvalid = (errors) => {
@@ -28,10 +30,11 @@ const Footer = ({ loading, onSubmit, onCancel, guardarDeshabilitado = false }) =
 
   return (
     <PageFooter>
-      <Button color="red" variant="light" disabled={loading} onClick={onCancel}>
+      <Button color="red" variant="light" mih={isMobile ? 44 : undefined} disabled={loading} onClick={onCancel}>
         Cancelar
       </Button>
       <Button
+        mih={isMobile ? 44 : undefined}
         loading={loading}
         disabled={guardarDeshabilitado}
         onClick={() => form.onSubmit(onSubmit, handleInvalid)()}

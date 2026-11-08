@@ -1,4 +1,3 @@
-import { useLocation } from "wouter";
 import {
   Avatar,
   Badge,
@@ -8,22 +7,13 @@ import {
   Table,
   Text,
 } from "@mantine/core";
-import {
-  IconEdit,
-  IconEye,
-  IconKey,
-  IconTrash,
-} from "@tabler/icons-react";
 
 import { EMPTY } from "@domain/format";
 import { timeFromNow, toLocalDate } from "@utils/dates";
 import { RowActionsMenu } from "@components";
 import { API_URLS } from "@constants/apiUrls";
 import { rolBadge } from "@domain/roles";
-import { useAuthStore } from "@stores/auth.store";
-import { useDeleteUsuario } from "../hooks/useDeleteUsuario";
-import { usePasswordReset } from "../../hooks/usePasswordReset";
-import { canManageUsuario } from "../../utils";
+import { useUsuarioRowActions } from "../hooks/useUsuarioRowActions";
 import { nombreCompleto } from "@domain/usuario";
 
 const ListaUsuariosTabla = ({
@@ -33,57 +23,12 @@ const ListaUsuariosTabla = ({
   onToggleAll,
   onRefresh,
 }) => {
-  const [, navigate] = useLocation();
-  const { confirmDelete } = useDeleteUsuario(onRefresh);
-  const { confirmReset } = usePasswordReset();
-  const currentUser = useAuthStore((state) => state.user);
-
-  const handleEdit = (userId) => navigate(`~/usuarios/${userId}/editar`);
-  const handleViewDetails = (userId) => navigate(`~/usuarios/${userId}`);
-
-  // SHG-FE-094 / SHG-FE-095: nunca ofrecer "Eliminar" (ni individual ni
-  // masivo) sobre el propio usuario logueado — hard delete sin guarda de
-  // backend contra auto-borrado, la decisión de alcance fue resolverlo sólo
-  // en el frontend. Se usa también para deshabilitar el checkbox de la
-  // propia fila (bulk delete de SelectionBanner).
-  const isSelf = (usuario) =>
-    Boolean(currentUser?.id) && String(currentUser.id) === String(usuario.id);
-
-  const getActions = (usuario) => {
-    // "Desactivar" se quitó del menú: no tenía `onClick` ni soporte de
-    // backend (`enabled` no existe en `UserDTO`), y activar/desactivar
-    // usuarios quedó fuera de alcance.
-    const self = isSelf(usuario);
-    // SHG-FE-121: un ADMIN no edita ni borra a otros ADMIN/SUPERUSER (404 del backend).
-    const manageable = canManageUsuario(currentUser, usuario);
-
-    const actions = [
-      { icon: <IconEye size={18} />, label: "Ver detalles", onClick: () => handleViewDetails(usuario.id) },
-    ];
-    if (manageable) {
-      actions.push({ icon: <IconEdit size={18} />, label: "Editar", color: "blue", onClick: () => handleEdit(usuario.id) });
-    }
-    if (manageable) {
-      actions.push({ icon: <IconKey size={18} />, label: "Restablecer contraseña", color: "orange", onClick: () => confirmReset(usuario) });
-    }
-
-    if (!self && manageable) {
-      actions.push({
-        icon: <IconTrash size={18} />,
-        label: "Eliminar",
-        color: "red",
-        dividerBefore: true,
-        onClick: () => confirmDelete(usuario),
-      });
-    }
-
-    return actions;
-  };
+  const { getActions, isSelf, isManageable } = useUsuarioRowActions(onRefresh);
 
   // "Seleccionar todos" ignora la propia fila (no seleccionable): si no se
   // excluyera acá, el checkbox de cabecera nunca llegaría a `checked` con el
   // resto de la página ya tildada (la propia fila jamás entra a `selectedIds`).
-  const selectableItems = items.filter((i) => !isSelf(i) && canManageUsuario(currentUser, i));
+  const selectableItems = items.filter((i) => !isSelf(i) && isManageable(i));
   const allSelected = selectableItems.length > 0 && selectableItems.every((i) => selectedIds.has(i.id));
   const indeterminate = !allSelected && selectableItems.some((i) => selectedIds.has(i.id));
 
@@ -118,7 +63,7 @@ const ListaUsuariosTabla = ({
           const fechaRegistro = item.fechaCreacion || item.createdAt || item.fecha;
           const authorities = item.authorities || [];
           const self = isSelf(item);
-          const manageable = canManageUsuario(currentUser, item);
+          const manageable = isManageable(item);
 
           return (
             <Table.Tr

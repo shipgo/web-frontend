@@ -3,12 +3,13 @@ import { useRef, useState } from "react";
 import { useForm } from "@mantine/form";
 import { DatePickerInput } from "@mantine/dates";
 import { useDebouncedCallback } from "@mantine/hooks";
-import { Card, Chip, Flex, MultiSelect, TextInput } from "@mantine/core";
+import { Card, Chip, MultiSelect, TextInput } from "@mantine/core";
 
 import dayjs from "dayjs";
 import { IconSearch } from "@tabler/icons-react";
 
 import { estadoOptions } from "@domain/estados";
+import { FilterSheet, useFieldSize } from "@components";
 
 const ESTADO_OPTIONS = estadoOptions("viaje");
 
@@ -74,7 +75,8 @@ const QUICK_FILTERS = [
   },
 ];
 
-const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
+const ListaViajesFiltros = ({ disabled, onFiltersChange, resultsCount }) => {
+  const fieldSize = useFieldSize();
   const [selectedQuickFilter, setSelectedQuickFilter] = useState(null);
 
   const lastSearchRef = useRef("");
@@ -136,20 +138,49 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
     form.setValues(filter ? filter.formValues() : DEFAULT_VALUES);
   };
 
+  const activeCount =
+    (form.values.estado.length > 0 ? 1 : 0) +
+    (form.values.date[0] || form.values.date[1] ? 1 : 0);
+
+  const handleClear = () => {
+    form.setValues(DEFAULT_VALUES);
+    setSelectedQuickFilter(null);
+    quickFilterOverrideRef.current = null;
+  };
+
   return (
     <Card component="search">
-      <Flex mb="md" gap="md" align="flex-start">
-        <TextInput
-          {...form.getInputProps("search")}
-          flex={1}
-          label="Buscar viaje"
-          placeholder="Patente del vehículo o nombre del chofer..."
-          rightSection={<IconSearch size={18} />}
-        />
-
+      <FilterSheet
+        activeCount={activeCount}
+        resultsCount={resultsCount}
+        onClear={handleClear}
+        search={
+          <TextInput
+            {...form.getInputProps("search")}
+            flex={1}
+            size={fieldSize}
+            label="Buscar viaje"
+            placeholder="Patente del vehículo o nombre del chofer..."
+            rightSection={<IconSearch size={18} />}
+          />
+        }
+        quickFilters={QUICK_FILTERS.map((filter) => (
+          <Chip
+            disabled={disabled}
+            variant="light"
+            size={fieldSize}
+            key={filter.label}
+            checked={selectedQuickFilter === filter.label}
+            onChange={() => handleQuickFilterChange(filter.label)}
+          >
+            {filter.label}
+          </Chip>
+        ))}
+      >
         <DatePickerInput
           {...form.getInputProps("date")}
           flex={1}
+          size={fieldSize}
           type="range"
           clearable
           label="Rango de fechas"
@@ -159,6 +190,7 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
         <MultiSelect
           {...form.getInputProps("estado")}
           flex={1}
+          size={fieldSize}
           label="Estados"
           placeholder="Seleccioná..."
           data={ESTADO_OPTIONS}
@@ -166,21 +198,7 @@ const ListaViajesFiltros = ({ disabled, onFiltersChange }) => {
           maxDropdownHeight={320}
           styles={{ pillsList: { flexWrap: "nowrap", overflow: "hidden" } }}
         />
-      </Flex>
-
-      <Flex gap="xs">
-        {QUICK_FILTERS.map((filter) => (
-          <Chip
-            disabled={disabled}
-            variant="light"
-            key={filter.label}
-            checked={selectedQuickFilter === filter.label}
-            onChange={() => handleQuickFilterChange(filter.label)}
-          >
-            {filter.label}
-          </Chip>
-        ))}
-      </Flex>
+      </FilterSheet>
     </Card>
   );
 };

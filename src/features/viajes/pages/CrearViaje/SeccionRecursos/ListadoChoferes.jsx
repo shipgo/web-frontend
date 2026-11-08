@@ -11,6 +11,7 @@ import {
 import { IconSearch } from "@tabler/icons-react";
 
 import ScreenContainer from "@components/ScreenContainer";
+import { useFieldSize } from "@components/useFieldSize";
 import SelectableItemList from "@components/SelectableItemList";
 
 import { useAuth } from "@contexts/auth";
@@ -28,6 +29,7 @@ const filterChoferes = (choferes, search) =>
   );
 
 const ListadoChoferes = () => {
+  const fieldSize = useFieldSize();
   const [searchValue, setSearchValue] = useState("");
 
   const {
@@ -91,6 +93,7 @@ const ListadoChoferes = () => {
 
         <Group mt="xs" gap="sm">
           <TextInput
+            size={fieldSize}
             flex={1}
             rightSection={<IconSearch size={16} />}
             placeholder="Buscá por nombre, email o teléfono..."

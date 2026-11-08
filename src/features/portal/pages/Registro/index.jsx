@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   Group,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -115,11 +116,12 @@ const RegistroPage = () => {
         </Text>
       </Stack>
 
-      <Card withBorder padding="lg" component="form" onSubmit={handleSubmit} noValidate>
+      <Card withBorder padding={{ base: 'md', sm: 'lg' }} component="form" onSubmit={handleSubmit} noValidate>
         <Stack gap="md">
-          <Group grow align="flex-start">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               label="Nombre"
+            size="md"
               placeholder="Tu nombre"
               withAsterisk
               key={form.key('nombre')}
@@ -127,15 +129,17 @@ const RegistroPage = () => {
             />
             <TextInput
               label="Apellido"
+            size="md"
               placeholder="Tu apellido"
               withAsterisk
               key={form.key('apellido')}
               {...form.getInputProps('apellido')}
             />
-          </Group>
+          </SimpleGrid>
 
           <TextInput
             label="Email"
+            size="md"
             type="email"
             placeholder="vos@email.com"
             autoComplete="email"
@@ -146,6 +150,7 @@ const RegistroPage = () => {
 
           <TextInput
             label="Teléfono"
+            size="md"
             placeholder="3511234567"
             autoComplete="tel"
             withAsterisk
@@ -155,6 +160,7 @@ const RegistroPage = () => {
 
           <PasswordInput
             label="Contraseña"
+            size="md"
             placeholder="Al menos 8 caracteres"
             autoComplete="new-password"
             withAsterisk
@@ -166,6 +172,7 @@ const RegistroPage = () => {
 
           <Button
             type="submit"
+            size="md"
             loading={submitting}
             disabled={!captcha.token}
             leftSection={<IconCircleCheck size={18} />}

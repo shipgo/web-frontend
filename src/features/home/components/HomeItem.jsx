@@ -11,20 +11,20 @@ const HomeItem = ({ title, description, icon, color, to, href, onClick }) => {
       to={to}
       href={href}
       target={href ? '_blank' : undefined}
-      padding='xl'
+      padding={{ base: 'sm', sm: 'xl' }}
       radius='md'
       shadow={hovered ? 'md' : 'xs'}
       onClick={onClick}
       component={to ? Link : href ? Anchor : 'div'}
-      style={{ cursor: to || href || onClick ? 'pointer' : 'default', transition: 'box-shadow 150ms ease' }}
+      style={{ minWidth: 0, cursor: to || href || onClick ? 'pointer' : 'default', transition: 'box-shadow 150ms ease' }}
     >
-      <Stack gap='md'>
+      <Stack gap='sm'>
         <ThemeIcon variant='light' color={color} size={56} radius='md'>
           {icon}
         </ThemeIcon>
         <Stack gap={4}>
-          <Title order={5}>{title}</Title>
-          <Text size='sm' c='dimmed' lh={1.5}>
+          <Title order={5} style={{ overflowWrap: 'anywhere' }}>{title}</Title>
+          <Text size='sm' c='dimmed' lh={1.5} lineClamp={3}>
             {description}
           </Text>
         </Stack>

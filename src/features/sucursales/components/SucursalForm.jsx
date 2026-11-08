@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Card,
+  Grid,
   Group,
   LoadingOverlay,
   Select,
@@ -23,6 +24,8 @@ import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 
 import PageFooter from "@components/PageFooter";
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { provinciaApi, localidadApi } from "@api";
 import { SALIR_SIN_GUARDAR, REINTENTAR_MAS_TARDE, FORMULARIO_INVALIDO } from "@copy/common";
 
@@ -74,6 +77,8 @@ const SucursalForm = ({
   submitLabel,
   hideCancel = false,
 }) => {
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [provincias, setProvincias] = useState([]);
   const [localidades, setLocalidades] = useState([]);
@@ -101,6 +106,7 @@ const SucursalForm = ({
 
     modals.openConfirmModal({
       title: SALIR_SIN_GUARDAR.titulo,
+      fullScreen: isMobile,
       children: (
         <Text size="sm">{SALIR_SIN_GUARDAR.mensaje}</Text>
       ),
@@ -193,6 +199,7 @@ const SucursalForm = ({
               </Group>
 
               <TextInput
+                size={size}
                 label="Nombre"
                 placeholder="Ej: Sucursal Centro"
                 leftSection={<IconBuilding size={18} />}
@@ -200,25 +207,32 @@ const SucursalForm = ({
                 {...form.getInputProps("nombre")}
               />
 
-              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <Grid>
+                <Grid.Col span={{ base: 4, sm: 6 }}>
                 <TextInput
+                  size={size}
                   label="Prefijo"
                   placeholder="Ej: 351"
                   leftSection={<IconPhone size={18} />}
                   required
                   {...form.getInputProps("prefijo")}
                 />
+                </Grid.Col>
 
+                <Grid.Col span={{ base: 8, sm: 6 }}>
                 <TextInput
+                  size={size}
                   label="Teléfono"
                   placeholder="Ej: 3511234567"
                   leftSection={<IconPhone size={18} />}
                   required
                   {...form.getInputProps("telefono")}
                 />
-              </SimpleGrid>
+                </Grid.Col>
+              </Grid>
 
               <TextInput
+                size={size}
                 label="Email"
                 placeholder="Ej: sucursal@empresa.com"
                 type="email"
@@ -238,6 +252,7 @@ const SucursalForm = ({
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <TextInput
+                  size={size}
                   label="Calle"
                   placeholder="Ej: Av. Colón"
                   leftSection={<IconMapPin size={18} />}
@@ -246,6 +261,7 @@ const SucursalForm = ({
                 />
 
                 <TextInput
+                  size={size}
                   label="Número"
                   placeholder="Ej: 1234"
                   leftSection={<IconMapPin size={18} />}
@@ -256,6 +272,7 @@ const SucursalForm = ({
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <Select
+                  size={size}
                   label="Provincia"
                   placeholder="Seleccioná una provincia"
                   data={provincias}
@@ -271,6 +288,7 @@ const SucursalForm = ({
                 />
 
                 <Select
+                  size={size}
                   label="Localidad"
                   placeholder="Seleccioná una localidad"
                   data={localidades}

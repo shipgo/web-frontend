@@ -23,6 +23,9 @@ import {
 import { EMPTY } from "@domain/format";
 import { toLocalDate } from "@utils/dates";
 import { rolBadge } from "@domain/roles";
+import { useIsMobile } from "@hooks/useIsMobile";
+import FormSections from "./FormSections";
+import { useFormSections } from "./useFormSections";
 import { iniciales, nombreCompleto, tieneNombre } from "@domain/usuario";
 
 const InfoItem = ({ icon: Icon, label, value, color = "blue" }) => (
@@ -50,74 +53,21 @@ const InfoItem = ({ icon: Icon, label, value, color = "blue" }) => (
  * @param {Object} props.usuario - Datos del usuario a mostrar
  * @param {boolean} props.showAllInfo - Si debe mostrar toda la información o solo la básica
  */
-const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
-  if (!usuario) {
-    return (
-      <Card>
-        <Text c="dimmed">No se encontró información del usuario</Text>
-      </Card>
-    );
-  }
-
+const UsuarioPerfilContenido = ({ usuario, showAllInfo }) => {
+  const isMobile = useIsMobile();
   const fullName = nombreCompleto(usuario, "Sin nombre");
   const initials = iniciales(usuario) || "U";
 
   const authorities = usuario.authorities || [];
 
-  return (
-    <Stack>
-      {/* Información Principal */}
-      <Card>
-        <Group align="flex-start" gap="xl" wrap="nowrap">
-          {/* Avatar */}
-          <Avatar
-            src={
-              usuario.profile
-                ? `/api${API_URLS.FILES_URL}/${usuario.profile}`
-                : null
-            }
-            size={120}
-            radius="md"
-          >
-            {!usuario.profile && (
-              <Text size="xl" fw={700}>
-                {initials}
-              </Text>
-            )}
-          </Avatar>
-
-          {/* Información básica */}
-          <Stack gap="sm" style={{ flex: 1 }}>
-            <div>
-              <Title order={2}>{fullName}</Title>
-              <Text size="sm" c="dimmed">
-                @{usuario.username}
-              </Text>
-            </div>
-
-            <Group gap="xs">
-              {authorities.map((auth, index) => {
-                const rol = rolBadge(auth);
-                return (
-                  <Badge key={index} color={rol.color} variant="light" size="lg">
-                    {rol.label}
-                  </Badge>
-                );
-              })}
-            </Group>
-          </Stack>
-        </Group>
-      </Card>
-
-      {showAllInfo && (
+  const sections = [
+    {
+      value: "personal",
+      title: "Información personal",
+      icon: <IconUser size={20} stroke={1.5} />,
+      fields: [],
+      children: (
         <>
-          {/* Información Personal */}
-          <Card>
-            <Stack gap="md">
-              <Group gap="0.75rem">
-                <IconUser size={20} stroke={1.5} />
-                <Title order={4}>Información personal</Title>
-              </Group>
               <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
                 <InfoItem
                   icon={IconUser}
@@ -154,16 +104,16 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
                   }
                 />
               </SimpleGrid>
-            </Stack>
-          </Card>
-
-          {/* Información de Contacto */}
-          <Card>
-            <Stack gap="md">
-              <Group gap="0.75rem">
-                <IconPhone size={20} stroke={1.5} />
-                <Title order={4}>Información de contacto</Title>
-              </Group>
+        </>
+      ),
+    },
+    {
+      value: "contacto",
+      title: "Información de contacto",
+      icon: <IconPhone size={20} stroke={1.5} />,
+      fields: [],
+      children: (
+        <>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
                 <InfoItem
                   icon={IconAt}
@@ -182,16 +132,16 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
                   color="green"
                 />
               </SimpleGrid>
-            </Stack>
-          </Card>
-
-          {/* Dirección */}
-          <Card>
-            <Stack gap="md">
-              <Group gap="0.75rem">
-                <IconMapPin size={20} stroke={1.5} />
-                <Title order={4}>Dirección</Title>
-              </Group>
+        </>
+      ),
+    },
+    {
+      value: "direccion",
+      title: "Dirección",
+      icon: <IconMapPin size={20} stroke={1.5} />,
+      fields: [],
+      children: (
+        <>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
                 <InfoItem
                   icon={IconMapPin}
@@ -216,16 +166,16 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
                   color="red"
                 />
               </SimpleGrid>
-            </Stack>
-          </Card>
-
-          {/* Información Laboral */}
-          <Card>
-            <Stack gap="md">
-              <Group gap="0.75rem">
-                <IconBriefcase size={20} stroke={1.5} />
-                <Title order={4}>Información laboral</Title>
-              </Group>
+        </>
+      ),
+    },
+    {
+      value: "laboral",
+      title: "Información laboral",
+      icon: <IconBriefcase size={20} stroke={1.5} />,
+      fields: [],
+      children: (
+        <>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
                 <InfoItem
                   icon={IconBuilding}
@@ -256,12 +206,71 @@ const UsuarioPerfil = ({ usuario, showAllInfo = true }) => {
                   </Group>
                 </Stack>
               </SimpleGrid>
-            </Stack>
-          </Card>
         </>
+      ),
+    },
+  ];
+  const { opened, setOpened } = useFormSections(sections);
+
+  return (
+    <Stack>
+      {/* Información Principal */}
+      <Card>
+        <Group align="flex-start" gap={isMobile ? "md" : "xl"} wrap="nowrap">
+          {/* Avatar */}
+          <Avatar
+            src={
+              usuario.profile
+                ? `/api${API_URLS.FILES_URL}/${usuario.profile}`
+                : null
+            }
+            size={isMobile ? 72 : 120}
+            radius="md"
+          >
+            {!usuario.profile && (
+              <Text size="xl" fw={700}>
+                {initials}
+              </Text>
+            )}
+          </Avatar>
+
+          {/* Información básica */}
+          <Stack gap="sm" style={{ flex: 1 }}>
+            <div>
+              <Title order={isMobile ? 3 : 2}>{fullName}</Title>
+              <Text size="sm" c="dimmed">
+                @{usuario.username}
+              </Text>
+            </div>
+
+            <Group gap="xs">
+              {authorities.map((auth, index) => {
+                const rol = rolBadge(auth);
+                return (
+                  <Badge key={index} color={rol.color} variant="light" size="lg">
+                    {rol.label}
+                  </Badge>
+                );
+              })}
+            </Group>
+          </Stack>
+        </Group>
+      </Card>
+
+      {showAllInfo && (
+        <FormSections sections={sections} opened={opened} onChange={setOpened} />
       )}
     </Stack>
   );
 };
+
+const UsuarioPerfil = ({ usuario, showAllInfo = true }) =>
+  usuario ? (
+    <UsuarioPerfilContenido usuario={usuario} showAllInfo={showAllInfo} />
+  ) : (
+    <Card>
+      <Text c="dimmed">No se encontró información del usuario</Text>
+    </Card>
+  );
 
 export default UsuarioPerfil;

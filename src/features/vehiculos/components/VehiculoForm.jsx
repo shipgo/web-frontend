@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
 import {
-  Card,
-  Group,
+  Box,
   LoadingOverlay,
   NumberInput,
   Select,
   SimpleGrid,
-  Stack,
-  Title,
   TextInput,
 } from "@mantine/core";
 import { IconCar, IconRuler, IconGauge } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
+import FormSections from "./FormSections";
+import { useFormSections } from "./useFormSections";
 import {
   combustibleApi,
   marcaApi,
@@ -60,6 +61,8 @@ const filterIgnoreAccents = ({ options, search }) => {
  */
 const VehiculoForm = () => {
   const form = useVehiculoFormContext();
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
 
   const [catalogsLoading, setCatalogsLoading] = useState(true);
   const [tiposVehiculo, setTiposVehiculo] = useState([]);
@@ -175,23 +178,17 @@ const VehiculoForm = () => {
     loadModelos();
   }, [form.values.marcaID]);
 
-  return (
-    <Stack>
-      {/* Información del Vehículo */}
-      <Card pos="relative">
-        <LoadingOverlay
-          visible={catalogsLoading}
-          overlayProps={{ radius: "md", blur: 2 }}
-        />
-
-        <Stack gap="md">
-          <Group gap="0.75rem">
-            <IconCar size={20} />
-            <Title order={4}>Información del vehículo</Title>
-          </Group>
-
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+  const sections = [
+    {
+      value: "vehiculo",
+      title: "Información del vehículo",
+      icon: <IconCar size={20} />,
+      fields: ["patente","tipoVehiculoID","marcaID","modeloID","anioCompra","kilometraje"],
+      children: (
+        <>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing={isMobile ? "md" : "lg"}>
             <TextInput
+              size={size}
               label="Patente"
               placeholder="Ej: AB123CD"
               required
@@ -204,6 +201,7 @@ const VehiculoForm = () => {
               }
             />
             <Select
+              size={size}
               label="Tipo de vehículo"
               placeholder="Seleccioná una opción"
               required
@@ -235,6 +233,7 @@ const VehiculoForm = () => {
               }}
             />
             <Select
+              size={size}
               label="Marca"
               placeholder="Seleccioná una opción"
               required
@@ -248,6 +247,7 @@ const VehiculoForm = () => {
               }}
             />
             <Select
+              size={size}
               label="Modelo"
               placeholder="Seleccioná primero una marca"
               required
@@ -258,14 +258,18 @@ const VehiculoForm = () => {
               {...form.getInputProps("modeloID")}
             />
             <NumberInput
+              size={size}
               label="Año de compra"
               placeholder="Ej: 2020"
               required
+              // Mobile: sin los botones +/- (se recortan y se escribe con el teclado numérico).
+              hideControls={isMobile}
               min={1900}
               max={new Date().getFullYear()}
               {...form.getInputProps("anioCompra")}
             />
             <NumberInput
+              size={size}
               label="Kilometraje"
               placeholder="Ej: 50000"
               required
@@ -276,19 +280,19 @@ const VehiculoForm = () => {
               {...form.getInputProps("kilometraje")}
             />
           </SimpleGrid>
-        </Stack>
-      </Card>
-
-      {/* Especificaciones Técnicas */}
-      <Card>
-        <Stack gap="md">
-          <Group gap="0.75rem">
-            <IconGauge size={20} />
-            <Title order={4}>Especificaciones técnicas</Title>
-          </Group>
-
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+        </>
+      ),
+    },
+    {
+      value: "specs",
+      title: "Especificaciones técnicas",
+      icon: <IconGauge size={20} />,
+      fields: ["combustibleID","consumoPromedio"],
+      children: (
+        <>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={isMobile ? "md" : "lg"}>
             <Select
+              size={size}
               label="Combustible"
               placeholder="Seleccioná una opción"
               required
@@ -298,6 +302,7 @@ const VehiculoForm = () => {
               {...form.getInputProps("combustibleID")}
             />
             <NumberInput
+              size={size}
               label="Consumo promedio"
               placeholder="Ej: 8.5"
               required
@@ -309,19 +314,19 @@ const VehiculoForm = () => {
               {...form.getInputProps("consumoPromedio")}
             />
           </SimpleGrid>
-        </Stack>
-      </Card>
-
-      {/* Información de Ruedas */}
-      <Card>
-        <Stack gap="md">
-          <Group gap="0.75rem">
-            <IconRuler size={20} />
-            <Title order={4}>Información de ruedas y capacidad</Title>
-          </Group>
-
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+        </>
+      ),
+    },
+    {
+      value: "ruedas",
+      title: "Información de ruedas y capacidad",
+      icon: <IconRuler size={20} />,
+      fields: ["tipoRuedaID","cantidadRuedas","pesoMaximo"],
+      children: (
+        <>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing={isMobile ? "md" : "lg"}>
             <Select
+              size={size}
               label="Tipo de rueda"
               placeholder="Seleccioná una opción"
               required
@@ -331,6 +336,7 @@ const VehiculoForm = () => {
               {...form.getInputProps("tipoRuedaID")}
             />
             <NumberInput
+              size={size}
               label="Cantidad de ruedas"
               placeholder={esMoto ? "2" : "Ej: 4"}
               // Sin `description` fija acá (a diferencia de "Peso máximo"
@@ -352,6 +358,7 @@ const VehiculoForm = () => {
               {...form.getInputProps("cantidadRuedas")}
             />
             <NumberInput
+              size={size}
               label="Peso máximo"
               placeholder="Ej: 1500"
               // Backend exige el campo igual para motos (no hay límite de
@@ -373,9 +380,26 @@ const VehiculoForm = () => {
               {...form.getInputProps("pesoMaximo")}
             />
           </SimpleGrid>
-        </Stack>
-      </Card>
-    </Stack>
+        </>
+      ),
+    },
+  ];
+  const { opened, setOpened, revealErrors } = useFormSections(sections);
+
+  // Abre (mobile) las secciones con errores cuando falla la validación del submit.
+  useEffect(() => {
+    revealErrors(form.errors);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.errors]);
+
+  return (
+    <Box pos="relative">
+      <LoadingOverlay
+        visible={catalogsLoading}
+        overlayProps={{ radius: "md", blur: 2 }}
+      />
+      <FormSections sections={sections} opened={opened} onChange={setOpened} />
+    </Box>
   );
 };
 
