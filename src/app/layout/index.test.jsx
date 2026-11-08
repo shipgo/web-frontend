@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Link } from "wouter";
 
@@ -90,22 +90,64 @@ describe("Layout — cajón de navegación mobile", () => {
     expect(burger()).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("el cajón tiene sucursal (superusuario), 'Mi perfil' y 'Cerrar sesión'", async () => {
+  it("el cajón tiene la sucursal (superusuario) y sólo navegación: el usuario vive en la hoja del avatar", async () => {
     const user = userEvent.setup();
-    mockLogout.mockResolvedValue();
     renderLayout();
     await user.click(burger());
 
     const navbar = document.getElementById("app-navbar");
     expect(within(navbar).getByTestId("sucursal-selector")).toBeInTheDocument();
-    expect(within(navbar).getByRole("link", { name: /mi perfil/i })).toHaveAttribute(
-      "href",
-      "/usuarios/7",
-    );
-    expect(within(navbar).getByRole("switch", { name: /modo oscuro/i })).toBeInTheDocument();
+    expect(within(navbar).queryByRole("link", { name: /mi perfil/i })).not.toBeInTheDocument();
+    expect(within(navbar).queryByText("Cerrar sesión")).not.toBeInTheDocument();
+    expect(within(navbar).queryByText(/modo oscuro/i)).not.toBeInTheDocument();
+  });
 
-    await user.click(within(navbar).getByText("Cerrar sesión"));
-    expect(mockLogout).toHaveBeenCalled();
+  describe("hoja del usuario (avatar del header)", () => {
+    const avatar = () => screen.getByRole("button", { name: /abrir opciones de usuario/i });
+
+    it("el avatar abre una hoja con 'Mi perfil', la apariencia y 'Cerrar sesión'", async () => {
+      const user = userEvent.setup();
+      mockLogout.mockResolvedValue();
+      renderLayout();
+
+      await user.click(avatar());
+
+      const hoja = await screen.findByRole("dialog");
+      expect(within(hoja).getByText("Ada Lovelace")).toBeInTheDocument();
+      expect(within(hoja).getByRole("link", { name: /mi perfil/i })).toHaveAttribute(
+        "href",
+        "/usuarios/7",
+      );
+      expect(within(hoja).getByText("Apariencia")).toBeInTheDocument();
+      expect(within(hoja).getByRole("radio", { name: "Auto" })).toBeInTheDocument();
+      expect(within(hoja).getByRole("radio", { name: "Claro" })).toBeInTheDocument();
+      expect(within(hoja).getByRole("radio", { name: "Oscuro" })).toBeInTheDocument();
+
+      await user.click(within(hoja).getByText("Cerrar sesión"));
+      expect(mockLogout).toHaveBeenCalled();
+    });
+
+    it("elegir una apariencia la marca como activa", async () => {
+      const user = userEvent.setup();
+      renderLayout();
+      await user.click(avatar());
+      const hoja = await screen.findByRole("dialog");
+
+      await user.click(within(hoja).getByText("Oscuro"));
+
+      expect(within(hoja).getByRole("radio", { name: "Oscuro" })).toBeChecked();
+    });
+
+    it("se cierra con Escape", async () => {
+      const user = userEvent.setup();
+      renderLayout();
+      await user.click(avatar());
+      await screen.findByRole("dialog");
+
+      await user.keyboard("{Escape}");
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    });
   });
 
   it("se cierra con Escape", async () => {
@@ -152,12 +194,11 @@ describe("Layout — escritorio", () => {
     window.matchMedia = originalMatchMedia;
   });
 
-  it("el navbar no se marca como oculto ni incluye el pie de usuario móvil", () => {
+  it("el navbar no se marca como oculto ni incluye el selector de sucursal", () => {
     renderLayout();
 
     const navbar = document.getElementById("app-navbar");
     expect(navbar).not.toHaveAttribute("aria-hidden");
-    expect(within(navbar).queryByTestId("mobile-user-section")).not.toBeInTheDocument();
     expect(within(navbar).queryByTestId("sucursal-selector")).not.toBeInTheDocument();
   });
 });

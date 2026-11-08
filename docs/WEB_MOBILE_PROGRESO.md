@@ -69,3 +69,4 @@ Cierre de la rama:
 - 2026-11-07: ola 1 completa y commiteada (e57a5f0).
 - 2026-11-07: ola 2 completa (6d53fe8) con pulido posterior; verificación a 390 px en iframe.
 - 2026-11-07: fix de backend hecho en `../backend` (rama `feat/tracking-publico-sin-gps-ni-palabra`, commit 0ab5052), `make up`, contrato en planning, segunda pasada visual y prueba en emulador Android con correcciones.
+- 2026-11-08: perfil y opciones del usuario pasan de la cola del cajón a una hoja inferior que abre el avatar del header (opción B del artefacto): Mi perfil, Apariencia (Auto / Claro / Oscuro) y Cerrar sesión. El cajón queda solo con navegación. `UserSheet.jsx` reemplaza a `MobileUserSection.jsx`. Escritorio no cambia. Backend: el origen `https://shipgo-web.vercel.app` pasa a ser fijo en CORS (backend PR #348).

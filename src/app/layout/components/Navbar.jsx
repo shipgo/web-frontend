@@ -13,7 +13,6 @@ import {
 import BrandLogo from "@components/BrandLogo";
 import OperatingSucursalSelector from "@components/OperatingSucursalSelector";
 import { useIsMobile } from "@hooks/useIsMobile";
-import MobileUserSection from "./MobileUserSection";
 import classes from "./Navbar.module.css";
 import {
   IconBook,
@@ -168,15 +167,14 @@ const AppNavbar = ({ opened = false, onClose }) => {
         {isMobile && (
           <>
             <div style={{ paddingTop: 12, paddingBottom: 4 }}>{manualLink}</div>
-            <MobileUserSection />
-            {/* Aire final: "Cerrar sesión" no debe quedar bajo la barra de gestos. */}
+            {/* Aire final: el último ítem no debe quedar bajo la barra de gestos. */}
             <div style={{ height: 'calc(24px + env(safe-area-inset-bottom))' }} aria-hidden />
           </>
         )}
       </AppShellSection>
 
       {/* Escritorio: "Manual" fijo abajo. Mobile: va dentro de la zona que
-          scrollea (arriba), junto con el bloque de usuario. */}
+          scrollea (el usuario vive en la hoja del avatar del header). */}
       {!isMobile && (
         <AppShellSection pt="xl" pb="xs">
           {manualLink}
