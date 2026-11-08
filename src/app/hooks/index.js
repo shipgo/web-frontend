@@ -4,3 +4,4 @@ export { useCaptcha } from "./useCaptcha";
 export { useTurnstileScript } from "./useTurnstileScript";
 export { useToggleColorScheme } from "./useToggleColorScheme";
 
+export { useIsMobile, MOBILE_QUERY } from "./useIsMobile";
