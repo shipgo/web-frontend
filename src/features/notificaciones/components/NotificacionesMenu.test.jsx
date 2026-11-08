@@ -12,6 +12,7 @@ import { formatFechaHora } from '@domain/format';
 const mockGetMias = vi.fn();
 const mockDelete = vi.fn();
 const mockVaciarTodas = vi.fn();
+const mockMarcarTodasLeidas = vi.fn();
 
 vi.mock('@api/catalogs.api', () => ({
   notificacionesApi: {
@@ -20,6 +21,7 @@ vi.mock('@api/catalogs.api', () => ({
     update: vi.fn(),
     delete: (...args) => mockDelete(...args),
     vaciarTodas: (...args) => mockVaciarTodas(...args),
+    marcarTodasLeidas: (...args) => mockMarcarTodasLeidas(...args),
   },
 }));
 
@@ -476,5 +478,68 @@ describe('NotificacionesMenu', () => {
       expect(await screen.findByText('Viaje planificado')).toBeInTheDocument();
       expect(screen.getByText('Viaje rechazado')).toBeInTheDocument();
     });
+  });
+});
+
+describe('NotificacionesMenu — "Marcar todas como leídas"', () => {
+  const ETIQUETA = 'Marcar todas las notificaciones como leídas';
+
+  beforeEach(() => {
+    mockGetMias.mockReset();
+    mockMarcarTodasLeidas.mockReset();
+    mockMarcarTodasLeidas.mockResolvedValue({});
+    notifications.clean();
+    notifications.cleanQueue();
+  });
+
+  it('no se ofrece si todas ya están leídas', async () => {
+    mockGetMias.mockResolvedValue(NOTIFS.map((n) => ({ ...n, visto: true })));
+    renderMenu();
+
+    await userEvent.click(await screen.findByLabelText(/Notificaciones/));
+    await screen.findByText('Viaje planificado');
+
+    expect(screen.queryByLabelText(ETIQUETA)).not.toBeInTheDocument();
+  });
+
+  it('pide PUT /api/notificaciones/leidas y deja todo leído al instante (sin contador ni botón)', async () => {
+    mockGetMias.mockResolvedValueOnce(NOTIFS).mockReturnValue(sinResolver());
+    const pendiente = deferred();
+    mockMarcarTodasLeidas.mockReturnValue(pendiente.promise);
+    renderMenu();
+
+    await userEvent.click(await screen.findByLabelText('Notificaciones, 1 sin leer'));
+    await userEvent.click(await screen.findByLabelText(ETIQUETA));
+
+    expect(mockMarcarTodasLeidas).toHaveBeenCalledTimes(1);
+    // optimista: el backend todavía no respondió
+    await waitFor(() =>
+      expect(screen.queryByLabelText('Notificaciones, 1 sin leer')).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByLabelText(ETIQUETA)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Marcar como leída')).not.toBeInTheDocument();
+
+    pendiente.resolve({});
+  });
+
+  it('si el PUT falla, vuelven las no leídas y se avisa', async () => {
+    mockGetMias.mockResolvedValueOnce(NOTIFS).mockReturnValue(sinResolver());
+    const rechazo = deferred();
+    mockMarcarTodasLeidas.mockReturnValue(rechazo.promise);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderMenu();
+
+    await userEvent.click(await screen.findByLabelText('Notificaciones, 1 sin leer'));
+    await userEvent.click(await screen.findByLabelText(ETIQUETA));
+    await waitFor(() =>
+      expect(screen.queryByLabelText('Notificaciones, 1 sin leer')).not.toBeInTheDocument(),
+    );
+
+    rechazo.resolve(Promise.reject({ response: { status: 500, data: {} } }));
+
+    expect(
+      await screen.findByText('No se pudieron marcar las notificaciones como leídas'),
+    ).toBeInTheDocument();
+    expect(await screen.findByLabelText('Notificaciones, 1 sin leer')).toBeInTheDocument();
   });
 });

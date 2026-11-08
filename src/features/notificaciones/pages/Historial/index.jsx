@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { Card, Divider, Group, Pagination, Stack, Text, Title } from '@mantine/core';
-import { IconBellOff } from '@tabler/icons-react';
+import { Button, Card, Divider, Group, Pagination, Stack, Text, Title } from '@mantine/core';
+import { IconBellOff, IconChecks } from '@tabler/icons-react';
 
 import PageContainer from '@components/PageContainer';
 import ScreenContainer from '@components/ScreenContainer';
@@ -9,6 +9,7 @@ import { useIsMobile } from '@hooks/useIsMobile';
 import { REINTENTAR_MAS_TARDE } from '@copy/common';
 
 import NotificacionFila from '../../components/NotificacionFila';
+import { useNotificaciones } from '../../hooks/useNotificaciones';
 import { useNotificacionesHistorial } from '../../hooks/useNotificacionesHistorial';
 
 /**
@@ -39,7 +40,11 @@ const NotificacionesHistorialPage = ({ portal = false }) => {
     isFetching,
     refetch,
     marcarLeida,
+    marcarTodasLeidas,
   } = useNotificacionesHistorial(page);
+  // Contador de la campana: cubre las no leídas aunque no estén en la página en pantalla.
+  const { unreadCount } = useNotificaciones();
+  const hayNoLeidas = unreadCount > 0 || notificaciones.some((n) => !n?.visto);
 
   // Si la página en la que estaba ya no existe (p. ej. vació las notificaciones
   // desde la campana), vuelve a la última que tenga contenido.
@@ -56,10 +61,25 @@ const NotificacionesHistorialPage = ({ portal = false }) => {
 
   const contenido = (
     <>
-      <Stack gap={4}>
-        <Title order={2}>Notificaciones</Title>
-        <Text c="dimmed">Todas tus notificaciones, de la más reciente a la más antigua.</Text>
-      </Stack>
+      <Group justify="space-between" align="flex-start" gap="sm">
+        <Stack gap={4} miw={0}>
+          <Title order={2}>Notificaciones</Title>
+          <Text c="dimmed">Todas tus notificaciones, de la más reciente a la más antigua.</Text>
+        </Stack>
+        {notificaciones.length > 0 ? (
+          <Button
+            variant="light"
+            leftSection={<IconChecks size={16} />}
+            mih={isMobile ? 44 : undefined}
+            fullWidth={isMobile}
+            disabled={!hayNoLeidas}
+            loading={marcarTodasLeidas.isPending}
+            onClick={() => marcarTodasLeidas.mutate()}
+          >
+            Marcar todas como leídas
+          </Button>
+        ) : null}
+      </Group>
 
       <Card withBorder padding={notificaciones.length > 0 ? 0 : 'lg'}>
         <ScreenContainer

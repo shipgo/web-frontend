@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { IconBell, IconTrash } from '@tabler/icons-react';
+import { IconBell, IconChecks, IconTrash } from '@tabler/icons-react';
 
 import { useIsMobile } from '@hooks/useIsMobile';
 import { notificacionesHistorialHref } from '../constants';
@@ -36,8 +36,15 @@ const NotificacionesMenu = ({ portal = false }) => {
   const isMobile = useIsMobile();
   const [, navigate] = useLocation();
   const [opened, setOpened] = useState(false);
-  const { notificaciones, unreadCount, isLoading, isError, marcarLeida, vaciarTodas } =
-    useNotificaciones();
+  const {
+    notificaciones,
+    unreadCount,
+    isLoading,
+    isError,
+    marcarLeida,
+    marcarTodasLeidas,
+    vaciarTodas,
+  } = useNotificaciones();
 
   const badge =
     unreadCount > MAX_BADGE ? `${MAX_BADGE}+` : String(unreadCount || '');
@@ -107,18 +114,34 @@ const NotificacionesMenu = ({ portal = false }) => {
         <Group justify="space-between" wrap="nowrap" pr="xs">
           <Menu.Label>Notificaciones</Menu.Label>
           {notificaciones.length > 0 ? (
-            <Tooltip label="Vaciar todas" withArrow>
-              <ActionIcon
-                size={isMobile ? 44 : 'sm'}
-                variant="subtle"
-                color="gray"
-                aria-label="Vaciar todas las notificaciones"
-                loading={vaciarTodas.isPending}
-                onClick={handleVaciarTodas}
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <Group gap={isMobile ? 0 : 4} wrap="nowrap">
+              {unreadCount > 0 ? (
+                <Tooltip label="Marcar todas como leídas" withArrow>
+                  <ActionIcon
+                    size={isMobile ? 44 : 'sm'}
+                    variant="subtle"
+                    color="gray"
+                    aria-label="Marcar todas las notificaciones como leídas"
+                    loading={marcarTodasLeidas.isPending}
+                    onClick={() => marcarTodasLeidas.mutate()}
+                  >
+                    <IconChecks size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              ) : null}
+              <Tooltip label="Vaciar todas" withArrow>
+                <ActionIcon
+                  size={isMobile ? 44 : 'sm'}
+                  variant="subtle"
+                  color="gray"
+                  aria-label="Vaciar todas las notificaciones"
+                  loading={vaciarTodas.isPending}
+                  onClick={handleVaciarTodas}
+                >
+                  <IconTrash size={16} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
           ) : null}
         </Group>
 

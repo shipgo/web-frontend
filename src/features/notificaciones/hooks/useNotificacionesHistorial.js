@@ -7,6 +7,7 @@ import {
   NOTIFICACIONES_HISTORIAL_QUERY_KEY,
 } from '../constants';
 import { useMarcarLeida } from './useMarcarLeida';
+import { useMarcarTodasLeidas } from './useMarcarTodasLeidas';
 
 /**
  * Historial paginado de notificaciones del usuario logueado
@@ -29,6 +30,7 @@ export const useNotificacionesHistorial = (page = 1) => {
 
   // Optimista sobre la página en pantalla y sobre la campana (`useMarcarLeida`).
   const marcarLeida = useMarcarLeida();
+  const marcarTodasLeidas = useMarcarTodasLeidas();
 
   const data = query.data;
   return {
@@ -37,5 +39,6 @@ export const useNotificacionesHistorial = (page = 1) => {
     totalPages: data?.totalPages ?? 0,
     totalElements: data?.totalElements ?? 0,
     marcarLeida,
+    marcarTodasLeidas,
   };
 };
