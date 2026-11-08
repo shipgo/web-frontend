@@ -28,25 +28,32 @@ Sin tareas SHG-FE: se hace todo en esta rama y este archivo es el registro. Al r
   - Landing con seguimiento en el hero, accesos en filas, login/registro/recuperar y portal (búsqueda por código y chips por estado, filtra solo la página cargada).
   - Copy de la landing corregido: ya no promete "ubicación" ni "tiempo real".
 
-## Pendiente de pulido de la ola 1
-- [ ] Tracking: segmentos del hero en verde (`green` de Mantine) y puntos del historial en color primario; unificar a un solo color.
-- [ ] Campana de notificaciones y `PublicLayout`: objetivo táctil de 44 px y ancho a 360 px sin verificar.
+- [x] Ola 2 (commit 6d53fe8 + pulido): listas en tarjetas con hoja de filtros, detalles con acción fija y secciones plegables, formularios en una columna, mapa a pantalla completa con hoja de viajes, dashboard 2×2, notificaciones, onboarding y pantallas 404/error/"usá la app". Cubre envíos, viajes, usuarios, vehículos, marcas, modelos, mantenimientos y sucursales.
+- [x] Pulido tras revisar a 390 px: "Cancelar viaje" en rojo cuando es la única acción (`StickyActionBar` ahora acepta `color`), nombre completo en tarjetas de usuario (`ListCard` acepta `badgeBelow`), selector "Retiro en sucursal" que envuelve, hero de tracking entregado en el mismo color que el historial, atribución de Mapbox visible sobre la hoja, aire bajo la lista cuando hay selección activa.
+- Verificación: suite completa 163 archivos / 1343 tests OK, `eslint .` 0 errores (8 warnings que ya existían), build OK; escritorio comparado contra las capturas del relevamiento (envíos, detalle, mapa, crear viaje) sin cambios. Mobile visto a 390 px en iframe: landing, login, tracking, shell y cajón, lista y detalle de envíos, crear envío, lista/detalle/crear viaje, usuarios, vehículos, mapa, dashboard.
+
+## Pendiente (para retomar en otra sesión)
+Verificación visual a 390/360 px de lo que NO se vio todavía:
+- [ ] Detalle y crear/editar de usuario y vehículo, mantenimientos, sucursales, marcas/modelos, historial de notificaciones, onboarding de empresa, 404, "usá la app", error de conexión, etiqueta de envío, recuperar cuenta con token, verificar cuenta, portal (lista y detalle) tras los cambios.
+- [ ] Dropdowns de `Select`/`MultiSelect` dentro de los acordeones de usuarios/vehículos, modal del selector de rango del dashboard, etiquetas de ejes de los gráficos.
+- [ ] Probar en un teléfono real: teclado abierto en login/registro/formularios, safe-area, arrastre de la hoja del mapa (choque de gestos con el mapa), primer render del mapa mobile, scroll de listas virtualizadas (Virtuoso) dentro de acordeones plegados.
+Cosas que quedaron distintas de la propuesta:
+- [ ] Crear/editar envío, mantenimiento y sucursal: tarjetas apiladas sin `Accordion` (si un error cae en una sección cerrada no se vería). Crear envío: el mapa va debajo del campo con 240 px, sin hoja a pantalla completa; falta probar si el arrastre del mapa pelea con el scroll de la página.
+- [ ] Modales de eliminar (`useDeleteMantenimiento`, `useDeleteSucursal`, `useDeleteMarca`, `useDeleteModelo`, y similares) siguen `centered`; pasarlos a `fullScreen: isMobile`.
+- [ ] CrearViaje: al cambiar de pestaña "Pendientes"/"Incluidos" se pierde el texto del buscador y la selección no pasada a "Incluidos". Listas de vehículos y choferes con alto fijo de 500 px apiladas.
+- [ ] Las tarjetas no tienen "seleccionar todos" (solo checkbox por tarjeta; el `SelectionBanner` permite limpiar).
+- [ ] `CambiarPasswordCard` (`src/app/components`) no usa `useFieldSize`: sus inputs pueden quedar con texto menor a 16 px en mobile.
+- [ ] Tooltips de info (KPIs y gráficos del dashboard) dependen de hover y no funcionan en táctil.
+- [ ] Subtítulo de las cabeceras de lista se corta con puntos suspensivos ("Administrá los usuarios de la pl…"): dejar que envuelva o use `lineClamp`.
+- [ ] `EtiquetaEnvio`: la flecha "Volver" de mobile lleva a la lista, no al detalle.
+- [ ] "Filtros (N)": el rango de fechas cuenta como 2 filtros.
+- [ ] Portal: búsqueda y contadores cuentan solo la página cargada (`useMisEnvios(page)`).
 - [ ] Footer fijo en iOS: el `padding-bottom` de safe-area reduce el alto útil (alto fijo de 70 px); subir el alto en `AppShell footer` si queda justo.
-- [ ] Portal: filtro y contadores cuentan solo la página cargada (`useMisEnvios(page)`); con más de 10 envíos no cubren todo.
-- [ ] Etiqueta del burger cambia a "Cerrar menú" pero el scrim lo tapa abierto.
-
-## En curso (ola 2: 5 workers sonnet en paralelo, una carpeta de features por worker, sin tocar `src/app/components`)
-- Envíos (`features/envios`): lista, detalle, crear, editar.
-- Viajes (`features/viajes`): lista, detalle, crear, editar.
-- Usuarios y vehículos.
-- Catálogo (marcas/modelos), mantenimientos y sucursales.
-- Mapa, dashboard, historial de notificaciones, onboarding y pantallas sueltas (404, "usá la app", error de conexión).
-
-## Pendiente
-- [ ] Revisar la ola 2 a 390 px en el navegador, corregir y commitear.
-- [ ] Revisar a 390 px lo que no se pudo capturar: etiqueta de envío (impresión), modales, onboarding de empresa.
-- [ ] Pasada final: suite completa de vitest con `--maxWorkers=2`, build, lint, y pasada visual de escritorio para confirmar que no cambió.
-- [ ] Probar en un teléfono real (teclado, safe-area, gestos de mapa): lo verificado hasta acá es un iframe de 390 px.
+- [ ] Etiqueta del burger pasa a "Cerrar menú" pero el scrim lo tapa con el cajón abierto.
+- [ ] Hay un caso donde el detalle de viaje deja "Cancelar viaje" como acción única (estado listo para salir): ya va en rojo; confirmar que ese es el comportamiento deseado.
+Cierre de la rama:
+- [ ] Decidir si se pushea `feat/web-mobile` y se abre PR (no se hizo; el owner decide). La rama tiene 4 commits sobre `main` @ a05ca76.
+- [ ] Actualizar el artefacto "Web mobile ShipGo" marcando lo hecho (opcional).
 
 ## Pendiente de backend (otro repo, ../backend)
 - [ ] Quitar `ultimaUbicacionAprox` de `PublicTrackingDTO` y `PublicTrackingService` (línea ~54).
@@ -55,4 +62,5 @@ Sin tareas SHG-FE: se hace todo en esta rama y este archivo es el registro. Al r
 
 ## Bitácora
 - 2026-11-07: relevamiento (77 capturas) y artefacto de propuesta. Se crea la rama y este registro.
-- 2026-11-07: ola 1 completa y commiteada (e57a5f0). Arranca la ola 2.
+- 2026-11-07: ola 1 completa y commiteada (e57a5f0).
+- 2026-11-07: ola 2 completa (6d53fe8) con pulido posterior; verificación a 390 px en iframe. Backend pendiente (ver arriba).

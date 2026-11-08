@@ -57,9 +57,7 @@ const TrackingEstadoHero = ({ data }) => {
   const entregadoEl = entregado ? fechaEntrega(data.historial) : null;
   const acento = rechazado
     ? 'var(--mantine-color-red-filled)'
-    : entregado
-      ? 'var(--mantine-color-green-filled)'
-      : 'var(--mantine-primary-color-filled)';
+    : 'var(--mantine-primary-color-filled)';
 
   return (
     <Card
@@ -72,7 +70,7 @@ const TrackingEstadoHero = ({ data }) => {
         <Group gap="sm" wrap="nowrap" align="flex-start">
           {entregado || rechazado ? (
             <ThemeIcon
-              color={rechazado ? 'red' : 'green'}
+              color={rechazado ? 'red' : undefined}
               variant="light"
               size={40}
               radius="xl"

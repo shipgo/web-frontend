@@ -76,7 +76,13 @@ const ResponsiveList = ({
         onEmptyFiltersData={onEmptyFiltersData}
       >
         {showCards ? (
-          <Stack gap="xs" data-testid="responsive-list-cards">
+          // Con selección activa el `SelectionBanner` queda fijo abajo: dejar aire
+          // para que no tape la última tarjeta.
+          <Stack
+            gap="xs"
+            data-testid="responsive-list-cards"
+            style={{ paddingBottom: selectedIds?.size > 0 ? 88 : 0 }}
+          >
             {items.map((row) => {
               const id = getRowId(row);
               return (

@@ -45,6 +45,9 @@ const MapaMobile = () => {
       h="calc(100dvh - var(--app-shell-header-offset, 0rem) - var(--app-shell-footer-offset, 0rem))"
       style={{ overflow: 'hidden' }}
     >
+      {/* La hoja de viajes asomada tapa el logo y la atribución de Mapbox (abajo):
+          se suben por encima de la hoja (altura asomada ~96 px + área segura). */}
+      <style>{`[data-testid="mapa-mobile"] .mapboxgl-ctrl-bottom-left, [data-testid="mapa-mobile"] .mapboxgl-ctrl-bottom-right { margin-bottom: calc(104px + env(safe-area-inset-bottom)); }`}</style>
       <MapCard style={{ position: 'absolute', inset: 0, borderRadius: 0 }} showControls={false}>
         <MapTruckMarkers />
         <MapRoute />
