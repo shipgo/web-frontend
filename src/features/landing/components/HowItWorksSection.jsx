@@ -14,7 +14,7 @@ const HowItWorksSection = () => {
   const isMobile = useIsMobile();
 
   return (
-  <Box component="section" py={{ base: 'lg', sm: 64 }} bg="colorPalette.0">
+  <Box component="section" py={{ base: 'lg', sm: 64 }} bg="var(--mantine-color-colorPalette-light)">
     <Container size="lg">
       <Stack gap="lg">
         <Stack gap={4} ta={{ base: 'left', sm: 'center' }} align={{ sm: 'center' }}>

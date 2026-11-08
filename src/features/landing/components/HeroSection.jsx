@@ -32,7 +32,7 @@ const HeroSection = () => {
   const copy = LANDING_HERO.mobile;
 
   return (
-    <Box component="section" py={{ base: 'lg', sm: 64 }} bg="colorPalette.0">
+    <Box component="section" py={{ base: 'lg', sm: 64 }} bg="var(--mantine-color-colorPalette-light)">
       <Container size="lg">
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 'xl', md: 48 }} verticalSpacing="xl">
           <Stack gap="md" justify="center">

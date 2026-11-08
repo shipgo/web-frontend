@@ -28,6 +28,24 @@ describe('PublicLayout', () => {
     expect(screen.getByText(/seguimiento de envíos/i)).toBeInTheDocument();
   });
 
+  it('guest y customer pueden cambiar el tema de color desde el header', () => {
+    renderWithProviders(
+      <PublicLayout>
+        <p>contenido</p>
+      </PublicLayout>,
+    );
+    expect(screen.getByRole('button', { name: 'Cambiar tema de color' })).toBeInTheDocument();
+
+    // También con sesión y un `headerRight` propio (portal del cliente).
+    mockUseAuth.mockReturnValue({ user: { authorities: [{ name: 'ROLE_CUSTOMER' }] }, isAuthenticated: true });
+    renderWithProviders(
+      <PublicLayout headerRight={<span>menú</span>}>
+        <p>otro</p>
+      </PublicLayout>,
+    );
+    expect(screen.getAllByRole('button', { name: 'Cambiar tema de color' })).toHaveLength(2);
+  });
+
   // SHG-FE-054: sin `homeHref` explícito, el wordmark linkea a la landing
   // pública sin sesión, o al home por rol si ya hay sesión (`/tracking` es
   // accesible con o sin sesión, así que este layout no puede asumir ninguna).

@@ -48,6 +48,19 @@ describe("AuthShell", () => {
     expect(foto).toHaveAttribute("loading", "lazy");
   });
 
+  it("ofrece el selector de tema en las dos variantes (ya no fuerza el modo claro)", () => {
+    const { unmount } = renderWithProviders(<AuthShell title="Hola">x</AuthShell>);
+    expect(screen.getByRole("button", { name: "Cambiar tema de color" })).toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(
+      <AuthShell variant="split" title="Hola">
+        x
+      </AuthShell>,
+    );
+    expect(screen.getByRole("button", { name: "Cambiar tema de color" })).toBeInTheDocument();
+  });
+
   it("variante split: el pie no se renderiza si no se pasa", () => {
     renderWithProviders(
       <AuthShell variant="split" title="Hola">
