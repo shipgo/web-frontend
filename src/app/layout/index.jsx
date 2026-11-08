@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 
 import AppHeader from "./components/Header";
 import AppNavbar from "./components/Navbar";
+import UserSheet from "./components/UserSheet";
 import FooterSlotProvider from "./FooterSlotProvider";
 import { useFooterSlot } from "./footerSlot";
 
@@ -19,6 +20,13 @@ const LayoutShell = ({ children }) => {
   const [location] = useLocation();
   // Cajón de navegación en mobile (< sm): lo abre la hamburguesa del header.
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
+  // Hoja del usuario (mobile): la abren el avatar del header y la fila del usuario
+  // fijada abajo del cajón. Al abrirla desde el cajón, éste se cierra.
+  const [sheetOpened, { open: openSheet, close: closeSheet }] = useDisclosure(false);
+  const openSheetFromDrawer = () => {
+    closeMenu();
+    openSheet();
+  };
 
   // Se cierra al navegar...
   useEffect(() => {
@@ -46,7 +54,11 @@ const LayoutShell = ({ children }) => {
       }}
       header={{ height: HEADER_HEIGHT_PX }}
     >
-      <AppHeader menuOpened={menuOpened} onToggleMenu={toggleMenu} />
+      <AppHeader
+        menuOpened={menuOpened}
+        onToggleMenu={toggleMenu}
+        onOpenUserSheet={openSheet}
+      />
       {/* Scrim del cajón: sólo mobile; tocar fuera cierra. */}
       {menuOpened && (
         <Overlay
@@ -58,7 +70,12 @@ const LayoutShell = ({ children }) => {
           data-testid="menu-scrim"
         />
       )}
-      <AppNavbar opened={menuOpened} onClose={closeMenu} />
+      <AppNavbar
+        opened={menuOpened}
+        onClose={closeMenu}
+        onOpenUserSheet={openSheetFromDrawer}
+      />
+      <UserSheet opened={sheetOpened} onClose={closeSheet} />
       {/* minWidth 0 / clip: nada del contenido ensancha el body en mobile. */}
       <AppShell.Main style={{ minWidth: 0, overflowX: "clip" }}>{children}</AppShell.Main>
     </AppShell>

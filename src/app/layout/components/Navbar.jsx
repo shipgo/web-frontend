@@ -4,8 +4,11 @@ import { Link, useLocation } from "wouter";
 import {
   AppShellNavbar,
   AppShellSection,
+  Avatar,
+  Group,
   NavLink,
   ScrollArea,
+  Stack,
   Text,
   UnstyledButton,
 } from "@mantine/core";
@@ -17,6 +20,7 @@ import classes from "./Navbar.module.css";
 import {
   IconBook,
   IconBuilding,
+  IconDots,
   IconExternalLink,
   IconHome,
 } from "@tabler/icons-react";
@@ -26,6 +30,8 @@ import { IconMap } from "@tabler/icons-react";
 import { useAuth } from "@contexts/auth";
 import { hasAnyRole } from "@domain/roles";
 import { necesitaOnboardingEmpresa } from "@domain/empresa";
+import { rolLabel } from "@domain/roles";
+import { iniciales, nombreCompleto } from "@domain/usuario";
 
 const NAV_ROW_MIN_HEIGHT = 44;
 
@@ -33,8 +39,9 @@ const NAV_ROW_MIN_HEIGHT = 44;
  * @param {Object} props
  * @param {boolean} [props.opened] Cajón abierto (sólo relevante en mobile).
  * @param {() => void} [props.onClose] Cierra el cajón (al tocar un enlace).
+ * @param {() => void} [props.onOpenUserSheet] Abre la hoja del usuario (fila fija abajo, mobile).
  */
-const AppNavbar = ({ opened = false, onClose }) => {
+const AppNavbar = ({ opened = false, onClose, onOpenUserSheet }) => {
   const isMobile = useIsMobile();
   const [location] = useLocation();
   const { user } = useAuth();
@@ -167,11 +174,51 @@ const AppNavbar = ({ opened = false, onClose }) => {
         {isMobile && (
           <>
             <div style={{ paddingTop: 12, paddingBottom: 4 }}>{manualLink}</div>
-            {/* Aire final: el último ítem no debe quedar bajo la barra de gestos. */}
-            <div style={{ height: 'calc(24px + env(safe-area-inset-bottom))' }} aria-hidden />
           </>
         )}
       </AppShellSection>
+
+      {/* Mobile: el usuario queda fijo abajo a la izquierda, siempre a la vista.
+          Un toque abre la hoja con perfil, apariencia y "Cerrar sesión". */}
+      {isMobile && user && (
+        <AppShellSection
+          pt="xs"
+          px="xs"
+          style={{
+            borderTop: "1px solid var(--mantine-color-default-border)",
+            paddingBottom: "calc(var(--mantine-spacing-xs) + env(safe-area-inset-bottom))",
+          }}
+        >
+          <UnstyledButton
+            onClick={onOpenUserSheet}
+            aria-haspopup="dialog"
+            aria-label={`Opciones de ${nombreCompleto(user, "Usuario")}`}
+            mih={NAV_ROW_MIN_HEIGHT}
+            w="100%"
+            px="xs"
+            data-testid="drawer-user-row"
+          >
+            <Group wrap="nowrap" gap="sm">
+              <Avatar
+                src={user.profile ? `/api${user.profile}` : undefined}
+                radius="xl"
+                color="colorPalette"
+              >
+                {iniciales(user) || "U"}
+              </Avatar>
+              <Stack gap={0} miw={0} style={{ flex: 1 }}>
+                <Text size="sm" fw={600} truncate="end">
+                  {nombreCompleto(user, "Usuario")}
+                </Text>
+                <Text size="xs" c="dimmed" truncate="end">
+                  {rolLabel(user.authorities?.[0]?.name || user.role)}
+                </Text>
+              </Stack>
+              <IconDots size={20} aria-hidden />
+            </Group>
+          </UnstyledButton>
+        </AppShellSection>
+      )}
 
       {/* Escritorio: "Manual" fijo abajo. Mobile: va dentro de la zona que
           scrollea (el usuario vive en la hoja del avatar del header). */}
