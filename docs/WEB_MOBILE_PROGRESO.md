@@ -21,22 +21,32 @@ Sin tareas SHG-FE: se hace todo en esta rama y este archivo es el registro. Al r
 
 ## Hecho
 - [x] Rama `feat/web-mobile` y hook `useIsMobile`.
+- [x] Ola 1 (commit e57a5f0), verificada a 390 px en navegador:
+  - Shell: cajón con hamburguesa, header de una fila, sucursal y usuario dentro del cajón (toda la navegación, Manual y usuario en una sola zona que scrollea), footer con área segura, inicio en 2 columnas.
+  - Tracking: sin ubicación ni palabra en la UI, tarjeta de estado con avance, historial de un solo color en orden descendente, búsqueda compacta, botón "Ingresar" en el header público. Landing a 390 px: de 3.984 a 1.639 px de alto.
+  - Componentes compartidos (`src/app/components`): `ResponsiveList`, `ListCard`, `FilterSheet`, `StickyActionBar`, `ActionMenu`, `ResponsiveModal`, `AvailableSelectedTabs`, `useFieldSize`; `PageHeader`/`PageBreadcrumbsHeader` con `primaryAction`/`secondaryActions`; `RowActionsMenu`, `ResultsCounter` y `PageContainer` responsive. Todavía NINGUNA pantalla los usa (eso es la ola 2).
+  - Landing con seguimiento en el hero, accesos en filas, login/registro/recuperar y portal (búsqueda por código y chips por estado, filtra solo la página cargada).
+  - Copy de la landing corregido: ya no promete "ubicación" ni "tiempo real".
 
-## En curso (ola 1, 4 workers sonnet en paralelo sobre archivos disjuntos, sin commitear)
-- Tracking: `src/features/tracking/**`, `PublicLayout.jsx`, `estados.js` (solo agrega un export), `PortalEnvioDetalle`.
-- Shell: `src/app/layout/**` (sin PublicLayout), `OperatingSucursalSelector`, `PageFooter`, `features/home`.
-- Componentes compartidos de listas/detalles/formularios: `src/app/components/*` (GridData, FiltersList, headers, RowActionsMenu, SelectableItemList) y nuevos (`StickyActionBar`, `ActionMenu`, `ResponsiveModal`).
-- Landing, login, registro, recuperar y `PortalEnvios` (búsqueda y chips).
+## Pendiente de pulido de la ola 1
+- [ ] Tracking: segmentos del hero en verde (`green` de Mantine) y puntos del historial en color primario; unificar a un solo color.
+- [ ] Campana de notificaciones y `PublicLayout`: objetivo táctil de 44 px y ancho a 360 px sin verificar.
+- [ ] Footer fijo en iOS: el `padding-bottom` de safe-area reduce el alto útil (alto fijo de 70 px); subir el alto en `AppShell footer` si queda justo.
+- [ ] Portal: filtro y contadores cuentan solo la página cargada (`useMisEnvios(page)`); con más de 10 envíos no cubren todo.
+- [ ] Etiqueta del burger cambia a "Cerrar menú" pero el scrim lo tapa abierto.
+
+## En curso (ola 2: 5 workers sonnet en paralelo, una carpeta de features por worker, sin tocar `src/app/components`)
+- Envíos (`features/envios`): lista, detalle, crear, editar.
+- Viajes (`features/viajes`): lista, detalle, crear, editar.
+- Usuarios y vehículos.
+- Catálogo (marcas/modelos), mantenimientos y sucursales.
+- Mapa, dashboard, historial de notificaciones, onboarding y pantallas sueltas (404, "usá la app", error de conexión).
 
 ## Pendiente
-- [ ] Ola 0 tracking: sacar mapa y palabra de `TrackingResultado`, historial de un solo color, tarjeta de estado, búsqueda compacta, header público con "Ingresar".
-- [ ] Ola 1 shell: cajón, header de una fila, sucursal y usuario en el cajón, footer con área segura, inicio en 2 columnas.
-- [ ] Ola 2 listados: componentes compartidos (`ResponsiveList`, `FilterSheet`, header de lista, `RowActionsMenu`) y aplicarlos a las 8 listas.
-- [ ] Ola 2 detalles: título compacto, `StickyActionBar`, secciones plegables, modales como hoja inferior.
-- [ ] Ola 3 formularios: una columna, secciones plegables, mapa en hoja, selección en pestañas, campos de 48 px.
-- [ ] Ola 4 mapa y dashboard.
-- [ ] Ola 5 landing, login, registro y portal (búsqueda y chips por estado).
-- [ ] Revisar a 390 px las pantallas no capturadas: crear usuario/vehículo/mantenimiento, editar, etiqueta, modales, 404, "usá la app", error de conexión, onboarding de empresa.
+- [ ] Revisar la ola 2 a 390 px en el navegador, corregir y commitear.
+- [ ] Revisar a 390 px lo que no se pudo capturar: etiqueta de envío (impresión), modales, onboarding de empresa.
+- [ ] Pasada final: suite completa de vitest con `--maxWorkers=2`, build, lint, y pasada visual de escritorio para confirmar que no cambió.
+- [ ] Probar en un teléfono real (teclado, safe-area, gestos de mapa): lo verificado hasta acá es un iframe de 390 px.
 
 ## Pendiente de backend (otro repo, ../backend)
 - [ ] Quitar `ultimaUbicacionAprox` de `PublicTrackingDTO` y `PublicTrackingService` (línea ~54).
@@ -45,3 +55,4 @@ Sin tareas SHG-FE: se hace todo en esta rama y este archivo es el registro. Al r
 
 ## Bitácora
 - 2026-11-07: relevamiento (77 capturas) y artefacto de propuesta. Se crea la rama y este registro.
+- 2026-11-07: ola 1 completa y commiteada (e57a5f0). Arranca la ola 2.
