@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 
@@ -50,5 +50,53 @@ describe('AuthProvider — redirección a /login sin sesión (SHG-FE-104)', () =
     renderAt('/tracking/ABC');
     expect(await screen.findByText('contenido')).toBeInTheDocument();
     expect(mockSetLocation).not.toHaveBeenCalled();
+  });
+});
+
+// El splash de marca (verde) es SOLO de la web instalada en el celular; en el navegador se ve el
+// loader de siempre mientras se resuelve la sesión.
+describe('AuthProvider — pantalla de carga de la sesión', () => {
+  const originalMatchMedia = window.matchMedia;
+
+  const simular = ({ standalone, movil }) => {
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: query.includes('display-mode') ? standalone : movil,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+  };
+
+  beforeEach(() => {
+    mockSetLocation.mockReset();
+    // La sesión nunca se resuelve: queda en la pantalla de carga.
+    mockState.initUser = vi.fn(() => new Promise(() => {}));
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+    mockState.initUser = vi.fn().mockResolvedValue(false);
+  });
+
+  it('en el navegador (pestaña) muestra el loader, no el splash verde', () => {
+    simular({ standalone: false, movil: true });
+    const { container } = renderAt('/');
+
+    expect(screen.queryByTestId('splash-screen')).not.toBeInTheDocument();
+    expect(container.querySelector('.mantine-Loader-root')).not.toBeNull();
+  });
+
+  it('instalada en escritorio tampoco muestra el splash', () => {
+    simular({ standalone: true, movil: false });
+    renderAt('/');
+
+    expect(screen.queryByTestId('splash-screen')).not.toBeInTheDocument();
+  });
+
+  it('instalada en el celular muestra el splash de marca', () => {
+    simular({ standalone: true, movil: true });
+    renderAt('/');
+
+    expect(screen.getByTestId('splash-screen')).toBeInTheDocument();
   });
 });

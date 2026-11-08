@@ -46,11 +46,22 @@ describe('manifest.webmanifest (instalación de la web)', () => {
     expect(manifest.theme_color).toBe('#006b5a');
   });
 
-  it('index.html trae un splash verde dentro de #root (se ve antes que React) con el logo precargado', () => {
+  it('index.html trae un splash verde dentro de #root (se ve antes que React) con el logo', () => {
     expect(html).toMatch(/<div id="root">\s*<div id="splash"/);
     expect(html).toContain('background: #006b5a');
-    expect(html).toContain('<link rel="preload" as="image" href="/splash.svg" />');
     expect(html).toContain('src="/splash.svg"');
+  });
+
+  // El splash es SOLO de la web instalada en el celular: oculto por defecto y visible únicamente
+  // con `display-mode: standalone` + ancho de celular (misma condición que `esAppInstaladaMovil`).
+  it('el splash del HTML está oculto por defecto y sólo se muestra en la app instalada del celular', () => {
+    const condicion = '@media (display-mode: standalone) and (max-width: 47.99em)';
+    expect(html).toMatch(/#splash\s*\{\s*display:\s*none;?\s*\}/);
+    expect(html).toContain(condicion);
+    // El logo sólo se precarga en ese caso (no se baja para quien usa el navegador).
+    expect(html).toMatch(
+      /<link\s+rel="preload"\s+as="image"\s+href="\/splash\.svg"\s+media="\(display-mode: standalone\) and \(max-width: 47\.99em\)"/,
+    );
   });
 
   it('public/splash.svg existe y es el logo en blanco, sin fondo propio', () => {

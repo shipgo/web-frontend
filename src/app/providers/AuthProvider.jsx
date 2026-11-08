@@ -6,6 +6,8 @@ import { landingPathFor } from "@domain/roles";
 import { isProtectedPath } from "@utils/protectedPaths";
 import ConnectionErrorScreen from "@components/ConnectionErrorScreen";
 import SplashScreen from "@components/SplashScreen";
+import { esAppInstaladaMovil } from "@utils/appInstalada";
+import { Center, Loader } from "@mantine/core";
 
 const AuthProvider = ({ children }) => {
   const [, setLocation] = useLocation();
@@ -45,9 +47,15 @@ const AuthProvider = ({ children }) => {
     }
   }, [isAuthenticated, isLoading, isInitialized, connectionError, setLocation, user]);
 
-  // Splash de marca mientras se inicializa la autenticación (verde, como app-mobile).
+  // Mientras se inicializa la autenticación: splash de marca (verde) SOLO en la web instalada del
+  // celular, donde continúa al splash nativo; en el navegador, el loader de siempre.
   if (!isInitialized || isLoading) {
-    return <SplashScreen />;
+    if (esAppInstaladaMovil()) return <SplashScreen />;
+    return (
+      <Center h="100vh">
+        <Loader size="lg" />
+      </Center>
+    );
   }
 
   // Bootstrap sin respuesta de la API (timeout / red / 5xx; SHG-FE-110): en una

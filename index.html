@@ -8,24 +8,37 @@
     <link rel="apple-touch-icon" href="/favicon-180x180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preload" as="image" href="/splash.svg" />
+    <link
+      rel="preload"
+      as="image"
+      href="/splash.svg"
+      media="(display-mode: standalone) and (max-width: 47.99em)"
+    />
     <!--
-      Splash de carga (mismo verde y composición que el splash de app-mobile). Se pinta antes que
-      el bundle de React y vive dentro de #root: al montar la app, React lo reemplaza (la pantalla
-      de carga de la sesión, `SplashScreen`, repite el mismo diseño para que no haya parpadeo).
+      Splash de carga (mismo verde y composición que el splash de app-mobile), SOLO en la web
+      instalada del celular (`display-mode: standalone` + ancho de celular): en el navegador, o
+      instalada en escritorio, no se ve. Se pinta antes que el bundle de React y vive dentro de
+      #root: al montar la app, React lo reemplaza (la pantalla de carga de la sesión,
+      `SplashScreen`, repite el mismo diseño para que no haya parpadeo). La condición debe ser la
+      misma que `esAppInstaladaMovil` (`src/app/utils/appInstalada.js`).
     -->
     <style>
       #splash {
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
-        display: grid;
-        place-items: center;
-        background: #006b5a;
+        display: none;
       }
-      #splash img {
-        width: min(220px, 56vw);
-        height: auto;
+      @media (display-mode: standalone) and (max-width: 47.99em) {
+        #splash {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          display: grid;
+          place-items: center;
+          background: #006b5a;
+        }
+        #splash img {
+          width: min(220px, 56vw);
+          height: auto;
+        }
       }
     </style>
     <meta name="theme-color" content="#006b5a" />
