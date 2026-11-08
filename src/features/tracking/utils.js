@@ -44,3 +44,21 @@ export const fechaEntrega = (historial) => {
   if (!fechas.length) return null;
   return fechas.reduce((max, f) => (dayjs(f).isAfter(dayjs(max)) ? f : max));
 };
+
+/**
+ * Historial en orden descendente (lo más reciente primero). No muta el
+ * original; los items sin fecha válida van al final conservando su orden.
+ */
+export const historialDescendente = (historial) =>
+  (historial ?? [])
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const da = dayjs(a.item?.fecha);
+      const db = dayjs(b.item?.fecha);
+      const va = da.isValid();
+      const vb = db.isValid();
+      if (va && vb && !da.isSame(db)) return db.valueOf() - da.valueOf();
+      if (va !== vb) return va ? -1 : 1;
+      return b.index - a.index;
+    })
+    .map(({ item }) => item);

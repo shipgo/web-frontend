@@ -17,10 +17,6 @@ vi.mock("../../api/tracking.api", () => ({
   publicTrackingApi: { track: (...args) => mockTrack(...args) },
 }));
 
-vi.mock("../../components/TrackingUbicacionMapa", () => ({
-  default: () => <div data-testid="mapa-ubicacion" />,
-}));
-
 import TrackingPublicoPage from "./index";
 
 const renderAt = (route) =>

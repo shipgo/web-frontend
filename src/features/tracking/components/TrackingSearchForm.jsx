@@ -14,6 +14,7 @@ import { codigoEsValido, CODIGO_INVALIDO_MSG, normalizarCodigo } from '../utils'
  * @param {() => void} [props.onInvalid]  Se llama cuando el envío falla la validación local (el resultado anterior ya no corresponde).
  * @param {boolean} [props.loading=false]
  * @param {boolean} [props.autoFocus=true]
+ * @param {boolean} [props.compact=false]  Una sola fila (input + botón con ícono), sin texto de ayuda: se usa cuando ya hay resultado.
  * @param {boolean} [props.disabled=false]  Bloquea el submit (p. ej. sin token de captcha aún, SHG-FE-043).
  */
 const TrackingSearchForm = ({
@@ -23,6 +24,7 @@ const TrackingSearchForm = ({
   loading = false,
   autoFocus = true,
   disabled = false,
+  compact = false,
 }) => {
   const form = useForm({
     mode: 'uncontrolled',
@@ -36,35 +38,63 @@ const TrackingSearchForm = ({
     onSubmit(normalizarCodigo(codigo));
   };
 
+  const inputProps = {
+    placeholder: 'Ej. 7K2M9QX4TP',
+    autoFocus,
+    autoCapitalize: 'characters',
+    autoComplete: 'off',
+    spellCheck: false,
+    disabled,
+    key: form.key('codigo'),
+    // 16 px evita el zoom automático de iOS; 44 px = objetivo táctil mínimo.
+    styles: { input: { fontSize: 16, minHeight: 44 } },
+    ...form.getInputProps('codigo'),
+  };
+
+  // Misma estructura en ambos modos para que el input no se remonte (y no
+  // pierda lo tipeado) al pasar de formulario completo a compacto.
   return (
     <form onSubmit={form.onSubmit(handleSubmit, () => onInvalid?.())} noValidate>
       <Stack gap="xs">
-        <TextInput
-          label="Código de seguimiento"
-          placeholder="Ej. 7K2M9QX4TP"
-          size="md"
-          autoFocus={autoFocus}
-          autoCapitalize="characters"
-          autoComplete="off"
-          spellCheck={false}
-          disabled={disabled}
-          key={form.key('codigo')}
-          {...form.getInputProps('codigo')}
-        />
-        <Group justify="space-between" align="center" wrap="wrap-reverse">
-          <Text size="xs" c="dimmed">
-            Lo encontrás en el email de confirmación de tu envío.
-          </Text>
-          <Button
-            type="submit"
-            size="md"
-            loading={loading}
-            disabled={disabled}
-            leftSection={<IconSearch size={18} />}
-          >
-            Consultar
-          </Button>
+        <Group gap="xs" wrap="nowrap" align="flex-start">
+          <TextInput
+            {...(compact
+              ? { 'aria-label': 'Código de seguimiento' }
+              : { label: 'Código de seguimiento' })}
+            style={{ flex: 1, minWidth: 0 }}
+            {...inputProps}
+          />
+          {compact ? (
+            <Button
+              type="submit"
+              aria-label="Consultar"
+              loading={loading}
+              disabled={disabled}
+              h={44}
+              w={44}
+              px={0}
+            >
+              <IconSearch size={20} />
+            </Button>
+          ) : null}
         </Group>
+        {compact ? null : (
+          <Group justify="space-between" align="center" wrap="wrap-reverse">
+            <Text size="xs" c="dimmed">
+              Lo encontrás en el email de confirmación de tu envío.
+            </Text>
+            <Button
+              type="submit"
+              size="md"
+              h={44}
+              loading={loading}
+              disabled={disabled}
+              leftSection={<IconSearch size={18} />}
+            >
+              Consultar
+            </Button>
+          </Group>
+        )}
       </Stack>
     </form>
   );

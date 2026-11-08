@@ -33,16 +33,16 @@ const PortalLayout = ({ children }) => {
   const nombre = user?.getFullName?.().trim() || user?.email || 'Mi cuenta';
 
   const headerRight = (
-    <Group gap="xs" wrap="nowrap">
+    <Group gap={4} wrap="nowrap">
       <NotificacionesBell />
       <Menu shadow="md" width={220} position="bottom-end">
         <Menu.Target>
-          <UnstyledButton aria-label="Menú de la cuenta">
+          <UnstyledButton aria-label="Menú de la cuenta" mih={44} px="xs">
             <Group gap="xs" wrap="nowrap">
               <Avatar radius="xl" size="sm" color="blue">
                 {user?.getInitials?.() || null}
               </Avatar>
-              <Text size="sm" fw={500} visibleFrom="xs" lineClamp={1}>
+              <Text size="sm" fw={500} visibleFrom="sm" lineClamp={1} maw={180}>
                 {nombre}
               </Text>
               <IconChevronDown size={16} />

@@ -1,16 +1,19 @@
-import { Text, Timeline } from '@mantine/core';
-import { IconCircleDot } from '@tabler/icons-react';
+import { Box, Group, Text } from '@mantine/core';
 
-import { estadoBadge, estadoLabel } from '@domain/estados';
+import { estadoLabel, normalizarEstado } from '@domain/estados';
 import { formatFechaHora } from '@domain/format';
 
+import { historialDescendente } from '../utils';
+
+const BULLET = 14;
+const HALO = '0 0 0 5px color-mix(in srgb, var(--mantine-primary-color-filled) 25%, transparent)';
+const HALO_ROJO = '0 0 0 5px color-mix(in srgb, var(--mantine-color-red-filled) 25%, transparent)';
+
 /**
- * Línea de tiempo de estados de un envío a partir del `historial` del
- * `PublicTrackingDTO` (`[{ estado, fecha }]`, orden cronológico ascendente).
- *
- * Usa el mapa canónico de `@domain/estados` para labels y colores — nunca los
- * strings que pueda mandar el backend. Reutilizable por el portal CUSTOMER
- * (`SHG-FE-026`).
+ * Historial de estados de un envío a partir del `historial` del
+ * `PublicTrackingDTO` (`[{ estado, fecha }]`). Se muestra en orden descendente
+ * (lo más reciente arriba) con un solo color: primario para lo ocurrido, con
+ * halo y negrita en el último, y rojo SOLO para `rechazado`.
  *
  * @param {Object} props
  * @param {Array<{ estado: string, fecha: string }>} [props.historial=[]]
@@ -24,24 +27,68 @@ const TrackingTimeline = ({ historial = [] }) => {
     );
   }
 
+  const items = historialDescendente(historial);
+
   return (
-    <Timeline active={historial.length - 1} bulletSize={22} lineWidth={2}>
-      {historial.map((item, index) => {
-        const { color } = estadoBadge('envio', item.estado);
+    <Box component="ol" m={0} p={0} style={{ listStyle: 'none' }}>
+      {items.map((item, index) => {
+        const esUltimo = index === 0;
+        const esFin = index === items.length - 1;
+        const rechazado = normalizarEstado(item.estado) === 'rechazado';
+        const colorBullet = rechazado
+          ? 'var(--mantine-color-red-filled)'
+          : 'var(--mantine-primary-color-filled)';
         return (
-          <Timeline.Item
+          <Box
+            component="li"
             key={`${item.estado}-${item.fecha ?? index}`}
-            bullet={<IconCircleDot size={14} />}
-            color={color}
-            title={estadoLabel('envio', item.estado)}
+            aria-current={esUltimo ? 'step' : undefined}
+            pos="relative"
+            pl={32}
+            pb={esFin ? 0 : 'md'}
           >
+            {!esFin ? (
+              <Box
+                aria-hidden
+                pos="absolute"
+                style={{
+                  left: BULLET / 2 - 1,
+                  top: BULLET + 4,
+                  bottom: -2,
+                  width: 2,
+                  background: 'var(--mantine-color-default-border)',
+                }}
+              />
+            ) : null}
+            <Box
+              aria-hidden
+              pos="absolute"
+              style={{
+                left: 0,
+                top: 3,
+                width: BULLET,
+                height: BULLET,
+                borderRadius: '50%',
+                background: colorBullet,
+                boxShadow: esUltimo ? (rechazado ? HALO_ROJO : HALO) : 'none',
+              }}
+            />
+            <Group gap="xs" wrap="wrap">
+              <Text
+                size="sm"
+                fw={esUltimo ? 700 : 500}
+                c={rechazado ? 'red' : undefined}
+              >
+                {estadoLabel('envio', item.estado)}
+              </Text>
+            </Group>
             <Text size="xs" c="dimmed">
               {formatFechaHora(item.fecha)}
             </Text>
-          </Timeline.Item>
+          </Box>
         );
       })}
-    </Timeline>
+    </Box>
   );
 };
 

@@ -182,3 +182,16 @@ export const esEstadoTerminal = (entidad, valor) =>
  * salió (`creado`/`planificado`/`en_proceso_de_carga`/`listo_para_viaje`) ni uno ya cerrado.
  */
 export const ESTADOS_VIAJE_CON_TRACKING = ['en_camino', 'con_problemas'];
+
+/**
+ * Pasos ordenados del recorrido "feliz" de un envío (para barras de avance,
+ * ej. el hero del tracking). `rechazado` no es un paso: es una salida alternativa.
+ */
+export const ESTADO_ENVIO_PASOS = [
+  'creado',
+  'en_sucursal',
+  'asignado_a_viaje',
+  'en_vehiculo',
+  'en_camino',
+  'entregado',
+];

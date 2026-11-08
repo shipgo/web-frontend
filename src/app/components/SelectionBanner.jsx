@@ -1,3 +1,4 @@
+import { useIsMobile } from "@hooks/useIsMobile";
 import { Button, Group, Menu, Paper, Text } from "@mantine/core";
 import {
   IconChevronDown,
@@ -14,6 +15,8 @@ import {
  * `onClick` ni tiene sentido de producto todavía).
  */
 const SelectionBanner = ({ count, singular, plural, onClear, onExport, onDelete }) => {
+  const isMobile = useIsMobile();
+
   if (count === 0) return null;
 
   const label = count === 1 ? `1 ${singular}` : `${count} ${plural}`;
@@ -27,19 +30,20 @@ const SelectionBanner = ({ count, singular, plural, onClear, onExport, onDelete 
       px="md"
       radius="md"
       pos="fixed"
-      bottom={24}
-      left="50%"
-      miw={360}
-      maw="calc(100vw - 2rem)"
-      style={{ transform: "translateX(-50%)", zIndex: 200 }}
+      bottom={isMobile ? "calc(12px + env(safe-area-inset-bottom))" : 24}
+      left={isMobile ? 16 : "50%"}
+      right={isMobile ? 16 : undefined}
+      miw={isMobile ? undefined : 360}
+      maw={isMobile ? undefined : "calc(100vw - 2rem)"}
+      style={{ transform: isMobile ? undefined : "translateX(-50%)", zIndex: 200 }}
     >
-      <Group justify="space-between" gap="xl">
+      <Group justify="space-between" gap={isMobile ? "xs" : "xl"} wrap="nowrap">
         <Text size="sm" fw={500}>
           {label}
         </Text>
 
         <Group gap="xs">
-          <Button variant="subtle" size="xs" onClick={onClear}>
+          <Button variant="subtle" size={isMobile ? "sm" : "xs"} mih={isMobile ? 44 : undefined} onClick={onClear}>
             Deseleccionar
           </Button>
 
@@ -52,7 +56,8 @@ const SelectionBanner = ({ count, singular, plural, onClear, onExport, onDelete 
                     dark mode (axe-core `color-contrast`, SHG-FE-070). */}
                 <Button
                   variant="light"
-                  size="xs"
+                  size={isMobile ? "sm" : "xs"}
+                  mih={isMobile ? 44 : undefined}
                   rightSection={<IconChevronDown size={14} />}
                   c="var(--shg-button-text-primary)"
                 >

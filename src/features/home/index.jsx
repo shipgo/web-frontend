@@ -30,7 +30,7 @@ const HomePage = () => {
             <Text size='xs' fw={600} tt='uppercase' c='dimmed' style={{ letterSpacing: '0.08em' }}>
               {title}
             </Text>
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing='md'>
+            <SimpleGrid cols={{ base: 2, sm: 2, md: 4 }} spacing={{ base: 'sm', sm: 'md' }}>
               {options.map((option) => (
                 <HomeItem key={option.title} {...option} onClick={resolveonClick(option.action)} />
               ))}

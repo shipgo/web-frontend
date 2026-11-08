@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
@@ -66,6 +66,85 @@ describe('LandingPage', () => {
 
     await waitFor(() => {
       expect(window.location.pathname).toBe('/tracking/7K2M9QX4TP');
+    });
+  });
+
+  it('el header ofrece el menú "Ingresar" con las dos entradas', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LandingPage />);
+
+    await user.click(screen.getByRole('button', { name: /ingresar/i }));
+
+    const items = await screen.findAllByRole('menuitem');
+    expect(items.map((item) => [item.textContent, item.getAttribute('href')])).toEqual([
+      ['Soy cliente', '/portal/ingresar'],
+      ['Soy del equipo', '/login'],
+    ]);
+  });
+
+  describe('en mobile', () => {
+    const originalMatchMedia = window.matchMedia;
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia;
+    });
+    const mockMobile = () => {
+      window.matchMedia = (query) => ({
+        matches: true,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      });
+    };
+
+    it('el hero trae el campo de seguimiento (una sola vez) y navega al enviar', async () => {
+      mockMobile();
+      const user = userEvent.setup();
+      renderWithProviders(<LandingPage />);
+
+      expect(
+        screen.getByRole('heading', { level: 1, name: /seguí tu envío con el código/i }),
+      ).toBeInTheDocument();
+      expect(screen.getAllByLabelText(/código de seguimiento/i)).toHaveLength(1);
+      expect(screen.getByRole('link', { name: /creá tu cuenta/i })).toHaveAttribute(
+        'href',
+        '/registro',
+      );
+
+      await user.type(screen.getByLabelText(/código de seguimiento/i), '7K2M9QX4TP');
+      await user.click(screen.getByRole('button', { name: /consultar/i }));
+      await waitFor(() => {
+        expect(window.location.pathname).toBe('/tracking/7K2M9QX4TP');
+      });
+    });
+
+    it('los accesos son 2 filas compactas: cliente y equipo', () => {
+      mockMobile();
+      renderWithProviders(<LandingPage />);
+
+      expect(screen.getByRole('link', { name: /soy cliente/i })).toHaveAttribute(
+        'href',
+        '/portal/ingresar',
+      );
+      expect(screen.getByRole('link', { name: /soy del equipo/i })).toHaveAttribute(
+        'href',
+        '/login',
+      );
+    });
+
+    it('los créditos de las fotos están plegados detrás de un enlace', async () => {
+      mockMobile();
+      const user = userEvent.setup();
+      renderWithProviders(<LandingPage />);
+
+      const toggle = screen.getByRole('button', { name: /créditos de las fotos/i });
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      await user.click(toggle);
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(await screen.findByRole('link', { name: 'Arum Visuals' })).toBeInTheDocument();
     });
   });
 

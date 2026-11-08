@@ -1,0 +1,7 @@
+/* Cajón móvil: ~82 % del ancho (máx. 320 px) sobre el contenido, con scrim. */
+@media (max-width: 47.99em) {
+  .navbar {
+    width: min(82vw, 320px) !important;
+    z-index: 151;
+  }
+}

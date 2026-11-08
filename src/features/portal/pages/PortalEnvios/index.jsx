@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useMediaQuery } from '@mantine/hooks';
 import {
   Badge,
   Card,
+  Chip,
   Group,
   Pagination,
   Paper,
   Stack,
   Table,
   Text,
+  TextInput,
   Title,
 } from '@mantine/core';
+import { IconSearch } from '@tabler/icons-react';
 
 import ScreenContainer from '@components/ScreenContainer';
 import { estadoBadge } from '@domain/estados';
 import { formatFecha, EMPTY } from '@domain/format';
 import { PORTAL_HOME_PATH } from '@domain/roles';
 import { REINTENTAR_MAS_TARDE } from '@copy/common';
+import { useIsMobile } from '@hooks/useIsMobile';
 
 import { useMisEnvios } from './hooks/useMisEnvios';
 
@@ -33,6 +36,27 @@ const getDestino = (envio) => {
   const partes = [localidad, provincia].filter(Boolean).join(', ');
   return partes || EMPTY;
 };
+
+const ESTADOS_EN_CURSO = [
+  'creado',
+  'en_sucursal',
+  'asignado_a_viaje',
+  'en_vehiculo',
+  'en_camino',
+];
+
+/** Filtros por estado del portal: `match` decide a qué grupo pertenece un envío. */
+const FILTROS_ESTADO = [
+  { value: 'todos', label: 'Todos', match: () => true },
+  { value: 'en_curso', label: 'En curso', match: (e) => ESTADOS_EN_CURSO.includes(e.estado) },
+  { value: 'entregados', label: 'Entregados', match: (e) => e.estado === 'entregado' },
+  // Otros = lo que no es ni "en curso" ni "entregado" (hoy: rechazado).
+  {
+    value: 'otros',
+    label: 'Otros',
+    match: (e) => e.estado !== 'entregado' && !ESTADOS_EN_CURSO.includes(e.estado),
+  },
+];
 
 /**
  * Lista en cards para pantallas angostas (SHG-FE-112): a 390 px la tabla cortaba
@@ -103,13 +127,26 @@ const EnviosCards = ({ envios, onOpen }) => (
 const PortalEnviosPage = () => {
   const [, navigate] = useLocation();
   const [page, setPage] = useState(1);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtro, setFiltro] = useState('todos');
   // Breakpoint `sm` de Mantine (48em): por debajo, cards en lugar de tabla.
-  const isMobile = useMediaQuery('(max-width: 47.99em)', undefined, {
-    // Sin esto el primer render en un celular muestra la tabla y salta a cards.
-    getInitialValueInEffect: false,
-  });
-  const { envios, totalPages, totalElements, isLoading, isError, isFetching, refetch } =
+  const isMobile = useIsMobile();
+  const { envios: todos, totalPages, totalElements, isLoading, isError, isFetching, refetch } =
     useMisEnvios(page);
+
+  // Filtro local sobre los envíos ya cargados (página actual; sin tocar el backend).
+  const conteos = Object.fromEntries(
+    FILTROS_ESTADO.map((f) => [f.value, todos.filter(f.match).length]),
+  );
+  const termino = busqueda.trim().toLowerCase();
+  const filtroActivo = FILTROS_ESTADO.find((f) => f.value === filtro) ?? FILTROS_ESTADO[0];
+  const envios = todos.filter(
+    (envio) =>
+      filtroActivo.match(envio) &&
+      (!termino || (envio.codigoSeguimiento ?? '').toLowerCase().includes(termino)),
+  );
+  const hayDatos = todos.length > 0;
+  const sinCoincidencias = hayDatos && envios.length === 0;
 
   return (
     <Stack gap="lg">
@@ -119,6 +156,33 @@ const PortalEnviosPage = () => {
           Seguí el estado de todos los envíos asociados a tu email.
         </Text>
       </Stack>
+
+      {hayDatos ? (
+        <Stack gap="xs">
+          <TextInput
+            aria-label="Buscar por código"
+            placeholder="Buscar por código"
+            size="md"
+            leftSection={<IconSearch size={16} />}
+            value={busqueda}
+            onChange={(event) => setBusqueda(event.currentTarget.value)}
+          />
+          <Chip.Group multiple={false} value={filtro} onChange={setFiltro}>
+            <Group gap="xs">
+              {FILTROS_ESTADO.map((f) => (
+                <Chip
+                  key={f.value}
+                  value={f.value}
+                  size="md"
+                  styles={{ label: { minHeight: 44, display: 'inline-flex', alignItems: 'center' } }}
+                >
+                  {f.label} ({conteos[f.value]})
+                </Chip>
+              ))}
+            </Group>
+          </Chip.Group>
+        </Stack>
+      ) : null}
 
       <Card withBorder padding={envios.length > 0 ? 0 : 'lg'}>
         <ScreenContainer
@@ -131,8 +195,10 @@ const PortalEnviosPage = () => {
           }}
           onEmptyData={{
             show: !isLoading && !isError && envios.length === 0,
-            title: 'Todavía no tenés envíos',
-            description: 'Cuando alguien te envíe un paquete o vos generes uno con este email, va a aparecer acá.',
+            title: sinCoincidencias ? 'No hay envíos que coincidan' : 'Todavía no tenés envíos',
+            description: sinCoincidencias
+              ? 'Probá con otro código o cambiá el filtro de estado.'
+              : 'Cuando alguien te envíe un paquete o vos generes uno con este email, va a aparecer acá.',
           }}
         >
           {envios.length > 0 && isMobile && (

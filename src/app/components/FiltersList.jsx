@@ -5,10 +5,12 @@ import { Button, Group, Pill, Text } from "@mantine/core";
 import { omit, isDate } from "es-toolkit";
 import { castArray, isEmpty, toPairs } from "es-toolkit/compat";
 
+import { useIsMobile } from "@hooks/useIsMobile";
 import { toLocalDate } from "@utils/dates";
 
 const FiltersList = memo(
   ({ onClearFilters, onFilterRemove, filters = {}, disabled = false }) => {
+    const isMobile = useIsMobile();
     const normalizeValues = useCallback((value) => {
       const formattedValue = isDate(value) ? toLocalDate(value) : value;
       return castArray(formattedValue).join(", ");
@@ -40,7 +42,8 @@ const FiltersList = memo(
 
         <Button
           variant="subtle"
-          size="compact-xs"
+          size={isMobile ? "sm" : "compact-xs"}
+          mih={isMobile ? 44 : undefined}
           disabled={disabled}
           onClick={onClearFilters}
         >

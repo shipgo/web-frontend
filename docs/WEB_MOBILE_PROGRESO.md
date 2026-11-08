@@ -22,8 +22,11 @@ Sin tareas SHG-FE: se hace todo en esta rama y este archivo es el registro. Al r
 ## Hecho
 - [x] Rama `feat/web-mobile` y hook `useIsMobile`.
 
-## En curso
-(nada)
+## En curso (ola 1, 4 workers sonnet en paralelo sobre archivos disjuntos, sin commitear)
+- Tracking: `src/features/tracking/**`, `PublicLayout.jsx`, `estados.js` (solo agrega un export), `PortalEnvioDetalle`.
+- Shell: `src/app/layout/**` (sin PublicLayout), `OperatingSucursalSelector`, `PageFooter`, `features/home`.
+- Componentes compartidos de listas/detalles/formularios: `src/app/components/*` (GridData, FiltersList, headers, RowActionsMenu, SelectableItemList) y nuevos (`StickyActionBar`, `ActionMenu`, `ResponsiveModal`).
+- Landing, login, registro, recuperar y `PortalEnvios` (búsqueda y chips).
 
 ## Pendiente
 - [ ] Ola 0 tracking: sacar mapa y palabra de `TrackingResultado`, historial de un solo color, tarjeta de estado, búsqueda compacta, header público con "Ingresar".

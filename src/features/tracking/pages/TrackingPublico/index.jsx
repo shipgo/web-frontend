@@ -64,13 +64,17 @@ const TrackingPublicoPage = () => {
   const consultando =
     codigoValido && Boolean(captcha.token) && (isLoading || isFetching) && !data;
 
+  const mostrarResultado = Boolean(data) && !busquedaInvalida;
+
   return (
     <Stack gap="xl">
       <Stack gap={4}>
         <Title order={2}>Seguí tu envío</Title>
-        <Text c="dimmed">
-          Ingresá el código de seguimiento para ver el estado de tu envío.
-        </Text>
+        {mostrarResultado ? null : (
+          <Text c="dimmed">
+            Ingresá el código de seguimiento para ver el estado de tu envío.
+          </Text>
+        )}
       </Stack>
 
       <Card withBorder padding="lg">
@@ -81,6 +85,7 @@ const TrackingPublicoPage = () => {
             onInvalid={() => setBusquedaInvalida(true)}
             loading={consultando}
             disabled={!captcha.token}
+            compact={mostrarResultado}
           />
           <CaptchaField captcha={captcha} />
         </Stack>

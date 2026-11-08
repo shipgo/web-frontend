@@ -1,6 +1,7 @@
 import { AppShellFooter, Flex } from "@mantine/core";
 
 import { useRegisterFooterSlot } from "../layout/footerSlot";
+import classes from "./PageFooter.module.css";
 
 /**
  * Barra de acciones fija (Cancelar + submit, con badges/resumen opcionales)
@@ -19,11 +20,16 @@ const PageFooter = ({ children }) => {
   useRegisterFooterSlot();
 
   return (
-    <AppShellFooter component={Flex} justify="center">
+    <AppShellFooter
+      component={Flex}
+      justify="center"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <Flex
         flex={1}
         maw={1440}
-        px="xl"
+        px={{ base: "md", sm: "xl" }}
+        className={classes.inner}
         py="xs"
         justify="flex-end"
         align="center"

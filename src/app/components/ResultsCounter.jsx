@@ -1,9 +1,11 @@
 import { useMemo, memo } from "react";
 
-import { Text, Skeleton, Group, Button } from "@mantine/core";
+import { Text, Skeleton, Group, Button, ActionIcon, Pagination } from "@mantine/core";
 
 import { isNumber } from "es-toolkit/compat";
 import { IconRefresh } from "@tabler/icons-react";
+
+import { useIsMobile } from "@hooks/useIsMobile";
 
 const TEXT_PROPS = {
   c: "gray",
@@ -11,8 +13,17 @@ const TEXT_PROPS = {
   miw: "max-content",
 };
 
+/**
+ * Contador "Mostrando X - Y de N resultados" + botón "Actualizar".
+ *
+ * Props nuevas opcionales (`onPageChange`, `totalPages`): si se pasan se dibuja
+ * además una paginación. En mobile (< sm) todo va en UNA línea sin apilar:
+ * "Mostrando 1–10 de 48" + paginación compacta (sólo anterior/siguiente y página
+ * actual) y el refresh como botón de ícono. Escritorio: igual que siempre.
+ */
 const ResultsCounter = memo(
-  ({ amount, onRefresh, limit = 10, currentPage = 1, isLoading = false }) => {
+  ({ amount, onRefresh, limit = 10, currentPage = 1, isLoading = false, onPageChange, totalPages }) => {
+    const isMobile = useIsMobile();
     const isEmptyResult = useMemo(
       () => [amount === 0, !isNumber(amount)].some((value) => value),
       [amount]
@@ -38,12 +49,50 @@ const ResultsCounter = memo(
       return <Text {...TEXT_PROPS}>Sin resultados</Text>;
     }
 
+    if (isMobile) {
+      const pages = totalPages ?? Math.ceil(amount / limit);
+      return (
+        <Group wrap="nowrap" justify="space-between" gap="xs">
+          <Text {...TEXT_PROPS}>
+            Mostrando {start}–{end} de {amount.toLocaleString("es-AR")}
+          </Text>
+          <Group wrap="nowrap" gap="xs">
+            {onPageChange && pages > 1 && (
+              <Pagination
+                size="md"
+                siblings={0}
+                boundaries={0}
+                withEdges={false}
+                value={currentPage}
+                onChange={onPageChange}
+                total={pages}
+                aria-label="Paginación"
+              />
+            )}
+            {onRefresh && (
+              <ActionIcon size={44} variant="subtle" onClick={onRefresh} aria-label="Actualizar">
+                <IconRefresh size={20} />
+              </ActionIcon>
+            )}
+          </Group>
+        </Group>
+      );
+    }
+
     return (
       <Group wrap="nowrap">
         <Text {...TEXT_PROPS}>
           Mostrando {start} - {end} de {amount.toLocaleString("es-AR")}{" "}
           resultados
         </Text>
+
+        {onPageChange && (
+          <Pagination
+            value={currentPage}
+            onChange={onPageChange}
+            total={totalPages ?? Math.ceil(amount / limit)}
+          />
+        )}
 
         {onRefresh && (
           <Button

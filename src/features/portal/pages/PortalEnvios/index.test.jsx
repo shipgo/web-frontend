@@ -84,6 +84,64 @@ describe("PortalEnviosPage", () => {
     expect(row).not.toHaveAttribute("style", expect.stringContaining("cursor"));
   });
 
+  describe("búsqueda y filtros por estado", () => {
+    const mk = (id, codigo, estado) => ({
+      id,
+      codigoSeguimiento: codigo,
+      estado,
+      historialEstado: [],
+    });
+    const envios = [
+      mk(1, "AAA111", "en_camino"),
+      mk(2, "BBB222", "creado"),
+      mk(3, "CCC333", "entregado"),
+      mk(4, "DDD444", "rechazado"),
+    ];
+
+    beforeEach(() => {
+      mockUseMisEnvios.mockReturnValue({ ...base, totalElements: 4, envios });
+    });
+
+    it("muestra los chips con contador", () => {
+      renderWithProviders(<PortalEnviosPage />);
+      expect(screen.getByLabelText("Todos (4)")).toBeInTheDocument();
+      expect(screen.getByLabelText("En curso (2)")).toBeInTheDocument();
+      expect(screen.getByLabelText("Entregados (1)")).toBeInTheDocument();
+      expect(screen.getByLabelText("Otros (1)")).toBeInTheDocument();
+    });
+
+    it("filtra por código", () => {
+      renderWithProviders(<PortalEnviosPage />);
+      fireEvent.change(screen.getByLabelText("Buscar por código"), {
+        target: { value: "bbb" },
+      });
+      expect(screen.getByText("BBB222")).toBeInTheDocument();
+      expect(screen.queryByText("AAA111")).not.toBeInTheDocument();
+    });
+
+    it("filtra por chip de estado", () => {
+      renderWithProviders(<PortalEnviosPage />);
+      fireEvent.click(screen.getByLabelText("En curso (2)"));
+      expect(screen.getByText("AAA111")).toBeInTheDocument();
+      expect(screen.getByText("BBB222")).toBeInTheDocument();
+      expect(screen.queryByText("CCC333")).not.toBeInTheDocument();
+      expect(screen.queryByText("DDD444")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByLabelText("Otros (1)"));
+      expect(screen.getByText("DDD444")).toBeInTheDocument();
+      expect(screen.queryByText("AAA111")).not.toBeInTheDocument();
+    });
+
+    it("muestra el estado vacío cuando nada coincide", () => {
+      renderWithProviders(<PortalEnviosPage />);
+      fireEvent.change(screen.getByLabelText("Buscar por código"), {
+        target: { value: "zzz" },
+      });
+      expect(screen.getByText("No hay envíos que coincidan")).toBeInTheDocument();
+      expect(screen.getByLabelText("Buscar por código")).toBeInTheDocument();
+    });
+  });
+
   describe("a 390 px (SHG-FE-112)", () => {
     const originalMatchMedia = window.matchMedia;
     const mockMobile = (matches) => {

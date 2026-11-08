@@ -1,6 +1,9 @@
 import {
+  ActionIcon,
   AppShellHeader,
   Avatar,
+  Box,
+  Burger,
   Button,
   Flex,
   Group,
@@ -14,6 +17,8 @@ import {
 import { spotlight } from "@mantine/spotlight";
 
 import { Link } from "wouter";
+
+import BrandLogo from "@components/BrandLogo";
 
 import {
   IconLogout,
@@ -37,7 +42,12 @@ import NavigationSpotlight from "./NavigationSpotlight";
 // `Menu.Item` fuerza `role="menuitem"` (que no admite `aria-checked`).
 const setMenuItemCheckbox = (el) => el?.setAttribute("role", "menuitemcheckbox");
 
-const AppHeader = () => {
+/**
+ * @param {Object} props
+ * @param {boolean} [props.menuOpened] Estado del cajón de navegación (mobile).
+ * @param {() => void} [props.onToggleMenu] Abre/cierra el cajón (hamburguesa).
+ */
+const AppHeader = ({ menuOpened = false, onToggleMenu }) => {
   const { user } = useAuth();
   const { logout } = useAuthStore();
   const { computedColorScheme, handleToggleColorScheme } = useToggleColorScheme();
@@ -65,9 +75,31 @@ const AppHeader = () => {
 
   return (
     <AppShellHeader component={Flex} justify="center">
-      <Flex flex={1} maw={1440} px="xl" py="xs">
+      <Flex
+        flex={1}
+        maw={1440}
+        px={{ base: "md", sm: "xl" }}
+        py="xs"
+        align="center"
+        wrap="nowrap"
+      >
+        {/* Mobile: hamburguesa + logo (el menú vive en el cajón del Navbar). */}
+        <Group hiddenFrom="sm" gap="xs" wrap="nowrap">
+          <Burger
+            opened={menuOpened}
+            onClick={onToggleMenu}
+            size="sm"
+            aria-label={menuOpened ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={menuOpened}
+            aria-controls="app-navbar"
+          />
+          <Link to="/" aria-label="ShipGo — inicio" style={{ display: "flex" }}>
+            <BrandLogo h={28} alt="ShipGo — inicio" />
+          </Link>
+        </Group>
+
         {!sinEmpresa && (
-          <Group>
+          <Group visibleFrom="sm">
             <Button
               w={400}
               justify="space-between"
@@ -91,9 +123,23 @@ const AppHeader = () => {
 
         {!sinEmpresa && <NavigationSpotlight />}
 
-        <Group ml="auto">
+        <Group ml="auto" gap="xs" wrap="nowrap">
+          {!sinEmpresa && (
+            <ActionIcon
+              hiddenFrom="sm"
+              size={44}
+              variant="subtle"
+              color="gray"
+              aria-label="Buscar o navegar"
+              onClick={() => spotlight.open()}
+            >
+              <IconSearch size={22} />
+            </ActionIcon>
+          )}
+
           {!sinEmpresa && <NotificacionesBell />}
 
+          <Box visibleFrom="sm">
           <Menu position="bottom-end" withArrow width={210}>
             <Menu.Target>
               <Button
@@ -188,6 +234,7 @@ const AppHeader = () => {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
+          </Box>
         </Group>
       </Flex>
     </AppShellHeader>

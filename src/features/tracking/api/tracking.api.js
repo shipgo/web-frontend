@@ -24,11 +24,6 @@ import { captchaHeader } from '@config/captcha';
  * @property {string} localidad
  * @property {string} provincia
  *
- * @typedef {Object} PublicTrackingUbicacion
- * @property {number} lat     Coordenada redondeada (~1 km de resolución).
- * @property {number} lng
- * @property {string} fecha   ISO `LocalDateTime`.
- *
  * @typedef {Object} PublicTrackingDTO
  * @property {string} codigoSeguimiento
  * @property {string} estado                              Valor canónico snake_case.
@@ -36,14 +31,11 @@ import { captchaHeader } from '@config/captcha';
  * @property {PublicTrackingHistorialItem[]} historial
  * @property {PublicTrackingDestino} [destino]            Sólo localidad + provincia (sin dirección exacta).
  * @property {string} [fechaEstimada]                     ISO `LocalDate`, sólo si el envío ya está en un viaje.
- * @property {PublicTrackingUbicacion} [ultimaUbicacionAprox]  Sólo si el envío está `en_camino`.
- * @property {string} [palabraEntrega]  Palabra de entrega (`SHG-BE-042`) — ausente si `null`
- *   (`@JsonInclude(NON_NULL)`). El destinatario se la dice al chofer al recibir el envío. Secreto
- *   remitente↔destinatario↔chofer: NUNCA se expone en `EnvioDTO` (panel operador).
  *
  * Campos OMITIDOS a propósito por privacidad (el DTO del backend ya los filtra):
  * nombre / apellido / email / teléfono del remitente y del receptor, y la
- * dirección exacta del destino. El front NO agrega nada por fuera de este shape.
+ * dirección exacta del destino. La UI además ignora `ultimaUbicacionAprox` y
+ * `palabraEntrega` si el backend aún las manda (la palabra viaja sólo por email). El front NO agrega nada por fuera de este shape.
  */
 
 export const publicTrackingApi = {

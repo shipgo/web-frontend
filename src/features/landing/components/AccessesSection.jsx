@@ -4,15 +4,20 @@ import {
   Button,
   Card,
   Container,
+  Group,
+  Paper,
   SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
   Title,
 } from '@mantine/core';
+import { IconChevronRight } from '@tabler/icons-react';
 import { useHover } from '@mantine/hooks';
 
-import { LANDING_ACCESSES } from '../constants/content';
+import { useIsMobile } from '@hooks/useIsMobile';
+
+import { LANDING_ACCESSES, LANDING_ACCESSES_COMPACT } from '../constants/content';
 
 /**
  * Una tarjeta de `AccessesSection`, con el mismo criterio de hover
@@ -62,13 +67,58 @@ const AccessCard = ({ access }) => {
   );
 };
 
+/** Fila compacta (mobile): ícono, título, descripción corta y chevron; ≥ 44 px. */
+const AccessRow = ({ access }) => (
+  <Paper
+    withBorder
+    component={Link}
+    href={access.href}
+    p="sm"
+    mih={64}
+    style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
+  >
+    <Group wrap="nowrap" gap="sm">
+      <ThemeIcon size={40} radius="md" variant="light" aria-hidden="true">
+        {access.icon}
+      </ThemeIcon>
+      <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+        <Text fw={600}>{access.title}</Text>
+        <Text size="sm" c="dimmed">
+          {access.description}
+        </Text>
+      </Stack>
+      <IconChevronRight size={20} aria-hidden="true" />
+    </Group>
+  </Paper>
+);
+
 /**
  * Los 4 accesos diferenciados de la landing (criterio de aceptación de
  * `SHG-FE-044`): login interno, login del customer (ruta propia), registro de
  * customer y tracking guest. Cada uno es una `Card` con su propio CTA — nunca
  * el mismo link para operador y customer.
  */
-const AccessesSection = () => (
+const AccessesSection = () => {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <Box component="section" py="xl">
+        <Container size="lg">
+          <Stack gap="md">
+            <Title order={2}>Ingresá a tu cuenta</Title>
+            <Stack gap="xs">
+              {LANDING_ACCESSES_COMPACT.map((access) => (
+                <AccessRow key={access.id} access={access} />
+              ))}
+            </Stack>
+          </Stack>
+        </Container>
+      </Box>
+    );
+  }
+
+  return (
   <Box component="section" py={{ base: 'xl', sm: 64 }}>
     <Container size="lg">
       <Stack gap="lg">
@@ -85,6 +135,7 @@ const AccessesSection = () => (
       </Stack>
     </Container>
   </Box>
-);
+  );
+};
 
 export default AccessesSection;

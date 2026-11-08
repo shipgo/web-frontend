@@ -11,11 +11,6 @@ vi.mock('../../api/tracking.api', () => ({
   publicTrackingApi: { track: (...args) => mockTrack(...args) },
 }));
 
-// El mini-mapa depende de mapbox-gl (no anda en jsdom): lo stubeamos.
-vi.mock('../../components/TrackingUbicacionMapa', () => ({
-  default: () => <div data-testid="mapa-ubicacion" />,
-}));
-
 import TrackingPublicoPage from './index';
 
 const DTO_OK = {
@@ -66,7 +61,8 @@ describe('TrackingPublicoPage', () => {
     expect(screen.getAllByText('En camino').length).toBeGreaterThan(0);
     expect(screen.getByText('Rosario, Santa Fe')).toBeInTheDocument();
     expect(screen.getByText('Creado')).toBeInTheDocument();
-    expect(screen.getByTestId('mapa-ubicacion')).toBeInTheDocument();
+    expect(screen.queryByTestId('mapa-ubicacion')).not.toBeInTheDocument();
+    expect(screen.queryByText(/ubicación aproximada/i)).not.toBeInTheDocument();
   });
 
   it('no muestra "Entrega estimada" ni "A definir" aunque el DTO traiga fechaEstimada (SHG-FE-143)', async () => {
@@ -77,7 +73,7 @@ describe('TrackingPublicoPage', () => {
     expect(screen.queryByText(/entrega estimada/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/a definir/i)).not.toBeInTheDocument();
     // En camino: todavía no hay fecha de entrega.
-    expect(screen.queryByText('Fecha de entrega')).not.toBeInTheDocument();
+    expect(screen.queryByText(/entregado el/i)).not.toBeInTheDocument();
   });
 
   it('entregado: muestra "Fecha de entrega" con la fecha del evento entregado (SHG-FE-143)', async () => {
@@ -93,8 +89,8 @@ describe('TrackingPublicoPage', () => {
     });
     renderAt('/tracking/7K2M9QX4TP');
 
-    expect(await screen.findByText('Fecha de entrega')).toBeInTheDocument();
-    expect(screen.getByText('04/09/2026')).toBeInTheDocument();
+    expect(await screen.findByText('Entregado el 04/09/2026')).toBeInTheDocument();
+    expect(screen.getByText('Paso 6 de 6')).toBeInTheDocument();
     expect(screen.queryByText(/entrega estimada/i)).not.toBeInTheDocument();
   });
 
@@ -112,42 +108,83 @@ describe('TrackingPublicoPage', () => {
     });
     renderAt('/tracking/7K2M9QX4TP');
 
-    const fila = (await screen.findByText('Fecha de entrega')).parentElement;
-    expect(fila).toHaveTextContent('06/09/2026');
-    expect(fila).not.toHaveTextContent('04/09/2026');
+    expect(await screen.findByText('Entregado el 06/09/2026')).toBeInTheDocument();
+    expect(screen.queryByText('Entregado el 04/09/2026')).not.toBeInTheDocument();
   });
 
-  it('muestra la palabra de entrega cuando el DTO la trae (SHG-BE-042/SHG-FE-058)', async () => {
-    mockTrack.mockResolvedValue({ ...DTO_OK, palabraEntrega: 'AB23K9' });
+  it('no muestra la palabra de entrega aunque el DTO la traiga (solo viaja por email)', async () => {
+    mockTrack.mockResolvedValue({ ...DTO_OK, palabraEntrega: 'LUNA-PERRO' });
     renderAt('/tracking/7K2M9QX4TP');
 
-    expect(await screen.findByText('Tu palabra de entrega')).toBeInTheDocument();
-    expect(screen.getByText('AB23K9')).toBeInTheDocument();
-    expect(screen.getByText(/decísela al chofer/i)).toBeInTheDocument();
+    await screen.findByText('7K2M9QX4TP');
+    expect(screen.queryByText('LUNA-PERRO')).not.toBeInTheDocument();
+    expect(screen.queryByText(/palabra/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/decísela al chofer/i)).not.toBeInTheDocument();
   });
 
-  it('no muestra nada de palabra de entrega si el DTO no la trae (envíos viejos)', async () => {
+  it('historial en orden descendente y sin rojo si no hay rechazado', async () => {
     mockTrack.mockResolvedValue(DTO_OK);
     renderAt('/tracking/7K2M9QX4TP');
 
     await screen.findByText('7K2M9QX4TP');
-    expect(screen.queryByText('Tu palabra de entrega')).not.toBeInTheDocument();
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent('En camino');
+    expect(items[0]).toHaveTextContent('03/09/2026 08:00');
+    expect(items[2]).toHaveTextContent('Creado');
+    expect(items[0]).toHaveAttribute('aria-current', 'step');
   });
 
-  it('muestra la palabra de dos palabras tal cual la manda el backend (SHG-FE-144)', async () => {
-    mockTrack.mockResolvedValue({ ...DTO_OK, palabraEntrega: 'LUNA-PERRO' });
+  it('rechazado: hero "No pudimos entregarlo" y historial con el estado en rojo', async () => {
+    mockTrack.mockResolvedValue({
+      ...DTO_OK,
+      estado: 'rechazado',
+      estadoLabel: 'No entregado',
+      historial: [
+        ...DTO_OK.historial,
+        { estado: 'rechazado', fecha: '2026-09-04T15:30:00' },
+      ],
+    });
     renderAt('/tracking/7K2M9QX4TP');
 
-    expect(await screen.findByText('LUNA-PERRO')).toBeInTheDocument();
+    expect(await screen.findByText('No pudimos entregarlo')).toBeInTheDocument();
+    expect(screen.queryByText(/entregado el/i)).not.toBeInTheDocument();
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('No entregado');
+    expect(screen.getByText('Paso 5 de 6')).toBeInTheDocument();
   });
 
-  it('un envío sin palabra (palabraEntrega ausente) no muestra la palabra ni textos que la mencionen (SHG-FE-144)', async () => {
-    mockTrack.mockResolvedValue({ ...DTO_OK, estado: 'en_camino', estadoLabel: 'En camino' });
+  it('hero en camino: frase, destino y "Paso 5 de 6"', async () => {
+    mockTrack.mockResolvedValue(DTO_OK);
     renderAt('/tracking/7K2M9QX4TP');
 
-    await screen.findByText('7K2M9QX4TP');
-    expect(screen.queryByText(/palabra/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/decísela al chofer/i)).not.toBeInTheDocument();
+    expect(await screen.findByText('Tu envío va en camino')).toBeInTheDocument();
+    expect(screen.getByText('Paso 5 de 6')).toBeInTheDocument();
+    expect(screen.getAllByTestId('hero-segmento')).toHaveLength(6);
+  });
+
+  it('hero con estado desconocido degrada sin romper', async () => {
+    mockTrack.mockResolvedValue({ ...DTO_OK, estado: 'desconocido', historial: [] });
+    renderAt('/tracking/7K2M9QX4TP');
+
+    expect(await screen.findByTestId('tracking-estado-hero')).toBeInTheDocument();
+    expect(screen.queryByText(/paso \d de 6/i)).not.toBeInTheDocument();
+  });
+
+  it('búsqueda compacta con resultado: sin texto de ayuda y botón con ícono', async () => {
+    mockTrack.mockResolvedValue(DTO_OK);
+    renderAt('/tracking/7K2M9QX4TP');
+
+    await screen.findByText('Tu envío va en camino');
+    expect(screen.queryByText(/lo encontrás en el email/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ingresá el código de seguimiento para ver/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /consultar/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/código de seguimiento/i)).toHaveValue('7K2M9QX4TP');
+  });
+
+  it('sin resultado: formulario completo con texto de ayuda', () => {
+    renderAt('/tracking');
+    expect(screen.getByText(/lo encontrás en el email/i)).toBeInTheDocument();
   });
 
   it('código con formato inválido: no llama al backend y avisa', async () => {
@@ -204,7 +241,6 @@ describe('TrackingPublicoPage', () => {
     await waitFor(() =>
       expect(screen.queryByText('Rosario, Santa Fe')).not.toBeInTheDocument(),
     );
-    expect(screen.queryByTestId('mapa-ubicacion')).not.toBeInTheDocument();
   });
 
   it('SHG-FE-112: tras una búsqueda inválida, una válida vuelve a mostrar el resultado', async () => {
