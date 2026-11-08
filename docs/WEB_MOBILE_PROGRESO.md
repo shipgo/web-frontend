@@ -30,11 +30,12 @@ Sin tareas SHG-FE: se hace todo en esta rama y este archivo es el registro. Al r
 
 - [x] Ola 2 (commit 6d53fe8 + pulido): listas en tarjetas con hoja de filtros, detalles con acción fija y secciones plegables, formularios en una columna, mapa a pantalla completa con hoja de viajes, dashboard 2×2, notificaciones, onboarding y pantallas 404/error/"usá la app". Cubre envíos, viajes, usuarios, vehículos, marcas, modelos, mantenimientos y sucursales.
 - [x] Pulido tras revisar a 390 px: "Cancelar viaje" en rojo cuando es la única acción (`StickyActionBar` ahora acepta `color`), nombre completo en tarjetas de usuario (`ListCard` acepta `badgeBelow`), selector "Retiro en sucursal" que envuelve, hero de tracking entregado en el mismo color que el historial, atribución de Mapbox visible sobre la hoja, aire bajo la lista cuando hay selección activa.
+- Revisión visual a 390 px (segunda pasada, 2026-11-07): además de lo anterior se vieron crear usuario, detalle de usuario, crear vehículo, detalle de vehículo, marcas, mantenimientos (lista y crear), historial de notificaciones, etiqueta de envío y el portal del cliente (lista con búsqueda y chips, detalle con tarjeta de estado). Sin scroll horizontal en ninguna.
 - Verificación: suite completa 163 archivos / 1343 tests OK, `eslint .` 0 errores (8 warnings que ya existían), build OK; escritorio comparado contra las capturas del relevamiento (envíos, detalle, mapa, crear viaje) sin cambios. Mobile visto a 390 px en iframe: landing, login, tracking, shell y cajón, lista y detalle de envíos, crear envío, lista/detalle/crear viaje, usuarios, vehículos, mapa, dashboard.
 
 ## Pendiente (para retomar en otra sesión)
 Verificación visual a 390/360 px de lo que NO se vio todavía:
-- [ ] Detalle y crear/editar de usuario y vehículo, mantenimientos, sucursales, marcas/modelos, historial de notificaciones, onboarding de empresa, 404, "usá la app", error de conexión, etiqueta de envío, recuperar cuenta con token, verificar cuenta, portal (lista y detalle) tras los cambios.
+- [ ] Editar usuario/vehículo/mantenimiento/sucursal, detalle de mantenimiento y de sucursal, modelos, onboarding de empresa, 404, "usá la app", error de conexión, recuperar cuenta con token, verificar cuenta, registro.
 - [ ] Dropdowns de `Select`/`MultiSelect` dentro de los acordeones de usuarios/vehículos, modal del selector de rango del dashboard, etiquetas de ejes de los gráficos.
 - [ ] Probar en un teléfono real: teclado abierto en login/registro/formularios, safe-area, arrastre de la hoja del mapa (choque de gestos con el mapa), primer render del mapa mobile, scroll de listas virtualizadas (Virtuoso) dentro de acordeones plegados.
 Cosas que quedaron distintas de la propuesta:
@@ -50,17 +51,20 @@ Cosas que quedaron distintas de la propuesta:
 - [ ] Portal: búsqueda y contadores cuentan solo la página cargada (`useMisEnvios(page)`).
 - [ ] Footer fijo en iOS: el `padding-bottom` de safe-area reduce el alto útil (alto fijo de 70 px); subir el alto en `AppShell footer` si queda justo.
 - [ ] Etiqueta del burger pasa a "Cerrar menú" pero el scrim lo tapa con el cajón abierto.
+- [ ] Menores vistos en la segunda pasada: en crear mantenimiento el botón fijo corta el texto ("Crear mantenimient…") a 390 px; el título "Crear mantenimiento" ocupa 3 líneas; el campo numérico "Año de compra" de crear vehículo recorta su control de +/-.
 - [ ] Hay un caso donde el detalle de viaje deja "Cancelar viaje" como acción única (estado listo para salir): ya va en rojo; confirmar que ese es el comportamiento deseado.
 Cierre de la rama:
-- [ ] Decidir si se pushea `feat/web-mobile` y se abre PR (no se hizo; el owner decide). La rama tiene 4 commits sobre `main` @ a05ca76.
+- [ ] Decidir si se pushea `feat/web-mobile` y se abre PR (no se hizo; el owner decide). La rama tiene 5 commits sobre `main` @ a05ca76. Idem la rama del backend.
 - [ ] Actualizar el artefacto "Web mobile ShipGo" marcando lo hecho (opcional).
 
-## Pendiente de backend (otro repo, ../backend)
-- [ ] Quitar `ultimaUbicacionAprox` de `PublicTrackingDTO` y `PublicTrackingService` (línea ~54).
-- [ ] Quitar `palabraEntrega` del endpoint público `/api/public/tracking/{codigo}` y del endpoint del portal (línea ~58). Mientras no se haga, el JSON sigue exponiéndola aunque la web la oculte.
-- [ ] Actualizar contrato y tests de ese endpoint.
+## Backend (repo `../backend`)
+- [x] Hecho en la rama `feat/tracking-publico-sin-gps-ni-palabra` (commit 0ab5052, desde `develop`, sin push): `PublicTrackingDTO` ya no tiene `ultimaUbicacionAprox` ni `palabraEntrega`; `PublicTrackingService` sin `UbicacionViajeRepository`; tests de servicio, controller y el barrido de `EnvioTienePalabraEntregaTest` (ahora incluye `/api/public`) pasan (24 tests de esos patrones; no se corrió la suite completa del backend). La palabra sigue yendo por el email de seguimiento y el chofer la valida al entregar (sin cambios).
+- [ ] Mergear esa rama (PR contra `develop`) y reconstruir el backend local (`make up` en `../backend`, recrea esquema y seed; pide permiso al owner) para que el contenedor deje de exponer los campos. Mientras no se haga, el backend en ejecución los sigue devolviendo (la web ya los ignora).
+- [ ] Actualizar `../planning/CONTRACTS.md` (SHG-CONTRACT-007 y la parte de la palabra de entrega del tracking guest, SHG-CONTRACT-025) y las notas de coordinación que mencionan `ultimaUbicacionAprox`/`palabraEntrega` en el tracking público. No se tocó `../planning` (checkout compartido).
+- [ ] Revisar `../app-mobile`: no hay referencias a `ultimaUbicacionAprox` en su `src`, pero confirmar que no consume `palabraEntrega` del tracking público.
 
 ## Bitácora
 - 2026-11-07: relevamiento (77 capturas) y artefacto de propuesta. Se crea la rama y este registro.
 - 2026-11-07: ola 1 completa y commiteada (e57a5f0).
-- 2026-11-07: ola 2 completa (6d53fe8) con pulido posterior; verificación a 390 px en iframe. Backend pendiente (ver arriba).
+- 2026-11-07: ola 2 completa (6d53fe8) con pulido posterior; verificación a 390 px en iframe.
+- 2026-11-07: fix de backend hecho en `../backend` (rama `feat/tracking-publico-sin-gps-ni-palabra`, commit 0ab5052); segunda pasada visual de pantallas faltantes.
