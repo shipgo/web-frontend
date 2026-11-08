@@ -8,26 +8,6 @@
     <link rel="apple-touch-icon" href="/favicon-180x180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preload" as="image" href="/splash.svg" />
-    <!--
-      Splash de carga (mismo verde y composición que el splash de app-mobile). Se pinta antes que
-      el bundle de React y vive dentro de #root: al montar la app, React lo reemplaza (la pantalla
-      de carga de la sesión, `SplashScreen`, repite el mismo diseño para que no haya parpadeo).
-    -->
-    <style>
-      #splash {
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
-        display: grid;
-        place-items: center;
-        background: #006b5a;
-      }
-      #splash img {
-        width: min(220px, 56vw);
-        height: auto;
-      }
-    </style>
     <meta name="theme-color" content="#006b5a" />
     <!-- Nombre de la app al instalarla (Android/escritorio lo toman del manifest; iOS de acá). -->
     <meta name="application-name" content="ShipGO!" />
@@ -75,10 +55,7 @@
     <meta property="og:image:height" content="630" />
   </head>
   <body>
-    <div id="root">
-      <div id="splash" role="status" aria-label="Cargando ShipGO!">
-        <img src="/splash.svg" alt="" width="220" height="238" />
-      </div>
+    <div id="root"></div>
     </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
