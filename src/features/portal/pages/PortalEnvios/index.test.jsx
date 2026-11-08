@@ -71,6 +71,50 @@ describe("PortalEnviosPage", () => {
     expect(screen.getByText("Córdoba, Córdoba")).toBeInTheDocument();
   });
 
+  describe("estado visto por el cliente (no los estados internos)", () => {
+    const envioCon = (extra) => ({
+      id: 1,
+      codigoSeguimiento: "SEED000001",
+      historialEstado: [{ estado: "creado", fechaHoraInicio: "2026-01-01T09:00:00" }],
+      destino: { localidad: { nombre: "Córdoba", provincia: { nombre: "Córdoba" } } },
+      ...extra,
+    });
+    const verEstado = (envio) => {
+      mockUseMisEnvios.mockReturnValue({ ...base, totalElements: 1, envios: [envio] });
+      renderWithProviders(<PortalEnviosPage />);
+    };
+
+    it.each(["asignado_a_viaje", "en_vehiculo"])("%s se muestra como «En preparación»", (estado) => {
+      verEstado(envioCon({ estado }));
+
+      expect(screen.getByText("En preparación")).toBeInTheDocument();
+      expect(screen.queryByText(/asignado a viaje|en vehículo/i)).not.toBeInTheDocument();
+    });
+
+    it("en sucursal, al principio, se muestra como «Recibido»", () => {
+      verEstado(envioCon({ estado: "en_sucursal" }));
+
+      expect(screen.getByText("Recibido")).toBeInTheDocument();
+      expect(screen.queryByText("En sucursal")).not.toBeInTheDocument();
+    });
+
+    it("un retiro que ya llegó a la sucursal se muestra como «Listo para retirar»", () => {
+      verEstado(
+        envioCon({
+          estado: "en_sucursal",
+          tipoEntrega: "sucursal",
+          historialEstado: [
+            { estado: "creado", fechaHoraInicio: "2026-01-01T09:00:00" },
+            { estado: "en_camino", fechaHoraInicio: "2026-01-02T09:00:00" },
+            { estado: "en_sucursal", fechaHoraInicio: "2026-01-02T16:00:00" },
+          ],
+        }),
+      );
+
+      expect(screen.getByText("Listo para retirar")).toBeInTheDocument();
+    });
+  });
+
   it("una fila sin codigoSeguimiento no rompe ni queda clickeable", () => {
     mockUseMisEnvios.mockReturnValue({
       ...base,
@@ -79,7 +123,7 @@ describe("PortalEnviosPage", () => {
     });
     renderWithProviders(<PortalEnviosPage />);
 
-    const row = screen.getByText("Creado").closest("tr");
+    const row = screen.getByText("Recibido").closest("tr");
     expect(row).toBeInTheDocument();
     expect(row).not.toHaveAttribute("style", expect.stringContaining("cursor"));
   });
@@ -208,7 +252,7 @@ describe("PortalEnviosPage", () => {
       expect(mockNavigate).toHaveBeenLastCalledWith(destino);
 
       mockNavigate.mockClear();
-      const sinCodigo = screen.getByText("Creado").closest("[class*=Paper]");
+      const sinCodigo = screen.getByText("Recibido").closest("[class*=Paper]");
       fireEvent.click(sinCodigo);
       fireEvent.keyDown(sinCodigo, { key: "Enter" });
       expect(mockNavigate).not.toHaveBeenCalled();

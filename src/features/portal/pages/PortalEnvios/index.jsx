@@ -16,13 +16,27 @@ import {
 import { IconSearch } from '@tabler/icons-react';
 
 import ScreenContainer from '@components/ScreenContainer';
-import { estadoBadge } from '@domain/estados';
+import { colorPublicoEnvio, progresoEnvio } from '@features/tracking';
 import { formatFecha, EMPTY } from '@domain/format';
 import { PORTAL_HOME_PATH } from '@domain/roles';
 import { REINTENTAR_MAS_TARDE } from '@copy/common';
 import { useIsMobile } from '@hooks/useIsMobile';
 
 import { useMisEnvios } from './hooks/useMisEnvios';
+
+/**
+ * Estado que ve el cliente (no los estados internos: "en sucursal", "asignado a viaje",
+ * "en vehículo" se muestran como "Recibido" / "En preparación"; un retiro que ya llegó a
+ * la sucursal es "Listo para retirar"). Ver `@features/tracking` (`progresoEnvio`).
+ */
+const estadoPublico = (envio) => {
+  const progreso = progresoEnvio({
+    estado: envio.estado,
+    historial: envio.historialEstado,
+    tipoEntrega: envio.tipoEntrega,
+  });
+  return { label: progreso.etiqueta, color: colorPublicoEnvio(progreso) };
+};
 
 /** Fecha de alta = `historialEstado` con `estado === 'creado'` (CONTRACTS.md §4). */
 const getFechaAlta = (envio) =>
@@ -66,7 +80,7 @@ const FILTROS_ESTADO = [
 const EnviosCards = ({ envios, onOpen }) => (
   <Stack gap="xs" p="sm" data-testid="portal-envios-cards">
     {envios.map((envio) => {
-      const info = estadoBadge('envio', envio.estado);
+      const info = estadoPublico(envio);
       const fecha = getFechaAlta(envio);
       const codigo = envio.codigoSeguimiento || null;
       return (
@@ -220,7 +234,7 @@ const PortalEnviosPage = () => {
                 </Table.Thead>
                 <Table.Tbody>
                   {envios.map((envio) => {
-                    const info = estadoBadge('envio', envio.estado);
+                    const info = estadoPublico(envio);
                     const fecha = getFechaAlta(envio);
                     // El backend genera `codigoSeguimiento` en el alta; si por lo
                     // que sea falta, la fila no es navegable (el detalle se

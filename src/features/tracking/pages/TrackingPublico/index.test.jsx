@@ -24,6 +24,7 @@ const DTO_OK = {
   ],
   destino: { localidad: 'Rosario', provincia: 'Santa Fe' },
   fechaEstimada: '2026-09-05',
+  tipoEntrega: 'domicilio',
   ultimaUbicacionAprox: { lat: -32.94, lng: -60.65, fecha: '2026-09-03T12:00:00' },
 };
 
@@ -60,7 +61,7 @@ describe('TrackingPublicoPage', () => {
     // estado + destino + timeline
     expect(screen.getAllByText('En camino').length).toBeGreaterThan(0);
     expect(screen.getByText('Rosario, Santa Fe')).toBeInTheDocument();
-    expect(screen.getByText('Creado')).toBeInTheDocument();
+    expect(screen.getByText('Envío registrado')).toBeInTheDocument();
     expect(screen.queryByTestId('mapa-ubicacion')).not.toBeInTheDocument();
     expect(screen.queryByText(/ubicación aproximada/i)).not.toBeInTheDocument();
   });
@@ -90,7 +91,7 @@ describe('TrackingPublicoPage', () => {
     renderAt('/tracking/7K2M9QX4TP');
 
     expect(await screen.findByText('Entregado el 04/09/2026')).toBeInTheDocument();
-    expect(screen.getByText('Paso 6 de 6')).toBeInTheDocument();
+    expect(screen.getByText('Paso 4 de 4')).toBeInTheDocument();
     expect(screen.queryByText(/entrega estimada/i)).not.toBeInTheDocument();
   });
 
@@ -128,10 +129,11 @@ describe('TrackingPublicoPage', () => {
 
     await screen.findByText('7K2M9QX4TP');
     const items = screen.getAllByRole('listitem');
-    expect(items).toHaveLength(3);
+    // 3 estados del backend -> 2 entradas: "en sucursal" al inicio es un paso interno.
+    expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent('En camino');
     expect(items[0]).toHaveTextContent('03/09/2026 08:00');
-    expect(items[2]).toHaveTextContent('Creado');
+    expect(items[1]).toHaveTextContent('Envío registrado');
     expect(items[0]).toHaveAttribute('aria-current', 'step');
   });
 
@@ -151,16 +153,61 @@ describe('TrackingPublicoPage', () => {
     expect(screen.queryByText(/entregado el/i)).not.toBeInTheDocument();
     const items = screen.getAllByRole('listitem');
     expect(items[0]).toHaveTextContent('No entregado');
-    expect(screen.getByText('Paso 5 de 6')).toBeInTheDocument();
+    // La barra queda en la última fase alcanzada (en camino).
+    expect(screen.getByText('Paso 3 de 4')).toBeInTheDocument();
   });
 
-  it('hero en camino: frase, destino y "Paso 5 de 6"', async () => {
+  it('hero en camino: frase, destino y "Paso 3 de 4"', async () => {
     mockTrack.mockResolvedValue(DTO_OK);
     renderAt('/tracking/7K2M9QX4TP');
 
     expect(await screen.findByText('Tu envío va en camino')).toBeInTheDocument();
-    expect(screen.getByText('Paso 5 de 6')).toBeInTheDocument();
-    expect(screen.getAllByTestId('hero-segmento')).toHaveLength(6);
+    expect(screen.getByText('Paso 3 de 4')).toBeInTheDocument();
+    expect(screen.getAllByTestId('hero-segmento')).toHaveLength(4);
+  });
+
+  it('no muestra los estados internos: un viaje en preparación se ve como "En preparación"', async () => {
+    mockTrack.mockResolvedValue({
+      ...DTO_OK,
+      estado: 'en_vehiculo',
+      estadoLabel: 'En vehículo',
+      historial: [
+        { estado: 'creado', fecha: '2026-09-01T10:00:00' },
+        { estado: 'asignado_a_viaje', fecha: '2026-09-02T09:00:00' },
+        { estado: 'en_vehiculo', fecha: '2026-09-03T07:00:00' },
+      ],
+    });
+    renderAt('/tracking/7K2M9QX4TP');
+
+    await screen.findByText('7K2M9QX4TP');
+    expect(screen.queryByText(/asignado a viaje|en vehículo/i)).not.toBeInTheDocument();
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent('En preparación');
+    expect(items[0]).toHaveTextContent('02/09/2026 09:00');
+    expect(screen.getByText('Paso 2 de 4')).toBeInTheDocument();
+  });
+
+  it('retiro en sucursal que ya llegó: "Listo para retirar", última fase y última etapa "Retiro en sucursal"', async () => {
+    mockTrack.mockResolvedValue({
+      ...DTO_OK,
+      estado: 'en_sucursal',
+      estadoLabel: 'En sucursal',
+      tipoEntrega: 'sucursal',
+      historial: [
+        { estado: 'creado', fecha: '2026-09-01T10:00:00' },
+        { estado: 'en_camino', fecha: '2026-09-03T08:00:00' },
+        { estado: 'en_sucursal', fecha: '2026-09-03T16:00:00' },
+      ],
+    });
+    renderAt('/tracking/7K2M9QX4TP');
+
+    expect(await screen.findByText('Tu envío está listo para retirar')).toBeInTheDocument();
+    expect(screen.getByText('Paso 4 de 4')).toBeInTheDocument();
+    expect(screen.getAllByText('Listo para retirar').length).toBeGreaterThan(0);
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('Listo para retirar en la sucursal');
+    expect(items[0]).toHaveTextContent('03/09/2026 16:00');
   });
 
   it('hero con estado desconocido degrada sin romper', async () => {

@@ -1,25 +1,30 @@
 import { Box, Group, Text } from '@mantine/core';
 
-import { estadoLabel, normalizarEstado } from '@domain/estados';
 import { formatFechaHora } from '@domain/format';
 
-import { historialDescendente } from '../utils';
+import { historialPublico } from '../fases';
 
 const BULLET = 14;
 const HALO = '0 0 0 5px color-mix(in srgb, var(--mantine-primary-color-filled) 25%, transparent)';
 const HALO_ROJO = '0 0 0 5px color-mix(in srgb, var(--mantine-color-red-filled) 25%, transparent)';
 
 /**
- * Historial de estados de un envío a partir del `historial` del
- * `PublicTrackingDTO` (`[{ estado, fecha }]`). Se muestra en orden descendente
- * (lo más reciente arriba) con un solo color: primario para lo ocurrido, con
- * halo y negrita en el último, y rojo SOLO para `rechazado`.
+ * Historial de un envío a partir del `PublicTrackingDTO`, mostrado por fases
+ * (`../fases`: "Envío registrado", "En preparación", "En camino", "Entregado" o
+ * "Listo para retirar"). No se muestran los estados internos (en sucursal, asignado
+ * a viaje, en vehículo) ni los repetidos. Orden descendente (lo más reciente
+ * arriba) con un solo color: primario para lo ocurrido, con halo y negrita en el
+ * último, y rojo SOLO para el rechazo.
  *
  * @param {Object} props
  * @param {Array<{ estado: string, fecha: string }>} [props.historial=[]]
+ * @param {string} [props.estado] Estado actual del envío.
+ * @param {string} [props.tipoEntrega] `domicilio` | `sucursal`.
  */
-const TrackingTimeline = ({ historial = [] }) => {
-  if (historial.length === 0) {
+const TrackingTimeline = ({ historial = [], estado, tipoEntrega }) => {
+  const items = historialPublico({ estado, historial, tipoEntrega });
+
+  if (items.length === 0) {
     return (
       <Text c="dimmed" size="sm">
         Todavía no hay movimientos registrados para este envío.
@@ -27,21 +32,19 @@ const TrackingTimeline = ({ historial = [] }) => {
     );
   }
 
-  const items = historialDescendente(historial);
-
   return (
     <Box component="ol" m={0} p={0} style={{ listStyle: 'none' }}>
       {items.map((item, index) => {
         const esUltimo = index === 0;
         const esFin = index === items.length - 1;
-        const rechazado = normalizarEstado(item.estado) === 'rechazado';
+        const rechazado = item.rechazado;
         const colorBullet = rechazado
           ? 'var(--mantine-color-red-filled)'
           : 'var(--mantine-primary-color-filled)';
         return (
           <Box
             component="li"
-            key={`${item.estado}-${item.fecha ?? index}`}
+            key={item.clave}
             aria-current={esUltimo ? 'step' : undefined}
             pos="relative"
             pl={32}
@@ -79,7 +82,7 @@ const TrackingTimeline = ({ historial = [] }) => {
                 fw={esUltimo ? 700 : 500}
                 c={rechazado ? 'red' : undefined}
               >
-                {estadoLabel('envio', item.estado)}
+                {item.etiqueta}
               </Text>
             </Group>
             <Text size="xs" c="dimmed">

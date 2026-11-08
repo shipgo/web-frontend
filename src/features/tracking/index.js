@@ -19,3 +19,7 @@ export { default as TrackingErrorAlert } from './components/TrackingErrorAlert';
 export { publicTrackingApi } from './api/tracking.api';
 export { usePublicTracking, clasificarErrorTracking } from './hooks/usePublicTracking';
 export { codigoEsValido, normalizarCodigo, CODIGO_INVALIDO_MSG } from './utils';
+
+// Fases del envío tal como las ve quien lo espera (barra de avance, historial y
+// badges del portal del cliente).
+export { progresoEnvio, historialPublico, colorPublicoEnvio, fasesDelEnvio } from './fases';
