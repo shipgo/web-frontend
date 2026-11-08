@@ -29,11 +29,21 @@ const ItemVehiculo = ({ vehicle, pesoTotal, motivoNoDisponible }) => {
           </Text>
         </Box>
 
+        {/* El motivo ("En mantenimiento hasta 12/11 08:00") es largo: en mobile se parte
+            en dos líneas en vez de cortarse con puntos suspensivos. */}
         <Badge
           color="orange"
           variant="light"
           radius="md"
-          style={{ textTransform: "none" }}
+          maw="55%"
+          style={{
+            textTransform: "none",
+            whiteSpace: "normal",
+            height: "auto",
+            paddingBlock: 4,
+            textAlign: "center",
+            lineHeight: 1.3,
+          }}
         >
           {motivoNoDisponible}
         </Badge>

@@ -66,7 +66,7 @@ describe("ListadoChoferes — buscador sin acentos (SHG-FE-139)", () => {
     renderWithProviders(<Harness />);
 
     await screen.findByText(/José/);
-    await user.type(screen.getByPlaceholderText("Buscá por nombre, email o teléfono..."), consulta);
+    await user.type(screen.getByPlaceholderText("Nombre, email o teléfono..."), consulta);
 
     expect(screen.getByText(/José/)).toBeInTheDocument();
     expect(screen.queryByText(/Laura/)).not.toBeInTheDocument();

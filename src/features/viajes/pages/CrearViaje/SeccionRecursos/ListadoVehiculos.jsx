@@ -2,6 +2,8 @@ import { useState } from "react";
 
 import { Card } from "@mantine/core";
 
+import { useIsMobile } from "@hooks/useIsMobile";
+
 import { coincideBusqueda } from "@utils/text";
 
 import SearchVehiculos from "./SearchVehiculos";
@@ -21,6 +23,7 @@ const filterVehiculos = (vehiculos, search) =>
   );
 
 const ListadoVehiculos = () => {
+  const isMobile = useIsMobile();
   const [searchValue, setSearchValue] = useState("");
   const { desde, hasta } = useDisponibilidadParams();
 
@@ -42,7 +45,10 @@ const ListadoVehiculos = () => {
   const enMantenimiento = filterVehiculos(enMantenimientoData, searchValue);
 
   return (
-    <Card flex={1} h="500" padding="none" shadow="none" withBorder>
+    // Mobile: `flex="none"`. Dentro de la `Stack` (columna) un `flex={1}` ignora el alto
+    // y la tarjeta quedaba del tamaño de su contenido; como la lista virtualizada no
+    // tiene alto propio, medía 0 y no se veía ningún vehículo.
+    <Card flex={isMobile ? "none" : 1} h="500" padding="none" shadow="none" withBorder>
       <SearchVehiculos
         isFetching={isFetching}
         handleRefetch={refetch}

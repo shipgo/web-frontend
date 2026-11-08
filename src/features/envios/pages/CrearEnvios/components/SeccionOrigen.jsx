@@ -519,10 +519,14 @@ const SeccionOrigen = ({ destinoBloqueado = false }) => {
               </MapCard>
             </ScreenContainer>
             {!form.values.coordenadas && !destinoBloqueado && (
+              // Mobile: arriba a la izquierda. Abajo chocaba con el logo y la "i" de atribución
+              // de Mapbox (el texto se cortaba en "ubicar el enví…").
               <Text
                 pos="absolute"
-                bottom={10}
+                top={{ base: 10, sm: "auto" }}
+                bottom={{ base: "auto", sm: 10 }}
                 left={10}
+                maw="calc(100% - 20px)"
                 size="sm"
                 px="sm"
                 py={4}

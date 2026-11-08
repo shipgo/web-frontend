@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   Group,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -15,6 +16,8 @@ import { notifications } from '@mantine/notifications';
 import { IconCheck, IconDeviceFloppy, IconX } from '@tabler/icons-react';
 
 import ScreenContainer from '@components/ScreenContainer';
+import { useFieldSize } from '@components/useFieldSize';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { applyApiError } from '@domain/apiError';
 import { useAuthStore } from '@stores/auth.store';
 
@@ -44,6 +47,8 @@ const MiPerfilPage = () => {
   const getUserInfo = useAuthStore((state) => state.getUserInfo);
   const { data, isLoading, isError, refetch } = useMiPerfil();
   const [submitting, setSubmitting] = useState(false);
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
 
   const form = useForm({
     initialValues: MI_PERFIL_INITIAL_VALUES,
@@ -129,25 +134,25 @@ const MiPerfilPage = () => {
           {data && (
             <form onSubmit={handleSubmit} noValidate>
               <Stack gap="md">
-                <Group justify="space-between" align="center">
+                {/* Mobile: el estado de verificación va debajo del email (al lado el email quedaba angosto). */}
+                <Stack gap="xs">
                   <TextInput
+                    size={size}
                     label="Email"
                     value={data.email ?? ''}
                     disabled
                     readOnly
-                    flex={1}
                   />
-                  <Badge
-                    mt={22}
-                    color={data.emailVerificado ? 'teal' : 'gray'}
-                    variant="light"
-                  >
-                    {data.emailVerificado ? 'Email verificado' : 'Email sin verificar'}
-                  </Badge>
-                </Group>
+                  <div>
+                    <Badge color={data.emailVerificado ? 'teal' : 'gray'} variant="light">
+                      {data.emailVerificado ? 'Email verificado' : 'Email sin verificar'}
+                    </Badge>
+                  </div>
+                </Stack>
 
-                <Group grow align="flex-start">
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                   <TextInput
+                    size={size}
                     label="Nombre"
                     withAsterisk
                     key={form.key('nombre')}
@@ -155,15 +160,17 @@ const MiPerfilPage = () => {
                     disabled={submitting}
                   />
                   <TextInput
+                    size={size}
                     label="Apellido"
                     withAsterisk
                     key={form.key('apellido')}
                     {...form.getInputProps('apellido')}
                     disabled={submitting}
                   />
-                </Group>
+                </SimpleGrid>
 
                 <TextInput
+                  size={size}
                   label="Teléfono"
                   autoComplete="tel"
                   withAsterisk
@@ -175,6 +182,8 @@ const MiPerfilPage = () => {
                 <Group justify="flex-end">
                   <Button
                     type="submit"
+                    size={size}
+                    fullWidth={isMobile}
                     loading={submitting}
                     leftSection={<IconDeviceFloppy size={18} />}
                   >

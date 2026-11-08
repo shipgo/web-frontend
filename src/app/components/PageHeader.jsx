@@ -23,7 +23,16 @@ const PageHeader = ({ title, subtitle, children, primaryAction, secondaryActions
   return (
     <Flex justify="space-between" gap="xs" align={isMobile ? 'center' : 'flex-end'} wrap="nowrap">
       <Stack gap={0} miw={0} flex={isMobile ? 1 : undefined}>
-        <Title order={2} truncate={isMobile ? 'end' : undefined}>
+        {/* `Title` no resuelve `truncate`: una sola línea con puntos suspensivos a mano (mobile). */}
+        <Title
+          order={2}
+          fz={isMobile ? 24 : undefined}
+          style={
+            isMobile
+              ? { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
+              : undefined
+          }
+        >
           {title}
         </Title>
         {subtitle && (

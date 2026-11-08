@@ -19,6 +19,7 @@ import ResponsiveList from './ResponsiveList';
 import ListCard from './ListCard';
 import FilterSheet from './FilterSheet';
 import PageHeader from './PageHeader';
+import PageBreadcrumbsHeader from './PageBreadcrumbsHeader';
 import StickyActionBar from './StickyActionBar';
 import ResponsiveModal from './ResponsiveModal';
 import RowActionsMenu from './RowActionsMenu';
@@ -236,6 +237,31 @@ describe('PageHeader', () => {
     await userEvent.click(await screen.findByText('Exportar CSV'));
     expect(onExport).toHaveBeenCalled();
     expect(screen.getByText('Envíos')).toBeInTheDocument();
+  });
+});
+
+describe('Títulos de pantalla en mobile (una sola línea)', () => {
+  // `Title` no resuelve `truncate`: "Crear mantenimiento" se partía en dos líneas en 390 px.
+  const unaLinea = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+
+  it('PageBreadcrumbsHeader: una línea con puntos suspensivos y 24 px', () => {
+    mobile.value = true;
+    renderWithProviders(<PageBreadcrumbsHeader entidad="Mantenimientos" accion="Crear mantenimiento" />);
+    const titulo = screen.getByRole('heading', { name: 'Crear mantenimiento' });
+    expect(titulo).toHaveStyle(unaLinea);
+  });
+
+  it('PageHeader: una línea con puntos suspensivos', () => {
+    mobile.value = true;
+    renderWithProviders(<PageHeader title="Configurá tu empresa" />);
+    expect(screen.getByRole('heading', { name: 'Configurá tu empresa' })).toHaveStyle(unaLinea);
+  });
+
+  it('PageHeader en escritorio no se trunca', () => {
+    renderWithProviders(<PageHeader title="Configurá tu empresa" />);
+    expect(screen.getByRole('heading', { name: 'Configurá tu empresa' })).not.toHaveStyle({
+      whiteSpace: 'nowrap',
+    });
   });
 });
 

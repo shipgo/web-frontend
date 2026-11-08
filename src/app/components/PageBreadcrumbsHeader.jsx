@@ -68,7 +68,13 @@ const PageBreadcrumbsHeader = ({
           </ActionIcon>
         </Link>
         <Box flex={1} miw={0}>
-          <Title order={2} truncate="end">
+          {/* `Title` no resuelve `truncate`: una sola línea con puntos suspensivos a mano, y 24 px
+              para que "Crear mantenimiento" entre sin cortarse en 390 px. */}
+          <Title
+            order={2}
+            fz={24}
+            style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+          >
             {accion}
           </Title>
           {descripcionNode}

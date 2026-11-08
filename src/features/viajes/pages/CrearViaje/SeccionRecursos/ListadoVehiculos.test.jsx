@@ -31,6 +31,12 @@ vi.mock("react-virtuoso", () => ({
   },
   GroupedVirtuoso: () => null,
 }));
+// Para poder probar el layout mobile (jsdom no resuelve media queries).
+const mobile = { value: false };
+vi.mock("@hooks/useIsMobile", () => ({
+  useIsMobile: () => mobile.value,
+  MOBILE_QUERY: "",
+}));
 vi.mock("../hooks/useDisponibilidadParams", () => ({
   useDisponibilidadParams: () => ({
     desde: "2026-08-01T09:00:00",
@@ -89,5 +95,42 @@ describe("ListadoVehiculos — buscador sin acentos (SHG-FE-139)", () => {
     // El buscador tiene debounce: la Hilux desaparece recién cuando se aplica.
     await waitFor(() => expect(screen.queryByText(/BB222BB/)).not.toBeInTheDocument());
     expect(screen.getByText(/AA111AA/)).toBeInTheDocument();
+  });
+});
+
+describe("ListadoVehiculos — alto de la tarjeta en mobile", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mobile.value = false;
+    mockDisponibles.mockReturnValue(consulta([KANGOO]));
+    mockEnMantenimiento.mockReturnValue(consulta([]));
+  });
+
+  const tarjeta = () => screen.getByText("Vehículos disponibles").closest(".mantine-Card-root");
+
+  it("mobile: la tarjeta no usa flex=1 (en una columna ignoraba su alto y la lista medía 0)", async () => {
+    mobile.value = true;
+    renderWithProviders(<Harness />);
+    await screen.findByText(/AA111AA/);
+
+    expect(tarjeta()).toHaveStyle({ flex: "none" });
+  });
+
+  it("escritorio: sigue repartiendo el ancho con flex=1", async () => {
+    renderWithProviders(<Harness />);
+    await screen.findByText(/AA111AA/);
+
+    expect(tarjeta()).not.toHaveStyle({ flex: "none" });
+  });
+
+  it("un vehículo en mantenimiento muestra el motivo completo, que puede partirse en dos líneas", async () => {
+    mobile.value = true;
+    mockEnMantenimiento.mockReturnValue(
+      consulta([{ ...HILUX, mantenimiento: { fechaHoraFin: "2026-08-12T08:00:00" } }]),
+    );
+    renderWithProviders(<Harness />);
+
+    const motivo = await screen.findByText(/en mantenimiento hasta/i);
+    expect(motivo.closest(".mantine-Badge-root")).toHaveStyle({ whiteSpace: "normal" });
   });
 });
