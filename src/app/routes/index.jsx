@@ -345,15 +345,14 @@ const AppRoutes = () => {
       {/* Portal CUSTOMER (SHG-FE-026, CONTRACTS.md §7). `/registro` +
           `/registro/verificar` son públicos (whitelist en `AuthProvider` y
           `restclient` por `startsWith`); `/portal/**` requiere sesión de
-          CUSTOMER (`PortalRoute`). Layout: `PublicLayout` (envuelto en
-          `PortalLayout` para el portal), NUNCA el AppShell de admin. */}
+          CUSTOMER (`PortalRoute`). Layout: `/registro` usa el molde de acceso
+          (`AuthShell`, dentro de su propia página); `/registro/verificar` usa
+          `PublicLayout`; el portal va en `PortalLayout`. NUNCA el AppShell de admin. */}
       <Route path='/registro'>
         <PublicRoute>
-          <PublicLayout>
-            <Suspense fallback={<RouteFallback />}>
-              <RegistroPage />
-            </Suspense>
-          </PublicLayout>
+          <Suspense fallback={<RouteFallback />}>
+            <RegistroPage />
+          </Suspense>
         </PublicRoute>
       </Route>
       <Route path='/registro/verificar'>
