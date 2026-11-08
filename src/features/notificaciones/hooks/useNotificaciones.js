@@ -11,6 +11,7 @@ import {
   NOTIFICACIONES_REFETCH_MS,
 } from '../constants';
 import { useMarcarLeida } from './useMarcarLeida';
+import { useMarcarTodasLeidas } from './useMarcarTodasLeidas';
 
 const porFechaDesc = (a, b) =>
   new Date(b?.fecha ?? 0).getTime() - new Date(a?.fecha ?? 0).getTime();
@@ -24,7 +25,8 @@ const porFechaDesc = (a, b) =>
  * "Marcar leída" es `DELETE /api/notificaciones/{id}`: el backend tiene
  * `@SQLDelete(... SET visto=true ...)`, así que el borrado es un soft-delete que
  * sólo marca la notificación como vista (sigue apareciendo en el listado, ya
- * leída). No hay endpoint de "marcar todas".
+ * leída). "Marcar todas como leídas" es `PUT /api/notificaciones/leidas` (ver
+ * `useMarcarTodasLeidas`).
  *
  * Ambas acciones son optimistas (SHG-FE-141): el cache cambia en `onMutate`,
  * se revierte en `onError` y se revalida en `onSettled`. La de marcar leída
@@ -60,6 +62,7 @@ export const useNotificaciones = ({ enabled = true } = {}) => {
   );
 
   const marcarLeida = useMarcarLeida();
+  const marcarTodasLeidas = useMarcarTodasLeidas();
 
   // "Vaciar todas" también es optimista: ya hay un modal de confirmación y el
   // listado queda vacío al instante; si falla, vuelve el listado original.
@@ -94,6 +97,7 @@ export const useNotificaciones = ({ enabled = true } = {}) => {
     notificaciones,
     unreadCount,
     marcarLeida,
+    marcarTodasLeidas,
     vaciarTodas,
   };
 };

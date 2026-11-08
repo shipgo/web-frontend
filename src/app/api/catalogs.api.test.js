@@ -1,8 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const mockGet = vi.fn();
+const mockPut = vi.fn();
 vi.mock('@config/restclient', () => ({
-  restclient: { get: (...args) => mockGet(...args) },
+  restclient: { get: (...args) => mockGet(...args), put: (...args) => mockPut(...args) },
 }));
 
 import { notificacionesApi } from './catalogs.api';
@@ -20,5 +21,18 @@ describe('notificacionesApi.getHistorial (SHG-FE-142)', () => {
       params: { page: 2, size: 20 },
     });
     expect(res).toBe(pagina);
+  });
+});
+
+describe('notificacionesApi.marcarTodasLeidas', () => {
+  beforeEach(() => mockPut.mockReset());
+
+  it('PUT /notificaciones/leidas sin cuerpo (marca todas como leídas, no las oculta)', async () => {
+    mockPut.mockResolvedValue({ data: '' });
+
+    await notificacionesApi.marcarTodasLeidas();
+
+    expect(mockPut).toHaveBeenCalledTimes(1);
+    expect(mockPut).toHaveBeenCalledWith('/notificaciones/leidas');
   });
 });

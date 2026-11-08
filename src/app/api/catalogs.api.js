@@ -186,6 +186,16 @@ export const notificacionesApi = {
   },
 
   /**
+   * `PUT /api/notificaciones/leidas` — marca TODAS las notificaciones del usuario
+   * logueado como leídas (`visto=true`) en una sola operación. No las oculta
+   * (eso es `vaciarTodas`): siguen apareciendo, ya leídas.
+   */
+  marcarTodasLeidas: async () => {
+    const response = await restclient.put(`${API_URLS.NOTIFICACIONES_URL}/leidas`);
+    return response.data;
+  },
+
+  /**
    * `POST /api/notificaciones`
    * @param {Object} data - entidad `Notificacion`.
    */

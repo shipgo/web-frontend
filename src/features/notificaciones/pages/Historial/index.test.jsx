@@ -10,6 +10,7 @@ import { memoryLocation } from 'wouter/memory-location';
 const mockGetMias = vi.fn();
 const mockGetHistorial = vi.fn();
 const mockDelete = vi.fn();
+const mockMarcarTodasLeidas = vi.fn();
 
 vi.mock('@api/catalogs.api', () => ({
   notificacionesApi: {
@@ -19,6 +20,7 @@ vi.mock('@api/catalogs.api', () => ({
     update: vi.fn(),
     delete: (...args) => mockDelete(...args),
     vaciarTodas: vi.fn(),
+    marcarTodasLeidas: (...args) => mockMarcarTodasLeidas(...args),
   },
 }));
 
@@ -84,6 +86,8 @@ describe('NotificacionesHistorialPage', () => {
     mockGetHistorial.mockReset();
     mockDelete.mockReset();
     mockDelete.mockResolvedValue({});
+    mockMarcarTodasLeidas.mockReset();
+    mockMarcarTodasLeidas.mockResolvedValue({});
     notifications.clean();
     notifications.cleanQueue();
   });
@@ -201,8 +205,38 @@ describe('NotificacionesHistorialPage', () => {
 
     // 1 carga inicial + 1 revalidación tras el DELETE (misma clave raíz)
     await waitFor(() => expect(mockGetHistorial).toHaveBeenCalledTimes(2));
-    // la campana (sin observadores acá) queda marcada para revalidar
-    expect(queryClient.getQueryState(NOTIFICACIONES_QUERY_KEY)?.isInvalidated).toBe(true);
+    // la campana también se revalida (la página la observa para el contador de no leídas):
+    // 1 carga inicial + 1 revalidación tras el DELETE
+    await waitFor(() => expect(mockGetMias.mock.calls.length).toBeGreaterThanOrEqual(2));
+    expect(queryClient.getQueryState(NOTIFICACIONES_QUERY_KEY)?.isInvalidated).toBe(false);
+  });
+
+  it('"Marcar todas como leídas" pide PUT /leidas y marca todo el historial al instante', async () => {
+    mockGetHistorial.mockResolvedValue(pagina(NOTIFS));
+    mockGetMias.mockResolvedValue(NOTIFS);
+    mockMarcarTodasLeidas.mockReturnValue(new Promise(() => {}));
+    renderPage();
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Marcar todas como leídas' }),
+    );
+
+    expect(mockMarcarTodasLeidas).toHaveBeenCalledTimes(1);
+    // optimista: el backend todavía no respondió y ya no queda ninguna sin leer
+    await waitFor(() =>
+      expect(screen.queryByLabelText('Marcar como leída')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('"Marcar todas como leídas" queda deshabilitado si no hay nada sin leer', async () => {
+    const leidas = NOTIFS.map((n) => ({ ...n, visto: true }));
+    mockGetHistorial.mockResolvedValue(pagina(leidas));
+    mockGetMias.mockResolvedValue(leidas);
+    renderPage();
+
+    expect(
+      await screen.findByRole('button', { name: 'Marcar todas como leídas' }),
+    ).toBeDisabled();
   });
 
   it('si el DELETE falla se restaura la notificación y se avisa', async () => {
