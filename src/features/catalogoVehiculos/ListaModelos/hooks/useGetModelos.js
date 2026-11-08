@@ -1,5 +1,5 @@
 import { mapValues } from "es-toolkit";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { useParams } from "@hooks/useParams";
 import { modeloApi } from "../../api/catalogoVehiculos.api";
@@ -43,6 +43,8 @@ export const useGetModelos = (pageLimit = 10) => {
     isFetching: isLoading,
     refetch: refetchModelos,
   } = useQuery({
+    // Mantiene la página anterior mientras llega la nueva (no vacía la lista ni el contador).
+    placeholderData: keepPreviousData,
     queryFn: async () => modeloApi.get(normalizedParams),
     queryKey: ["modelos", JSON.stringify(normalizedParams)],
   });

@@ -1,5 +1,5 @@
 import { mapValues } from "es-toolkit";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { useParams } from "@hooks/useParams";
 import { marcaApi } from "../../api/catalogoVehiculos.api";
@@ -42,6 +42,8 @@ export const useGetMarcas = (pageLimit = 10) => {
     isFetching: isLoading,
     refetch: refetchMarcas,
   } = useQuery({
+    // Mantiene la página anterior mientras llega la nueva (no vacía la lista ni el contador).
+    placeholderData: keepPreviousData,
     queryFn: async () => marcaApi.get(normalizedParams),
     queryKey: ["marcas", JSON.stringify(normalizedParams)],
   });

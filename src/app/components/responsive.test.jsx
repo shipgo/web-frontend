@@ -82,6 +82,54 @@ describe('ResponsiveList', () => {
     expect(screen.getByText('Nada por acá')).toBeInTheDocument();
     expect(screen.queryAllByTestId('list-card')).toHaveLength(0);
   });
+
+  describe('recarga con tarjetas ya cargadas (mobile)', () => {
+    const renderCargando = (extra = {}) =>
+      renderWithProviders(
+        <ResponsiveList
+          items={extra.items ?? items}
+          onLoading={{ show: true, description: 'Cargando envíos...' }}
+          renderCard={(row) => <ListCard title={row.codigo} />}
+        >
+          <table data-testid="tabla" />
+        </ResponsiveList>,
+      );
+
+    it('conserva las tarjetas atenuadas e inertes con un indicador, sin la tarjeta de carga', () => {
+      mobile.value = true;
+      renderCargando();
+
+      expect(screen.getAllByTestId('list-card')).toHaveLength(2);
+      expect(screen.getByTestId('responsive-list-cards')).toHaveAttribute('inert');
+      expect(screen.getByTestId('responsive-list-cards').style.opacity).toBe('0.45');
+      expect(screen.getByRole('status')).toHaveTextContent('Cargando envíos...');
+    });
+
+    it('primera carga (sin tarjetas): tarjeta de carga completa, sin indicador', () => {
+      mobile.value = true;
+      renderCargando({ items: [] });
+
+      expect(screen.queryAllByTestId('list-card')).toHaveLength(0);
+      expect(screen.queryByTestId('responsive-list-refreshing')).not.toBeInTheDocument();
+      expect(screen.getByText('Cargando envíos...')).toBeInTheDocument();
+    });
+
+    it('escritorio sigue mostrando la tarjeta de carga (no cambia)', () => {
+      renderCargando();
+
+      expect(screen.queryAllByTestId('list-card')).toHaveLength(0);
+      expect(screen.queryByTestId('responsive-list-refreshing')).not.toBeInTheDocument();
+      expect(screen.getByText('Cargando envíos...')).toBeInTheDocument();
+    });
+
+    it('al terminar de cargar las tarjetas vuelven a ser interactivas', () => {
+      mobile.value = true;
+      renderList();
+
+      expect(screen.getByTestId('responsive-list-cards')).not.toHaveAttribute('inert');
+      expect(screen.queryByTestId('responsive-list-refreshing')).not.toBeInTheDocument();
+    });
+  });
 });
 
 describe('FilterSheet', () => {
@@ -204,5 +252,20 @@ describe('ResultsCounter mobile', () => {
     mobile.value = true;
     renderWithProviders(<ResultsCounter amount={48} limit={10} currentPage={1} />);
     expect(screen.getByText(/Mostrando 1–10 de 48/)).toBeInTheDocument();
+  });
+
+  it('al cambiar de página avisa a la pantalla y vuelve al inicio de la página', async () => {
+    mobile.value = true;
+    const onPageChange = vi.fn();
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    renderWithProviders(
+      <ResultsCounter amount={48} limit={10} currentPage={1} onPageChange={onPageChange} totalPages={5} />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: '2' }));
+
+    expect(onPageChange).toHaveBeenCalledWith(2);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0 });
+    scrollTo.mockRestore();
   });
 });

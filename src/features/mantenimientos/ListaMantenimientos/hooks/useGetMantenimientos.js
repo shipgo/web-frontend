@@ -1,5 +1,5 @@
 import { mapValues } from "es-toolkit";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { useParams } from "@hooks/useParams";
 import { mantenimientoApi } from "../../api/mantenimientos.api";
@@ -49,6 +49,8 @@ export const useGetMantenimientos = (pageLimit = 10, initialFilters = {}) => {
     isFetching: isLoading,
     refetch: refetchMantenimientos,
   } = useQuery({
+    // Mantiene la página anterior mientras llega la nueva (no vacía la lista ni el contador).
+    placeholderData: keepPreviousData,
     queryFn: () => mantenimientoApi.get(normalizedParams),
     queryKey: ["mantenimientos", JSON.stringify(normalizedParams)],
   });
