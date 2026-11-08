@@ -14,7 +14,6 @@ import {
   Switch,
   Text,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
 import { spotlight } from "@mantine/spotlight";
 
 import { Link } from "wouter";
@@ -39,7 +38,6 @@ import { iniciales, nombreCompleto } from "@domain/usuario";
 import { useToggleColorScheme } from "@hooks/useToggleColorScheme";
 
 import NavigationSpotlight from "./NavigationSpotlight";
-import UserSheet from "./UserSheet";
 
 // `Menu.Item` fuerza `role="menuitem"` (que no admite `aria-checked`).
 const setMenuItemCheckbox = (el) => el?.setAttribute("role", "menuitemcheckbox");
@@ -48,14 +46,12 @@ const setMenuItemCheckbox = (el) => el?.setAttribute("role", "menuitemcheckbox")
  * @param {Object} props
  * @param {boolean} [props.menuOpened] Estado del cajón de navegación (mobile).
  * @param {() => void} [props.onToggleMenu] Abre/cierra el cajón (hamburguesa).
+ * @param {() => void} [props.onOpenUserSheet] Abre la hoja del usuario (avatar, mobile).
  */
-const AppHeader = ({ menuOpened = false, onToggleMenu }) => {
+const AppHeader = ({ menuOpened = false, onToggleMenu, onOpenUserSheet }) => {
   const { user } = useAuth();
   const { logout } = useAuthStore();
   const { computedColorScheme, handleToggleColorScheme } = useToggleColorScheme();
-  // Hoja del usuario (mobile): la abre el avatar; en escritorio hay un menú desplegable.
-  const [sheetOpened, { open: openSheet, close: closeSheet }] = useDisclosure(false);
-
   // Si no hay usuario, no renderizar el header (o renderizar versión simplificada)
   if (!user) {
     return null;
@@ -150,7 +146,7 @@ const AppHeader = ({ menuOpened = false, onToggleMenu }) => {
             radius="xl"
             aria-label="Abrir opciones de usuario"
             aria-haspopup="dialog"
-            onClick={openSheet}
+            onClick={onOpenUserSheet}
           >
             <Avatar
               src={user.profile ? `/api${user.profile}` : undefined}
@@ -260,7 +256,6 @@ const AppHeader = ({ menuOpened = false, onToggleMenu }) => {
           </Box>
         </Group>
       </Flex>
-      <UserSheet opened={sheetOpened} onClose={closeSheet} />
     </AppShellHeader>
   );
 };

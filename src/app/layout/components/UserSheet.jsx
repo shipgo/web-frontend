@@ -1,6 +1,6 @@
 import {
   Avatar,
-  Divider,
+  Box,
   Drawer,
   Group,
   NavLink,
@@ -8,8 +8,9 @@ import {
   Stack,
   Text,
   useMantineColorScheme,
+  VisuallyHidden,
 } from "@mantine/core";
-import { IconLogout, IconUser } from "@tabler/icons-react";
+import { IconChevronRight, IconLogout, IconUser } from "@tabler/icons-react";
 import { Link } from "wouter";
 
 import { useAuth } from "@contexts/auth";
@@ -27,9 +28,11 @@ const APARIENCIAS = [
 ];
 
 /**
- * Hoja inferior del usuario (mobile): perfil, apariencia (Auto / Claro / Oscuro)
- * y "Cerrar sesión". La abre el avatar del header; reemplaza al menú desplegable
- * de escritorio, que en mobile no se muestra, y deja el cajón sólo con navegación.
+ * Hoja inferior del usuario (mobile): quién sos, "Mi perfil", apariencia
+ * (Auto / Claro / Oscuro) y "Cerrar sesión". La abren el avatar del header y la
+ * fila del usuario fijada abajo del cajón; reemplaza al menú desplegable de
+ * escritorio, que en mobile no se muestra. Mide lo que su contenido (con
+ * tope de 85 % del alto), con un tirador arriba.
  *
  * @param {Object} props
  * @param {boolean} props.opened
@@ -59,15 +62,43 @@ const UserSheet = ({ opened, onClose }) => {
       opened={opened}
       onClose={onClose}
       position="bottom"
-      size="auto"
-      radius="md"
       withCloseButton={false}
+      // El título es el nombre accesible del diálogo; visualmente es sólo el tirador.
       title={
-        <Group wrap="nowrap" gap="sm">
+        <>
+          <VisuallyHidden>Opciones de usuario</VisuallyHidden>
+          <Box aria-hidden w={32} h={4} bg="gray.4" style={{ borderRadius: 2 }} />
+        </>
+      }
+      styles={{
+        content: {
+          // Alto del contenido (el `size` de Mantine fija un alto y deja vacío abajo).
+          flex: "0 0 auto",
+          width: "100%",
+          height: "auto",
+          maxHeight: "85dvh",
+          borderRadius: "18px 18px 0 0",
+        },
+        header: {
+          minHeight: 0,
+          padding: "8px 16px 0",
+          justifyContent: "center",
+        },
+        title: { flex: "0 0 auto", lineHeight: 1 },
+        body: {
+          padding: "8px 16px",
+          paddingBottom:
+            "calc(var(--mantine-spacing-sm) + env(safe-area-inset-bottom))",
+        },
+      }}
+      data-testid="user-sheet"
+    >
+      <Stack gap="xs">
+        <Group wrap="nowrap" gap="sm" py={4}>
           <Avatar
             src={user.profile ? `/api${user.profile}` : undefined}
             radius="xl"
-            size="lg"
+            size={44}
             color="colorPalette"
           >
             {iniciales(user) || "U"}
@@ -81,36 +112,26 @@ const UserSheet = ({ opened, onClose }) => {
             </Text>
           </Stack>
         </Group>
-      }
-      styles={{
-        title: { flex: 1, minWidth: 0 },
-        content: { maxHeight: "85dvh" },
-        body: {
-          paddingBottom:
-            "calc(var(--mantine-spacing-md) + env(safe-area-inset-bottom))",
-        },
-      }}
-      data-testid="user-sheet"
-    >
-      <Stack gap="xs">
+
         {!sinEmpresa && (
           <NavLink
             component={Link}
             to={`/usuarios/${user.id}`}
             label="Mi perfil"
             mih={ROW_MIN_HEIGHT}
+            px={4}
             leftSection={<IconUser size={18} />}
+            rightSection={<IconChevronRight size={16} />}
             onClick={onClose}
           />
         )}
 
-        <Stack gap={4} px="md" py="xs">
+        <Stack gap={4}>
           <Text size="xs" fw={700} tt="uppercase" c="dimmed">
             Apariencia
           </Text>
           <SegmentedControl
             fullWidth
-            size="md"
             aria-label="Apariencia"
             value={colorScheme}
             onChange={setColorScheme}
@@ -118,12 +139,11 @@ const UserSheet = ({ opened, onClose }) => {
           />
         </Stack>
 
-        <Divider />
-
         <NavLink
           color="red"
           label="Cerrar sesión"
           mih={ROW_MIN_HEIGHT}
+          px={4}
           onClick={handleLogout}
           leftSection={<IconLogout size={18} />}
         />

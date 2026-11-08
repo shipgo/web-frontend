@@ -102,6 +102,22 @@ describe("Layout — cajón de navegación mobile", () => {
     expect(within(navbar).queryByText(/modo oscuro/i)).not.toBeInTheDocument();
   });
 
+  it("el usuario queda fijo abajo del cajón y su toque abre la hoja (cerrando el cajón)", async () => {
+    const user = userEvent.setup();
+    renderLayout();
+    await user.click(burger());
+
+    const navbar = document.getElementById("app-navbar");
+    const fila = within(navbar).getByTestId("drawer-user-row");
+    expect(within(fila).getByText("Ada Lovelace")).toBeInTheDocument();
+    expect(within(fila).getByText("Superusuario")).toBeInTheDocument();
+
+    await user.click(fila);
+
+    expect(await screen.findByRole("dialog", { name: /opciones de usuario/i })).toBeInTheDocument();
+    expect(burger()).toHaveAttribute("aria-expanded", "false");
+  });
+
   describe("hoja del usuario (avatar del header)", () => {
     const avatar = () => screen.getByRole("button", { name: /abrir opciones de usuario/i });
 
@@ -192,6 +208,12 @@ describe("Layout — escritorio", () => {
 
   afterEach(() => {
     window.matchMedia = originalMatchMedia;
+  });
+
+  it("en escritorio el cajón no trae la fila fija del usuario (está el menú del avatar)", () => {
+    renderLayout();
+
+    expect(screen.queryByTestId("drawer-user-row")).not.toBeInTheDocument();
   });
 
   it("el navbar no se marca como oculto ni incluye el selector de sucursal", () => {
