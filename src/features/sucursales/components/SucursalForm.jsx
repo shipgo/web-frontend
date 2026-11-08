@@ -208,7 +208,7 @@ const SucursalForm = ({
               />
 
               <Grid>
-                <Grid.Col span={{ base: 4, sm: 6 }}>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                 <TextInput
                   size={size}
                   label="Prefijo"
@@ -219,7 +219,7 @@ const SucursalForm = ({
                 />
                 </Grid.Col>
 
-                <Grid.Col span={{ base: 8, sm: 6 }}>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                 <TextInput
                   size={size}
                   label="Teléfono"

@@ -15,6 +15,8 @@ import {
 } from "@mantine/core";
 import { IconCheck, IconLock, IconX } from "@tabler/icons-react";
 
+import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { applyApiError, getRateLimitMessage } from "@domain/apiError";
 import { PASSWORD_MIN } from "@domain/validation";
 import { useAuthStore } from "@stores/auth.store";
@@ -69,6 +71,8 @@ const INITIAL_VALUES = {
 const CambiarPasswordCard = () => {
   const changePassword = useAuthStore((state) => state.changePassword);
   const [loading, setLoading] = useState(false);
+  const size = useFieldSize();
+  const isMobile = useIsMobile();
 
   const form = useForm({
     initialValues: INITIAL_VALUES,
@@ -127,6 +131,7 @@ const CambiarPasswordCard = () => {
 
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
           <PasswordInput
+            size={size}
             {...form.getInputProps("oldPassword")}
             key={form.key("oldPassword")}
             label="Contraseña actual"
@@ -134,6 +139,7 @@ const CambiarPasswordCard = () => {
             disabled={loading}
           />
           <PasswordInput
+            size={size}
             {...form.getInputProps("newPassword")}
             key={form.key("newPassword")}
             label="Nueva contraseña"
@@ -141,6 +147,7 @@ const CambiarPasswordCard = () => {
             disabled={loading}
           />
           <PasswordInput
+            size={size}
             {...form.getInputProps("confirmPassword")}
             key={form.key("confirmPassword")}
             label="Repetí la contraseña"
@@ -150,7 +157,7 @@ const CambiarPasswordCard = () => {
         </SimpleGrid>
 
         <Group justify="flex-end">
-          <Button type="submit" loading={loading}>
+          <Button type="submit" size={size} fullWidth={isMobile} loading={loading}>
             Cambiar contraseña
           </Button>
         </Group>

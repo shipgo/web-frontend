@@ -12,6 +12,7 @@ import { IconSearch } from "@tabler/icons-react";
 
 import ScreenContainer from "@components/ScreenContainer";
 import { useFieldSize } from "@components/useFieldSize";
+import { useIsMobile } from "@hooks/useIsMobile";
 import SelectableItemList from "@components/SelectableItemList";
 
 import { useAuth } from "@contexts/auth";
@@ -30,6 +31,7 @@ const filterChoferes = (choferes, search) =>
 
 const ListadoChoferes = () => {
   const fieldSize = useFieldSize();
+  const isMobile = useIsMobile();
   const [searchValue, setSearchValue] = useState("");
 
   const {
@@ -82,7 +84,7 @@ const ListadoChoferes = () => {
   };
 
   return (
-    <Card flex={1} h="500" padding="none" shadow="none" withBorder>
+    <Card flex={isMobile ? "none" : 1} h="500" padding="none" shadow="none" withBorder>
       <Card.Section withBorder p="md">
         <Group justify="space-between">
           <Title order={5}>Choferes disponibles</Title>
@@ -96,7 +98,7 @@ const ListadoChoferes = () => {
             size={fieldSize}
             flex={1}
             rightSection={<IconSearch size={16} />}
-            placeholder="Buscá por nombre, email o teléfono..."
+            placeholder="Nombre, email o teléfono..."
             onChange={(event) => setSearchValue(event.target.value)}
           />
         </Group>
