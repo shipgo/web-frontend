@@ -1,5 +1,5 @@
 import { Link } from 'wouter';
-import { Anchor, Box, Flex, Group, Image, Stack, Text, Title } from '@mantine/core';
+import { Anchor, Box, Flex, Image, Stack, Text, Title } from '@mantine/core';
 
 import ForcedLightScheme from '@components/ForcedLightScheme';
 
@@ -94,9 +94,9 @@ const AuthShell = ({
               {children}
             </Stack>
             {footer ? (
-              <Group gap="lg" mt="auto" justify={{ base: 'center', sm: 'flex-start' }}>
+              <Flex gap="lg" mt="auto" justify={{ base: 'center', sm: 'flex-start' }}>
                 {footer}
-              </Group>
+              </Flex>
             ) : null}
           </Flex>
           <Box visibleFrom="sm" pos="relative" miw={0} style={{ flex: '1.08 1 0' }}>

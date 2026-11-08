@@ -23,6 +23,9 @@ import { isCaptchaApiError } from '@config/captcha';
 import { registroApi } from '../../api/portal.api';
 import { REGISTRO_SCHEMA, REGISTRO_INITIAL_VALUES } from './constants/schema';
 
+// Ancho del formulario: más ancho que el de acceso (400 px) para que Nombre y Apellido compartan fila.
+const REGISTRO_WIDTH = 460;
+
 /**
  * Registro público de CUSTOMER (`/registro`) → `POST /api/register`.
  * Contrato: `planning/CONTRACTS.md §7` (CONTRACT-007) · backend `SHG-BE-002`.
@@ -30,8 +33,6 @@ import { REGISTRO_SCHEMA, REGISTRO_INITIAL_VALUES } from './constants/schema';
  * No hay auto-login: el backend exige verificar el email antes de poder entrar.
  * Al éxito se muestra una pantalla "revisá tu email".
  */
-const REGISTRO_WIDTH = 460;
-
 const RegistroPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState(null);

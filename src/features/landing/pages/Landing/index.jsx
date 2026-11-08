@@ -18,7 +18,7 @@ import LandingFooter from '../../components/LandingFooter';
  * sesión — con sesión viva, `routes/index.jsx` (`RootRoute`) redirige al home
  * que corresponde al rol antes de montar esta página.
  *
- * Fuerza tema `light` (igual que `LoginPage`/`AuthCardShell`) porque tiene una
+ * Fuerza tema `light` (igual que `LoginPage`/`AuthShell`) porque tiene una
  * foto/hero de marca fija que no fue diseñada para dark mode. Es una vista
  * pública sin autenticación; contrasta con las rutas autenticadas que sí
  * respetan la preferencia del usuario (SHG-FE-061). Rediseñar para dark mode
