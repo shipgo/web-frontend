@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, Drawer, Flex, Group, Stack } from '@mantine/core';
+import { Box, Button, Drawer, Flex, Group, Stack, Text } from '@mantine/core';
 import { IconAdjustmentsHorizontal } from '@tabler/icons-react';
 
 import { useIsMobile } from '@hooks/useIsMobile';
@@ -93,13 +93,33 @@ const FilterSheet = ({
         opened={opened}
         onClose={close}
         position="bottom"
-        size="auto"
-        title={title}
-        radius="md"
+        withCloseButton={false}
+        // Mismo patrón que la hoja del usuario: tirador arriba y título debajo.
+        // El título es también el nombre accesible del diálogo.
+        title={
+          <Stack gap="xs" align="center">
+            <Box aria-hidden w={32} h={4} bg="gray.4" style={{ borderRadius: 2 }} />
+            <Text component="span" fw={700} size="lg" lh={1.2} style={{ alignSelf: 'flex-start' }}>
+              {title}
+            </Text>
+          </Stack>
+        }
         styles={{
-          content: { maxHeight: '85dvh', display: 'flex', flexDirection: 'column' },
-          body: { overflowY: 'auto', paddingBottom: 0 },
+          content: {
+            // Alto del contenido (el `size` de Mantine fija un alto y deja vacío abajo).
+            flex: '0 0 auto',
+            width: '100%',
+            height: 'auto',
+            maxHeight: '85dvh',
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: '18px 18px 0 0',
+          },
+          header: { minHeight: 0, padding: '8px 16px 8px' },
+          title: { flex: 1 },
+          body: { overflowY: 'auto', padding: '4px 16px 0' },
         }}
+        data-testid="filter-sheet"
       >
         <Stack gap="md" pb="md">{children}</Stack>
         <Group
