@@ -9,27 +9,18 @@ import { loginAs } from "../lib/auth.js";
  * propio `BrowserContext`, todos corren aunque alguno falle, tabla de
  * resultados al final + falla la corrida si quedó alguno en rojo.
  *
- * **Datos de seed — drift real detectado (documentado, no se toca `planning/`
- * desde acá; el orquestador actualiza `DEV_ENV.md`):** este backend real
- * lleva encadenadas muchas corridas de e2e de otras tareas (crear-envio,
- * crear-viaje, otro worker QA corriendo en paralelo) sin reset posible (sin
- * Docker en esta máquina, ver `e2e/README.md`). Al momento de escribir este
- * caso, el estado real difiere del documentado en `DEV_ENV.md` §4:
- * - Los códigos de seguimiento del seed son `SEED000001`..`SEED000024`, no
- *   `SHG-DEV-0001`..`SHG-DEV-0024` — se usa el envío id 1 (`SEED000001`) como
- *   equivalente real más cercano al caso 1 de la tarea.
- * - El viaje `en_camino` con track GPS es hoy el id **1** (patente `AA222AA`),
- *   no el id 2 (que está en estado `con_problemas`) — se usa el id 1 para los
- *   casos 2/3. Sólo tiene 2 puntos de historial (no 8): la aserción del caso 2
- *   compara contra el conteo real vía API en el momento de la corrida, no un
- *   número fijo.
- * - No existe ningún viaje en estado `planificado` en este momento (todos los
- *   viajes libres de esta franja fueron consumidos por corridas previas). Se
- *   usa el viaje id **4** (`cancelado`, sin ningún punto GPS ni recorridos
- *   cargados) para el caso 4 — mismo comportamiento bajo prueba (mapa sin
- *   tracking, sin crash), estado real distinto al de la doc.
- * - Ninguno de estos casos toca los viajes id 1/2 de forma destructiva (sólo
- *   lecturas vía API + UI); el caso 3 sí agrega UN punto GPS nuevo al viaje 1
+ * **Datos de seed (verificados contra `backend/dev-seed/generate_data_dev.py`
+ * y `backend/src/main/resources/data-dev.sql`):**
+ * - Códigos de seguimiento: `SEED000001`..`SEED000032` (no `SHG-DEV-…`). El
+ *   caso 1 usa el envío id 1 (`SEED000001`).
+ * - Viaje `en_camino` con track GPS: id **2** (patente `AA333AA`, chofer
+ *   `chofer`, sucursal Centro). Tiene 8 puntos en `ubicacion_viaje` y no está
+ *   `con_problemas`. Lo usan los casos 2 y 3. La aserción del caso 2 compara
+ *   contra el conteo real vía API (`>=`), no contra un número fijo.
+ * - Viaje `planificado` sin GPS: id **4** (sucursal Centro, sin filas en
+ *   `ubicacion_viaje`). Lo usa el caso 4.
+ * - Salvo el caso 3, ninguno de estos casos modifica los viajes 2 o 4 (sólo
+ *   lecturas vía API + UI). El caso 3 agrega UN punto GPS nuevo al viaje 2
  *   posteando como el chofer real asignado (`POST /api/tracking/location`) —
  *   efecto aditivo idéntico a lo que haría el chofer real manejando, nunca
  *   cambia su estado ni cancela/edita nada.
@@ -52,8 +43,8 @@ import { loginAs } from "../lib/auth.js";
  */
 export const name = "detalle-envio-viaje-tracking";
 
-const VIAJE_EN_CAMINO_ID = 1; // patente AA222AA, chofer `chofer` (ver comentario de cabecera)
-const VIAJE_SIN_TRACKING_ID = 4; // cancelado, sin recorridos ni GPS
+const VIAJE_EN_CAMINO_ID = 2; // en_camino, patente AA333AA, chofer `chofer`, Centro (ver comentario de cabecera)
+const VIAJE_SIN_TRACKING_ID = 4; // planificado, sin GPS (ver comentario de cabecera)
 const ENVIO_ID = 1; // SEED000001
 
 const results = [];

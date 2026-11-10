@@ -11,12 +11,13 @@ import { loginAs } from "../lib/auth.js";
  * de qué sub-casos rompieron) si quedó alguno en rojo. Ver README para la
  * convención de `logger`/`loginAs`.
  *
- * Datos de seed relevantes (`planning/DEV_ENV.md` §3-4 / `backend/dev-seed`):
+ * Datos de seed relevantes (`backend/dev-seed/generate_data_dev.py` /
+ * `backend/src/main/resources/data-dev.sql`):
  * - `admin` → sucursal Centro (id 1). `admin2` → sucursal Norte (id 2).
- * - Envíos: sólo el id 23 (`SHG-DEV-0023`) es de la sucursal Norte; el resto
- *   (1..22) son de Centro — permite una aserción de tenant-scoping exacta.
- * - Vehículos `disponible`: Centro tiene `AA111AA`/`AA777AA`; Norte tiene
- *   sólo `AA444AA` (`GET /api/vehiculo/disponibles`, SHG-BE-023).
+ * - Envíos de Norte: ids 23 y 29-32 (códigos `SEED000023`, `SEED000029`..
+ *   `SEED000032`) — permite una aserción de tenant-scoping exacta.
+ * - Vehículos `disponible`: Centro tiene `AA111AA`, `AA777AA` y `AA888MT`;
+ *   Norte tiene `AA444AA` (`GET /api/vehiculo/disponibles`, SHG-BE-023).
  */
 export const name = "login-guardas-tenant";
 
