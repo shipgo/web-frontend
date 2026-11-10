@@ -125,7 +125,7 @@ export async function run({ browser, logger }) {
     try {
       await page.goto(`${config.webBaseUrl}/login`);
       await page.getByLabel("Usuario").fill("admin");
-      await page.getByLabel("Contraseña").fill("Contrasena-Incorrecta-1!");
+      await page.getByLabel("Contraseña", { exact: true }).fill("Contrasena-Incorrecta-1!");
       await page.getByRole("button", { name: "Iniciar sesión" }).click();
 
       await page.getByText(/usuario y\/o contraseña incorrectos/i).waitFor({ timeout: 10_000 });
@@ -149,7 +149,7 @@ export async function run({ browser, logger }) {
     try {
       await page.goto(`${config.webBaseUrl}/login`);
       await page.getByLabel("Usuario").fill("admin@shipgo.dev");
-      await page.getByLabel("Contraseña").fill(config.seedPassword);
+      await page.getByLabel("Contraseña", { exact: true }).fill(config.seedPassword);
 
       const [response] = await Promise.all([
         page.waitForResponse((res) => res.url().includes("/api/login"), { timeout: 10_000 }),
