@@ -22,7 +22,7 @@ export async function loginAs(page, roleKey, { logger, caseName } = {}) {
 
   await page.goto(`${config.webBaseUrl}/login`);
   await page.getByLabel("Usuario").fill(user.username);
-  await page.getByLabel("Contraseña").fill(SEED_PASSWORD);
+  await page.getByLabel("Contraseña", { exact: true }).fill(SEED_PASSWORD);
   if (logger) await logger.step(page, caseName, `login-form-${roleKey}`);
 
   await Promise.all([
