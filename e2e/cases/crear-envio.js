@@ -458,7 +458,7 @@ export async function run({ browser, logger }) {
 
         await page.getByRole("button", { name: "Registrar envío" }).click();
 
-        const toastError = notificacion(page, /error en el servidor/i);
+        const toastError = notificacion(page, /No se pudo crear el envío/i).filter({ hasText: /Algo salió mal/i });
         await toastError.waitFor({ timeout: 10_000 });
         await esperarAnimacion(toastError);
         await logger.step(page, name, "caso4-error-5xx");
