@@ -193,6 +193,16 @@ describe('FilterSheet', () => {
     expect(screen.queryByRole('button', { name: /Filtros/ })).not.toBeInTheDocument();
   });
 
+  it('mobile: al abrir la hoja no enfoca ningún campo (no levanta el teclado)', async () => {
+    mobile.value = true;
+    setup();
+    await userEvent.click(screen.getByRole('button', { name: 'Filtros (2)' }));
+    const campo = await screen.findByLabelText('destino');
+    await new Promise((r) => setTimeout(r, 100));
+    expect(campo).not.toHaveFocus();
+    expect(screen.getByText('Filtros', { selector: 'span' })).toHaveFocus();
+  });
+
   it('mobile abre la hoja, limpia y cierra', async () => {
     mobile.value = true;
     const onClear = vi.fn();

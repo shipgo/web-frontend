@@ -99,7 +99,17 @@ const FilterSheet = ({
         title={
           <Stack gap="xs" align="center">
             <Box aria-hidden w={32} h={4} bg="gray.4" style={{ borderRadius: 2 }} />
-            <Text component="span" fw={700} size="lg" lh={1.2} style={{ alignSelf: 'flex-start' }}>
+            {/* Foco inicial en el título (no tabulable) y no en el primer campo: en mobile
+                enfocar un input al abrir levantaba el teclado sin que nadie lo pidiera. */}
+            <Text
+              component="span"
+              fw={700}
+              size="lg"
+              lh={1.2}
+              tabIndex={-1}
+              data-autofocus
+              style={{ alignSelf: 'flex-start', outline: 'none' }}
+            >
               {title}
             </Text>
           </Stack>
