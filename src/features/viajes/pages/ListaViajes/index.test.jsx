@@ -194,13 +194,20 @@ describe("ListaViajes", () => {
     // (1000ms) en dispararse; 3s da margen sin acoplarse a la duración real
     // de la transición.
     const MENU_ITEM_TIMEOUT = 3000;
+    // `hidden: true` en TODAS las queries de `menuitem`: en jsdom todos los
+    // rects son 0x0, así que el middleware `hide()` de floating-ui (Popover de
+    // Mantine) marca la referencia como oculta y deja el dropdown con
+    // `display: none` inline, de forma intermitente según el timing del
+    // cómputo de posición. Sin esto `getByRole('menuitem')` (que excluye lo
+    // inaccesible) falla al azar. Los ítems siguen montados/ausentes según la
+    // lógica real, así que las aserciones de ausencia siguen siendo válidas.
 
     const abrirMenuDelViaje = async (user, id) => {
       await user.click(await screen.findByRole("button", { name: `Acciones del viaje ${id}` }));
     };
 
     const encontrarMenuItem = (name) =>
-      screen.findByRole("menuitem", { name }, { timeout: MENU_ITEM_TIMEOUT });
+      screen.findByRole("menuitem", { name, hidden: true }, { timeout: MENU_ITEM_TIMEOUT });
 
     it('"Ver hoja de ruta" navega al detalle del viaje', async () => {
       const user = userEvent.setup();
@@ -235,7 +242,7 @@ describe("ListaViajes", () => {
       // Confirma que el menú ya montó vía un ítem que SÍ está en este estado
       // (distinto del que se busca ausente, para no repetir el mismo query).
       expect(await encontrarMenuItem("Cancelar viaje")).toBeInTheDocument();
-      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje", hidden: true })).not.toBeInTheDocument();
     });
 
     it('con_problemas: se puede cancelar desde la fila (PUT /cancelar) pero no editar (SHG-FE-132)', async () => {
@@ -246,7 +253,7 @@ describe("ListaViajes", () => {
       renderWithProviders(<ListaViajes />);
       await abrirMenuDelViaje(user, 42);
 
-      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje", hidden: true })).not.toBeInTheDocument();
       await user.click(await encontrarMenuItem("Cancelar viaje"));
       const dialog = await screen.findByRole("dialog");
       await user.click(within(dialog).getByRole("button", { name: "Cancelar viaje" }));
@@ -262,7 +269,7 @@ describe("ListaViajes", () => {
       await abrirMenuDelViaje(user, 42);
 
       expect(await encontrarMenuItem("Cancelar viaje")).toBeInTheDocument();
-      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje", hidden: true })).not.toBeInTheDocument();
     });
 
     it('"Cancelar viaje" pide confirmación, llama a la API real y refresca el listado', async () => {
@@ -344,8 +351,8 @@ describe("ListaViajes", () => {
 
       // En en_camino ya no es cancelable ni editable: no debería quedar
       // ninguna acción sin sentido (ver ESTADOS_CANCELABLES/VIAJE_ESTADOS_EDITABLES).
-      expect(screen.queryByRole("menuitem", { name: "Editar viaje" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("menuitem", { name: "Cancelar viaje" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Editar viaje", hidden: true })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Cancelar viaje", hidden: true })).not.toBeInTheDocument();
 
       await user.click(monitorear);
 
@@ -374,7 +381,7 @@ describe("ListaViajes", () => {
       // Confirma apertura vía "Ver hoja de ruta" (siempre presente) antes de
       // afirmar la ausencia de "Ver en el mapa".
       expect(await encontrarMenuItem("Ver hoja de ruta")).toBeInTheDocument();
-      expect(screen.queryByRole("menuitem", { name: "Ver en el mapa" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Ver en el mapa", hidden: true })).not.toBeInTheDocument();
     });
 
     it('no quedan las acciones muertas "Reportar incidente" ni "Desvincular chofer" en ningún estado', async () => {
@@ -386,8 +393,8 @@ describe("ListaViajes", () => {
       await abrirMenuDelViaje(user, 42);
 
       expect(await encontrarMenuItem("Ver hoja de ruta")).toBeInTheDocument();
-      expect(screen.queryByRole("menuitem", { name: "Reportar incidente" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("menuitem", { name: "Desvincular chofer" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Reportar incidente", hidden: true })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: "Desvincular chofer", hidden: true })).not.toBeInTheDocument();
     });
   });
 
@@ -412,7 +419,7 @@ describe("ListaViajes", () => {
       expect(await screen.findByText("2 viajes seleccionados")).toBeInTheDocument();
 
       await user.click(screen.getByRole("button", { name: "Acciones" }));
-      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados", hidden: true }));
 
       const dialog = await screen.findByRole("dialog");
       // SHG-FE-106: informa qué no se va a eliminar antes de confirmar.
@@ -444,7 +451,7 @@ describe("ListaViajes", () => {
 
       await user.click(await screen.findByLabelText("Seleccionar viaje 44"));
       await user.click(screen.getByRole("button", { name: "Acciones" }));
-      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados", hidden: true }));
 
       const dialog = await screen.findByRole("dialog");
       expect(within(dialog).getByText(/viaje #44: no se puede eliminar porque está Con problemas/)).toBeInTheDocument();
@@ -464,7 +471,7 @@ describe("ListaViajes", () => {
 
       await user.click(await screen.findByLabelText("Seleccionar viaje 43"));
       await user.click(screen.getByRole("button", { name: "Acciones" }));
-      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Eliminar seleccionados", hidden: true }));
 
       const dialog = await screen.findByRole("dialog");
       expect(within(dialog).getByText(/viaje #43: no se puede eliminar porque está En camino/)).toBeInTheDocument();

@@ -187,7 +187,7 @@ describe('ListaEnvios', () => {
 
     const table = screen.getByRole('table');
     await user.click(within(table).getByRole('button'));
-    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar', hidden: true }));
     await user.click(await screen.findByRole('button', { name: 'Eliminar' }));
 
     expect(await screen.findByText('No se puede eliminar')).toBeInTheDocument();
@@ -310,7 +310,7 @@ describe('ListaEnvios', () => {
       renderWithProviders(<ListaEnvios />);
       await user.click(await screen.findByRole('button', { name: 'Acciones de SHG-DEV-0001' }));
 
-      await user.click(await screen.findByRole('menuitem', { name: 'Imprimir etiqueta' }, { timeout: 3000 }));
+      await user.click(await screen.findByRole('menuitem', { name: 'Imprimir etiqueta', hidden: true }, { timeout: 3000 }));
 
       await waitFor(() => expect(window.location.pathname).toBe(`/envios/${ENVIO_EN_SUCURSAL.id}/etiqueta`));
     });
@@ -324,7 +324,7 @@ describe('ListaEnvios', () => {
       const user = userEvent.setup();
       renderWithProviders(<ListaEnvios />);
       await user.click(await screen.findByRole('button', { name: /^Acciones de/ }));
-      const item = await screen.findByRole('menuitem', { name: 'Imprimir etiqueta' }, { timeout: 3000 });
+      const item = await screen.findByRole('menuitem', { name: 'Imprimir etiqueta', hidden: true }, { timeout: 3000 });
       expect(item).toHaveAttribute('data-disabled');
     });
   });
@@ -344,7 +344,7 @@ describe('ListaEnvios', () => {
       renderWithProviders(<ListaEnvios />);
       await user.click(await screen.findByRole('button', { name: 'Acciones de SHG-DEV-0001' }));
 
-      const editar = await screen.findByRole('menuitem', { name: 'Editar' }, { timeout: 3000 });
+      const editar = await screen.findByRole('menuitem', { name: 'Editar', hidden: true }, { timeout: 3000 });
       if (deshabilitado) expect(editar).toHaveAttribute('data-disabled');
       else expect(editar).not.toHaveAttribute('data-disabled');
     });
@@ -356,13 +356,20 @@ describe('ListaEnvios', () => {
     // carga (suite corriendo en paralelo) puede tardar más que el default de
     // `findByRole` (1000ms).
     const MENU_ITEM_TIMEOUT = 3000;
+    // `hidden: true` en TODAS las queries de `menuitem`: en jsdom todos los
+    // rects son 0x0, así que el middleware `hide()` de floating-ui (Popover de
+    // Mantine) marca la referencia como oculta y deja el dropdown con
+    // `display: none` inline, de forma intermitente según el timing del
+    // cómputo de posición. Sin esto `getByRole('menuitem')` (que excluye lo
+    // inaccesible) falla al azar. Los ítems siguen montados/ausentes según la
+    // lógica real, así que las aserciones de ausencia siguen siendo válidas.
 
     const abrirMenuDelEnvio = async (user, codigoSeguimiento) => {
       await user.click(await screen.findByRole('button', { name: `Acciones de ${codigoSeguimiento}` }));
     };
 
     const encontrarMenuItem = (name) =>
-      screen.findByRole('menuitem', { name }, { timeout: MENU_ITEM_TIMEOUT });
+      screen.findByRole('menuitem', { name, hidden: true }, { timeout: MENU_ITEM_TIMEOUT });
 
     it('navega a /mapa?viaje=:id cuando el envío tiene un viaje en_camino', async () => {
       const envioConViajeEnCamino = {
@@ -452,7 +459,7 @@ describe('ListaEnvios', () => {
 
     const table = screen.getByRole('table');
     await user.click(within(table).getByRole('button'));
-    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar', hidden: true }));
     await user.click(await screen.findByRole('button', { name: 'Eliminar' }));
 
     await waitFor(() => expect(envioApi.delete).toHaveBeenCalledWith(1));
@@ -491,7 +498,7 @@ describe('ListaEnvios', () => {
       await user.click(await screen.findByLabelText('Seleccionar envío SHG-DEV-0001'));
 
       await user.click(screen.getByRole('button', { name: 'Acciones' }));
-      await user.click(await screen.findByRole('menuitem', { name: 'Exportar seleccionados' }));
+      await user.click(await screen.findByRole('menuitem', { name: 'Exportar seleccionados', hidden: true }));
 
       expect(createObjectURL).toHaveBeenCalledTimes(1);
       const blob = createObjectURL.mock.calls[0][0];
@@ -528,7 +535,7 @@ describe('ListaEnvios', () => {
       expect(await screen.findByText('2 envíos seleccionados')).toBeInTheDocument();
 
       await user.click(screen.getByRole('button', { name: 'Acciones' }));
-      await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados' }));
+      await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados', hidden: true }));
 
       const dialog = await screen.findByRole('dialog');
       expect(within(dialog).getByText(/eliminar 2 envíos/)).toBeInTheDocument();
@@ -569,7 +576,7 @@ describe('ListaEnvios', () => {
 
       await user.click(await screen.findByLabelText('Seleccionar envío SHG-DEV-0001'));
       await user.click(screen.getByRole('button', { name: 'Acciones' }));
-      await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados' }));
+      await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados', hidden: true }));
 
       const dialog = await screen.findByRole('dialog');
       const confirmBtn = within(dialog).getByRole('button', { name: 'Eliminar' });
