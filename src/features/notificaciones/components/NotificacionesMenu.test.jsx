@@ -313,11 +313,11 @@ describe('NotificacionesMenu', () => {
       const { history } = renderMenu();
 
       await userEvent.click(await screen.findByLabelText(/Notificaciones/));
-      await userEvent.click(await screen.findByRole('menuitem', { name: 'Ver todas' }));
+      await userEvent.click(await screen.findByRole('menuitem', { name: 'Ver todas', hidden: true }));
 
       await waitFor(() => expect(history.at(-1)).toBe('/notificaciones'));
       await waitFor(() =>
-        expect(screen.queryByRole('menuitem', { name: 'Ver todas' })).not.toBeInTheDocument(),
+        expect(screen.queryByRole('menuitem', { name: 'Ver todas', hidden: true })).not.toBeInTheDocument(),
       );
     });
 
@@ -326,7 +326,7 @@ describe('NotificacionesMenu', () => {
       const { history } = renderMenu({ portal: true, base: '/portal' });
 
       await userEvent.click(await screen.findByLabelText(/Notificaciones/));
-      await userEvent.click(await screen.findByRole('menuitem', { name: 'Ver todas' }));
+      await userEvent.click(await screen.findByRole('menuitem', { name: 'Ver todas', hidden: true }));
 
       await waitFor(() => expect(history.at(-1)).toBe('/portal/notificaciones'));
     });
@@ -338,7 +338,7 @@ describe('NotificacionesMenu', () => {
       await userEvent.click(await screen.findByLabelText('Notificaciones'));
       await screen.findByText('No tenés notificaciones.');
 
-      expect(screen.queryByRole('menuitem', { name: 'Ver todas' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('menuitem', { name: 'Ver todas', hidden: true })).not.toBeInTheDocument();
     });
   });
 

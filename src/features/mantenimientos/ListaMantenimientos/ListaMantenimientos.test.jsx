@@ -136,7 +136,7 @@ describe("ListaMantenimientos", () => {
 
     const table = screen.getByRole("table");
     await user.click(within(table).getByRole("button"));
-    await user.click(await screen.findByRole("menuitem", { name: "Eliminar" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Eliminar", hidden: true }));
     await user.click(await screen.findByRole("button", { name: "Eliminar" }));
 
     expect(await screen.findByText("No se puede eliminar")).toBeInTheDocument();

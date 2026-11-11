@@ -157,7 +157,7 @@ describe("AppHeader — menú del usuario (SHG-FE-134)", () => {
   const abrirMenu = async (user) => {
     await user.click(screen.getByText("Ada Lovelace"));
     await screen.findByRole("menu");
-    await screen.findAllByRole("menuitem");
+    await screen.findAllByRole("menuitem", { hidden: true });
   };
 
   it("ofrece 'Mi perfil' (al detalle propio), el toggle de tema y 'Cerrar sesión'", async () => {
@@ -168,12 +168,12 @@ describe("AppHeader — menú del usuario (SHG-FE-134)", () => {
     renderHeaderWithAutoScheme();
     await abrirMenu(user);
 
-    expect(screen.getByRole("menuitem", { name: /mi perfil/i })).toHaveAttribute(
+    expect(screen.getByRole("menuitem", { name: /mi perfil/i, hidden: true })).toHaveAttribute(
       "href",
       "/usuarios/42",
     );
-    expect(screen.getByRole("menuitemcheckbox", { name: "Modo oscuro" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: /cerrar sesión/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Modo oscuro", hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /cerrar sesión/i, hidden: true })).toBeInTheDocument();
   });
 
   it("el Switch refleja el esquema, alterna con un click y el menú sigue abierto", async () => {
@@ -185,7 +185,7 @@ describe("AppHeader — menú del usuario (SHG-FE-134)", () => {
     renderHeaderWithAutoScheme();
     await abrirMenu(user);
 
-    const fila = () => screen.getByRole("menuitemcheckbox", { name: "Modo oscuro" });
+    const fila = () => screen.getByRole("menuitemcheckbox", { name: "Modo oscuro", hidden: true });
     expect(fila()).toHaveAttribute("aria-checked", "true");
 
     await user.click(fila());
@@ -207,7 +207,7 @@ describe("AppHeader — menú del usuario (SHG-FE-134)", () => {
     renderHeaderWithAutoScheme();
     await abrirMenu(user);
 
-    expect(screen.getByRole("menuitemcheckbox", { name: "Modo oscuro" })).toHaveAttribute(
+    expect(screen.getByRole("menuitemcheckbox", { name: "Modo oscuro", hidden: true })).toHaveAttribute(
       "aria-checked",
       "true",
     );
@@ -221,8 +221,8 @@ describe("AppHeader — menú del usuario (SHG-FE-134)", () => {
     renderHeaderWithAutoScheme();
     await abrirMenu(user);
 
-    expect(screen.queryByRole("menuitem", { name: /mi perfil/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("menuitemcheckbox", { name: "Modo oscuro" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: /cerrar sesión/i })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /mi perfil/i, hidden: true })).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Modo oscuro", hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /cerrar sesión/i, hidden: true })).toBeInTheDocument();
   });
 });

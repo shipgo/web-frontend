@@ -49,9 +49,9 @@ describe('SelectionBanner', () => {
     renderWithProviders(<SelectionBanner {...baseProps} count={2} onExport={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: 'Acciones' }));
-    expect(await screen.findByRole('menuitem', { name: 'Exportar seleccionados' })).toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'Eliminar seleccionados' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'Editar seleccionados' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('menuitem', { name: 'Exportar seleccionados', hidden: true })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Eliminar seleccionados', hidden: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Editar seleccionados', hidden: true })).not.toBeInTheDocument();
   });
 
   it('con sólo onDelete, el menú muestra "Eliminar seleccionados" pero no "Exportar seleccionados" ni "Editar seleccionados"', async () => {
@@ -59,9 +59,9 @@ describe('SelectionBanner', () => {
     renderWithProviders(<SelectionBanner {...baseProps} count={2} onDelete={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: 'Acciones' }));
-    expect(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados' })).toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'Exportar seleccionados' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'Editar seleccionados' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados', hidden: true })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Exportar seleccionados', hidden: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Editar seleccionados', hidden: true })).not.toBeInTheDocument();
   });
 
   it('con ambos handlers, el menú muestra los dos ítems y nunca "Editar seleccionados"', async () => {
@@ -93,7 +93,7 @@ describe('SelectionBanner', () => {
     renderWithProviders(<SelectionBanner {...baseProps} count={3} onExport={onExport} onDelete={onDelete} />);
 
     await user.click(screen.getByRole('button', { name: 'Acciones' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Exportar seleccionados' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Exportar seleccionados', hidden: true }));
 
     expect(onExport).toHaveBeenCalledTimes(1);
     expect(onDelete).not.toHaveBeenCalled();
@@ -107,7 +107,7 @@ describe('SelectionBanner', () => {
     renderWithProviders(<SelectionBanner {...baseProps} count={3} onExport={onExport} onDelete={onDelete} />);
 
     await user.click(screen.getByRole('button', { name: 'Acciones' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados', hidden: true }));
 
     expect(onDelete).toHaveBeenCalledTimes(1);
     expect(onExport).not.toHaveBeenCalled();

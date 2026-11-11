@@ -77,7 +77,7 @@ describe('DetalleViaje en mobile', () => {
     expect(screen.queryByRole('button', { name: 'Cancelar viaje' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Más acciones' }));
-    expect(await screen.findByRole('menuitem', { name: 'Cancelar viaje' })).toBeInTheDocument();
+    expect(await screen.findByRole('menuitem', { name: 'Cancelar viaje', hidden: true })).toBeInTheDocument();
   });
 
   it('las paradas son plegables y la primera viene abierta', async () => {

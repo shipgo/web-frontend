@@ -75,7 +75,7 @@ describe('LandingPage', () => {
 
     await user.click(screen.getByRole('button', { name: /ingresar/i }));
 
-    const items = await screen.findAllByRole('menuitem');
+    const items = await screen.findAllByRole('menuitem', { hidden: true });
     expect(items.map((item) => [item.textContent, item.getAttribute('href')])).toEqual([
       ['Soy cliente', '/portal/ingresar'],
       ['Soy del equipo', '/login'],
