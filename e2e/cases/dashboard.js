@@ -100,6 +100,13 @@ async function fetchResumen(requestCtx, { desde, hasta, sucursalId } = {}) {
 }
 
 /** Card de una KpiCard/ChartCard por su título visible (ambas son `.mantine-Card-root`). */
+// El header (`OperatingSucursalSelector`) también tiene un input con el placeholder
+// "Todas las sucursales"; el selector que afirma este spec es el del filtro del
+// Dashboard, dentro de `<main>` (`AppShell.Main`) — sin acotar, Playwright (strict
+// mode) ve 2 matches.
+const selectorSucursalDashboard = (page) =>
+  page.locator("main").getByPlaceholder("Todas las sucursales");
+
 const cardPorTitulo = (page, titulo) =>
   page.locator(".mantine-Card-root").filter({ hasText: titulo });
 
@@ -215,7 +222,7 @@ export async function run({ browser, logger }) {
       await irADashboard(page);
 
       // Selector de sucursal visible (SUPERUSER-only, `DashboardFiltros.jsx`).
-      await page.getByPlaceholder("Todas las sucursales").waitFor({ timeout: 10_000 });
+      await selectorSucursalDashboard(page).waitFor({ timeout: 10_000 });
 
       const [totalResp] = await Promise.all([
         page.waitForResponse(
@@ -274,7 +281,7 @@ export async function run({ browser, logger }) {
       await irADashboard(page);
 
       // ADMIN no ve el selector de sucursal (sólo SUPERUSER elige, `CONTRACTS.md §3`).
-      const selectorSucursal = await page.getByPlaceholder("Todas las sucursales").count();
+      const selectorSucursal = await selectorSucursalDashboard(page).count();
       if (selectorSucursal > 0) {
         throw new Error("admin2 (ADMIN) no debería ver el selector de sucursal del dashboard");
       }

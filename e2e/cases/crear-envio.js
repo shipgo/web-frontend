@@ -337,7 +337,10 @@ export async function run({ browser, logger }) {
         const erroresEsperados = [
           "Ingresá el nombre.",
           "Ingresá el apellido.",
-          "Ingresá un email válido.",
+          // Campos vacíos: el schema (`emailRequerido`) da un mensaje por campo
+          // ("válido" queda para el formato malformado, caso 3).
+          "Ingresá el email del remitente.",
+          "Ingresá el email del destinatario.",
           "Ingresá el prefijo.",
           "Ingresá el teléfono.",
           "Ingresá la calle.",
