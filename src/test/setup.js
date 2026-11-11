@@ -32,3 +32,13 @@ if (typeof window !== "undefined" && !window.matchMedia) {
     dispatchEvent: () => false,
   });
 }
+
+// Convención para tests que consultan ítems de un `Menu`/`RowActionsMenu`
+// (Mantine): usar `hidden: true` en `getByRole/findByRole/queryByRole` de
+// `menuitem`. En jsdom todos los rects son 0x0, así que el middleware `hide()`
+// de floating-ui (Popover de Mantine) marca la referencia como oculta y deja
+// el dropdown con `display: none` inline, de forma intermitente según el
+// timing del cómputo de posición. Los roles inaccesibles quedan excluidos por
+// defecto y `menuitem` falla al azar ("Unable to find role=menuitem"). Con
+// `hidden: true` los ítems se encuentran según lo que está montado, y las
+// aserciones de ausencia siguen siendo válidas (el ítem no está en el DOM).

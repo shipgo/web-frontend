@@ -356,13 +356,6 @@ describe('ListaEnvios', () => {
     // carga (suite corriendo en paralelo) puede tardar más que el default de
     // `findByRole` (1000ms).
     const MENU_ITEM_TIMEOUT = 3000;
-    // `hidden: true` en TODAS las queries de `menuitem`: en jsdom todos los
-    // rects son 0x0, así que el middleware `hide()` de floating-ui (Popover de
-    // Mantine) marca la referencia como oculta y deja el dropdown con
-    // `display: none` inline, de forma intermitente según el timing del
-    // cómputo de posición. Sin esto `getByRole('menuitem')` (que excluye lo
-    // inaccesible) falla al azar. Los ítems siguen montados/ausentes según la
-    // lógica real, así que las aserciones de ausencia siguen siendo válidas.
 
     const abrirMenuDelEnvio = async (user, codigoSeguimiento) => {
       await user.click(await screen.findByRole('button', { name: `Acciones de ${codigoSeguimiento}` }));

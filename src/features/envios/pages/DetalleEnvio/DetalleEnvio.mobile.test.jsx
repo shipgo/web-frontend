@@ -61,7 +61,7 @@ describe('DetalleEnvio en mobile', () => {
     expect(barra).toHaveTextContent('Entregar');
 
     await user.click(screen.getByRole('button', { name: 'Más acciones' }));
-    expect(await screen.findByRole('menuitem', { name: /Registrar entrega fallida/ })).toBeInTheDocument();
+    expect(await screen.findByRole('menuitem', { name: /Registrar entrega fallida/, hidden: true })).toBeInTheDocument();
   });
 
   it('las secciones son un acordeón con la primera abierta', async () => {

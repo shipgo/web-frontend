@@ -86,7 +86,7 @@ describe("ListaVehiculosTabla", () => {
 
     await user.click(screen.getByRole("button", { name: /acciones de ab123cd/i }));
 
-    expect(screen.queryByRole("menuitem", { name: "Asignar chofer" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Asignar chofer", hidden: true })).not.toBeInTheDocument();
   });
 
   it('"Historial de mantenimiento" navega a /mantenimientos filtrado por patente', async () => {
@@ -94,7 +94,7 @@ describe("ListaVehiculosTabla", () => {
     renderTabla();
 
     await user.click(screen.getByRole("button", { name: /acciones de ab123cd/i }));
-    await user.click(await screen.findByRole("menuitem", { name: "Historial de mantenimiento" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Historial de mantenimiento", hidden: true }));
 
     expect(mockNavigate).toHaveBeenCalledWith("~/mantenimientos?patente=AB123CD");
   });

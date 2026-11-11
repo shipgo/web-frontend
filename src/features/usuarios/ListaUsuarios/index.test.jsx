@@ -75,7 +75,7 @@ describe('ListaUsuarios — la selección masiva nunca incluye al propio usuario
     expect(await screen.findByText('1 usuario seleccionado')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Acciones' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados', hidden: true }));
 
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/eliminar 1 usuario/)).toBeInTheDocument();
@@ -142,7 +142,7 @@ describe('ListaUsuarios — la selección masiva nunca incluye al propio usuario
     useAuthStore.setState({ user: { id: 2, username: 'otra', authorities: ['ROLE_SUPERUSER'] } });
 
     await user.click(screen.getByRole('button', { name: 'Acciones' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Eliminar seleccionados', hidden: true }));
 
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/eliminar 1 usuario/)).toBeInTheDocument();
