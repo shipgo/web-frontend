@@ -187,7 +187,10 @@ function esperarResponseSinParams(page, urlIncludes, keysAusentes, { timeout = 1
  * como en algunos tests unitarios de jsdom — y el dropdown se cierra solo
  * tras cada pick, así que hay que reabrirlo antes de cada selección/deselección). */
 async function seleccionarOpcionEstado(page, comboboxLabel, optionLabel) {
-  await page.getByRole("combobox", { name: comboboxLabel }).click();
+  // El MultiSelect de Mantine queda ABIERTO tras elegir una opción: un segundo click
+  // en el combobox lo CIERRA y las opciones desaparecen. Se abre sólo si está cerrado.
+  const combobox = page.getByRole("combobox", { name: comboboxLabel });
+  if ((await combobox.getAttribute("aria-expanded")) !== "true") await combobox.click();
   const option = page.getByRole("option", { name: optionLabel, exact: true });
   await option.waitFor({ timeout: 10_000 });
   await option.click();
@@ -233,6 +236,7 @@ const ESTADO_VIAJE_LABELS = {
   creado: "Creado",
   planificado: "Planificado",
   en_proceso_de_carga: "En carga",
+  listo_para_viaje: "Listo para salir",
   en_camino: "En camino",
   finalizado: "Finalizado",
   cancelado: "Cancelado",
@@ -418,7 +422,7 @@ export async function run({ browser, logger }) {
 
       await page.getByText("Sin resultados").waitFor({ timeout: 10_000 });
       await page
-        .getByText("No se encontraron envíos con los filtros aplicados")
+        .getByText("Ningún envío coincide con los filtros.")
         .waitFor({ timeout: 5_000 });
       const limpiarBtn = page.getByRole("button", { name: "Limpiar filtros" });
       await limpiarBtn.waitFor({ timeout: 5_000 });

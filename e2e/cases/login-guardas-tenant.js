@@ -74,7 +74,7 @@ export async function run({ browser, logger }) {
   });
 
   // ── 2. super / Shipgo123! -> panel, alcance total ────────────────────────
-  await record(2, "Login super -> panel, alcance total", async () => {
+  await record(2, "Login super -> panel, alcance total (empresa, todas las sucursales)", async () => {
     const context = await browser.newContext();
     const page = await context.newPage();
     logger.attachPage(page, name);
@@ -90,8 +90,23 @@ export async function run({ browser, logger }) {
       if (!roles.some((r) => /SUPERUSER/i.test(r))) {
         throw new Error(`whoami de super no trae ROLE_SUPERUSER (vino: ${JSON.stringify(roles)})`);
       }
-      if (body?.sucursal) {
-        throw new Error(`super debería tener alcance total (sin sucursal fija), vino: ${JSON.stringify(body.sucursal)}`);
+      // SHG-BE-078/095: `super` pertenece a la empresa demo y tiene una sucursal "base"
+      // (Centro, DEV_ENV.md §3), pero su alcance es la EMPRESA entera: ve datos de
+      // todas las sucursales. Se afirma el alcance real (envíos de >=2 sucursales
+      // distintas en `/api/envio`), no la ausencia de `sucursal` en whoami.
+      if (!body?.sucursal?.empresa?.id) {
+        throw new Error(`super debería pertenecer a una empresa (alcance de empresa), vino: ${JSON.stringify(body?.sucursal)}`);
+      }
+      const enviosResp = await context.request.get(`${config.backendBaseUrl}/api/envio`, {
+        params: { size: 200 },
+      });
+      if (!enviosResp.ok()) throw new Error(`GET /api/envio como super -> ${enviosResp.status()}`);
+      const envios = (await enviosResp.json())?.content ?? [];
+      const sucursalIds = new Set(envios.map((e) => e?.sucursal?.id).filter((id) => id != null));
+      if (sucursalIds.size < 2) {
+        throw new Error(
+          `super debería ver envíos de todas las sucursales de su empresa (>=2 sucursales), vio: ${JSON.stringify([...sucursalIds])}`,
+        );
       }
       await logger.step(page, name, "caso2-super-panel-alcance-total");
     } finally {
