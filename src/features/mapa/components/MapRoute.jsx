@@ -98,9 +98,14 @@ const MapRoute = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route, map, selectedViajeId]);
 
-  if (!selectedViaje) return null;
+  const ubicacionActual = selectedViaje?.currentLocation;
+  const historialGeoJson = useMemo(() => {
+    const trazo = trazoConUbicacion(historial, ubicacionActual);
+    if (trazo.length < 2) return null;
+    return { type: 'Feature', geometry: { type: 'LineString', coordinates: trazo } };
+  }, [historial, ubicacionActual]);
 
-  const trazoHistorial = trazoConUbicacion(historial, selectedViaje.currentLocation);
+  if (!selectedViaje) return null;
 
   const estadoVisual = getEstadoVisualViaje(selectedViaje, selectedViaje.ultimaActualizacion);
   const truckPos = route ? route.waypoints[paradasEntregadas] : selectedViaje.currentLocation;
@@ -201,22 +206,6 @@ const MapRoute = () => {
         </Popup>
       )}
 
-      {trazoHistorial.length >= 2 && (
-        <Source
-          key={`historial-${selectedViajeId}`}
-          id={`historial-${selectedViajeId}`}
-          type="geojson"
-          data={{ type: 'Feature', geometry: { type: 'LineString', coordinates: trazoHistorial } }}
-        >
-          <Layer
-            id={`historial-line-${selectedViajeId}`}
-            type="line"
-            layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-            paint={{ 'line-width': 4, 'line-color': HISTORIAL_COLOR, 'line-opacity': 0.9 }}
-          />
-        </Source>
-      )}
-
       {route && (
         <Source type="geojson" data={route.geometry} lineMetrics={true}>
           <Layer
@@ -244,6 +233,25 @@ const MapRoute = () => {
             paint={{
               'text-color': '#ef4444',
             }}
+          />
+        </Source>
+      )}
+      {/* Declarado DESPUÉS de la ruta: el Layer "route" ya está montado cuando el
+          historial lo referencia con `beforeId`; si la ruta llega después, queda
+          encima por orden de montaje. En ambos casos el historial queda debajo. */}
+      {historialGeoJson && (
+        <Source
+          key={`historial-${selectedViajeId}`}
+          id={`historial-${selectedViajeId}`}
+          type="geojson"
+          data={historialGeoJson}
+        >
+          <Layer
+            id={`historial-line-${selectedViajeId}`}
+            beforeId={route ? 'route' : undefined}
+            type="line"
+            layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+            paint={{ 'line-width': 4, 'line-color': HISTORIAL_COLOR, 'line-opacity': 0.9 }}
           />
         </Source>
       )}

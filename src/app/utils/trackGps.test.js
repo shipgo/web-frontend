@@ -13,6 +13,9 @@ describe('puntosDeHistorial', () => {
     const r = puntosDeHistorial([p(1, null, 1), p(2, NaN, 1), p(3, 1, undefined), p(4, 1, 2)]);
     expect(r).toEqual([{ lat: 1, lng: 2, orden: 4 }]);
   });
+  it('conserva coordenadas 0 (válidas)', () => {
+    expect(puntosDeHistorial([p(1, 0, 0), p(2, 0, 5)])).toHaveLength(2);
+  });
   it('tolera entrada no array', () => {
     expect(puntosDeHistorial(undefined)).toEqual([]);
   });

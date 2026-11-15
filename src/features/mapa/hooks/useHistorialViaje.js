@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { trackingApi } from '@api/tracking.api';
 import { coordenadasDeHistorial } from '@utils/trackGps';
 
+const SIN_COORDENADAS = [];
 const REFETCH_MS = 30_000;
 
 /**
@@ -22,5 +23,5 @@ export const useHistorialViaje = (viajeId) => {
     refetchInterval: REFETCH_MS,
     select: coordenadasDeHistorial,
   });
-  return { coordenadas: query.data ?? [], isLoading: query.isLoading };
+  return { coordenadas: query.data ?? SIN_COORDENADAS, isLoading: query.isLoading };
 };

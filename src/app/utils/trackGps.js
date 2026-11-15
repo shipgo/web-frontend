@@ -22,7 +22,7 @@ const esCoord = (v) => typeof v === 'number' && Number.isFinite(v);
  */
 export const puntosDeHistorial = (historial) =>
   (Array.isArray(historial) ? historial : [])
-    .map((p) => ({ lat: p?.latitud ?? p?.lat, lng: p?.longitud ?? p?.lng, orden: p?.orden }))
+    .map((p) => ({ lat: p?.latitud, lng: p?.longitud, orden: p?.orden }))
     .filter((p) => esCoord(p.lat) && esCoord(p.lng))
     .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
 
