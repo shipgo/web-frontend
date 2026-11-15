@@ -6,6 +6,7 @@ import { LngLatBounds } from 'mapbox-gl';
 
 import Map from '@components/Map';
 import { useIsMobile } from '@hooks/useIsMobile';
+import { puntosDeHistorial } from '@utils/trackGps';
 
 /** Coordenadas de la parada de un recorrido (`puntoEntrega` o `sucursalDestino`, XOR). */
 const coordsDeRecorrido = (recorrido) => {
@@ -52,14 +53,6 @@ const TRACK_LINE_LAYER = {
   layout: { 'line-cap': 'round', 'line-join': 'round' },
   paint: { 'line-width': 3, 'line-color': '#f76707', 'line-opacity': 0.85 },
 };
-
-/** Ordena el historial de tracking (`UbicacionViajeDTO[]`) por `orden` y descarta
- * puntos sin coordenadas válidas. */
-const puntosDeHistorial = (historial = []) =>
-  [...historial]
-    .filter((p) => p?.latitud != null && p?.longitud != null)
-    .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
-    .map((p) => ({ lat: p.latitud, lng: p.longitud, orden: p.orden }));
 
 /**
  * `initialViewState` de react-map-gl sólo se aplica al montar el `<Map>`: acá

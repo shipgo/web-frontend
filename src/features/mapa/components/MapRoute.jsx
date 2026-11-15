@@ -8,6 +8,7 @@ import { estadoBadge, esEstadoTerminal } from '@domain/estados';
 import { formatTelefono } from '@domain/format';
 import { useGetRoute } from '../hooks/useGetRoute';
 import { useSelectedViaje } from '../contexts/selectedViaje';
+import { useHistorialViaje } from '../hooks/useHistorialViaje';
 import { useViajesConUbicacion } from '../hooks/useViajesConUbicacion';
 import { getEstadoVisualViaje } from '../utils/estadoVisual';
 import { getRouteGradient } from '../utils/routeGradient';
@@ -43,6 +44,17 @@ const StopMarker = ({ parada, index, isDelivered, onClick }) => (
   </Marker>
 );
 
+// Mapbox exige color real (no `var(--...)`). Naranja del detalle del viaje.
+const HISTORIAL_COLOR = '#f76707';
+
+/** Extiende el trazo hasta la última ubicación SSE si es distinta del último punto. */
+const trazoConUbicacion = (coordenadas, ubicacion) => {
+  if (!ubicacion || coordenadas.length === 0) return coordenadas;
+  const ultimo = coordenadas[coordenadas.length - 1];
+  if (ultimo[0] === ubicacion[0] && ultimo[1] === ubicacion[1]) return coordenadas;
+  return [...coordenadas, ubicacion];
+};
+
 const MapRoute = () => {
   const { selectedViajeId } = useSelectedViaje();
   const { viajes } = useViajesConUbicacion();
@@ -52,6 +64,7 @@ const MapRoute = () => {
     selectedViajeId,
     selectedViaje?.currentLocation,
   );
+  const { coordenadas: historial } = useHistorialViaje(selectedViajeId);
   const { current: map } = useMap();
   const [selectedParada, setSelectedParada] = useState(null);
 
@@ -86,6 +99,8 @@ const MapRoute = () => {
   }, [route, map, selectedViajeId]);
 
   if (!selectedViaje) return null;
+
+  const trazoHistorial = trazoConUbicacion(historial, selectedViaje.currentLocation);
 
   const estadoVisual = getEstadoVisualViaje(selectedViaje, selectedViaje.ultimaActualizacion);
   const truckPos = route ? route.waypoints[paradasEntregadas] : selectedViaje.currentLocation;
@@ -184,6 +199,22 @@ const MapRoute = () => {
             })}
           </Stack>
         </Popup>
+      )}
+
+      {trazoHistorial.length >= 2 && (
+        <Source
+          key={`historial-${selectedViajeId}`}
+          id={`historial-${selectedViajeId}`}
+          type="geojson"
+          data={{ type: 'Feature', geometry: { type: 'LineString', coordinates: trazoHistorial } }}
+        >
+          <Layer
+            id={`historial-line-${selectedViajeId}`}
+            type="line"
+            layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+            paint={{ 'line-width': 4, 'line-color': HISTORIAL_COLOR, 'line-opacity': 0.9 }}
+          />
+        </Source>
       )}
 
       {route && (
