@@ -1,54 +1,230 @@
-/* Etiqueta de envío (SHG-FE-136): 100x150 mm, siempre blanco y negro. */
+/* Etiqueta de envío: 100x150 mm, siempre blanco y negro. Diseño aprobado por el owner. */
 .etiqueta-envio {
   box-sizing: border-box;
   width: 100mm;
   height: 150mm;
-  padding: 6mm;
+  padding: 5mm;
   background: #fff;
   color: #000;
-  border: 1px solid #000;
+  border: 0.3mm solid #000;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4mm;
+  gap: 2.6mm;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  line-height: 1.2;
   overflow: hidden;
   page-break-after: always;
   break-after: page;
 }
 
-.etiqueta-envio__qr {
-  background: #fff;
-  padding: 2mm;
+.etiqueta-envio *,
+.etiqueta-envio *::before,
+.etiqueta-envio *::after {
+  box-sizing: border-box;
 }
 
-.etiqueta-envio__codigo {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 7mm;
-  font-weight: 700;
-  letter-spacing: 0.3mm;
+.etiqueta-envio__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 3mm;
+}
+
+.etiqueta-envio__logo {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+}
+
+.etiqueta-envio__logo-icono {
+  width: 9.5mm;
+  height: 9.5mm;
+  display: block;
+}
+
+.etiqueta-envio__logo span {
+  font-weight: 800;
+  font-size: 7.4mm;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.etiqueta-envio__tipo {
+  background: #000;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
-  word-break: break-all;
+  padding: 1.4mm 3mm;
+  min-width: 31mm;
+  font-size: 3.5mm;
+  font-weight: 800;
+  letter-spacing: 0.25mm;
+  line-height: 1.1;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.etiqueta-envio__k {
+  font-size: 2.3mm;
+  font-weight: 800;
+  letter-spacing: 0.3mm;
+  text-transform: uppercase;
+}
+
+.etiqueta-envio__desde {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5mm;
+  border-bottom: 0.4mm solid #000;
+  padding-bottom: 2mm;
+}
+
+.etiqueta-envio__desde b {
+  font-size: 3.7mm;
+  font-weight: 700;
+}
+
+.etiqueta-envio__desde em {
+  font-style: normal;
+  font-size: 3mm;
+}
+
+.etiqueta-envio__hasta {
+  flex: 1;
+  min-height: 0;
+  border: 0.7mm solid #000;
+  padding: 2.6mm 3mm;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2mm;
+  overflow: hidden;
+}
+
+.etiqueta-envio__hasta > * {
+  flex-shrink: 0;
+}
+
+/* line-clamp: último recurso; el autoajuste de tamaño (EtiquetaEnvio.jsx) va primero. */
+.etiqueta-envio__nom {
+  font-size: 5.2mm;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.etiqueta-envio__nom--sec {
+  font-size: 3.8mm;
+  font-weight: 700;
+}
+
+.etiqueta-envio__dir {
+  font-size: 4mm;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.etiqueta-envio__ciu {
+  font-size: 5.8mm;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1mm;
+  margin-top: auto;
+}
+
+.etiqueta-envio__ciu small {
+  display: block;
+  font-size: 3.8mm;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 0.4mm;
+}
+
+.etiqueta-envio__tel {
+  font-size: 3.6mm;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.etiqueta-envio__cod {
+  display: grid;
+  grid-template-columns: 42mm minmax(0, 1fr);
+  gap: 3mm;
+  align-items: stretch;
+}
+
+.etiqueta-envio__qr {
+  background: #fff;
+  padding: 1mm;
+  width: 42mm;
+  height: 42mm;
+}
+
+.etiqueta-envio__qr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .etiqueta-envio__datos {
-  width: 100%;
-  border-top: 0.4mm solid #000;
-  padding-top: 3mm;
+  display: grid;
+  align-content: start;
+  gap: 1.4mm;
+  min-width: 0;
+}
+
+.etiqueta-envio__datos > div {
+  min-width: 0;
+  border-bottom: 0.25mm solid #000;
+  padding-bottom: 1mm;
+}
+
+.etiqueta-envio__datos > div:last-child {
+  border-bottom: none;
+}
+
+.etiqueta-envio__datos b {
+  display: block;
+  font-size: 4.6mm;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.etiqueta-envio__items {
+  list-style: none;
+  margin: 0.6mm 0 0;
+  padding: 0;
+  font-size: 3.3mm;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.etiqueta-envio__items li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.etiqueta-envio__pie {
   display: flex;
-  flex-direction: column;
-  gap: 2mm;
-  font-size: 3.6mm;
-}
-
-.etiqueta-envio__label {
-  font-size: 2.8mm;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-.etiqueta-envio__valor {
+  justify-content: space-between;
+  gap: 3mm;
+  font-size: 2.4mm;
   font-weight: 500;
-  word-break: break-word;
+  white-space: nowrap;
+  border-top: 0.3mm solid #000;
+  padding-top: 1.2mm;
+  font-variant-numeric: tabular-nums;
 }
 
 @page {
@@ -57,9 +233,15 @@
 }
 
 /* Copia de la etiqueta montada en un portal bajo <body> (ver index.jsx): sólo
-   se ve al imprimir. En pantalla se oculta. */
+   se ve al imprimir. */
 .etiqueta-print-root {
-  display: none;
+  /* Fuera de pantalla pero con layout (no display: none): así el autoajuste del
+     bloque HASTA puede medir la copia de impresión. */
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 @media print {
@@ -78,6 +260,8 @@
   }
 
   .etiqueta-print-root {
+    position: static;
+    visibility: visible;
     display: block;
   }
 
