@@ -59,17 +59,17 @@ describe('EtiquetaEnvio', () => {
     expect(conPalabra.textContent).not.toMatch(/palabra|LUNA-PERRO/i);
   });
 
-  it('muestra QR, código y datos de apoyo, e imprime con window.print', async () => {
+  it('muestra QR y datos de apoyo, e imprime con window.print', async () => {
     const user = userEvent.setup();
     renderPage();
 
     const etiqueta = await screen.findByTestId('etiqueta-envio');
     expect(envioApi.getById).toHaveBeenCalledWith('9');
-    expect(within(etiqueta).getByText('SHG-ABC123')).toBeInTheDocument();
+    expect(etiqueta.textContent).not.toContain('SHG-ABC123');
     expect(within(etiqueta).getByTestId('qr')).toHaveAttribute('data-value', 'SHG-ABC123');
     expect(screen.getByTestId('etiqueta-envio-impresion')).toBeInTheDocument();
     expect(within(etiqueta).getByText('Juan García')).toBeInTheDocument();
-    expect(within(etiqueta).getByText(/Av\. Colón 1234/)).toBeInTheDocument();
+    expect(within(etiqueta).getByText('Av. Colón 1234')).toBeInTheDocument();
     expect(within(etiqueta).getByText('Sucursal Norte')).toBeInTheDocument();
     expect(etiqueta.textContent).not.toMatch(/undefined/);
 
@@ -86,7 +86,8 @@ describe('EtiquetaEnvio', () => {
     renderPage();
 
     const etiqueta = await screen.findByTestId('etiqueta-envio');
-    expect(within(etiqueta).getByText('Retiro en sucursal')).toBeInTheDocument();
+    expect(within(etiqueta).getByText('RETIRO EN SUCURSAL')).toBeInTheDocument();
+    expect(within(etiqueta).getByText('Hasta · retiro en sucursal')).toBeInTheDocument();
     expect(within(etiqueta).getByText('Sucursal Sur')).toBeInTheDocument();
   });
 
