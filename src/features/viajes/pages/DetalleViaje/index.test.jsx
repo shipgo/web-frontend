@@ -100,7 +100,7 @@ describe('DetalleViaje', () => {
     expect(screen.getByText('Detalle de viaje')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /ayuda/i })).toHaveAttribute(
       'href',
-      'https://shipgo.gitbook.io/manual',
+      'https://shipgo.github.io/manual/',
     );
 
     expect(screen.getAllByText('En camino').length).toBeGreaterThan(0);

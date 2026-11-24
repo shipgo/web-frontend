@@ -204,7 +204,7 @@ describe("EditarViaje", () => {
     expect(screen.getByText("Editar viaje")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /ayuda/i })
-    ).toHaveAttribute("href", "https://shipgo.gitbook.io/manual");
+    ).toHaveAttribute("href", "https://shipgo.github.io/manual/");
   });
 
   it("prefills el vehículo, choferes, fechas planificadas y envíos/recorridos del viaje", async () => {

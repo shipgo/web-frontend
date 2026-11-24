@@ -32,6 +32,7 @@ import { hasAnyRole } from "@domain/roles";
 import { necesitaOnboardingEmpresa } from "@domain/empresa";
 import { rolLabel } from "@domain/roles";
 import { iniciales, nombreCompleto } from "@domain/usuario";
+import { MANUAL_URL } from "@constants/manualUrl";
 
 const NAV_ROW_MIN_HEIGHT = 44;
 
@@ -66,7 +67,7 @@ const AppNavbar = ({ opened = false, onClose, onOpenUserSheet }) => {
       mih={mih}
       label="Manual"
       target="_blank"
-      href="https://shipgo.gitbook.io/manual"
+      href={MANUAL_URL}
       leftSection={<IconBook size={18} />}
       rightSection={<IconExternalLink size={18} />}
     />

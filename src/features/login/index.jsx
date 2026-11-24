@@ -27,6 +27,7 @@ import { getRateLimitMessage } from "@domain/apiError";
 import { landingPathFor } from "@domain/roles";
 import { resolvePostLoginRedirect } from "@utils/redirect";
 import { useCaptcha } from "@hooks/useCaptcha";
+import { MANUAL_URL } from "@constants/manualUrl";
 import CaptchaField from "@components/CaptchaField";
 import { isCaptchaApiError } from "@config/captcha";
 import { LOGIN_VARIANTS } from "./constants/copy";
@@ -166,7 +167,7 @@ const LoginPage = ({ variant = "operator" }) => {
       subtitle={copy.subtitle}
       footer={
         <>
-          <Anchor href="https://shipgo.gitbook.io/manual" target="_blank" size="sm" c="dimmed">
+          <Anchor href={MANUAL_URL} target="_blank" size="sm" c="dimmed">
             Ayuda
           </Anchor>
           <Anchor component={WouterLink} href="/" size="sm" c="dimmed">

@@ -10,6 +10,7 @@ import {
 } from '@tabler/icons-react';
 
 import { ROLES_WEB } from '@domain/roles';
+import { MANUAL_URL } from '@constants/manualUrl';
 
 const ITEMS = [
   {
@@ -79,8 +80,7 @@ const ITEMS = [
         description: 'Consultá la documentación de la plataforma',
         icon: <IconBook size={28} />,
         color: 'gray',
-        // Verificado en SHG-FE-051: URL https://shipgo.gitbook.io/manual existe y es funcional
-        href: 'https://shipgo.gitbook.io/manual',
+        href: MANUAL_URL,
       },
       {
         title: 'Alternar tema',

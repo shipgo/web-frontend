@@ -91,7 +91,7 @@ describe("LoginPage — captcha (SHG-FE-043)", () => {
 
     expect(screen.getByRole("link", { name: "Ayuda" })).toHaveAttribute(
       "href",
-      "https://shipgo.gitbook.io/manual",
+      "https://shipgo.github.io/manual/",
     );
     expect(screen.getByRole("link", { name: "Volver al inicio" })).toHaveAttribute("href", "/");
   });
