@@ -1,9 +1,8 @@
 import { ActionIcon, Button, Menu } from '@mantine/core';
 import { IconDotsVertical, IconHelp } from '@tabler/icons-react';
 
+import { MANUAL_URL } from '@constants/manualUrl';
 import { useIsMobile } from '@hooks/useIsMobile';
-
-export const HELP_URL = 'https://shipgo.gitbook.io/manual';
 
 /**
  * Acciones de encabezado compartidas por `PageHeader` y `PageBreadcrumbsHeader`.
@@ -36,7 +35,7 @@ const PageHeaderActions = ({ children, primaryAction, secondaryActions = [], sho
           </Button>
         ))}
         {showHelp && (
-          <Button variant="subtle" component="a" href={HELP_URL} target="_blank">
+          <Button variant="subtle" component="a" href={MANUAL_URL} target="_blank">
             Ayuda
           </Button>
         )}
@@ -72,7 +71,7 @@ const PageHeaderActions = ({ children, primaryAction, secondaryActions = [], sho
                 mih={44}
                 leftSection={<IconHelp size={16} />}
                 component="a"
-                href={HELP_URL}
+                href={MANUAL_URL}
                 target="_blank"
               >
                 Ayuda

@@ -75,7 +75,7 @@ describe("AppNavbar", () => {
     expect(screen.queryByText("Modo claro")).not.toBeInTheDocument();
     expect(screen.queryByText("Modo oscuro")).not.toBeInTheDocument();
     const manual = screen.getByRole("link", { name: /manual/i });
-    expect(manual).toHaveAttribute("href", "https://shipgo.gitbook.io/manual");
+    expect(manual).toHaveAttribute("href", "https://shipgo.github.io/manual/");
     // "Manual" queda fuera del área con scroll; los ítems de navegación, dentro.
     expect(manual.closest(".mantine-ScrollArea-viewport")).toBeNull();
     expect(

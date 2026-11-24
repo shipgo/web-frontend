@@ -11,6 +11,7 @@ import {
 
 import PageContainer from '@components/PageContainer';
 import PageHeader from '@components/PageHeader';
+import { MANUAL_URL } from '@constants/manualUrl';
 import { useIsMobile } from '@hooks/useIsMobile';
 import { useOperatingContext } from '@contexts/operatingContext';
 
@@ -104,7 +105,7 @@ const DashboardPage = () => {
             <Button
               variant="subtle"
               component="a"
-              href="https://shipgo.gitbook.io/manual"
+              href={MANUAL_URL}
               target="_blank"
             >
               Ayuda
